@@ -1,5 +1,4 @@
 /pg_data
-/.vscode
 __pycache__
 .DS_Store
 /envs/dev.env
