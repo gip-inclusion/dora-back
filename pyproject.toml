@@ -1,0 +1,8 @@
+[tool.isort]
+profile = "black"
+py_version = 39
+skip_gitignore = true
+
+[tool.black]
+target-version = ['py39']
+
