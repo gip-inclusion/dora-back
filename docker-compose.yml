@@ -17,7 +17,8 @@ services:
     env_file:
       - envs/dev.env
       - envs/secrets.env
-    command: sh -c "python manage.py migrate; python manage.py runserver 0.0.0.0:8000"
+    #command: sh -c "python manage.py migrate; python manage.py runserver 0.0.0.0:8000"
+    tty: true
     volumes:
       - .:/app
     ports:
