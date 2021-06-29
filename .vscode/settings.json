@@ -8,4 +8,7 @@
     "[markdown]": {
         "files.trimTrailingWhitespace": false,
     },
+    "files.exclude": {
+        "**/__pycache__": true
+    },
 }
