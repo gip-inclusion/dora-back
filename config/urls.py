@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from dora import views
+from dora.core import views
 
 urlpatterns = [
     path("hello/", views.hello_world),
