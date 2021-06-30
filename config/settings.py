@@ -26,7 +26,7 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ["DJANGO_DEBUG"] == "true"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [os.environ["DJANGO_ALLOWED_HOSTS"]]
 
 
 # Application definition
@@ -144,10 +144,21 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+
+# Rest Framework
+# https://www.django-rest-framework.org/api-guide/settings/
+
 REST_FRAMEWORK = {
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 10,
+    # Let's lock down access by default
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAdminUser",
+    ],
+    "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.AcceptHeaderVersioning",
+    "ALLOWED_VERSIONS": ["1.0"],
 }
 
+
+# CORS
+# https://github.com/adamchainz/django-cors-headers/blob/main/README.rst
+
 CORS_ALLOWED_ORIGINS = [os.environ["DJANGO_CORS_ALLOWED_ORIGINS"]]
-ALLOWED_HOSTS = [os.environ["DJANGO_ALLOWED_HOSTS"]]
