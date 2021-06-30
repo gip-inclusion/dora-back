@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     # local
     "dora.core",
     "dora.users",
+    "dora.structures",
 ]
 
 MIDDLEWARE = [

@@ -15,11 +15,17 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
 
-from dora.core import views
+import dora.core.views
+import dora.structures.views
+
+router = DefaultRouter()
+router.register(r"structures", dora.structures.views.StructureViewSet)
 
 urlpatterns = [
-    path("hello/", views.hello_world),
+    path("", include(router.urls)),
+    path("hello/", dora.core.views.hello_world),
     path("admin/", admin.site.urls),
 ]
