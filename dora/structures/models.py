@@ -77,3 +77,6 @@ class Structure(models.Model):
     )
 
     # TODO: opening_hours, edit history, moderation
+
+    def __str__(self):
+        return self.name
