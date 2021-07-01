@@ -162,4 +162,4 @@ REST_FRAMEWORK = {
 # CORS
 # https://github.com/adamchainz/django-cors-headers/blob/main/README.rst
 
-CORS_ALLOWED_ORIGINS = [os.environ["DJANGO_CORS_ALLOWED_ORIGINS"]]
+CORS_ALLOWED_ORIGIN_REGEXES = [os.environ["DJANGO_CORS_ALLOWED_ORIGIN_REGEXES"]]
