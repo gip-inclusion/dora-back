@@ -16,6 +16,7 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path
+from rest_framework.authtoken import views
 from rest_framework.routers import DefaultRouter
 
 import dora.core.views
@@ -28,4 +29,5 @@ urlpatterns = [
     path("", include(router.urls)),
     path("hello/", dora.core.views.hello_world),
     path("admin/", admin.site.urls),
+    path("api-token-auth/", views.obtain_auth_token),
 ]
