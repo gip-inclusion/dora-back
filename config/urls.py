@@ -20,6 +20,7 @@ from rest_framework.authtoken import views
 from rest_framework.routers import DefaultRouter
 
 import dora.core.views
+import dora.sirene.views
 import dora.structures.views
 
 router = DefaultRouter()
@@ -28,6 +29,7 @@ router.register(r"structures", dora.structures.views.StructureViewSet)
 urlpatterns = [
     path("", include(router.urls)),
     path("hello/", dora.core.views.hello_world),
+    path("search-sirene/", dora.sirene.views.search_sirene),
     path("admin/", admin.site.urls),
     path("api-token-auth/", views.obtain_auth_token),
 ]
