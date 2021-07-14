@@ -15,7 +15,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, register_converter
 from rest_framework.authtoken import views
 from rest_framework.routers import DefaultRouter
 
@@ -26,10 +26,23 @@ import dora.structures.views
 router = DefaultRouter()
 router.register(r"structures", dora.structures.views.StructureViewSet)
 
+
+class InseeCodeConverter:
+    regex = r"\d[0-9aAbB]\d{3}"
+
+    def to_python(self, value):
+        return str(value)
+
+    def to_url(self, value):
+        return f"{value}"
+
+
+register_converter(InseeCodeConverter, "insee_code")
+
 urlpatterns = [
     path("", include(router.urls)),
     path("hello/", dora.core.views.hello_world),
-    path("search-sirene/", dora.sirene.views.search_sirene),
+    path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
     path("admin/", admin.site.urls),
     path("api-token-auth/", views.obtain_auth_token),
 ]

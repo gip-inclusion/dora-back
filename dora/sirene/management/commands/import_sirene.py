@@ -19,6 +19,7 @@ def get_full_search_text_value(row, parent_name):
         {row["enseigne3Etablissement"]}
         {row["libelleCedexEtablissement"]}
         {row["libelleCommuneEtablissement"]}
+        {row["siret"]}
         {parent_name}\
      """
 
