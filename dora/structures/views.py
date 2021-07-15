@@ -7,8 +7,11 @@ from .serializers import StructureSerializer
 
 class StructurePermission(permissions.BasePermission):
     def has_permission(self, request, view):
-        # Make it read-only for now
-        return request.method in permissions.SAFE_METHODS
+        return bool(
+            request.method in permissions.SAFE_METHODS
+            or request.user
+            and request.user.is_authenticated
+        )
 
 
 class StructureViewSet(viewsets.ModelViewSet):
