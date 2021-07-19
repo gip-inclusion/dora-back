@@ -43,6 +43,7 @@ urlpatterns = [
     path("", include(router.urls)),
     path("hello/", dora.core.views.hello_world),
     path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
+    path("search-all-sirene/", dora.sirene.views.search_all_sirene),
     path("admin/", admin.site.urls),
     path("api-token-auth/", views.obtain_auth_token),
 ]
