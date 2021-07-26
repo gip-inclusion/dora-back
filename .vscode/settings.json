@@ -10,6 +10,7 @@
   "python.formatting.provider": "black",
   "python.linting.enabled": true,
   "python.linting.flake8Enabled": true,
+  "python.terminal.activateEnvironment": true,
 
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
