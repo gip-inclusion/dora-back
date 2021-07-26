@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "dora.core",
     "dora.users",
     "dora.structures",
+    "dora.services",
     "dora.sirene",
 ]
 

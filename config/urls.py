@@ -20,11 +20,13 @@ from rest_framework.authtoken import views
 from rest_framework.routers import DefaultRouter
 
 import dora.core.views
+import dora.services.views
 import dora.sirene.views
 import dora.structures.views
 
 router = DefaultRouter()
 router.register(r"structures", dora.structures.views.StructureViewSet)
+router.register(r"services", dora.services.views.ServiceViewSet)
 
 
 class InseeCodeConverter:
