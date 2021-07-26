@@ -174,6 +174,7 @@ REST_FRAMEWORK = {
         "djangorestframework_camel_case.parser.CamelCaseMultiPartParser",
         "djangorestframework_camel_case.parser.CamelCaseJSONParser",
     ),
+    "DEFAULT_METADATA_CLASS": "dora.core.misc.RelatedMetadata",
     "JSON_UNDERSCOREIZE": {
         "no_underscore_before_number": True,
     },
