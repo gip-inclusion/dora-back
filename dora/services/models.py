@@ -164,7 +164,7 @@ class Service(models.Model):
     )
 
     forms = ArrayField(
-        models.FileField(),
+        models.CharField(max_length=1024),
         verbose_name="Partagez les documents à compléter",
         blank=True,
         default=list,

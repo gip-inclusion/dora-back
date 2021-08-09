@@ -144,6 +144,14 @@ STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 
+# User uploaded files
+# https://django-storages.readthedocs.io/en/latest/backends/azure.html
+DEFAULT_FILE_STORAGE = "storages.backends.azure_storage.AzureStorage"
+AZURE_ACCOUNT_NAME = os.environ["AZURE_ACCOUNT_NAME"]
+AZURE_ACCOUNT_KEY = os.environ["AZURE_ACCOUNT_KEY"]
+AZURE_CONTAINER = os.environ["AZURE_CONTAINER"]
+AZURE_URL_EXPIRATION_SECS = 24 * 3600
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
