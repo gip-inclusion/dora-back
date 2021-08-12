@@ -24,6 +24,71 @@ def make_unique_slug(instance, value, length=20):
     return unique_slug
 
 
+class StructureKinds(models.TextChoices):
+    MOBILITY = ("MO", "Mobilité")
+    HOUSING = ("HO", "Logement")
+    CHILD_CARE = ("CC", "Garde d’enfant")
+
+
+class StructureTypology(models.TextChoices):
+    # Prescripteurs habilités
+    # https://github.com/betagouv/itou/blob/master/itou/prescribers/models.py#L91
+    PE = "PE", "Pôle emploi"
+    CAP_EMPLOI = "CAP_EMPLOI", "CAP emploi"
+    ML = "ML", "Mission locale"
+    DEPT = "DEPT", "Service social du conseil départemental"
+    SPIP = "SPIP", "SPIP — Service pénitentiaire d'insertion et de probation"
+    PJJ = "PJJ", "PJJ — Protection judiciaire de la jeunesse"
+    CCAS = (
+        "CCAS",
+        "CCAS — Centre communal d'action sociale ou centre intercommunal d'action sociale",
+    )
+    PLIE = "PLIE", "PLIE — Plan local pour l'insertion et l'emploi"
+    CHRS = "CHRS", "CHRS — Centre d'hébergement et de réinsertion sociale"
+    CIDFF = (
+        "CIDFF",
+        "CIDFF — Centre d'information sur les droits des femmes et des familles",
+    )
+    PREVENTION = "PREVENTION", "Service ou club de prévention"
+    AFPA = (
+        "AFPA",
+        "AFPA — Agence nationale pour la formation professionnelle des adultes",
+    )
+    PIJ_BIJ = "PIJ_BIJ", "PIJ-BIJ — Point/Bureau information jeunesse"
+    CAF = "CAF", "CAF — Caisse d'allocation familiale"
+    CADA = "CADA", "CADA — Centre d'accueil de demandeurs d'asile"
+    ASE = "ASE", "ASE — Aide sociale à l'enfance"
+    CAVA = "CAVA", "CAVA — Centre d'adaptation à la vie active"
+    CPH = "CPH", "CPH — Centre provisoire d'hébergement"
+    CHU = "CHU", "CHU — Centre d'hébergement d'urgence"
+    OACAS = (
+        "OACAS",
+        (
+            "OACAS — Structure porteuse d'un agrément national organisme "
+            "d'accueil communautaire et d'activité solidaire"
+        ),
+    )
+    # SIAE
+    # https://github.com/betagouv/itou/blob/master/itou/siaes/models.py#L169
+    EI = "EI", "SIAE — Entreprise d'insertion"
+    AI = ("AI", "SIAE — Association intermédiaire")
+    ACI = ("ACI", "SIAE — Atelier chantier d'insertion")
+    ACIPHC = (
+        "ACIPHC",
+        "SIAE — Atelier chantier d'insertion premières heures en chantier",
+    )
+    ETTI = ("ETTI", "SIAE — Entreprise de travail temporaire d'insertion")
+    EITI = ("EITI", "SIAE — Entreprise d'insertion par le travail indépendant")
+    GEIQ = (
+        "GEIQ",
+        "SIAE — Groupement d'employeurs pour l'insertion et la qualification",
+    )
+    EA = ("EA", "SIAE — Entreprise adaptée")
+    EATT = ("EATT", "SIAE — Entreprise adaptée de travail temporaire")
+
+    OTHER = "OTHER", "Autre"
+
+
 class Structure(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -31,6 +96,9 @@ class Structure(models.Model):
         verbose_name="Siret",
         max_length=14,
         validators=[validate_siret],
+    )
+    typology = models.CharField(
+        max_length=10, choices=StructureTypology.choices, blank=True
     )
     slug = models.SlugField(blank=True)
     name = models.CharField(verbose_name="Nom", max_length=255)
