@@ -8,3 +8,4 @@ class StructureSerializer(serializers.ModelSerializer):
         model = Structure
         # Temporary, while working on the exact model content
         fields = "__all__"
+        lookup_field = "slug"

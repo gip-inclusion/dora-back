@@ -18,3 +18,4 @@ class StructureViewSet(viewsets.ModelViewSet):
     queryset = Structure.objects.all()
     serializer_class = StructureSerializer
     permission_classes = [StructurePermission]
+    lookup_field = "slug"

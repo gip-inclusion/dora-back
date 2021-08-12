@@ -3,12 +3,25 @@ import uuid
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils.crypto import get_random_string
+from django.utils.text import slugify
 
 
 # From: https://github.com/betagouv/itou/blob/master/itou/utils/validators.py
 def validate_siret(siret):
     if not siret.isdigit() or len(siret) != 14:
         raise ValidationError("Le numéro SIRET doit être composé de 14 chiffres.")
+
+
+def make_unique_slug(instance, value, length=20):
+    model = instance.__class__
+    base_slug = slugify(value)[:length]
+    unique_slug = base_slug
+    while model.objects.filter(slug=unique_slug).exists():
+        unique_slug = (
+            base_slug + "-" + get_random_string(4, "abcdefghijklmnopqrstuvwxyz")
+        )
+    return unique_slug
 
 
 class Structure(models.Model):
@@ -19,6 +32,7 @@ class Structure(models.Model):
         max_length=14,
         validators=[validate_siret],
     )
+    slug = models.SlugField(blank=True)
     name = models.CharField(verbose_name="Nom", max_length=255)
     short_desc = models.TextField(blank=True)
     url = models.URLField(blank=True)
@@ -60,3 +74,8 @@ class Structure(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = make_unique_slug(self, self.name)
+        return super().save(*args, **kwargs)
