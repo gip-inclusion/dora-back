@@ -93,16 +93,14 @@ class Structure(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     siret = models.CharField(
-        verbose_name="Siret",
-        max_length=14,
-        validators=[validate_siret],
+        verbose_name="Siret", max_length=14, validators=[validate_siret], unique=True
     )
     typology = models.CharField(
         max_length=10, choices=StructureTypology.choices, blank=True
     )
-    slug = models.SlugField(blank=True)
+    slug = models.SlugField(blank=True, null=True, unique=True)
     name = models.CharField(verbose_name="Nom", max_length=255)
-    short_desc = models.TextField(blank=True)
+    short_desc = models.CharField(max_length=280, blank=True)
     url = models.URLField(blank=True)
     full_desc = models.TextField(blank=True)
     facebook_url = models.URLField(blank=True)
