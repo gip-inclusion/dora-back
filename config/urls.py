@@ -44,6 +44,7 @@ register_converter(InseeCodeConverter, "insee_code")
 urlpatterns = [
     path("", include(router.urls)),
     path("hello/", dora.core.views.hello_world),
+    path("sentry-debug/", dora.core.views.trigger_error),
     path("upload/<str:filename>/", dora.core.views.upload),
     path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
     path("search-all-sirene/", dora.sirene.views.search_all_sirene),
