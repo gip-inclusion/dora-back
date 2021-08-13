@@ -96,11 +96,12 @@ class Structure(models.Model):
         verbose_name="Siret", max_length=14, validators=[validate_siret], unique=True
     )
     typology = models.CharField(
-        max_length=10, choices=StructureTypology.choices, blank=True
+        max_length=10,
+        choices=StructureTypology.choices,
     )
     slug = models.SlugField(blank=True, null=True, unique=True)
     name = models.CharField(verbose_name="Nom", max_length=255)
-    short_desc = models.CharField(max_length=280, blank=True)
+    short_desc = models.CharField(max_length=280)
     url = models.URLField(blank=True)
     full_desc = models.TextField(blank=True)
     facebook_url = models.URLField(blank=True)
@@ -112,11 +113,11 @@ class Structure(models.Model):
     phone = models.CharField(max_length=10, blank=True)
     faq_url = models.URLField(blank=True)
     contact_form_url = models.URLField(blank=True)
-    email = models.EmailField(blank=True)
-    postal_code = models.CharField(max_length=5, blank=True)
+    email = models.EmailField()
+    postal_code = models.CharField(max_length=5)
     city_code = models.CharField(max_length=5, blank=True)
-    city = models.CharField(max_length=255, blank=True)
-    address1 = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=255)
+    address1 = models.CharField(max_length=255)
     address2 = models.CharField(max_length=255, blank=True)
     has_services = models.BooleanField(default=False, blank=True)
     ape = models.CharField(max_length=6, blank=True)
