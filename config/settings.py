@@ -14,6 +14,7 @@ from pathlib import Path
 
 import dj_database_url
 import sentry_sdk
+from corsheaders.defaults import default_headers
 from sentry_sdk.integrations.django import DjangoIntegration
 
 sentry_sdk.init(
@@ -211,3 +212,7 @@ REST_FRAMEWORK = {
 # https://github.com/adamchainz/django-cors-headers/blob/main/README.rst
 
 CORS_ALLOWED_ORIGIN_REGEXES = [os.environ["DJANGO_CORS_ALLOWED_ORIGIN_REGEXES"]]
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "sentry-trace",
+]
