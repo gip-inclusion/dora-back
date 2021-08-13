@@ -1,17 +1,4 @@
 {
-  "editor.formatOnSave": true,
-
-  "files.autoSave": "onFocusChange",
-  "files.exclude": {
-    "**/__pycache__": true
-  },
-  "files.trimTrailingWhitespace": true,
-
-  "python.formatting.provider": "black",
-  "python.linting.enabled": true,
-  "python.linting.flake8Enabled": true,
-  "python.terminal.activateEnvironment": true,
-
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -20,5 +7,15 @@
   },
   "[markdown]": {
     "files.trimTrailingWhitespace": false
-  }
+  },
+  "editor.formatOnSave": true,
+  "files.autoSave": "onFocusChange",
+  "files.exclude": {
+    "**/__pycache__": true
+  },
+  "files.trimTrailingWhitespace": true,
+  "python.formatting.provider": "black",
+  "python.linting.enabled": true,
+  "python.linting.flake8Enabled": true,
+  "python.terminal.activateEnvironment": true
 }
