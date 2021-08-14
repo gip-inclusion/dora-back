@@ -4,7 +4,9 @@ from .models import Structure
 
 
 class StructureSerializer(serializers.ModelSerializer):
-    typology_display = serializers.CharField(source="get_typology_display")
+    typology_display = serializers.CharField(
+        source="get_typology_display", read_only=True
+    )
 
     class Meta:
         model = Structure
