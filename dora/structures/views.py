@@ -1,8 +1,10 @@
 from rest_framework import permissions, viewsets
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
 
 from dora.structures.models import Structure
 
-from .serializers import StructureSerializer
+from .serializers import SiretClaimedSerializer, StructureSerializer
 
 
 class StructurePermission(permissions.BasePermission):
@@ -19,3 +21,11 @@ class StructureViewSet(viewsets.ModelViewSet):
     serializer_class = StructureSerializer
     permission_classes = [StructurePermission]
     lookup_field = "slug"
+
+
+@api_view()
+@permission_classes([permissions.AllowAny])
+def siret_was_claimed(request, siret):
+    structure = Structure.objects.get(siret=siret)
+    serializer = SiretClaimedSerializer(structure)
+    return Response(serializer.data)

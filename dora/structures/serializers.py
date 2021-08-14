@@ -11,3 +11,10 @@ class StructureSerializer(serializers.ModelSerializer):
         # Temporary, while working on the exact model content
         fields = "__all__"
         lookup_field = "slug"
+
+
+class SiretClaimedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Structure
+        fields = ["id", "siret", "slug"]
+        lookup_field = "siret"

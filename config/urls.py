@@ -41,6 +41,19 @@ class InseeCodeConverter:
 
 register_converter(InseeCodeConverter, "insee_code")
 
+
+class SiretConverter:
+    regex = r"\d{14}"
+
+    def to_python(self, value):
+        return str(value)
+
+    def to_url(self, value):
+        return f"{value}"
+
+
+register_converter(SiretConverter, "siret")
+
 urlpatterns = [
     path("", include(router.urls)),
     path("hello/", dora.core.views.hello_world),
@@ -48,6 +61,7 @@ urlpatterns = [
     path("upload/<str:filename>/", dora.core.views.upload),
     path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
     path("search-all-sirene/", dora.sirene.views.search_all_sirene),
+    path("siret-claimed/<siret:siret>/", dora.structures.views.siret_was_claimed),
     path("admin/", admin.site.urls),
     path("api-token-auth/", views.obtain_auth_token),
 ]
