@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import permissions, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -26,6 +27,6 @@ class StructureViewSet(viewsets.ModelViewSet):
 @api_view()
 @permission_classes([permissions.AllowAny])
 def siret_was_claimed(request, siret):
-    structure = Structure.objects.get(siret=siret)
+    structure = get_object_or_404(Structure.objects.all(), siret=siret)
     serializer = SiretClaimedSerializer(structure)
     return Response(serializer.data)
