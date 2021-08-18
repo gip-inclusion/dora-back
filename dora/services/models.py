@@ -247,7 +247,6 @@ class Service(models.Model):
         verbose_name="",
         on_delete=models.CASCADE,
         db_index=True,
-        null=True,
     )
 
     creation_date = models.DateTimeField(auto_now_add=True)
