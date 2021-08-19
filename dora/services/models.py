@@ -176,11 +176,10 @@ class Service(models.Model):
         blank=True,
         default=list,
     )
-    online_forms = ArrayField(
-        models.CharField(max_length=280),
-        verbose_name="Formulaires en ligne à compléter",
+    online_form = models.CharField(
+        max_length=280,
+        verbose_name="Formulaire en ligne à compléter",
         blank=True,
-        default=list,
     )
 
     ########################
