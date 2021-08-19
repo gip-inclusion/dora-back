@@ -8,6 +8,9 @@
   "[markdown]": {
     "files.trimTrailingWhitespace": false
   },
+  "[python]": {
+    "editor.tabSize": 4
+  },
   "editor.formatOnSave": true,
   "files.autoSave": "onFocusChange",
   "files.exclude": {
@@ -17,5 +20,6 @@
   "python.formatting.provider": "black",
   "python.linting.enabled": true,
   "python.linting.flake8Enabled": true,
-  "python.terminal.activateEnvironment": true
+  "python.terminal.activateEnvironment": true,
+  "editor.detectIndentation": false
 }
