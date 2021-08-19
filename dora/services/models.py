@@ -4,8 +4,21 @@ from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models.fields import CharField
+from django.utils.crypto import get_random_string
+from django.utils.text import slugify
 
 from dora.structures.models import Structure
+
+
+def make_unique_slug(instance, parent_slug, value, length=20):
+    model = instance.__class__
+    base_slug = parent_slug + "-" + slugify(value)[:length]
+    unique_slug = base_slug
+    while model.objects.filter(slug=unique_slug).exists():
+        unique_slug = (
+            base_slug + "-" + get_random_string(4, "abcdefghijklmnopqrstuvwxyz")
+        )
+    return unique_slug
 
 
 class ServiceCategories(models.TextChoices):
@@ -81,6 +94,7 @@ class Credential(models.Model):
 
 class Service(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    slug = models.SlugField(blank=True, null=True, unique=True)
 
     ##############
     # Presentation
@@ -264,3 +278,8 @@ class Service(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = make_unique_slug(self, self.structure.slug, self.name)
+        return super().save(*args, **kwargs)

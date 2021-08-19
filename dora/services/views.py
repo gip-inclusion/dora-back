@@ -18,3 +18,4 @@ class ServiceViewSet(viewsets.ModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
     permission_classes = [ServicePermission]
+    lookup_field = "slug"
