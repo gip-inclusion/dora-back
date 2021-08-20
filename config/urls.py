@@ -58,7 +58,7 @@ urlpatterns = [
     path("", include(router.urls)),
     path("hello/", dora.core.views.hello_world),
     path("sentry-debug/", dora.core.views.trigger_error),
-    path("upload/<str:filename>/", dora.core.views.upload),
+    path("upload/<slug:structure_slug>/<str:filename>/", dora.core.views.upload),
     path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
     path("search-all-sirene/", dora.sirene.views.search_all_sirene),
     path("siret-claimed/<siret:siret>/", dora.structures.views.siret_was_claimed),
