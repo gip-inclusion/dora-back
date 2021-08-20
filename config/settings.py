@@ -17,6 +17,8 @@ import sentry_sdk
 from corsheaders.defaults import default_headers
 from sentry_sdk.integrations.django import DjangoIntegration
 
+ENVIRONMENT = os.environ["ENVIRONMENT"]
+
 if os.environ["ENVIRONMENT"] != "local":
     sentry_sdk.init(
         dsn=os.environ["SENTRY_DSN"],
