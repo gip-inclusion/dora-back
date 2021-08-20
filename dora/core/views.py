@@ -9,12 +9,6 @@ from rest_framework.response import Response
 from dora.structures.models import Structure
 
 
-@api_view()
-@permission_classes([permissions.AllowAny])
-def hello_world(request):
-    return Response({"message": "Hello from Django!"})
-
-
 @api_view(["POST"])
 @parser_classes([FileUploadParser])
 @permission_classes([permissions.AllowAny])
