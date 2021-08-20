@@ -205,7 +205,7 @@ class Service(models.Model):
 
     # Location
 
-    location_kind = ArrayField(
+    location_kinds = ArrayField(
         models.CharField(max_length=2, choices=LocationKind.choices),
         verbose_name="Lieu de déroulement",
     )
