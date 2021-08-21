@@ -113,8 +113,10 @@ class Structure(models.Model):
     phone = models.CharField(max_length=10, blank=True)
     faq_url = models.URLField(blank=True)
     contact_form_url = models.URLField(blank=True)
-    email = models.EmailField()
-    postal_code = models.CharField(max_length=5)
+    email = models.EmailField(blank=True)
+    postal_code = models.CharField(
+        max_length=5,
+    )
     city_code = models.CharField(max_length=5, blank=True)
     city = models.CharField(max_length=255)
     address1 = models.CharField(max_length=255)

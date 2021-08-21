@@ -188,16 +188,12 @@ class Service(models.Model):
     # Contact
 
     contact_name = models.CharField(
-        max_length=140,
-        verbose_name="Nom du contact référent",
+        max_length=140, verbose_name="Nom du contact référent", blank=True
     )
     contact_phone = models.CharField(
-        verbose_name="Numéro de téléphone",
-        max_length=10,
+        verbose_name="Numéro de téléphone", max_length=10, blank=True
     )
-    contact_email = models.EmailField(
-        verbose_name="Courriel",
-    )
+    contact_email = models.EmailField(verbose_name="Courriel", blank=True)
     is_contact_info_public = models.BooleanField(
         verbose_name="Rendre mes informations publiques",
         default=False,
