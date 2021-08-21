@@ -253,7 +253,7 @@ class Service(models.Model):
 
     structure = models.ForeignKey(
         Structure,
-        verbose_name="",
+        verbose_name="Structure",
         on_delete=models.CASCADE,
         db_index=True,
     )
