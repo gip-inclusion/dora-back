@@ -48,7 +48,7 @@ class RelatedMetadata(SimpleMetadata):
             field_info["choices"] = [
                 {
                     "value": choice_value,
-                    "display_name": force_str(choice_name, strings_only=True),
+                    "label": force_str(choice_name, strings_only=True),
                 }
                 for choice_value, choice_name in field.choices.items()
             ]
