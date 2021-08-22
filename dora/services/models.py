@@ -176,8 +176,7 @@ class Service(models.Model):
         blank=True,
         default=list,
     )
-    online_form = models.CharField(
-        max_length=280,
+    online_form = models.URLField(
         verbose_name="Formulaire en ligne à compléter",
         blank=True,
     )
@@ -228,9 +227,6 @@ class Service(models.Model):
 
     # Duration
 
-    is_time_limited = models.BooleanField(
-        verbose_name="Votre offre est limitée dans le temps ?", default=False
-    )
     start_date = models.DateField(verbose_name="Date de début", null=True, blank=True)
     end_date = models.DateField(verbose_name="Date de fin", null=True, blank=True)
 
