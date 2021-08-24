@@ -1,3 +1,5 @@
+import logging
+
 from django.core.files.storage import default_storage
 from rest_framework import serializers
 
@@ -12,6 +14,8 @@ from .models import (
     ServiceKind,
     ServiceSubCategories,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ServiceSerializer(serializers.ModelSerializer):
@@ -57,7 +61,13 @@ class ServiceSerializer(serializers.ModelSerializer):
         return [ServiceCategories(cat).label for cat in obj.categories]
 
     def get_subcategories_display(self, obj):
-        return [ServiceSubCategories(cat).label for cat in obj.subcategories]
+        try:
+            return [ServiceSubCategories(cat).label for cat in obj.subcategories]
+        except ValueError:
+            logger.exception(
+                "Incorrect Service sub-category", extra={"values": obj.subcategories}
+            )
+            return []
 
     def get_beneficiaries_access_modes_display(self, obj):
         return [

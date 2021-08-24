@@ -27,9 +27,10 @@ class ServiceCategories(models.TextChoices):
     CHILD_CARE = ("CC", "Garde d’enfant")
 
 
+# Subcategories are prefixed by their category
 class ServiceSubCategories(models.TextChoices):
-    MO_FEES_HELP = ("MFH", "Aide aux frais de déplacements")
-    MO_CAR_REPAIR = ("MCR", "Réparation de voitures à prix réduit")
+    MO_FEES_HELP = ("MO-FH", "Aide aux frais de déplacements")
+    MO_CAR_REPAIR = ("MO-CR", "Réparation de voitures à prix réduit")
 
 
 class ServiceKind(models.TextChoices):
@@ -120,7 +121,7 @@ class Service(models.Model):
         db_index=True,
     )
     subcategories = ArrayField(
-        models.CharField(max_length=3, choices=ServiceSubCategories.choices),
+        models.CharField(max_length=6, choices=ServiceSubCategories.choices),
         verbose_name="Sous-catégorie",
     )
     is_common_law = models.BooleanField(
