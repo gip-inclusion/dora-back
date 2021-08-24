@@ -29,8 +29,21 @@ class ServiceCategories(models.TextChoices):
 
 # Subcategories are prefixed by their category
 class ServiceSubCategories(models.TextChoices):
-    MO_FEES_HELP = ("MO-FH", "Aide aux frais de déplacements")
-    MO_CAR_REPAIR = ("MO-CR", "Réparation de voitures à prix réduit")
+
+    MO_MOBILITY = ("MO-MO", "Quand on veut se déplacer")
+    MO_WORK = ("MO-WK", "Quand on reprend un emploi ou une formation")
+    MO_LICENSE = ("MO-LI", "Quand on veut passer son permis")
+    MO_VEHICLE = ("MO-VE", "Quand on a son permis mais pas de véhicule")
+    MO_MAINTENANCE = ("MO-MA", "Quand on doit entretenir son véhicule")
+
+    HO_SHORT = ("HO-SH", "Hebergement de courte durée")
+    HO_ACCESS = ("HO-AC", "Accéder au logement")
+    HO_KEEP = ("HO-KE", "Conserver son logement")
+
+    CC_INFO = ("CC-IN", "Information et accompagnement des parents")
+    CC_TEMP = ("CC-TM", "Garde ponctuelle")
+    CC_LONG = ("CC-LG", "Garde pérenne")
+    CC_EXTRACURRICULAR = ("CC-EX", "Garde périscolaire")
 
 
 class ServiceKind(models.TextChoices):
