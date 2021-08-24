@@ -24,6 +24,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     structure = serializers.SlugRelatedField(
         queryset=Structure.objects.all(), slug_field="slug"
     )
+    structure_name = serializers.SerializerMethodField()
     kinds_display = serializers.SerializerMethodField()
     categories_display = serializers.SerializerMethodField()
     subcategories_display = serializers.SerializerMethodField()
@@ -90,3 +91,6 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     def get_credentials_display(self, obj):
         return [item.name for item in obj.credentials.all()]
+
+    def get_structure_name(self, obj):
+        return obj.structure.name
