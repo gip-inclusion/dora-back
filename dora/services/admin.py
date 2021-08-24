@@ -9,6 +9,7 @@ class ServiceAdmin(admin.ModelAdmin):
         "name",
         "slug",
         "structure",
+        "category",
         "modification_date",
         "last_editor",
     ]

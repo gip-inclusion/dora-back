@@ -26,7 +26,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     )
     structure_name = serializers.SerializerMethodField()
     kinds_display = serializers.SerializerMethodField()
-    categories_display = serializers.SerializerMethodField()
+    category_display = serializers.SerializerMethodField()
     subcategories_display = serializers.SerializerMethodField()
     access_conditions_display = serializers.SerializerMethodField()
     concerned_public_display = serializers.SerializerMethodField()
@@ -58,8 +58,8 @@ class ServiceSerializer(serializers.ModelSerializer):
     def get_location_kinds_display(self, obj):
         return [LocationKind(kind).label for kind in obj.location_kinds]
 
-    def get_categories_display(self, obj):
-        return [ServiceCategories(cat).label for cat in obj.categories]
+    def get_category_display(self, obj):
+        return ServiceCategories(obj.category).label
 
     def get_subcategories_display(self, obj):
         try:

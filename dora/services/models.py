@@ -115,11 +115,13 @@ class Service(models.Model):
         verbose_name="Type de service",
         db_index=True,
     )
-    categories = ArrayField(
-        models.CharField(max_length=2, choices=ServiceCategories.choices),
+    category = models.CharField(
+        max_length=2,
+        choices=ServiceCategories.choices,
         verbose_name="Catégorie principale",
         db_index=True,
     )
+
     subcategories = ArrayField(
         models.CharField(max_length=6, choices=ServiceSubCategories.choices),
         verbose_name="Sous-catégorie",
