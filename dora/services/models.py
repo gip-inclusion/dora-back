@@ -167,6 +167,8 @@ class Service(models.Model):
     beneficiaries_access_modes = ArrayField(
         models.CharField(max_length=2, choices=BeneficiaryAccessMode.choices),
         verbose_name="Comment mobiliser la solution en tant que bénéficiaire",
+        blank=True,
+        default=list,
     )
     beneficiaries_access_modes_other = CharField(
         verbose_name="Autre", max_length=280, blank=True
