@@ -26,6 +26,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
     serializer_class = ServiceSerializer
     permission_classes = [ServicePermission]
     lookup_field = "slug"
+    ordering_fields = ["-modification_date"]
 
 
 @api_view()
