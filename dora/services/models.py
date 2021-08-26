@@ -62,6 +62,7 @@ class BeneficiaryAccessMode(models.TextChoices):
 class CoachOrientationMode(models.TextChoices):
     PHONE = ("PH", "Téléphoner")
     EMAIL = ("EM", "Envoyer un mail")
+    FORM = ("FO", "Envoyer le formulaire d’adhésion")
     EMAIL_PRESCRIPTION = ("EP", "Envoyer un mail avec une fiche de prescription")
     OTHER = ("OT", "Autre (préciser)")
 
