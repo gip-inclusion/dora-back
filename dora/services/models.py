@@ -157,9 +157,7 @@ class Service(models.Model):
     has_fee = models.BooleanField(
         verbose_name="Frais à charge pour le bénéficiaire", default=False
     )
-    fee_details = models.CharField(
-        verbose_name="Détail des frais", max_length=140, blank=True
-    )
+    fee_details = models.TextField(verbose_name="Détail des frais", blank=True)
 
     ############
     # Modalities
