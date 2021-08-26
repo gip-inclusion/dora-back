@@ -85,12 +85,20 @@ class AccessCondition(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name = "Critère d’admission"
+        verbose_name_plural = "Critères d’admission"
+
 
 class ConcernedPublic(models.Model):
     name = models.CharField(max_length=140)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        verbose_name = "Public concerné"
+        verbose_name_plural = "Publics concernés"
 
 
 class Requirement(models.Model):
@@ -99,12 +107,20 @@ class Requirement(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name = "Pré-requis ou compétence"
+        verbose_name_plural = "Pré-requis ou compétences"
+
 
 class Credential(models.Model):
     name = models.CharField(max_length=140)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        verbose_name = "Justificatif à fournir"
+        verbose_name_plural = "Justificatifs à fournir"
 
 
 class Service(models.Model):
