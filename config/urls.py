@@ -57,6 +57,7 @@ register_converter(SiretConverter, "siret")
 urlpatterns = [
     path("", include(router.urls)),
     path("services-options/", dora.services.views.options),
+    path("structures-options/", dora.structures.views.options),
     path("search/", dora.services.views.search),
     path("upload/<slug:structure_slug>/<str:filename>/", dora.core.views.upload),
     path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
