@@ -66,7 +66,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         return [LocationKind(kind).label for kind in obj.location_kinds]
 
     def get_category_display(self, obj):
-        return ServiceCategories(obj.category).label
+        return ServiceCategories(obj.category).label if obj.category else ""
 
     def get_subcategories_display(self, obj):
         try:
@@ -107,5 +107,12 @@ class ServiceListSerializer(ServiceSerializer):
     class Meta:
         model = Service
         # Temporary, while working on the exact model content
-        fields = ["slug", "name", "structure_info", "department"]
+        fields = [
+            "slug",
+            "name",
+            "structure_info",
+            "department",
+            "is_draft",
+            "modification_date",
+        ]
         lookup_field = "slug"
