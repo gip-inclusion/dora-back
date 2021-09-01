@@ -35,6 +35,16 @@ class ServiceViewSet(viewsets.ModelViewSet):
     permission_classes = [ServicePermission]
     lookup_field = "slug"
 
+    def get_queryset(self):
+        qs = None
+        user = self.request.user
+        if user and user.is_staff:
+            qs = Service.objects.all()
+        else:
+            # TODO: add all my org drafts
+            qs = Service.objects.filter(is_draft=False)
+        return qs.order_by("-modification_date")
+
     def get_serializer_class(self):
         if self.action == "list":
             return ServiceListSerializer
