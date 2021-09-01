@@ -130,10 +130,7 @@ class Service(models.Model):
     ##############
     # Presentation
     name = models.CharField(verbose_name="Nom de l’offre", max_length=140)
-    short_desc = models.TextField(
-        verbose_name="Résumé",
-        max_length=280,
-    )
+    short_desc = models.TextField(verbose_name="Résumé", max_length=280, blank=True)
     full_desc = models.TextField(
         verbose_name="Descriptif complet de l’offre", blank=True
     )
@@ -144,17 +141,22 @@ class Service(models.Model):
         models.CharField(max_length=2, choices=ServiceKind.choices),
         verbose_name="Type de service",
         db_index=True,
+        blank=True,
+        default=list,
     )
     category = models.CharField(
         max_length=2,
         choices=ServiceCategories.choices,
         verbose_name="Catégorie principale",
         db_index=True,
+        blank=True,
     )
 
     subcategories = ArrayField(
         models.CharField(max_length=6, choices=ServiceSubCategories.choices),
         verbose_name="Sous-catégorie",
+        blank=True,
+        default=list,
     )
     is_common_law = models.BooleanField(
         verbose_name="Il s’agit d'un service de Droit commun ?", default=False
@@ -190,6 +192,8 @@ class Service(models.Model):
     coach_orientation_modes = ArrayField(
         models.CharField(max_length=2, choices=CoachOrientationMode.choices),
         verbose_name="Comment orienter un bénéficiaire en tant qu’accompagnateur",
+        blank=True,
+        default=list,
     )
     coach_orientation_modes_other = CharField(
         verbose_name="Autre", max_length=280, blank=True
@@ -236,25 +240,18 @@ class Service(models.Model):
     location_kinds = ArrayField(
         models.CharField(max_length=2, choices=LocationKind.choices),
         verbose_name="Lieu de déroulement",
+        blank=True,
+        default=list,
     )
 
     remote_url = models.URLField(verbose_name="Lien visioconférence", blank=True)
-    address1 = models.CharField(
-        verbose_name="Adresse",
-        max_length=255,
-    )
+    address1 = models.CharField(verbose_name="Adresse", max_length=255, blank=True)
     address2 = models.CharField(
         verbose_name="Compléments d’adresse", max_length=255, blank=True
     )
-    postal_code = models.CharField(
-        verbose_name="Code postal",
-        max_length=5,
-    )
+    postal_code = models.CharField(verbose_name="Code postal", max_length=5, blank=True)
     city_code = models.CharField(verbose_name="Code INSEE", max_length=5, blank=True)
-    city = models.CharField(
-        verbose_name="Ville",
-        max_length=200,
-    )
+    city = models.CharField(verbose_name="Ville", max_length=200, blank=True)
     longitude = models.FloatField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)
 
@@ -280,6 +277,9 @@ class Service(models.Model):
         verbose_name="À partir d’une date", null=True, blank=True
     )
 
+    ##########
+    # Metadata
+
     structure = models.ForeignKey(
         Structure,
         verbose_name="Structure",
@@ -299,6 +299,8 @@ class Service(models.Model):
         blank=True,
         null=True,
     )
+
+    is_draft = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
