@@ -30,11 +30,10 @@ class ServicePermission(permissions.BasePermission):
 
 
 class ServiceViewSet(viewsets.ModelViewSet):
-    queryset = Service.objects.all()
+    queryset = Service.objects.all().order_by("-modification_date")
     serializer_class = ServiceSerializer
     permission_classes = [ServicePermission]
     lookup_field = "slug"
-    ordering_fields = ["-modification_date"]
 
     def get_serializer_class(self):
         if self.action == "list":
