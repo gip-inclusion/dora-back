@@ -1,7 +1,5 @@
 /pg_data
 __pycache__
 .DS_Store
-node_modules
-package-lock.json
 /envs/dev.env
 /envs/secrets.env
