@@ -124,7 +124,7 @@ def search(request):
     category = request.GET.get("cat")
     subcategory = request.GET.get("subcat")
     # city_code = request.GET.get("city")
-    results = Service.objects.filter(category=category)
+    results = Service.objects.filter(category=category, is_draft=False)
     if subcategory:
         results = results.filter(subcategories__contains=[subcategory])
 
