@@ -1,7 +1,10 @@
+from django.contrib.gis.measure import D
+from django.shortcuts import get_object_or_404
 from rest_framework import permissions, serializers, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
+from dora.admin_express.models import City
 from dora.services.models import (
     AccessCondition,
     BeneficiaryAccessMode,
@@ -123,9 +126,14 @@ def options(request):
 def search(request):
     category = request.GET.get("cat")
     subcategory = request.GET.get("subcat")
-    # city_code = request.GET.get("city")
+    city_code = request.GET.get("city")
+
     results = Service.objects.filter(category=category, is_draft=False)
     if subcategory:
         results = results.filter(subcategories__contains=[subcategory])
+
+    if city_code:
+        city = get_object_or_404(City, pk=city_code)
+        results = results.filter(geom__dwithin=(city.geom, D(km=30)))
 
     return Response(ServiceSerializer(results, many=True).data)

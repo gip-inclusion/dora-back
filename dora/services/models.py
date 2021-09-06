@@ -252,7 +252,9 @@ class Service(models.Model):
     postal_code = models.CharField(verbose_name="Code postal", max_length=5, blank=True)
     city_code = models.CharField(verbose_name="Code INSEE", max_length=5, blank=True)
     city = models.CharField(verbose_name="Ville", max_length=200, blank=True)
-    geom = models.PointField(srid=4326, spatial_index=True, null=True, blank=True)
+    geom = models.PointField(
+        srid=4326, geography=True, spatial_index=True, null=True, blank=True
+    )
 
     # Duration
 
