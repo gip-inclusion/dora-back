@@ -45,24 +45,24 @@ class Command(BaseCommand):
                     check=True,
                 )
 
-        shapefile = (
-            the_dir
-            / "ADMIN-EXPRESS-COG_3-0__SHP__FRA_2021-05-19"
-            / "ADMIN-EXPRESS-COG"
-            / "1_DONNEES_LIVRAISON_2021-05-19"
-            / "ADECOG_3-0_SHP_WGS84G_FRA"
-            / "COMMUNE.shp"
-        )
-        # /ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2021-05-19/ADECOG_3-0_SHP_WGS84G_FRA/COMMUNE.shp
-        mapping = {
-            "code": "INSEE_COM",
-            "name": "NOM",
-            "department": "INSEE_DEP",
-            "region": "INSEE_REG",
-            "siren_epci": "SIREN_EPCI",
-            "geom": "MULTIPOLYGON",
-        }
-        self.stdout.write(self.style.SUCCESS("Importing the data"))
-        lm = LayerMapping(City, shapefile, mapping)
-        lm.save(progress=True, strict=True)
-        self.stdout.write(self.style.SUCCESS("Importing successful"))
+            shapefile = (
+                the_dir
+                / "ADMIN-EXPRESS-COG_3-0__SHP__FRA_2021-05-19"
+                / "ADMIN-EXPRESS-COG"
+                / "1_DONNEES_LIVRAISON_2021-05-19"
+                / "ADECOG_3-0_SHP_WGS84G_FRA"
+                / "COMMUNE.shp"
+            )
+            # /ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2021-05-19/ADECOG_3-0_SHP_WGS84G_FRA/COMMUNE.shp
+            mapping = {
+                "code": "INSEE_COM",
+                "name": "NOM",
+                "department": "INSEE_DEP",
+                "region": "INSEE_REG",
+                "siren_epci": "SIREN_EPCI",
+                "geom": "MULTIPOLYGON",
+            }
+            self.stdout.write(self.style.SUCCESS("Importing the data"))
+            lm = LayerMapping(City, shapefile, mapping)
+            lm.save(progress=True, strict=True)
+            self.stdout.write(self.style.SUCCESS("Importing successful"))
