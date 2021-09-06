@@ -9,6 +9,8 @@ from django.core.management.base import BaseCommand
 
 from dora.admin_express.models import City
 
+EXE_7ZR = "/app/.apt/usr/lib/p7zip/7zr" if not settings.DEBUG else "7zr"
+
 # Using the fast OpenDataArchive mirror
 # The original is at ftp://Admin_Express_ext:Dahnoh0eigheeFok@ftp3.ign.fr/ADMIN-EXPRESS-COG_3-0__SHP__FRA_WM_2021-05-19.7z
 AE_COG_LINK = "http://files.opendatarchives.fr/professionnels.ign.fr/adminexpress/ADMIN-EXPRESS-COG_3-0__SHP__FRA_WM_2021-05-19.7z"
@@ -39,7 +41,7 @@ class Command(BaseCommand):
 
                 self.stdout.write(self.style.NOTICE("Decompression the AE COG"))
                 subprocess.run(
-                    ["7z", "-bd", "x", compressed_AE_file, f"-o{the_dir}"],
+                    [EXE_7ZR, "-bd", "x", compressed_AE_file, f"-o{the_dir}"],
                     check=True,
                 )
 
