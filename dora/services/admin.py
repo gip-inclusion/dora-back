@@ -1,9 +1,10 @@
-from django.contrib import admin
+from django.contrib.admin import RelatedOnlyFieldListFilter
+from django.contrib.gis import admin
 
 from .models import AccessCondition, ConcernedPublic, Credential, Requirement, Service
 
 
-class ServiceAdmin(admin.ModelAdmin):
+class ServiceAdmin(admin.OSMGeoAdmin):
 
     list_display = [
         "name",
@@ -14,7 +15,7 @@ class ServiceAdmin(admin.ModelAdmin):
         "last_editor",
     ]
     list_filter = [
-        ("structure", admin.RelatedOnlyFieldListFilter),
+        ("structure", RelatedOnlyFieldListFilter),
     ]
     ordering = ["-modification_date"]
 
