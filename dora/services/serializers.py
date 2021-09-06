@@ -18,13 +18,19 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
+class StructureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Structure
+        fields = ["slug", "name", "short_desc"]
+
+
 class ServiceSerializer(serializers.ModelSerializer):
     is_available = serializers.SerializerMethodField()
     forms_info = serializers.SerializerMethodField()
     structure = serializers.SlugRelatedField(
         queryset=Structure.objects.all(), slug_field="slug"
     )
-    structure_name = serializers.SerializerMethodField()
+    structure_info = StructureSerializer(source="structure", read_only=True)
     kinds_display = serializers.SerializerMethodField()
     category_display = serializers.SerializerMethodField()
     subcategories_display = serializers.SerializerMethodField()
@@ -38,6 +44,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     recurrence_display = serializers.CharField(
         source="get_recurrence_display", read_only=True
     )
+    department = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
@@ -59,7 +66,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         return [LocationKind(kind).label for kind in obj.location_kinds]
 
     def get_category_display(self, obj):
-        return ServiceCategories(obj.category).label
+        return ServiceCategories(obj.category).label if obj.category else ""
 
     def get_subcategories_display(self, obj):
         try:
@@ -92,5 +99,20 @@ class ServiceSerializer(serializers.ModelSerializer):
     def get_credentials_display(self, obj):
         return [item.name for item in obj.credentials.all()]
 
-    def get_structure_name(self, obj):
-        return obj.structure.name
+    def get_department(self, obj):
+        return obj.postal_code[0:2]
+
+
+class ServiceListSerializer(ServiceSerializer):
+    class Meta:
+        model = Service
+        # Temporary, while working on the exact model content
+        fields = [
+            "slug",
+            "name",
+            "structure_info",
+            "department",
+            "is_draft",
+            "modification_date",
+        ]
+        lookup_field = "slug"

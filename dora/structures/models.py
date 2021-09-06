@@ -24,12 +24,6 @@ def make_unique_slug(instance, value, length=20):
     return unique_slug
 
 
-class StructureKinds(models.TextChoices):
-    MOBILITY = ("MO", "Mobilité")
-    HOUSING = ("HO", "Logement")
-    CHILD_CARE = ("CC", "Garde d’enfant")
-
-
 class StructureTypology(models.TextChoices):
     # Prescripteurs habilités
     # https://github.com/betagouv/itou/blob/master/itou/prescribers/models.py#L91
