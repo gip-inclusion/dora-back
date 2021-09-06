@@ -111,6 +111,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 try:
     database_url = os.environ["DATABASE_URL"]
     DATABASES = {"default": dj_database_url.config()}
+    DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.postgis"
 except KeyError:
     DATABASES = {
         "default": {
