@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.gis.measure import D
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, serializers, viewsets
@@ -127,6 +128,7 @@ def search(request):
     category = request.GET.get("cat")
     subcategory = request.GET.get("subcat")
     city_code = request.GET.get("city")
+    radius = request.GET.get("radius", settings.DEFAULT_SEARCH_RADIUS)
 
     results = Service.objects.filter(category=category, is_draft=False)
     if subcategory:
@@ -135,5 +137,6 @@ def search(request):
     if city_code:
         city = get_object_or_404(City, pk=city_code)
         results = results.filter(geom__dwithin=(city.geom, D(km=30)))
+        results = results.filter(geom__dwithin=(city.geom, D(km=radius)))
 
     return Response(ServiceSerializer(results, many=True).data)

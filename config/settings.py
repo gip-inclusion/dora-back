@@ -222,3 +222,10 @@ CORS_ALLOWED_ORIGIN_REGEXES = [os.environ["DJANGO_CORS_ALLOWED_ORIGIN_REGEXES"]]
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "sentry-trace",
 ]
+
+################
+# APP SETTINGS #
+################
+
+# Services
+DEFAULT_SEARCH_RADIUS = 15  # in km
