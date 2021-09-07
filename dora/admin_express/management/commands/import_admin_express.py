@@ -39,7 +39,7 @@ class Command(BaseCommand):
                     check=True,
                 )
 
-                self.stdout.write(self.style.NOTICE("Decompression the AE COG"))
+                self.stdout.write(self.style.NOTICE("Decompressing the AE COG"))
                 subprocess.run(
                     [EXE_7ZR, "-bd", "x", compressed_AE_file, f"-o{the_dir}"],
                     check=True,
