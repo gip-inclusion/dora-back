@@ -136,7 +136,6 @@ def search(request):
 
     if city_code:
         city = get_object_or_404(City, pk=city_code)
-        results = results.filter(geom__dwithin=(city.geom, D(km=30)))
         results = results.filter(geom__dwithin=(city.geom, D(km=radius)))
 
     return Response(ServiceSerializer(results, many=True).data)
