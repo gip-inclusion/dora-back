@@ -126,7 +126,7 @@ def options(request):
 @permission_classes([permissions.AllowAny])
 def search(request):
     category = request.GET.get("cat")
-    subcategory = request.GET.get("subcat")
+    subcategory = request.GET.get("sub")
     city_code = request.GET.get("city")
     radius = request.GET.get("radius", settings.DEFAULT_SEARCH_RADIUS)
 
