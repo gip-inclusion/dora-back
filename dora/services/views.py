@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, serializers, viewsets
@@ -122,6 +123,29 @@ def options(request):
     return Response(result)
 
 
+class DistanceServiceSerializer(ServiceSerializer):
+    distance = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Service
+        fields = [
+            "category_display",
+            "city",
+            "distance",
+            "name",
+            "postal_code",
+            "short_desc",
+            "slug",
+            "structure_info",
+            "structure",
+        ]
+
+    def get_distance(self, obj):
+        if hasattr(obj, "distance"):
+            return int(obj.distance.km)
+        return None
+
+
 @api_view()
 @permission_classes([permissions.AllowAny])
 def search(request):
@@ -136,6 +160,11 @@ def search(request):
 
     if city_code:
         city = get_object_or_404(City, pk=city_code)
-        results = results.filter(geom__dwithin=(city.geom, D(km=radius)))
+        results = (
+            results.filter(geom__isnull=False)
+            .annotate(distance=Distance("geom", city.geom))
+            .filter(distance__lt=D(km=radius))
+            .order_by("distance")
+        )
 
-    return Response(ServiceSerializer(results, many=True).data)
+    return Response(DistanceServiceSerializer(results, many=True).data)
