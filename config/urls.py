@@ -23,6 +23,7 @@ import dora.core.views
 import dora.services.views
 import dora.sirene.views
 import dora.structures.views
+import dora.users.views
 
 router = DefaultRouter()
 router.register(r"structures", dora.structures.views.StructureViewSet)
@@ -56,6 +57,7 @@ register_converter(SiretConverter, "siret")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("me/", dora.users.views.me),
     path("services-options/", dora.services.views.options),
     path("structures-options/", dora.structures.views.options),
     path("search/", dora.services.views.search),

@@ -1,7 +1,12 @@
+from django.conf import settings
+from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.measure import D
+from django.shortcuts import get_object_or_404
 from rest_framework import permissions, serializers, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
+from dora.admin_express.models import City
 from dora.services.models import (
     AccessCondition,
     BeneficiaryAccessMode,
@@ -118,14 +123,48 @@ def options(request):
     return Response(result)
 
 
+class DistanceServiceSerializer(ServiceSerializer):
+    distance = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Service
+        fields = [
+            "category_display",
+            "city",
+            "distance",
+            "name",
+            "postal_code",
+            "short_desc",
+            "slug",
+            "structure_info",
+            "structure",
+        ]
+
+    def get_distance(self, obj):
+        if hasattr(obj, "distance"):
+            return int(obj.distance.km)
+        return None
+
+
 @api_view()
 @permission_classes([permissions.AllowAny])
 def search(request):
     category = request.GET.get("cat")
-    subcategory = request.GET.get("subcat")
-    # city_code = request.GET.get("city")
+    subcategory = request.GET.get("sub")
+    city_code = request.GET.get("city")
+    radius = request.GET.get("radius", settings.DEFAULT_SEARCH_RADIUS)
+
     results = Service.objects.filter(category=category, is_draft=False)
     if subcategory:
         results = results.filter(subcategories__contains=[subcategory])
 
-    return Response(ServiceSerializer(results, many=True).data)
+    if city_code:
+        city = get_object_or_404(City, pk=city_code)
+        results = (
+            results.filter(geom__isnull=False)
+            .annotate(distance=Distance("geom", city.geom))
+            .filter(distance__lt=D(km=radius))
+            .order_by("distance")
+        )
+
+    return Response(DistanceServiceSerializer(results, many=True).data)

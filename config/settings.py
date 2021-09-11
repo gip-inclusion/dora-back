@@ -52,6 +52,7 @@ ALLOWED_HOSTS = [os.environ["DJANGO_ALLOWED_HOSTS"]]
 # Application definition
 
 INSTALLED_APPS = [
+    "django.contrib.gis",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -61,6 +62,7 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     "rest_framework",
     "rest_framework.authtoken",
+    "rest_framework_gis",
     "corsheaders",
     # local
     "dora.core",
@@ -68,6 +70,7 @@ INSTALLED_APPS = [
     "dora.structures",
     "dora.services",
     "dora.sirene",
+    "dora.admin_express",
 ]
 
 MIDDLEWARE = [
@@ -109,10 +112,11 @@ WSGI_APPLICATION = "config.wsgi.application"
 try:
     database_url = os.environ["DATABASE_URL"]
     DATABASES = {"default": dj_database_url.config()}
+    DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.postgis"
 except KeyError:
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.postgresql",
+            "ENGINE": "django.contrib.gis.db.backends.postgis",
             "NAME": os.environ["POSTGRES_DB"],
             "USER": os.environ["POSTGRES_USER"],
             "PASSWORD": os.environ["POSTGRES_PASSWORD"],
@@ -218,3 +222,10 @@ CORS_ALLOWED_ORIGIN_REGEXES = [os.environ["DJANGO_CORS_ALLOWED_ORIGIN_REGEXES"]]
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "sentry-trace",
 ]
+
+################
+# APP SETTINGS #
+################
+
+# Services
+DEFAULT_SEARCH_RADIUS = 15  # in km

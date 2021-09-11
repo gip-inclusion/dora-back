@@ -1,8 +1,8 @@
 import uuid
 
 from django.conf import settings
+from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
-from django.db import models
 from django.db.models.fields import CharField
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
@@ -252,8 +252,9 @@ class Service(models.Model):
     postal_code = models.CharField(verbose_name="Code postal", max_length=5, blank=True)
     city_code = models.CharField(verbose_name="Code INSEE", max_length=5, blank=True)
     city = models.CharField(verbose_name="Ville", max_length=200, blank=True)
-    longitude = models.FloatField(blank=True, null=True)
-    latitude = models.FloatField(blank=True, null=True)
+    geom = models.PointField(
+        srid=4326, geography=True, spatial_index=True, null=True, blank=True
+    )
 
     # Duration
 
