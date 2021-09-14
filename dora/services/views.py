@@ -3,7 +3,7 @@ from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, serializers, viewsets
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from dora.admin_express.models import City
@@ -27,6 +27,8 @@ from .serializers import ServiceListSerializer, ServiceSerializer
 
 class ServicePermission(permissions.BasePermission):
     def has_permission(self, request, view):
+        if view.action == "get_last_draft":
+            return request.user and request.user.is_authenticated
         return bool(
             request.method in permissions.SAFE_METHODS
             or request.user
@@ -54,6 +56,13 @@ class ServiceViewSet(viewsets.ModelViewSet):
         if self.action == "list":
             return ServiceListSerializer
         return super().get_serializer_class()
+
+    @action(detail=False, methods=["get"], url_path="last-draft")
+    def get_last_draft(self, request):
+        last_draft = (
+            Service.objects.filter(is_draft=True).order_by("-modification_date").first()
+        )
+        return Response(ServiceSerializer(last_draft).data)
 
 
 @api_view()
