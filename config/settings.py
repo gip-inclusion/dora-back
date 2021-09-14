@@ -61,11 +61,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.postgres",
     "rest_framework",
-    "rest_framework.authtoken",
     "rest_framework_gis",
     "corsheaders",
     # local
     "dora.core",
+    "dora.rest_auth",
     "dora.users",
     "dora.structures",
     "dora.services",
@@ -191,8 +191,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAdminUser",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
+        "dora.rest_auth.authentication.TokenAuthentication",
     ],
     "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.AcceptHeaderVersioning",
     "ALLOWED_VERSIONS": ["1.0"],
@@ -200,7 +199,6 @@ REST_FRAMEWORK = {
     # https://github.com/vbabiy/djangorestframework-camel-case
     "DEFAULT_RENDERER_CLASSES": (
         "djangorestframework_camel_case.render.CamelCaseJSONRenderer",
-        "djangorestframework_camel_case.render.CamelCaseBrowsableAPIRenderer",
     ),
     "DEFAULT_PARSER_CLASSES": (
         "djangorestframework_camel_case.parser.CamelCaseFormParser",

@@ -16,14 +16,13 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path, register_converter
-from rest_framework.authtoken import views
 from rest_framework.routers import DefaultRouter
 
 import dora.core.views
+import dora.rest_auth
 import dora.services.views
 import dora.sirene.views
 import dora.structures.views
-import dora.users.views
 
 router = DefaultRouter()
 router.register(r"structures", dora.structures.views.StructureViewSet)
@@ -57,7 +56,6 @@ register_converter(SiretConverter, "siret")
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("me/", dora.users.views.me),
     path("services-options/", dora.services.views.options),
     path("structures-options/", dora.structures.views.options),
     path("search/", dora.services.views.search),
@@ -66,6 +64,6 @@ urlpatterns = [
     path("search-all-sirene/", dora.sirene.views.search_all_sirene),
     path("siret-claimed/<siret:siret>/", dora.structures.views.siret_was_claimed),
     path("admin/", admin.site.urls),
-    path("api-token-auth/", views.obtain_auth_token),
+    path("auth/", include("dora.rest_auth.urls")),
     path("sentry-debug/", dora.core.views.trigger_error),
 ]
