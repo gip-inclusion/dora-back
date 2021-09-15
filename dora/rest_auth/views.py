@@ -4,14 +4,14 @@ from time import sleep
 
 from django.contrib.auth.password_validation import password_changed, validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db.models import Q
 from django.http.response import Http404
 from django.utils import timezone
 from django.views.decorators.debug import sensitive_post_parameters
-from rest_framework import permissions
+from rest_framework import exceptions, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
+from dora.rest_auth.authentication import TokenAuthentication
 from dora.rest_auth.models import Token
 from dora.rest_auth.serializers import (
     LoginSerializer,
@@ -88,11 +88,9 @@ def token_verify(request):
     serializer = TokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     key = serializer.validated_data["key"]
-    tokens = Token.objects.filter(
-        Q(expiration=None) | Q(expiration__lte=timezone.now()),
-        key=key,
-    )
-    if not tokens:
+    try:
+        TokenAuthentication().authenticate_credentials(key)
+    except exceptions.AuthenticationFailed:
         raise Http404
 
     return Response({"result": "ok"}, status=200)
