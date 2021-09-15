@@ -6,7 +6,7 @@ urlpatterns = [
     # path("me/", dora.users.views.me),
     path("login/", views.login),
     path("password/reset/", views.password_reset),
-    path("password/reset/confirm/", views.password_confirm),
+    path("password/reset/confirm/", views.password_reset_confirm),
     path("password/change/", views.password_change),
     path("token/verify/", views.token_verify),
     path("registration/", views.register),

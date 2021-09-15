@@ -32,4 +32,12 @@ class LoginSerializer(serializers.Serializer):
 
 
 class TokenSerializer(serializers.Serializer):
-    key = serializers.CharField(max_length=40)
+    key = serializers.CharField()
+
+
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    new_password = serializers.CharField()

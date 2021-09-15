@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import os
+import random
 from pathlib import Path
 
 import dj_database_url
@@ -17,7 +18,20 @@ import sentry_sdk
 from corsheaders.defaults import default_headers
 from sentry_sdk.integrations.django import DjangoIntegration
 
+random.seed()
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+if os.path.isdir(BASE_DIR / "envs"):
+    import environ
+
+    environ.Env.read_env(os.path.join(BASE_DIR / "envs", "dev.env"))
+    environ.Env.read_env(os.path.join(BASE_DIR / "envs", "secrets.env"))
+
+
 ENVIRONMENT = os.environ["ENVIRONMENT"]
+
 
 if os.environ["ENVIRONMENT"] != "local":
     sentry_sdk.init(
@@ -32,10 +46,6 @@ if os.environ["ENVIRONMENT"] != "local":
         send_default_pii=True,
         environment=os.environ["ENVIRONMENT"],
     )
-
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production
@@ -134,9 +144,15 @@ AUTH_USER_MODEL = "users.User"
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "OPTIONS": {
+            "user_attributes": ["name", "email"],
+        },
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": 9,
+        },
     },
     {
         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
@@ -220,6 +236,20 @@ CORS_ALLOWED_ORIGIN_REGEXES = [os.environ["DJANGO_CORS_ALLOWED_ORIGIN_REGEXES"]]
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "sentry-trace",
 ]
+
+##################
+# EMAIL SETTINGS #
+##################
+DEFAULT_FROM_EMAIL = os.environ["DEFAULT_FROM_EMAIL"]
+
+# https://app.tipimail.com/#/app/settings/smtp_and_apis
+
+EMAIL_HOST = os.environ["EMAIL_HOST"]
+EMAIL_HOST_USER = os.environ["EMAIL_HOST_USER"]
+EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
+EMAIL_SUBJECT_PREFIX = os.environ["EMAIL_SUBJECT_PREFIX"]
+EMAIL_PORT = os.environ["EMAIL_PORT"]
+EMAIL_USE_TLS = True
 
 ################
 # APP SETTINGS #
