@@ -34,10 +34,10 @@ def send_mail(
 
 def send_password_reset_email(recipient_email, token):
     chg_pw_url = f"{settings.FRONTEND_URL}/auth/password-reset/?token={token}"
-    txt_msg = f"{chg_pw_url} test accent éàçè"
-    html_msg = f"<p>{chg_pw_url}<br>test accent test accent éàçè</p>"
+    txt_msg = f"{chg_pw_url}"
+    html_msg = f"<p>{chg_pw_url}</p>"
     send_mail(
-        "[DORA] Votre demande de réinitialisation de mot de passe",
+        "[DORA] Votre demande de reinitialisation de mot de passe",
         recipient_email,
         txt_msg,
         html_content=html_msg,
