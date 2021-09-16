@@ -2,6 +2,7 @@ import json
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 
 
 def send_mail(
@@ -33,9 +34,14 @@ def send_mail(
 
 
 def send_password_reset_email(recipient_email, token):
-    chg_pw_url = f"{settings.FRONTEND_URL}/auth/password-reset/?token={token}"
-    txt_msg = f"{chg_pw_url}"
-    html_msg = f"<p>{chg_pw_url}</p>"
+    params = {
+        "recipient_email": recipient_email,
+        "password_change_url": f"{settings.FRONTEND_URL}/auth/password-reset/?token={token}",
+        "homepage_url": settings.FRONTEND_URL,
+    }
+    txt_msg = render_to_string("pw-reset.txt", params)
+    html_msg = render_to_string("pw-reset.html", params)
+
     send_mail(
         "[DORA] Votre demande de reinitialisation de mot de passe",
         recipient_email,

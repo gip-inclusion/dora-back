@@ -1,0 +1,9 @@
+Bonjour !
+
+Vous recevez cet e-mail parce qu'un changement de mot de passe a été demandé sur notre site pour l'identifiant {{recipient_email}}
+
+Si vous êtes à l'origine de cette demande il vous suffit de cliquer sur le lien ci-dessous, ou de le recopier dans votre navigateur.
+{{password_change_url}}
+
+--
+(Ceci est un mail automatique, merci de ne pas répondre.)
