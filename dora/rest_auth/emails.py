@@ -1,5 +1,4 @@
 import json
-import os
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -34,7 +33,7 @@ def send_mail(
 
 
 def send_password_reset_email(recipient_email, token):
-    chg_pw_url = f"{os.environ['FRONTEND_URL']}/auth/password-reset/?token={token}"
+    chg_pw_url = f"{settings.FRONTEND_URL}/auth/password-reset/?token={token}"
     txt_msg = f"{chg_pw_url} test accent éàçè"
     html_msg = f"<p>{chg_pw_url}<br>test accent test accent éàçè</p>"
     send_mail(
