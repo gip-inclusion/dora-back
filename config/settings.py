@@ -250,7 +250,7 @@ EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
 EMAIL_SUBJECT_PREFIX = os.environ["EMAIL_SUBJECT_PREFIX"]
 EMAIL_PORT = os.environ["EMAIL_PORT"]
 EMAIL_USE_TLS = True
-
+EMAIL_DOMAIN = os.environ["EMAIL_DOMAIN"]
 ################
 # APP SETTINGS #
 ################
