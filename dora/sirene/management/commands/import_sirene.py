@@ -86,21 +86,24 @@ class Command(BaseCommand):
             with open(stock_file) as f:
                 num_stock_items = sum(1 for line in f)
             with open(stock_file) as units_file:
-                units_reader = csv.DictReader(units_file, delimiter=",")
-                units = {}
+                legal_units_reader = csv.DictReader(units_file, delimiter=",")
+                legal_units = {}
                 self.stdout.write(self.style.NOTICE("Parsing legal units"))
-                for i, row in enumerate(units_reader):
+                for i, row in enumerate(legal_units_reader):
                     if (i % 1_000_000) == 0:
                         self.stdout.write(
                             self.style.NOTICE(f"{round(100*i/num_stock_items)}% done")
                         )
                     assert row["statutDiffusionUniteLegale"] == "O"
-                    if row["denominationUniteLegale"]:
-                        units[row["siren"]] = {
-                            "denomination": row["denominationUniteLegale"],
-                            "diffusable": row["statutDiffusionUniteLegale"],
-                            "sigle": row["sigleUniteLegale"],
-                        }
+                    legal_units[row["siren"]] = {
+                        "denomination": row["denominationUniteLegale"],
+                        "diffusable": row["statutDiffusionUniteLegale"],
+                        "sigle": row["sigleUniteLegale"],
+                        "nom": row["nomUsageUniteLegale"] or row["nomUniteLegale"],
+                        "prenom": row["prenomUsuelUniteLegale"]
+                        or row["prenom1UniteLegale"],
+                        "ess": row["economieSocialeSolidaireUniteLegale"] == "O",
+                    }
                 num_establishments = 0
                 with open(estab_file) as f:
                     num_establishments = sum(1 for line in f)
@@ -125,8 +128,15 @@ class Command(BaseCommand):
                                 code_commune = row["codeCommuneEtablissement"]
 
                                 siren = row["siren"]
-                                parent = units.get(siren)
-                                parent_name = parent["denomination"] if parent else ""
+                                parent = legal_units.get(siren)
+                                parent_name = (
+                                    (
+                                        parent["denomination"]
+                                        or f"{parent['nom']} {parent['prenom']}"
+                                    )
+                                    if parent
+                                    else ""
+                                )
 
                                 rows.append(
                                     Establishment(
@@ -149,6 +159,7 @@ class Command(BaseCommand):
                                         enseigne2=row["enseigne2Etablissement"][:50],
                                         enseigne3=row["enseigne3Etablissement"][:50],
                                         is_siege=row["etablissementSiege"] == "true",
+                                        is_social=parent["ess"] if parent else False,
                                         repetition_index=row[
                                             "indiceRepetitionEtablissement"
                                         ],

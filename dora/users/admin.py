@@ -5,7 +5,18 @@ from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 
+from dora.structures.models import StructureMember
+
 from .models import User
+
+
+class StructureMemberInline(admin.TabularInline):
+    model = StructureMember
+    readonly_fields = ["user", "structure"]
+    extra = 0
+
+    def has_add_permission(self, request, obj):
+        return False
 
 
 class UserCreationForm(forms.ModelForm):
@@ -67,6 +78,7 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ("email", "name")
     ordering = ("email",)
     filter_horizontal = ()
+    inlines = [StructureMemberInline]
 
 
 # Now register the new UserAdmin...

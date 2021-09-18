@@ -17,6 +17,8 @@ class Establishment(models.Model):
     enseigne2 = models.CharField(max_length=50)
     enseigne3 = models.CharField(max_length=50)
     is_siege = models.BooleanField()
+    # appartient au champ de l’économie sociale et solidaire
+    is_social = models.BooleanField()
     repetition_index = models.CharField(max_length=1)
     libelle_cedex = models.CharField(max_length=100)
     libelle_commune = models.CharField(max_length=100)
