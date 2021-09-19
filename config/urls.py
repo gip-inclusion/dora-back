@@ -56,7 +56,6 @@ register_converter(SiretConverter, "siret")
 
 urlpatterns = [
     path("auth/", include("dora.rest_auth.urls")),
-    path("register-service-and-user/", dora.core.views.register_service_and_user),
     path("search/", dora.services.views.search),
     path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
     path("search-all-sirene/", dora.sirene.views.search_all_sirene),

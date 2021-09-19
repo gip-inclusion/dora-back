@@ -1,4 +1,4 @@
-Bonjour !
+Bonjour {{recipient_name}} !
 
 Vous recevez cet e-mail parce qu'un changement de mot de passe a été demandé sur notre site pour l'identifiant {{recipient_email}}
 
