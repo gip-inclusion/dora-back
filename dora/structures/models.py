@@ -16,6 +16,11 @@ def validate_siret(siret):
         raise ValidationError("Le numéro SIRET doit être composé de 14 chiffres.")
 
 
+def validate_safir(safir):
+    if not safir.isdigit() or len(safir) != 5:
+        raise ValidationError("Le code SAFIR doit être composé de 14 chiffres.")
+
+
 def make_unique_slug(instance, value, length=20):
     model = instance.__class__
     base_slug = slugify(value)[:length]
@@ -41,6 +46,13 @@ class StructureMember(models.Model):
                 fields=["user", "structure"], name="unique_user_structure"
             )
         ]
+
+
+class StructureSource(models.TextChoices):
+    DORA_STAFF = "DORA", "Équipe DORA"
+    ITOU = "ITOU", "Import ITOU"
+    STRUCT_STAFF = "PORTEUR", "Porteur"
+    PE_API = "PE", "API Référentiel Agence PE"
 
 
 class StructureTypology(models.TextChoices):
@@ -127,6 +139,14 @@ class Structure(models.Model):
     siret = models.CharField(
         verbose_name="Siret", max_length=14, validators=[validate_siret], unique=True
     )
+    code_safir_pe = models.CharField(
+        verbose_name="Code Safir Pole Emploi",
+        max_length=5,
+        validators=[validate_safir],
+        unique=True,
+        null=True,
+        blank=True,
+    )
     typology = models.CharField(
         max_length=10,
         choices=StructureTypology.choices,
@@ -151,6 +171,7 @@ class Structure(models.Model):
     )
     city_code = models.CharField(max_length=5, blank=True)
     city = models.CharField(max_length=255)
+    department = models.CharField(max_length=2, blank=True)
     address1 = models.CharField(max_length=255)
     address2 = models.CharField(max_length=255, blank=True)
     has_services = models.BooleanField(default=False, blank=True)
@@ -175,6 +196,10 @@ class Structure(models.Model):
         null=True,
     )
 
+    source = models.CharField(
+        max_length=12, choices=StructureSource.choices, blank=True
+    )
+
     members = models.ManyToManyField(User, through=StructureMember)
 
     objects = StructureManager()
@@ -187,4 +212,6 @@ class Structure(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = make_unique_slug(self, self.name)
+        if not self.department and self.city_code:
+            self.department = self.city_code[:2]
         return super().save(*args, **kwargs)

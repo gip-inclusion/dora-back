@@ -16,16 +16,10 @@ class StructureSerializer(serializers.ModelSerializer):
 
 
 class StructureListSerializer(serializers.ModelSerializer):
-    department = serializers.SerializerMethodField()
-
     class Meta:
         model = Structure
-        # Temporary, while working on the exact model content
         fields = ["slug", "name", "department"]
         lookup_field = "slug"
-
-    def get_department(self, obj):
-        return obj.postal_code[0:2]
 
 
 class SiretClaimedSerializer(serializers.ModelSerializer):

@@ -252,9 +252,18 @@ EMAIL_PORT = os.environ["EMAIL_PORT"]
 EMAIL_USE_TLS = True
 EMAIL_DOMAIN = os.environ["EMAIL_DOMAIN"]
 FRONTEND_URL = os.environ["FRONTEND_URL"]
+
 ################
 # APP SETTINGS #
 ################
 
 # Services
 DEFAULT_SEARCH_RADIUS = 15  # in km
+
+# Bot user
+DORA_BOT_USER = "dora-bot@dora.beta.gouv.fr"
+
+# Third party credentials
+
+PE_CLIENT_ID = os.environ["PE_CLIENT_ID"]
+PE_CLIENT_SECRET = os.environ["PE_CLIENT_SECRET"]

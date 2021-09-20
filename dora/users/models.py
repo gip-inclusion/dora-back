@@ -1,5 +1,6 @@
 # Inspired from https://docs.djangoproject.com/en/3.2/topics/auth/customizing/#a-full-example
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
@@ -27,6 +28,9 @@ class UserManager(BaseUserManager):
         user.is_admin = True
         user.save()
         return user
+
+    def get_dora_bot(self):
+        return self.get(email=settings.DORA_BOT_USER)
 
 
 class User(AbstractBaseUser):

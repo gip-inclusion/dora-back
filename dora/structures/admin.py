@@ -16,10 +16,15 @@ class StructureAdmin(admin.ModelAdmin):
     list_display = [
         "name",
         "slug",
+        "department",
+        "city_code",
+        "city",
         "modification_date",
         "last_editor",
     ]
-    ordering = ["-modification_date"]
+    list_filter = ["source", "department"]
+    search_fields = ("name", "siret", "code_safir_pe", "city", "department")
+    ordering = ["-modification_date", "department"]
     inlines = [StructureMemberInline]
 
 
