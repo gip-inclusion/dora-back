@@ -146,6 +146,7 @@ class Structure(models.Model):
         unique=True,
         null=True,
         blank=True,
+        db_index=True,
     )
     typology = models.CharField(
         max_length=10,
@@ -197,7 +198,10 @@ class Structure(models.Model):
     )
 
     source = models.CharField(
-        max_length=12, choices=StructureSource.choices, blank=True
+        max_length=12,
+        choices=StructureSource.choices,
+        blank=True,
+        db_index=True,
     )
 
     members = models.ManyToManyField(User, through=StructureMember)
