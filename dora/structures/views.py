@@ -51,3 +51,14 @@ def options(request):
         ],
     }
     return Response(result)
+
+
+@api_view()
+@permission_classes([permissions.AllowAny])
+def search_safir(request):
+    safir_code = request.query_params.get("safir", "")
+    if not safir_code:
+        return Response("need safir")
+
+    structure = get_object_or_404(Structure, code_safir_pe=safir_code)
+    return Response(StructureSerializer(structure).data)

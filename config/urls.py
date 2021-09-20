@@ -24,40 +24,21 @@ import dora.services.views
 import dora.sirene.views
 import dora.structures.views
 
+from .url_converters import InseeCodeConverter, SiretConverter
+
 router = DefaultRouter()
 router.register(r"structures", dora.structures.views.StructureViewSet)
 router.register(r"services", dora.services.views.ServiceViewSet)
 
-
-class InseeCodeConverter:
-    regex = r"\d[0-9aAbB]\d{3}"
-
-    def to_python(self, value):
-        return str(value)
-
-    def to_url(self, value):
-        return f"{value}"
-
-
 register_converter(InseeCodeConverter, "insee_code")
-
-
-class SiretConverter:
-    regex = r"\d{14}"
-
-    def to_python(self, value):
-        return str(value)
-
-    def to_url(self, value):
-        return f"{value}"
-
-
 register_converter(SiretConverter, "siret")
+
 
 urlpatterns = [
     path("auth/", include("dora.rest_auth.urls")),
     path("search/", dora.services.views.search),
     path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
+    path("search-safir/", dora.structures.views.search_safir),
     path("search-all-sirene/", dora.sirene.views.search_all_sirene),
     path("services-options/", dora.services.views.options),
     path("siret-claimed/<siret:siret>/", dora.structures.views.siret_was_claimed),
