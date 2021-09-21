@@ -211,6 +211,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.AcceptHeaderVersioning",
     "ALLOWED_VERSIONS": ["1.0"],
+    "DEFAULT_VERSION": os.environ.get("DEFAULT_VERSION"),
     # Camel Case
     # https://github.com/vbabiy/djangorestframework-camel-case
     "DEFAULT_RENDERER_CLASSES": (
