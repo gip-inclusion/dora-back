@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
+from django.http.response import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
@@ -60,9 +61,19 @@ class ServiceViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="last-draft")
     def get_last_draft(self, request):
         last_draft = (
-            Service.objects.filter(is_draft=True).order_by("-modification_date").first()
+            Service.objects.filter(is_draft=True, creator=request.user)
+            .order_by("-modification_date")
+            .first()
         )
-        return Response(ServiceSerializer(last_draft).data)
+        if last_draft:
+            return Response(ServiceSerializer(last_draft).data)
+        raise Http404
+
+    def perform_create(self, serializer):
+        serializer.save(creator=self.request.user, last_editor=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(last_editor=self.request.user)
 
 
 @api_view()
