@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
+from django.db.models import Q
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, serializers, viewsets
@@ -22,35 +23,63 @@ from dora.services.models import (
     ServiceKind,
     ServiceSubCategories,
 )
+from dora.structures.models import Structure
 
 from .serializers import ServiceListSerializer, ServiceSerializer
 
 
 class ServicePermission(permissions.BasePermission):
     def has_permission(self, request, view):
+        user = request.user
+
+        # Only authentified users can get the last draft
         if view.action == "get_last_draft":
-            return request.user and request.user.is_authenticated
-        return bool(
-            request.method in permissions.SAFE_METHODS
-            or request.user
-            and request.user.is_authenticated
-        )
+            return user and user.is_authenticated
+
+        # Anybody can read
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # Authentified user can read and write
+        return user and user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        # Anybody can read
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # Staff can do anything
+        if user.is_staff:
+            return True
+
+        # People can only edit their Structures' stuff
+        user_structures = Structure.objects.filter(membership__user=user)
+        return obj.structure in user_structures
 
 
 class ServiceViewSet(viewsets.ModelViewSet):
     queryset = Service.objects.all().order_by("-modification_date")
     serializer_class = ServiceSerializer
     permission_classes = [ServicePermission]
+
     lookup_field = "slug"
 
     def get_queryset(self):
         qs = None
         user = self.request.user
-        if user and user.is_staff:
+        # Everybody can see published services
+        if not user or not user.is_authenticated:
+            qs = Service.objects.filter(is_draft=False)
+        # Staff can see everything
+        elif user.is_staff:
             qs = Service.objects.all()
         else:
-            # TODO: add all my org drafts
-            qs = Service.objects.filter(is_draft=False)
+            # Authentified users can see everything in their structure
+            # plus published services for other structures
+            qs = Service.objects.filter(
+                Q(is_draft=False) | Q(structure__membership__user=user)
+            )
         return qs.order_by("-modification_date")
 
     def get_serializer_class(self):
