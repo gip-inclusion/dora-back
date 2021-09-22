@@ -48,8 +48,68 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Service
-        # Temporary, while working on the exact model content
-        exclude = ["id"]
+
+        fields = [
+            "slug",
+            "name",
+            "short_desc",
+            "full_desc",
+            "kinds",
+            "category",
+            "subcategories",
+            "is_common_law",
+            "access_conditions",
+            "concerned_public",
+            "is_cumulative",
+            "has_fee",
+            "fee_details",
+            "beneficiaries_access_modes",
+            "beneficiaries_access_modes_other",
+            "coach_orientation_modes",
+            "coach_orientation_modes_other",
+            "requirements",
+            "credentials",
+            "forms",
+            "online_form",
+            "contact_name",
+            "contact_phone",
+            "contact_email",
+            "is_contact_info_public",
+            "location_kinds",
+            "remote_url",
+            "address1",
+            "address2",
+            "postal_code",
+            "city_code",
+            "city",
+            "geom",
+            "start_date",
+            "end_date",
+            "recurrence",
+            "recurrence_other",
+            "suspension_count",
+            "suspension_date",
+            "structure",
+            "creation_date",
+            "modification_date",
+            "is_draft",
+            "is_available",
+            "forms_info",
+            "structure",
+            "structure_info",
+            "kinds_display",
+            "category_display",
+            "subcategories_display",
+            "access_conditions_display",
+            "concerned_public_display",
+            "requirements_display",
+            "credentials_display",
+            "location_kinds_display",
+            "beneficiaries_access_modes_display",
+            "coach_orientation_modes_display",
+            "recurrence_display",
+            "department",
+        ]
         lookup_field = "slug"
 
     def get_is_available(self, obj):
@@ -101,6 +161,18 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     def get_department(self, obj):
         return obj.postal_code[0:2]
+
+    def validate_structure(self, value):
+        user = self.context.get("request").user
+
+        if not user.is_staff and value not in Structure.objects.filter(
+            membership__user=user
+        ):
+            raise serializers.ValidationError(
+                "Vous n’appartenez pas à cette structure", "not_member_of_struct"
+            )
+
+        return value
 
 
 class ServiceListSerializer(ServiceSerializer):

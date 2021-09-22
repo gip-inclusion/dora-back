@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import permissions, viewsets
+from rest_framework import mixins, permissions, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
@@ -14,14 +14,41 @@ from .serializers import (
 
 class StructurePermission(permissions.BasePermission):
     def has_permission(self, request, view):
-        return bool(
-            request.method in permissions.SAFE_METHODS
-            or request.user
-            and request.user.is_authenticated
-        )
+        user = request.user
+
+        # Nobody can delete a structure
+        if request.method == "DELETE":
+            return False
+
+        # Anybody can read
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # Authentified user can read and write
+        return user and user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        # Anybody can read
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # Staff can do anything
+        if user.is_staff:
+            return True
+
+        # People can only edit their Structures' stuff
+        user_structures = Structure.objects.filter(membership__user=user)
+        return obj in user_structures
 
 
-class StructureViewSet(viewsets.ModelViewSet):
+class StructureViewSet(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
     queryset = Structure.objects.all()
     serializer_class = StructureSerializer
     permission_classes = [StructurePermission]
@@ -31,6 +58,12 @@ class StructureViewSet(viewsets.ModelViewSet):
         if self.action == "list":
             return StructureListSerializer
         return super().get_serializer_class()
+
+    def perform_create(self, serializer):
+        serializer.save(creator=self.request.user, last_editor=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(last_editor=self.request.user)
 
 
 @api_view()

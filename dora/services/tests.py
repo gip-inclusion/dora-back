@@ -1,33 +1,39 @@
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
+from .models import Service
+
+DUMMY_SERVICE = {"name": "Mon service"}
+
 
 class ServiceTestCase(APITestCase):
     def setUp(self):
         self.me = baker.make("users.User")
         self.superuser = baker.make("users.User", is_staff=True)
-        my_struct = baker.make("Structure")
-        my_struct.members.add(self.me)
+        self.my_struct = baker.make("Structure")
+        self.my_struct.members.add(self.me)
         self.my_service = baker.make(
-            "Service", structure=my_struct, is_draft=False, creator=self.me
+            "Service", structure=self.my_struct, is_draft=False, creator=self.me
         )
         self.my_draft_service = baker.make(
-            "Service", structure=my_struct, is_draft=True, creator=self.me
+            "Service", structure=self.my_struct, is_draft=True, creator=self.me
         )
         self.my_latest_draft_service = baker.make(
-            "Service", structure=my_struct, is_draft=True, creator=self.me
+            "Service", structure=self.my_struct, is_draft=True, creator=self.me
         )
 
         self.other_service = baker.make("Service", is_draft=False)
         self.other_draft_service = baker.make("Service", is_draft=True)
 
         self.colleague_service = baker.make(
-            "Service", structure=my_struct, is_draft=False
+            "Service", structure=self.my_struct, is_draft=False
         )
         self.colleague_draft_service = baker.make(
-            "Service", structure=my_struct, is_draft=True
+            "Service", structure=self.my_struct, is_draft=True
         )
         self.client.force_authenticate(user=self.me)
+
+    # Visibility
 
     def test_can_see_my_services(self):
         response = self.client.get("/services/")
@@ -59,6 +65,8 @@ class ServiceTestCase(APITestCase):
         response = self.client.get("/services/")
         services_ids = [s["slug"] for s in response.data]
         self.assertNotIn(self.other_draft_service, services_ids)
+
+    # Modification
 
     def test_can_edit_my_services(self):
         response = self.client.patch(
@@ -104,9 +112,24 @@ class ServiceTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 404)
 
+    def test_edit_structures_updates_last_editor(self):
+        self.assertNotEqual(self.colleague_service.last_editor, self.me)
+        response = self.client.patch(
+            f"/services/{self.colleague_service.slug}/", {"name": "xxx"}
+        )
+        self.assertEqual(response.status_code, 200)
+        slug = response.data["slug"]
+        s = Service.objects.get(slug=slug)
+        self.assertEqual(s.last_editor, self.me)
+        self.assertNotEqual(s.creator, self.me)
+
+    # Last draft
+
     def test_get_last_draft_returns_only_mine(self):
         response = self.client.get("/services/last-draft/")
         self.assertEqual(response.data["slug"], self.my_latest_draft_service.slug)
+
+    # Superuser
 
     def test_superuser_can_sees_everything(self):
         self.client.force_authenticate(user=self.superuser)
@@ -130,3 +153,56 @@ class ServiceTestCase(APITestCase):
         self.client.force_authenticate(user=self.superuser)
         response = self.client.get("/services/last-draft/")
         self.assertEqual(response.status_code, 404)
+
+    # Adding
+
+    def test_can_add_service(self):
+        DUMMY_SERVICE["structure"] = self.my_struct.slug
+        response = self.client.post(
+            "/services/",
+            DUMMY_SERVICE,
+        )
+        self.assertEqual(response.status_code, 201)
+        slug = response.data["slug"]
+        Service.objects.get(slug=slug)
+
+    def test_add_service_check_structure(self):
+        DUMMY_SERVICE["structure"] = baker.make("Structure").slug
+        response = self.client.post(
+            "/services/",
+            DUMMY_SERVICE,
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["structure"][0]["code"], "not_member_of_struct")
+
+    def test_super_user_can_add_to_any_structure(self):
+        self.client.force_authenticate(user=self.superuser)
+        DUMMY_SERVICE["structure"] = baker.make("Structure").slug
+        response = self.client.post(
+            "/services/",
+            DUMMY_SERVICE,
+        )
+        self.assertEqual(response.status_code, 201)
+        slug = response.data["slug"]
+        Service.objects.get(slug=slug)
+
+    def test_adding_service_populates_creator_last_editor(self):
+        DUMMY_SERVICE["structure"] = self.my_struct.slug
+        response = self.client.post(
+            "/services/",
+            DUMMY_SERVICE,
+        )
+        self.assertEqual(response.status_code, 201)
+        slug = response.data["slug"]
+        new_service = Service.objects.get(slug=slug)
+        self.assertEqual(new_service.creator, self.me)
+        self.assertEqual(new_service.last_editor, self.me)
+
+    # Deleting
+
+    def test_cant_delete_service(self):
+        # Deletion is forbidden for now
+        response = self.client.delete(
+            f"/services/{self.my_service.slug}/",
+        )
+        self.assertEqual(response.status_code, 403)

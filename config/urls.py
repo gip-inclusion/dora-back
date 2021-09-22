@@ -27,8 +27,10 @@ import dora.structures.views
 from .url_converters import InseeCodeConverter, SiretConverter
 
 router = DefaultRouter()
-router.register(r"structures", dora.structures.views.StructureViewSet)
-router.register(r"services", dora.services.views.ServiceViewSet)
+router.register(
+    r"structures", dora.structures.views.StructureViewSet, basename="structure"
+)
+router.register(r"services", dora.services.views.ServiceViewSet, basename="service")
 
 register_converter(InseeCodeConverter, "insee_code")
 register_converter(SiretConverter, "siret")

@@ -4,7 +4,7 @@ from django.contrib.gis.measure import D
 from django.db.models import Q
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
-from rest_framework import permissions, serializers, viewsets
+from rest_framework import mixins, permissions, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
@@ -32,6 +32,10 @@ class ServicePermission(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
 
+        # Nobody can delete a service
+        if request.method == "DELETE":
+            return False
+
         # Only authentified users can get the last draft
         if view.action == "get_last_draft":
             return user and user.is_authenticated
@@ -58,8 +62,13 @@ class ServicePermission(permissions.BasePermission):
         return obj.structure in user_structures
 
 
-class ServiceViewSet(viewsets.ModelViewSet):
-    queryset = Service.objects.all().order_by("-modification_date")
+class ServiceViewSet(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
     serializer_class = ServiceSerializer
     permission_classes = [ServicePermission]
 

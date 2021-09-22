@@ -33,7 +33,9 @@ def make_unique_slug(instance, value, length=20):
 
 
 class StructureMember(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="membership")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="membership"
+    )
     structure = models.ForeignKey(
         "Structure", on_delete=models.CASCADE, related_name="membership"
     )

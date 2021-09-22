@@ -10,8 +10,39 @@ class StructureSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Structure
-        # Temporary, while working on the exact model content
-        fields = "__all__"
+        fields = [
+            "siret",
+            "code_safir_pe",
+            "typology",
+            "typology_display",
+            "slug",
+            "name",
+            "short_desc",
+            "url",
+            "full_desc",
+            "facebook_url",
+            "linkedin_url",
+            "twitter_url",
+            "youtube_url",
+            "instagram_url",
+            "ressources_url",
+            "phone",
+            "faq_url",
+            "contact_form_url",
+            "email",
+            "postal_code",
+            "city_code",
+            "city",
+            "department",
+            "address1",
+            "address2",
+            "has_services",
+            "ape",
+            "longitude",
+            "latitude",
+            "creation_date",
+            "modification_date",
+        ]
         lookup_field = "slug"
 
 
@@ -25,5 +56,5 @@ class StructureListSerializer(serializers.ModelSerializer):
 class SiretClaimedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Structure
-        fields = ["id", "siret", "slug"]
+        fields = ["siret", "slug"]
         lookup_field = "siret"
