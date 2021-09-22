@@ -3,6 +3,18 @@ from django.contrib import admin
 from .models import Structure, StructureMember
 
 
+class StructureMemberAdmin(admin.ModelAdmin):
+    search_fields = (
+        "user__name",
+        "user__email",
+        "structure__name",
+        "structure__department",
+    )
+
+    list_display = ["user", "structure", "is_admin"]
+    list_filter = ["is_admin"]
+
+
 class StructureMemberInline(admin.TabularInline):
     model = StructureMember
     readonly_fields = ["user", "structure"]
@@ -29,3 +41,4 @@ class StructureAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Structure, StructureAdmin)
+admin.site.register(StructureMember, StructureMemberAdmin)
