@@ -24,7 +24,11 @@ from dora.structures.models import Structure, StructureMember
 from dora.users.models import User
 
 from .emails import send_email_validation_email, send_password_reset_email
-from .serializers import ResendEmailValidationSerializer, ServiceAndUserSerializer
+from .serializers import (
+    ResendEmailValidationSerializer,
+    ServiceAndUserSerializer,
+    UserInfoSerializer,
+)
 
 
 @sensitive_post_parameters(["password"])
@@ -94,6 +98,19 @@ def token_verify(request):
         raise Http404
 
     return Response({"result": "ok"}, status=200)
+
+
+@api_view(["POST"])
+@permission_classes([permissions.AllowAny])
+def user_info(request):
+    serializer = TokenSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    key = serializer.validated_data["key"]
+    try:
+        user, _token = TokenAuthentication().authenticate_credentials(key)
+    except exceptions.AuthenticationFailed:
+        raise Http404
+    return Response(UserInfoSerializer(user).data, status=200)
 
 
 @api_view(["POST"])

@@ -36,6 +36,12 @@ class LoginSerializer(serializers.Serializer):
         return attrs
 
 
+class UserInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["name", "is_staff"]
+
+
 class TokenSerializer(serializers.Serializer):
     key = serializers.CharField()
 
