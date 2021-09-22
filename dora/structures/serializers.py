@@ -46,11 +46,16 @@ class StructureSerializer(serializers.ModelSerializer):
         lookup_field = "slug"
 
 
-class StructureListSerializer(serializers.ModelSerializer):
+class StructureListSerializer(StructureSerializer):
+    num_services = serializers.SerializerMethodField()
+
     class Meta:
         model = Structure
-        fields = ["slug", "name", "department"]
+        fields = ["slug", "name", "department", "typology_display", "num_services"]
         lookup_field = "slug"
+
+    def get_num_services(self, obj):
+        return obj.services.count()
 
 
 class SiretClaimedSerializer(serializers.ModelSerializer):

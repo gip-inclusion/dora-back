@@ -106,6 +106,22 @@ class StructureTestCase(APITestCase):
         self.assertEqual(new_structure.creator, self.me)
         self.assertEqual(new_structure.last_editor, self.me)
 
+    # Deleting
+
+    def test_cant_delete_structure(self):
+        response = self.client.delete(
+            f"/structures/{self.my_struct.slug}/",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    # get_my_services
+    def test_filter_my_services_only(self):
+        response = self.client.get("/structures/?mine=1")
+        services_ids = [s["slug"] for s in response.data]
+        self.assertIn(self.my_struct.slug, services_ids)
+        self.assertIn(self.my_other_struct.slug, services_ids)
+        self.assertNotIn(self.other_struct.slug, services_ids)
+
     # Test structure creation/joining; maybe in rest_auth app?
     # Need to mock email sending
     # def test_adding_structure_creates_membership(self):
@@ -116,11 +132,3 @@ class StructureTestCase(APITestCase):
 
     # def test_join_structure_makes_nonadmin(self):
     #     self.assertTrue(False)
-
-    # Deleting
-
-    def test_cant_delete_structure(self):
-        response = self.client.delete(
-            f"/structures/{self.my_struct.slug}/",
-        )
-        self.assertEqual(response.status_code, 403)

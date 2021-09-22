@@ -74,11 +74,22 @@ class ServiceViewSet(
 
     lookup_field = "slug"
 
+    def get_my_services(self, user):
+        if not user or not user.is_authenticated:
+            return Service.objects.none()
+        if user.is_staff:
+            return Service.objects.all()
+        return Service.objects.filter(structure__membership__user=user)
+
     def get_queryset(self):
         qs = None
         user = self.request.user
+        only_mine = self.request.query_params.get("mine")
+
+        if only_mine:
+            qs = self.get_my_services(user)
         # Everybody can see published services
-        if not user or not user.is_authenticated:
+        elif not user or not user.is_authenticated:
             qs = Service.objects.filter(is_draft=False)
         # Staff can see everything
         elif user.is_staff:

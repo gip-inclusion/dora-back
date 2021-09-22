@@ -49,10 +49,22 @@ class StructureViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = Structure.objects.all()
     serializer_class = StructureSerializer
     permission_classes = [StructurePermission]
     lookup_field = "slug"
+
+    def get_queryset(self):
+        only_mine = self.request.query_params.get("mine")
+
+        if only_mine:
+            user = self.request.user
+            if user and user.is_authenticated:
+                if user.is_staff:
+                    return Structure.objects.all()
+                return Structure.objects.filter(membership__user=user)
+            else:
+                return Structure.objects.none()
+        return Structure.objects.all()
 
     def get_serializer_class(self):
         if self.action == "list":

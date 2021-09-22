@@ -286,6 +286,7 @@ class Service(models.Model):
         verbose_name="Structure",
         on_delete=models.CASCADE,
         db_index=True,
+        related_name="services",
     )
     is_draft = models.BooleanField(default=True)
 
