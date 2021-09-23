@@ -269,3 +269,5 @@ DORA_BOT_USER = "dora-bot@dora.beta.gouv.fr"
 
 PE_CLIENT_ID = os.environ["PE_CLIENT_ID"]
 PE_CLIENT_SECRET = os.environ["PE_CLIENT_SECRET"]
+
+MATTERMOST_HOOK_KEY = os.environ.get("MATTERMOST_HOOK_KEY")

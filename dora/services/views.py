@@ -9,6 +9,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from dora.admin_express.models import City
+from dora.core.notify import send_mattermost_notification
 from dora.services.models import (
     AccessCondition,
     BeneficiaryAccessMode,
@@ -126,7 +127,14 @@ class ServiceViewSet(
         raise Http404
 
     def perform_create(self, serializer):
-        serializer.save(creator=self.request.user, last_editor=self.request.user)
+        service = serializer.save(
+            creator=self.request.user, last_editor=self.request.user
+        )
+        structure = service.structure
+        draft = "(brouillon) " if service.is_draft else ""
+        send_mattermost_notification(
+            f"[{settings.ENVIRONMENT}] :tada: Nouveau service {draft} “{service.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/services/{service.slug}"
+        )
 
     def perform_update(self, serializer):
         serializer.save(last_editor=self.request.user)

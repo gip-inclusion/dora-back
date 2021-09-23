@@ -2,6 +2,7 @@ import random
 from datetime import timedelta
 from time import sleep
 
+from django.conf import settings
 from django.contrib.auth.password_validation import password_changed, validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
@@ -12,6 +13,7 @@ from rest_framework import exceptions, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
+from dora.core.notify import send_mattermost_notification
 from dora.rest_auth.authentication import TokenAuthentication
 from dora.rest_auth.models import Token
 from dora.rest_auth.serializers import (
@@ -175,6 +177,9 @@ def register_service_and_user(request):
         structure.creator = user
         structure.last_editor = user
         structure.save()
+        send_mattermost_notification(
+            f"[{settings.ENVIRONMENT}] :tada: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
+        )
 
     # Link them
     StructureMember.objects.create(
@@ -186,4 +191,9 @@ def register_service_and_user(request):
         user=user, expiration=timezone.now() + timedelta(minutes=30)
     )
     send_email_validation_email(data["email"], user.name, tmp_token.key)
+
+    send_mattermost_notification(
+        f"[{settings.ENVIRONMENT}] :tada: Nouvel utilisateur “{user.name}” enregistré dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
+    )
+
     return Response(status=201)
