@@ -129,6 +129,23 @@ class ServiceTestCase(APITestCase):
         response = self.client.get("/services/last-draft/")
         self.assertEqual(response.data["slug"], self.my_latest_draft_service.slug)
 
+    def test_get_last_draft_only_if_still_in_struct(self):
+        draft_service = baker.make(
+            "Service", structure=self.my_struct, is_draft=True, creator=self.me
+        )
+        response = self.client.get("/services/last-draft/")
+        self.assertEqual(response.data["slug"], draft_service.slug)
+        draft_service.structure = baker.make("Structure")
+        draft_service.save()
+        response = self.client.get("/services/last-draft/")
+        self.assertEqual(response.data["slug"], self.my_latest_draft_service.slug)
+
+    def test_superuser_get_last_draft_any_struct(self):
+        self.client.force_authenticate(user=self.superuser)
+        service = baker.make("Service", is_draft=True, creator=self.superuser)
+        response = self.client.get("/services/last-draft/")
+        self.assertEqual(response.data["slug"], service.slug)
+
     # Superuser
 
     def test_superuser_can_sees_everything(self):

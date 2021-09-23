@@ -109,11 +109,16 @@ class ServiceViewSet(
 
     @action(detail=False, methods=["get"], url_path="last-draft")
     def get_last_draft(self, request):
-        last_draft = (
-            Service.objects.filter(is_draft=True, creator=request.user)
-            .order_by("-modification_date")
-            .first()
-        )
+        user = request.user
+        last_drafts = Service.objects.filter(
+            is_draft=True,
+            creator=user,
+        ).order_by("-modification_date")
+        if not user.is_staff:
+            last_drafts = last_drafts.filter(
+                structure__membership__user__id=user.id,
+            )
+        last_draft = last_drafts.first()
         if last_draft:
             return Response(
                 ServiceSerializer(last_draft, context={"request": request}).data
