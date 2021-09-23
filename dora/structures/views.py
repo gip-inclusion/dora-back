@@ -82,7 +82,7 @@ class StructureViewSet(
 @permission_classes([permissions.AllowAny])
 def siret_was_claimed(request, siret):
     structure = get_object_or_404(Structure.objects.all(), siret=siret)
-    serializer = SiretClaimedSerializer(structure)
+    serializer = SiretClaimedSerializer(structure, context={"request": request})
     return Response(serializer.data)
 
 
@@ -106,4 +106,4 @@ def search_safir(request):
         return Response("need safir")
 
     structure = get_object_or_404(Structure, code_safir_pe=safir_code)
-    return Response(StructureSerializer(structure).data)
+    return Response(StructureSerializer(structure, context={"request": request}).data)

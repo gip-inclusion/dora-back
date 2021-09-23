@@ -115,7 +115,9 @@ class ServiceViewSet(
             .first()
         )
         if last_draft:
-            return Response(ServiceSerializer(last_draft).data)
+            return Response(
+                ServiceSerializer(last_draft, context={"request": request}).data
+            )
         raise Http404
 
     def perform_create(self, serializer):
@@ -169,15 +171,17 @@ def options(request):
         ],
         "kinds": [{"value": c[0], "label": c[1]} for c in ServiceKind.choices],
         "access_conditions": AccessConditionSerializer(
-            AccessCondition.objects.all(), many=True
+            AccessCondition.objects.all(), many=True, context={"request": request}
         ).data,
         "concerned_public": ConcernedPublicSerializer(
-            ConcernedPublic.objects.all(), many=True
+            ConcernedPublic.objects.all(), many=True, context={"request": request}
         ).data,
         "requirements": RequirementSerializer(
-            Requirement.objects.all(), many=True
+            Requirement.objects.all(), many=True, context={"request": request}
         ).data,
-        "credentials": CredentialSerializer(Credential.objects.all(), many=True).data,
+        "credentials": CredentialSerializer(
+            Credential.objects.all(), many=True, context={"request": request}
+        ).data,
         "beneficiaries_access_modes": [
             {"value": c[0], "label": c[1]} for c in BeneficiaryAccessMode.choices
         ],
@@ -236,4 +240,6 @@ def search(request):
             .order_by("distance")
         )
 
-    return Response(DistanceServiceSerializer(results, many=True).data)
+    return Response(
+        DistanceServiceSerializer(results, many=True, context={"request": request}).data
+    )
