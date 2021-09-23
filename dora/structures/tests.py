@@ -65,6 +65,16 @@ class StructureTestCase(APITestCase):
         s = Structure.objects.get(slug=slug)
         self.assertEqual(s.last_editor, self.me)
 
+    def test_can_write_field_true(self):
+        response = self.client.get(f"/structures/{self.my_struct.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_write"], True)
+
+    def test_can_write_field_false(self):
+        response = self.client.get(f"/structures/{self.other_struct.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_write"], False)
+
     # Superuser
 
     def test_superuser_can_sees_everything(self):
@@ -83,6 +93,12 @@ class StructureTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         response = self.client.get(f"/structures/{self.my_struct.slug}/")
         self.assertEqual(response.data["name"], "xxx")
+
+    def test_superuser_can_write_field_true(self):
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.get(f"/structures/{self.my_struct.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_write"], True)
 
     # Adding
 

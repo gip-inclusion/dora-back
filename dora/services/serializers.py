@@ -3,7 +3,7 @@ import logging
 from django.core.files.storage import default_storage
 from rest_framework import serializers
 
-from dora.structures.models import Structure
+from dora.structures.models import Structure, StructureMember
 
 from .models import (
     BeneficiaryAccessMode,
@@ -45,6 +45,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         source="get_recurrence_display", read_only=True
     )
     department = serializers.SerializerMethodField()
+    can_write = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
@@ -109,6 +110,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "coach_orientation_modes_display",
             "recurrence_display",
             "department",
+            "can_write",
         ]
         lookup_field = "slug"
 
@@ -162,11 +164,18 @@ class ServiceSerializer(serializers.ModelSerializer):
     def get_department(self, obj):
         return obj.postal_code[0:2]
 
+    def get_can_write(self, obj):
+        user = self.context.get("request").user
+        return obj.can_write(user)
+
     def validate_structure(self, value):
         user = self.context.get("request").user
 
-        if not user.is_staff and value not in Structure.objects.filter(
-            membership__user=user
+        if (
+            not user.is_staff
+            and not StructureMember.objects.filter(
+                structure_id=value.id, user_id=user.id
+            ).exists()
         ):
             raise serializers.ValidationError(
                 "Vous n’appartenez pas à cette structure", "not_member_of_struct"
@@ -178,7 +187,6 @@ class ServiceSerializer(serializers.ModelSerializer):
 class ServiceListSerializer(ServiceSerializer):
     class Meta:
         model = Service
-        # Temporary, while working on the exact model content
         fields = [
             "slug",
             "name",

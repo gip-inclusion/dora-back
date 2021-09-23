@@ -221,3 +221,11 @@ class Structure(models.Model):
         if not self.department and self.city_code:
             self.department = self.city_code[:2]
         return super().save(*args, **kwargs)
+
+    def can_write(self, user):
+        return (
+            user.is_staff
+            or StructureMember.objects.filter(
+                structure_id=self.id, user_id=user.id
+            ).exists()
+        )

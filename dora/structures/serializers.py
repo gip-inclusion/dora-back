@@ -8,6 +8,8 @@ class StructureSerializer(serializers.ModelSerializer):
         source="get_typology_display", read_only=True
     )
 
+    can_write = serializers.SerializerMethodField()
+
     class Meta:
         model = Structure
         fields = [
@@ -42,8 +44,13 @@ class StructureSerializer(serializers.ModelSerializer):
             "latitude",
             "creation_date",
             "modification_date",
+            "can_write",
         ]
         lookup_field = "slug"
+
+    def get_can_write(self, obj):
+        user = self.context.get("request").user
+        return obj.can_write(user)
 
 
 class StructureListSerializer(StructureSerializer):

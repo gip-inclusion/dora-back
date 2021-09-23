@@ -7,7 +7,7 @@ from django.db.models.fields import CharField
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
-from dora.structures.models import Structure
+from dora.structures.models import Structure, StructureMember
 
 
 def make_unique_slug(instance, parent_slug, value, length=20):
@@ -311,3 +311,11 @@ class Service(models.Model):
         if not self.slug:
             self.slug = make_unique_slug(self, self.structure.slug, self.name)
         return super().save(*args, **kwargs)
+
+    def can_write(self, user):
+        return (
+            user.is_staff
+            or StructureMember.objects.filter(
+                structure_id=self.structure_id, user_id=user.id
+            ).exists()
+        )

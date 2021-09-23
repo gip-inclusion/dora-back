@@ -123,6 +123,19 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(s.last_editor, self.me)
         self.assertNotEqual(s.creator, self.me)
 
+    def test_can_write_field_true(self):
+        response = self.client.get(f"/services/{self.my_service.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_write"], True)
+        response = self.client.get(f"/services/{self.my_draft_service.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_write"], True)
+
+    def test_can_write_field_false(self):
+        response = self.client.get(f"/services/{self.other_service.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_write"], False)
+
     # Last draft
 
     def test_get_last_draft_returns_only_mine(self):
@@ -170,6 +183,12 @@ class ServiceTestCase(APITestCase):
         self.client.force_authenticate(user=self.superuser)
         response = self.client.get("/services/last-draft/")
         self.assertEqual(response.status_code, 404)
+
+    def test_superuser_can_write_field_true(self):
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.get(f"/services/{self.my_service.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_write"], True)
 
     # Adding
 
