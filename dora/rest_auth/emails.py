@@ -37,7 +37,7 @@ def send_password_reset_email(recipient_email, recipient_name, token):
     params = {
         "recipient_email": recipient_email,
         "recipient_name": recipient_name,
-        "password_change_url": f"{settings.FRONTEND_URL}/auth/password-reset/?token={token}",
+        "password_change_url": f"{settings.FRONTEND_URL}/auth/reinitialiser-mdp/?token={token}",
         "homepage_url": settings.FRONTEND_URL,
     }
     txt_msg = render_to_string("pw-reset.txt", params)
@@ -56,7 +56,7 @@ def send_email_validation_email(recipient_email, recipient_name, token):
     params = {
         "recipient_email": recipient_email,
         "recipient_name": recipient_name,
-        "email_validation_url": f"{settings.FRONTEND_URL}/auth/email-validation/?token={token}",
+        "email_validation_url": f"{settings.FRONTEND_URL}/auth/validation-email/?token={token}",
         "homepage_url": settings.FRONTEND_URL,
     }
     txt_msg = render_to_string("email-validation.txt", params)
