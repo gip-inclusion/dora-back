@@ -6,11 +6,19 @@ from django.db import models
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
+from dora.sirene.serializers import EstablishmentSerializer
+from dora.users.models import User
+
 
 # From: https://github.com/betagouv/itou/blob/master/itou/utils/validators.py
 def validate_siret(siret):
     if not siret.isdigit() or len(siret) != 14:
         raise ValidationError("Le numéro SIRET doit être composé de 14 chiffres.")
+
+
+def validate_safir(safir):
+    if not safir.isdigit() or len(safir) != 5:
+        raise ValidationError("Le code SAFIR doit être composé de 14 chiffres.")
 
 
 def make_unique_slug(instance, value, length=20):
@@ -22,6 +30,31 @@ def make_unique_slug(instance, value, length=20):
             base_slug + "-" + get_random_string(4, "abcdefghijklmnopqrstuvwxyz")
         )
     return unique_slug
+
+
+class StructureMember(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="membership"
+    )
+    structure = models.ForeignKey(
+        "Structure", on_delete=models.CASCADE, related_name="membership"
+    )
+    is_admin = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "Membre"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "structure"], name="unique_user_structure"
+            )
+        ]
+
+
+class StructureSource(models.TextChoices):
+    DORA_STAFF = "DORA", "Équipe DORA"
+    ITOU = "ITOU", "Import ITOU"
+    STRUCT_STAFF = "PORTEUR", "Porteur"
+    PE_API = "PE", "API Référentiel Agence PE"
 
 
 class StructureTypology(models.TextChoices):
@@ -83,11 +116,39 @@ class StructureTypology(models.TextChoices):
     OTHER = "OTHER", "Autre"
 
 
+class StructureManager(models.Manager):
+    def create_from_establishment(self, establishment):
+        data = EstablishmentSerializer(establishment).data
+        structure = self.model(
+            siret=data["siret"],
+            name=data["name"],
+            address1=data["address1"],
+            address2=data["address2"],
+            postal_code=data["postal_code"],
+            city_code=data["city_code"],
+            city=data["city"],
+            ape=data["ape"],
+            longitude=data["longitude"],
+            latitude=data["latitude"],
+        )
+        structure.save()
+        return structure
+
+
 class Structure(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     siret = models.CharField(
         verbose_name="Siret", max_length=14, validators=[validate_siret], unique=True
+    )
+    code_safir_pe = models.CharField(
+        verbose_name="Code Safir Pole Emploi",
+        max_length=5,
+        validators=[validate_safir],
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
     )
     typology = models.CharField(
         max_length=10,
@@ -113,6 +174,7 @@ class Structure(models.Model):
     )
     city_code = models.CharField(max_length=5, blank=True)
     city = models.CharField(max_length=255)
+    department = models.CharField(max_length=2, blank=True)
     address1 = models.CharField(max_length=255)
     address2 = models.CharField(max_length=255, blank=True)
     has_services = models.BooleanField(default=False, blank=True)
@@ -123,7 +185,11 @@ class Structure(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now=True)
     creator = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
     )
     last_editor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -133,6 +199,17 @@ class Structure(models.Model):
         null=True,
     )
 
+    source = models.CharField(
+        max_length=12,
+        choices=StructureSource.choices,
+        blank=True,
+        db_index=True,
+    )
+
+    members = models.ManyToManyField(User, through=StructureMember)
+
+    objects = StructureManager()
+
     # TODO: opening_hours, edit history, moderation
 
     def __str__(self):
@@ -141,4 +218,14 @@ class Structure(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = make_unique_slug(self, self.name)
+        if not self.department and self.city_code:
+            self.department = self.city_code[:2]
         return super().save(*args, **kwargs)
+
+    def can_write(self, user):
+        return (
+            user.is_staff
+            or StructureMember.objects.filter(
+                structure_id=self.id, user_id=user.id
+            ).exists()
+        )

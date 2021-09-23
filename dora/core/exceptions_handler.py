@@ -1,4 +1,4 @@
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import Http404
 from rest_framework import exceptions
 from rest_framework.response import Response
@@ -28,4 +28,17 @@ def custom_exception_handler(exc, context):
         set_rollback()
         return Response(data, status=exc.status_code, headers=headers)
 
+    elif isinstance(exc, ValidationError):
+        data = {
+            "non_field_errors": [
+                {
+                    "code": e.code,
+                    "message": e.message % e.params if e.params else e.message,
+                }
+                for e in exc.error_list
+            ]
+        }
+
+        set_rollback()
+        return Response(data, status=400)
     return None

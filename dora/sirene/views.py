@@ -24,7 +24,11 @@ def search_sirene(request, citycode):
         .order_by("-similarity")
     )
 
-    return Response(EstablishmentSerializer(results[:10], many=True).data)
+    return Response(
+        EstablishmentSerializer(
+            results[:10], many=True, context={"request": request}
+        ).data
+    )
 
 
 @api_view()
@@ -38,4 +42,8 @@ def search_all_sirene(request):
         similarity=TrigramSimilarity("full_search_text", q)
     ).order_by("-similarity")
 
-    return Response(EstablishmentSerializer(results[:10], many=True).data)
+    return Response(
+        EstablishmentSerializer(
+            results[:10], many=True, context={"request": request}
+        ).data
+    )

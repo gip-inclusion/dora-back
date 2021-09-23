@@ -16,56 +16,37 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path, register_converter
-from rest_framework.authtoken import views
 from rest_framework.routers import DefaultRouter
 
 import dora.core.views
+import dora.rest_auth
 import dora.services.views
 import dora.sirene.views
 import dora.structures.views
-import dora.users.views
+
+from .url_converters import InseeCodeConverter, SiretConverter
 
 router = DefaultRouter()
-router.register(r"structures", dora.structures.views.StructureViewSet)
-router.register(r"services", dora.services.views.ServiceViewSet)
-
-
-class InseeCodeConverter:
-    regex = r"\d[0-9aAbB]\d{3}"
-
-    def to_python(self, value):
-        return str(value)
-
-    def to_url(self, value):
-        return f"{value}"
-
+router.register(
+    r"structures", dora.structures.views.StructureViewSet, basename="structure"
+)
+router.register(r"services", dora.services.views.ServiceViewSet, basename="service")
 
 register_converter(InseeCodeConverter, "insee_code")
-
-
-class SiretConverter:
-    regex = r"\d{14}"
-
-    def to_python(self, value):
-        return str(value)
-
-    def to_url(self, value):
-        return f"{value}"
-
-
 register_converter(SiretConverter, "siret")
 
+
 urlpatterns = [
-    path("", include(router.urls)),
-    path("me/", dora.users.views.me),
-    path("services-options/", dora.services.views.options),
-    path("structures-options/", dora.structures.views.options),
+    path("auth/", include("dora.rest_auth.urls")),
     path("search/", dora.services.views.search),
-    path("upload/<slug:structure_slug>/<str:filename>/", dora.core.views.upload),
     path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
+    path("search-safir/", dora.structures.views.search_safir),
     path("search-all-sirene/", dora.sirene.views.search_all_sirene),
+    path("services-options/", dora.services.views.options),
     path("siret-claimed/<siret:siret>/", dora.structures.views.siret_was_claimed),
+    path("structures-options/", dora.structures.views.options),
+    path("upload/<slug:structure_slug>/<str:filename>/", dora.core.views.upload),
     path("admin/", admin.site.urls),
-    path("api-token-auth/", views.obtain_auth_token),
     path("sentry-debug/", dora.core.views.trigger_error),
+    path("", include(router.urls)),
 ]

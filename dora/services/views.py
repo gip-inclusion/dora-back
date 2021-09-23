@@ -1,12 +1,15 @@
 from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
+from django.db.models import Q
+from django.http.response import Http404
 from django.shortcuts import get_object_or_404
-from rest_framework import permissions, serializers, viewsets
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework import mixins, permissions, serializers, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from dora.admin_express.models import City
+from dora.core.notify import send_mattermost_notification
 from dora.services.models import (
     AccessCondition,
     BeneficiaryAccessMode,
@@ -21,39 +24,120 @@ from dora.services.models import (
     ServiceKind,
     ServiceSubCategories,
 )
+from dora.structures.models import Structure
 
 from .serializers import ServiceListSerializer, ServiceSerializer
 
 
 class ServicePermission(permissions.BasePermission):
     def has_permission(self, request, view):
-        return bool(
-            request.method in permissions.SAFE_METHODS
-            or request.user
-            and request.user.is_authenticated
-        )
+        user = request.user
+
+        # Nobody can delete a service
+        if request.method == "DELETE":
+            return False
+
+        # Only authentified users can get the last draft
+        if view.action == "get_last_draft":
+            return user and user.is_authenticated
+
+        # Anybody can read
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # Authentified user can read and write
+        return user and user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        # Anybody can read
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # Staff can do anything
+        if user.is_staff:
+            return True
+
+        # People can only edit their Structures' stuff
+        user_structures = Structure.objects.filter(membership__user=user)
+        return obj.structure in user_structures
 
 
-class ServiceViewSet(viewsets.ModelViewSet):
-    queryset = Service.objects.all().order_by("-modification_date")
+class ServiceViewSet(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
     serializer_class = ServiceSerializer
     permission_classes = [ServicePermission]
+
     lookup_field = "slug"
+
+    def get_my_services(self, user):
+        if not user or not user.is_authenticated:
+            return Service.objects.none()
+        if user.is_staff:
+            return Service.objects.all()
+        return Service.objects.filter(structure__membership__user=user)
 
     def get_queryset(self):
         qs = None
         user = self.request.user
-        if user and user.is_staff:
+        only_mine = self.request.query_params.get("mine")
+
+        if only_mine:
+            qs = self.get_my_services(user)
+        # Everybody can see published services
+        elif not user or not user.is_authenticated:
+            qs = Service.objects.filter(is_draft=False)
+        # Staff can see everything
+        elif user.is_staff:
             qs = Service.objects.all()
         else:
-            # TODO: add all my org drafts
-            qs = Service.objects.filter(is_draft=False)
+            # Authentified users can see everything in their structure
+            # plus published services for other structures
+            qs = Service.objects.filter(
+                Q(is_draft=False) | Q(structure__membership__user=user)
+            )
         return qs.order_by("-modification_date")
 
     def get_serializer_class(self):
         if self.action == "list":
             return ServiceListSerializer
         return super().get_serializer_class()
+
+    @action(detail=False, methods=["get"], url_path="last-draft")
+    def get_last_draft(self, request):
+        user = request.user
+        last_drafts = Service.objects.filter(
+            is_draft=True,
+            creator=user,
+        ).order_by("-modification_date")
+        if not user.is_staff:
+            last_drafts = last_drafts.filter(
+                structure__membership__user__id=user.id,
+            )
+        last_draft = last_drafts.first()
+        if last_draft:
+            return Response(
+                ServiceSerializer(last_draft, context={"request": request}).data
+            )
+        raise Http404
+
+    def perform_create(self, serializer):
+        service = serializer.save(
+            creator=self.request.user, last_editor=self.request.user
+        )
+        structure = service.structure
+        draft = "(brouillon) " if service.is_draft else ""
+        send_mattermost_notification(
+            f"[{settings.ENVIRONMENT}] :tada: Nouveau service {draft} “{service.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/services/{service.slug}"
+        )
+
+    def perform_update(self, serializer):
+        serializer.save(last_editor=self.request.user)
 
 
 @api_view()
@@ -100,15 +184,17 @@ def options(request):
         ],
         "kinds": [{"value": c[0], "label": c[1]} for c in ServiceKind.choices],
         "access_conditions": AccessConditionSerializer(
-            AccessCondition.objects.all(), many=True
+            AccessCondition.objects.all(), many=True, context={"request": request}
         ).data,
         "concerned_public": ConcernedPublicSerializer(
-            ConcernedPublic.objects.all(), many=True
+            ConcernedPublic.objects.all(), many=True, context={"request": request}
         ).data,
         "requirements": RequirementSerializer(
-            Requirement.objects.all(), many=True
+            Requirement.objects.all(), many=True, context={"request": request}
         ).data,
-        "credentials": CredentialSerializer(Credential.objects.all(), many=True).data,
+        "credentials": CredentialSerializer(
+            Credential.objects.all(), many=True, context={"request": request}
+        ).data,
         "beneficiaries_access_modes": [
             {"value": c[0], "label": c[1]} for c in BeneficiaryAccessMode.choices
         ],
@@ -167,4 +253,6 @@ def search(request):
             .order_by("distance")
         )
 
-    return Response(DistanceServiceSerializer(results, many=True).data)
+    return Response(
+        DistanceServiceSerializer(results, many=True, context={"request": request}).data
+    )

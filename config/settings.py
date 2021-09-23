@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import os
+import random
 from pathlib import Path
 
 import dj_database_url
@@ -17,7 +18,20 @@ import sentry_sdk
 from corsheaders.defaults import default_headers
 from sentry_sdk.integrations.django import DjangoIntegration
 
+random.seed()
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+if os.path.isdir(BASE_DIR / "envs"):
+    import environ
+
+    environ.Env.read_env(os.path.join(BASE_DIR / "envs", "dev.env"))
+    environ.Env.read_env(os.path.join(BASE_DIR / "envs", "secrets.env"))
+
+
 ENVIRONMENT = os.environ["ENVIRONMENT"]
+
 
 if os.environ["ENVIRONMENT"] != "local":
     sentry_sdk.init(
@@ -32,10 +46,6 @@ if os.environ["ENVIRONMENT"] != "local":
         send_default_pii=True,
         environment=os.environ["ENVIRONMENT"],
     )
-
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production
@@ -53,7 +63,6 @@ ALLOWED_HOSTS = [os.environ["DJANGO_ALLOWED_HOSTS"]]
 
 INSTALLED_APPS = [
     "django.contrib.gis",
-    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -61,11 +70,12 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.postgres",
     "rest_framework",
-    "rest_framework.authtoken",
     "rest_framework_gis",
     "corsheaders",
     # local
+    "config.apps.AdminConfig",
     "dora.core",
+    "dora.rest_auth",
     "dora.users",
     "dora.structures",
     "dora.services",
@@ -90,7 +100,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -98,6 +108,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "dora.core.context_processors.environment",
             ],
         },
     },
@@ -134,9 +145,15 @@ AUTH_USER_MODEL = "users.User"
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "OPTIONS": {
+            "user_attributes": ["name", "email"],
+        },
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": 9,
+        },
     },
     {
         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
@@ -191,16 +208,15 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAdminUser",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
+        "dora.rest_auth.authentication.TokenAuthentication",
     ],
     "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.AcceptHeaderVersioning",
     "ALLOWED_VERSIONS": ["1.0"],
+    "DEFAULT_VERSION": os.environ.get("DEFAULT_VERSION"),
     # Camel Case
     # https://github.com/vbabiy/djangorestframework-camel-case
     "DEFAULT_RENDERER_CLASSES": (
         "djangorestframework_camel_case.render.CamelCaseJSONRenderer",
-        "djangorestframework_camel_case.render.CamelCaseBrowsableAPIRenderer",
     ),
     "DEFAULT_PARSER_CLASSES": (
         "djangorestframework_camel_case.parser.CamelCaseFormParser",
@@ -223,9 +239,35 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     "sentry-trace",
 ]
 
+##################
+# EMAIL SETTINGS #
+##################
+DEFAULT_FROM_EMAIL = os.environ["DEFAULT_FROM_EMAIL"]
+
+# https://app.tipimail.com/#/app/settings/smtp_and_apis
+
+EMAIL_HOST = os.environ["EMAIL_HOST"]
+EMAIL_HOST_USER = os.environ["EMAIL_HOST_USER"]
+EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
+EMAIL_SUBJECT_PREFIX = os.environ["EMAIL_SUBJECT_PREFIX"]
+EMAIL_PORT = os.environ["EMAIL_PORT"]
+EMAIL_USE_TLS = True
+EMAIL_DOMAIN = os.environ["EMAIL_DOMAIN"]
+FRONTEND_URL = os.environ["FRONTEND_URL"]
+
 ################
 # APP SETTINGS #
 ################
 
 # Services
 DEFAULT_SEARCH_RADIUS = 15  # in km
+
+# Bot user
+DORA_BOT_USER = "dora-bot@dora.beta.gouv.fr"
+
+# Third party credentials
+
+PE_CLIENT_ID = os.environ["PE_CLIENT_ID"]
+PE_CLIENT_SECRET = os.environ["PE_CLIENT_SECRET"]
+
+MATTERMOST_HOOK_KEY = os.environ.get("MATTERMOST_HOOK_KEY")

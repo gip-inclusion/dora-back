@@ -7,7 +7,7 @@ from django.db.models.fields import CharField
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
-from dora.structures.models import Structure
+from dora.structures.models import Structure, StructureMember
 
 
 def make_unique_slug(instance, parent_slug, value, length=20):
@@ -286,10 +286,13 @@ class Service(models.Model):
         verbose_name="Structure",
         on_delete=models.CASCADE,
         db_index=True,
+        related_name="services",
     )
+    is_draft = models.BooleanField(default=True)
 
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now=True)
+
     creator = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True
     )
@@ -301,8 +304,6 @@ class Service(models.Model):
         null=True,
     )
 
-    is_draft = models.BooleanField(default=True)
-
     def __str__(self):
         return self.name
 
@@ -310,3 +311,11 @@ class Service(models.Model):
         if not self.slug:
             self.slug = make_unique_slug(self, self.structure.slug, self.name)
         return super().save(*args, **kwargs)
+
+    def can_write(self, user):
+        return (
+            user.is_staff
+            or StructureMember.objects.filter(
+                structure_id=self.structure_id, user_id=user.id
+            ).exists()
+        )
