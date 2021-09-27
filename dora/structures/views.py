@@ -1,9 +1,11 @@
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, permissions, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from dora.structures.models import Structure, StructureTypology
+from dora.core.notify import send_mattermost_notification
+from dora.structures.models import Structure, StructureSource, StructureTypology
 
 from .serializers import (
     SiretClaimedSerializer,
@@ -72,7 +74,16 @@ class StructureViewSet(
         return super().get_serializer_class()
 
     def perform_create(self, serializer):
-        serializer.save(creator=self.request.user, last_editor=self.request.user)
+        user = self.request.user
+        source = (
+            StructureSource.DORA_STAFF
+            if user.is_staff
+            else StructureSource.STRUCT_STAFF
+        )
+        structure = serializer.save(creator=user, last_editor=user, source=source)
+        send_mattermost_notification(
+            f"[{settings.ENVIRONMENT}] :tada: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
+        )
 
     def perform_update(self, serializer):
         serializer.save(last_editor=self.request.user)

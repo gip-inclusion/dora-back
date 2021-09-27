@@ -22,7 +22,7 @@ from dora.rest_auth.serializers import (
     PasswordResetSerializer,
     TokenSerializer,
 )
-from dora.structures.models import Structure, StructureMember
+from dora.structures.models import Structure, StructureMember, StructureSource
 from dora.users.models import User
 
 from .emails import send_email_validation_email, send_password_reset_email
@@ -176,6 +176,7 @@ def register_service_and_user(request):
         is_new_structure = True
         structure.creator = user
         structure.last_editor = user
+        structure.source = StructureSource.STRUCT_STAFF
         structure.save()
         send_mattermost_notification(
             f"[{settings.ENVIRONMENT}] :tada: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
