@@ -21,7 +21,16 @@ logger = logging.getLogger(__name__)
 class StructureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Structure
-        fields = ["slug", "name", "short_desc"]
+        fields = [
+            "slug",
+            "name",
+            "short_desc",
+            "address1",
+            "address2",
+            "postal_code",
+            "city",
+            "url",
+        ]
 
 
 class ServiceSerializer(serializers.ModelSerializer):
