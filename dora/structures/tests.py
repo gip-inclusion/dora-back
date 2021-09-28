@@ -1,7 +1,7 @@
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
-from dora.structures.models import Structure
+from dora.structures.models import Structure, StructureSource
 
 DUMMY_STRUCTURE = {
     "siret": "12345678901234",
@@ -121,6 +121,27 @@ class StructureTestCase(APITestCase):
         new_structure = Structure.objects.get(slug=slug)
         self.assertEqual(new_structure.creator, self.me)
         self.assertEqual(new_structure.last_editor, self.me)
+
+    def test_adding_structure_sets_source(self):
+        response = self.client.post(
+            "/structures/",
+            DUMMY_STRUCTURE,
+        )
+        self.assertEqual(response.status_code, 201)
+        slug = response.data["slug"]
+        s = Structure.objects.get(slug=slug)
+        self.assertEqual(s.source, StructureSource.STRUCT_STAFF)
+
+    def test_adding_structure_by_admin_sets_source(self):
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.post(
+            "/structures/",
+            DUMMY_STRUCTURE,
+        )
+        self.assertEqual(response.status_code, 201)
+        slug = response.data["slug"]
+        s = Structure.objects.get(slug=slug)
+        self.assertEqual(s.source, StructureSource.DORA_STAFF)
 
     # Deleting
 
