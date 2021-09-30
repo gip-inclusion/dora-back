@@ -274,7 +274,7 @@ def search(request):
     if cat_label:
         # Only log real searches, as the monitoring service uses this url too for the moment
         send_mattermost_notification(
-            f"[{settings.ENVIRONMENT}] :tada: Nouvel recherche {cat_label} / { subcat_label} / {city_label} avec un rayon de {radius} km.\n{results_count} resultat(s)\n{settings.FRONTEND_URL}/recherche/?cat={category}&sub={subcategory}&city={city_code}&cl={city_label}"
+            f"[{settings.ENVIRONMENT}] :mag_right: Nouvelle recherche {cat_label} / { subcat_label} / {city_label} avec un rayon de {radius} km.\n{results_count} resultat(s)\n{settings.FRONTEND_URL}/recherche/?cat={category}&sub={subcategory}&city={city_code}&cl={city_label}"
         )
 
     return Response(

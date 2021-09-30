@@ -179,7 +179,7 @@ def register_service_and_user(request):
         structure.source = StructureSource.STRUCT_STAFF
         structure.save()
         send_mattermost_notification(
-            f"[{settings.ENVIRONMENT}] :tada: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
+            f"### [{settings.ENVIRONMENT}] :office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
         )
 
     # Link them
@@ -194,7 +194,7 @@ def register_service_and_user(request):
     send_email_validation_email(data["email"], user.name, tmp_token.key)
 
     send_mattermost_notification(
-        f"[{settings.ENVIRONMENT}] :tada: Nouvel utilisateur “{user.name}” enregistré dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
+        f"### [{settings.ENVIRONMENT}] :adult: Nouvel utilisateur “{user.name}” enregistré dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
     )
 
     return Response(status=201)
