@@ -1,14 +1,20 @@
 import logging
 
+from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from rest_framework import serializers
+from rest_framework.relations import PrimaryKeyRelatedField
 
 from dora.structures.models import Structure, StructureMember
 
 from .models import (
+    AccessCondition,
     BeneficiaryAccessMode,
     CoachOrientationMode,
+    ConcernedPublic,
+    Credential,
     LocationKind,
+    Requirement,
     Service,
     ServiceCategories,
     ServiceKind,
@@ -16,6 +22,36 @@ from .models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class CreatablePrimaryKeyRelatedField(PrimaryKeyRelatedField):
+    def use_pk_only_optimization(self):
+        return True
+
+    def to_internal_value(self, data):
+        if isinstance(data, int):
+            return super().to_internal_value(data)
+
+        # If we receive a string instead of a primary key, search
+        # by value, and create a new object if not found
+        if self.root.instance:
+            structure = self.root.instance.structure
+        else:
+            structure_slug = self.root.initial_data["structure"]
+            structure = Structure.objects.get(slug=structure_slug)
+        if not structure:
+            raise ValidationError("La structure ne peut pas être vide")
+        queryset = self.queryset
+
+        # find if it already exists in the same structure
+        obj = queryset.filter(name=data, structure=structure).first()
+        if not obj:
+            # then in the global repository
+            obj = queryset.filter(name=data, structure=None).first()
+        if not obj:
+            # otherwise create it
+            obj = queryset.create(name=data, structure=structure)
+        return obj
 
 
 class StructureSerializer(serializers.ModelSerializer):
@@ -43,9 +79,29 @@ class ServiceSerializer(serializers.ModelSerializer):
     kinds_display = serializers.SerializerMethodField()
     category_display = serializers.SerializerMethodField()
     subcategories_display = serializers.SerializerMethodField()
+    access_conditions = CreatablePrimaryKeyRelatedField(
+        many=True,
+        queryset=AccessCondition.objects.all(),
+        required=False,
+    )
     access_conditions_display = serializers.SerializerMethodField()
+    concerned_public = CreatablePrimaryKeyRelatedField(
+        many=True,
+        queryset=ConcernedPublic.objects.all(),
+        required=False,
+    )
     concerned_public_display = serializers.SerializerMethodField()
+    requirements = CreatablePrimaryKeyRelatedField(
+        many=True,
+        queryset=Requirement.objects.all(),
+        required=False,
+    )
     requirements_display = serializers.SerializerMethodField()
+    credentials = CreatablePrimaryKeyRelatedField(
+        many=True,
+        queryset=Credential.objects.all(),
+        required=False,
+    )
     credentials_display = serializers.SerializerMethodField()
     location_kinds_display = serializers.SerializerMethodField()
     beneficiaries_access_modes_display = serializers.SerializerMethodField()
@@ -177,20 +233,70 @@ class ServiceSerializer(serializers.ModelSerializer):
         user = self.context.get("request").user
         return obj.can_write(user)
 
-    def validate_structure(self, value):
-        user = self.context.get("request").user
+    # def validate_structure(self, value):
+    #     user = self.context.get("request").user
 
-        if (
-            not user.is_staff
-            and not StructureMember.objects.filter(
-                structure_id=value.id, user_id=user.id
-            ).exists()
-        ):
-            raise serializers.ValidationError(
-                "Vous n’appartenez pas à cette structure", "not_member_of_struct"
+    #     if (
+    #         not user.is_staff
+    #         and not StructureMember.objects.filter(
+    #             structure_id=value.id, user_id=user.id
+    #         ).exists()
+    #     ):
+    #         raise serializers.ValidationError(
+    #             "Vous n’appartenez pas à cette structure", "not_member_of_struct"
+    #         )
+
+    #     return value
+
+    def validate(self, data):
+        user = self.context.get("request").user
+        structure = data.get("structure") or self.instance.structure
+
+        user_structures = StructureMember.objects.filter(user_id=user.id).values_list(
+            "structure_id", flat=True
+        )
+
+        if "structure" in data:
+            if not user.is_staff and data["structure"].id not in user_structures:
+                raise serializers.ValidationError(
+                    {"structure": "Vous n’appartenez pas à cette structure"},
+                    "not_member_of_struct",
+                )
+
+        assert structure.id is None or structure.id in user_structures or user.is_staff
+
+        if "access_conditions" in data:
+            self._validate_custom_choice(
+                "access_conditions", data, user, user_structures, structure
             )
 
-        return value
+        if "concerned_public" in data:
+            self._validate_custom_choice(
+                "concerned_public", data, user, user_structures, structure
+            )
+
+        if "requirements" in data:
+            self._validate_custom_choice(
+                "requirements", data, user, user_structures, structure
+            )
+
+        if "credentials" in data:
+            self._validate_custom_choice(
+                "credentials", data, user, user_structures, structure
+            )
+
+        return data
+
+    def _validate_custom_choice(self, field, data, user, user_structures, structure):
+        values = data[field]
+        for val in values:
+            if val.structure_id is not None and val.structure_id != structure.id:
+                raise serializers.ValidationError(
+                    {field: "Ce choix n'est pas disponible dans cette structure"},
+                    "unallowed_custom_choices_bad_struc",
+                )
+
+        return values
 
 
 class ServiceListSerializer(ServiceSerializer):

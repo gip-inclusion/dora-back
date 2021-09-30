@@ -15,8 +15,6 @@ def send_mattermost_notification(msg):
                     },
                     data=json.dumps({"text": msg}),
                 )
-        else:
-            print(msg)
 
     except requests.exceptions.RequestException:
         # TODO: logging
