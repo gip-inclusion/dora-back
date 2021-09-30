@@ -1,6 +1,8 @@
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
+from dora.structures.models import Structure
+
 from .models import AccessCondition, Service
 
 DUMMY_SERVICE = {"name": "Mon service"}
@@ -223,7 +225,9 @@ class ServiceTestCase(APITestCase):
 
     def test_super_user_can_add_to_any_structure(self):
         self.client.force_authenticate(user=self.superuser)
-        DUMMY_SERVICE["structure"] = baker.make("Structure").slug
+        slug = baker.make("Structure").slug
+        Structure.objects.get(slug=slug)
+        DUMMY_SERVICE["structure"] = slug
         response = self.client.post(
             "/services/",
             DUMMY_SERVICE,
@@ -340,6 +344,16 @@ class ServiceTestCase(APITestCase):
         response = self.client.patch(
             f"/services/{self.my_service.slug}/",
             {"access_conditions": [self.other_struct_condition1.id]},
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_cant_add_other_structure_choice_even_if_mine(self):
+        struct = baker.make("Structure")
+        struct.members.add(self.me)
+        struct_condition = baker.make("AccessCondition", structure=struct)
+        response = self.client.patch(
+            f"/services/{self.my_service.slug}/",
+            {"access_conditions": [struct_condition.id]},
         )
         self.assertEqual(response.status_code, 400)
 

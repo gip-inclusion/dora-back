@@ -146,9 +146,10 @@ def options(request):
     class CustomChoiceSerializer(serializers.ModelSerializer):
         value = serializers.IntegerField(source="id")
         label = serializers.CharField(source="name")
+        structure = serializers.SlugRelatedField(slug_field="slug", read_only=True)
 
         class Meta:
-            fields = ["value", "label"]
+            fields = ["value", "label", "structure"]
 
     class AccessConditionSerializer(CustomChoiceSerializer):
         class Meta(CustomChoiceSerializer.Meta):

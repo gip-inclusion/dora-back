@@ -250,6 +250,8 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         user = self.context.get("request").user
+        structure = data.get("structure") or self.instance.structure
+
         user_structures = StructureMember.objects.filter(user_id=user.id).values_list(
             "structure_id", flat=True
         )
@@ -260,34 +262,41 @@ class ServiceSerializer(serializers.ModelSerializer):
                     {"structure": "Vous n’appartenez pas à cette structure"},
                     "not_member_of_struct",
                 )
+
+        assert structure.id is None or structure.id in user_structures or user.is_staff
+
+        if "access_conditions" in data:
+            self._validate_custom_choice(
+                "access_conditions", data, user, user_structures, structure
+            )
+
+        if "concerned_public" in data:
+            self._validate_custom_choice(
+                "concerned_public", data, user, user_structures, structure
+            )
+
+        if "requirements" in data:
+            self._validate_custom_choice(
+                "requirements", data, user, user_structures, structure
+            )
+
+        if "credentials" in data:
+            self._validate_custom_choice(
+                "credentials", data, user, user_structures, structure
+            )
+
         return data
 
-    def _validate_custom_choice(self, values):
-        user = self.context.get("request").user
-        if user.is_staff:
-            return values
-        user_structures = StructureMember.objects.filter(user_id=user.id).values_list(
-            "structure_id", flat=True
-        )
+    def _validate_custom_choice(self, field, data, user, user_structures, structure):
+        values = data[field]
         for val in values:
-            if val.structure_id is not None and val.structure_id not in user_structures:
+            if val.structure_id is not None and val.structure_id != structure.id:
                 raise serializers.ValidationError(
-                    "Ce choix n'est pas disponible dans cette structure",
-                    "unallowed_custom_choices",
+                    {field: "Ce choix n'est pas disponible dans cette structure"},
+                    "unallowed_custom_choices_bad_struc",
                 )
+
         return values
-
-    def validate_access_conditions(self, value):
-        return self._validate_custom_choice(value)
-
-    def validate_concerned_public(self, value):
-        return self._validate_custom_choice(value)
-
-    def validate_requirements(self, value):
-        return self._validate_custom_choice(value)
-
-    def validate_credentials(self, value):
-        return self._validate_custom_choice(value)
 
 
 class ServiceListSerializer(ServiceSerializer):
