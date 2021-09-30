@@ -24,7 +24,7 @@ from dora.services.models import (
     ServiceKind,
     ServiceSubCategories,
 )
-from dora.structures.models import Structure
+from dora.structures.models import Structure, StructureMember
 
 from .serializers import ServiceListSerializer, ServiceSerializer
 
@@ -143,37 +143,41 @@ class ServiceViewSet(
 @api_view()
 @permission_classes([permissions.AllowAny])
 def options(request):
-    class AccessConditionSerializer(serializers.ModelSerializer):
+    class CustomChoiceSerializer(serializers.ModelSerializer):
         value = serializers.IntegerField(source="id")
         label = serializers.CharField(source="name")
 
         class Meta:
+            fields = ["value", "label"]
+
+    class AccessConditionSerializer(CustomChoiceSerializer):
+        class Meta(CustomChoiceSerializer.Meta):
             model = AccessCondition
-            fields = ["value", "label"]
 
-    class ConcernedPublicSerializer(serializers.ModelSerializer):
-        value = serializers.IntegerField(source="id")
-        label = serializers.CharField(source="name")
-
-        class Meta:
+    class ConcernedPublicSerializer(CustomChoiceSerializer):
+        class Meta(CustomChoiceSerializer.Meta):
             model = ConcernedPublic
-            fields = ["value", "label"]
 
-    class RequirementSerializer(serializers.ModelSerializer):
-        value = serializers.IntegerField(source="id")
-        label = serializers.CharField(source="name")
-
-        class Meta:
+    class RequirementSerializer(CustomChoiceSerializer):
+        class Meta(CustomChoiceSerializer.Meta):
             model = Requirement
-            fields = ["value", "label"]
 
-    class CredentialSerializer(serializers.ModelSerializer):
-        value = serializers.IntegerField(source="id")
-        label = serializers.CharField(source="name")
-
-        class Meta:
+    class CredentialSerializer(CustomChoiceSerializer):
+        class Meta(CustomChoiceSerializer.Meta):
             model = Credential
-            fields = ["value", "label"]
+
+    def filter_custom_choices(choices):
+        user = request.user
+        if not user.is_authenticated:
+            return choices.filter(structure_id=None)
+        if user.is_staff:
+            return choices
+        user_structures = StructureMember.objects.filter(user=user).values_list(
+            "structure_id", flat=True
+        )
+        return choices.filter(
+            Q(structure_id__in=user_structures) | Q(structure_id=None)
+        )
 
     result = {
         "categories": [
@@ -184,16 +188,24 @@ def options(request):
         ],
         "kinds": [{"value": c[0], "label": c[1]} for c in ServiceKind.choices],
         "access_conditions": AccessConditionSerializer(
-            AccessCondition.objects.all(), many=True, context={"request": request}
+            filter_custom_choices(AccessCondition.objects.all()),
+            many=True,
+            context={"request": request},
         ).data,
         "concerned_public": ConcernedPublicSerializer(
-            ConcernedPublic.objects.all(), many=True, context={"request": request}
+            filter_custom_choices(ConcernedPublic.objects.all()),
+            many=True,
+            context={"request": request},
         ).data,
         "requirements": RequirementSerializer(
-            Requirement.objects.all(), many=True, context={"request": request}
+            filter_custom_choices(Requirement.objects.all()),
+            many=True,
+            context={"request": request},
         ).data,
         "credentials": CredentialSerializer(
-            Credential.objects.all(), many=True, context={"request": request}
+            filter_custom_choices(Credential.objects.all()),
+            many=True,
+            context={"request": request},
         ).data,
         "beneficiaries_access_modes": [
             {"value": c[0], "label": c[1]} for c in BeneficiaryAccessMode.choices

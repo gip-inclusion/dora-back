@@ -20,8 +20,15 @@ class ServiceAdmin(admin.OSMGeoAdmin):
     ordering = ["-modification_date"]
 
 
+class CustomizableChoiceAdmin(admin.ModelAdmin):
+    list_display = ("name", "structure")
+    list_filter = [
+        ("structure", RelatedOnlyFieldListFilter),
+    ]
+
+
 admin.site.register(Service, ServiceAdmin)
-admin.site.register(AccessCondition)
-admin.site.register(ConcernedPublic)
-admin.site.register(Requirement)
-admin.site.register(Credential)
+admin.site.register(AccessCondition, CustomizableChoiceAdmin)
+admin.site.register(ConcernedPublic, CustomizableChoiceAdmin)
+admin.site.register(Requirement, CustomizableChoiceAdmin)
+admin.site.register(Credential, CustomizableChoiceAdmin)

@@ -227,6 +227,7 @@ REST_FRAMEWORK = {
         "no_underscore_before_number": True,
     },
     "EXCEPTION_HANDLER": "dora.core.exceptions_handler.custom_exception_handler",
+    "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
 
 

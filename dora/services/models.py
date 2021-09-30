@@ -79,46 +79,49 @@ class RecurrenceKind(models.TextChoices):
     OTHER = ("OT", "Autre")
 
 
-class AccessCondition(models.Model):
+class CustomizableChoice(models.Model):
     name = models.CharField(max_length=140)
+    structure = models.ForeignKey(
+        Structure,
+        on_delete=models.CASCADE,
+        db_index=True,
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        abstract = True
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name", "structure"],
+                name="%(app_label)s_unique_%(class)s_by_structure",
+            )
+        ]
 
     def __str__(self):
         return self.name
 
-    class Meta:
+
+class AccessCondition(CustomizableChoice):
+    class Meta(CustomizableChoice.Meta):
         verbose_name = "Critère d’admission"
         verbose_name_plural = "Critères d’admission"
 
 
-class ConcernedPublic(models.Model):
-    name = models.CharField(max_length=140)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
+class ConcernedPublic(CustomizableChoice):
+    class Meta(CustomizableChoice.Meta):
         verbose_name = "Public concerné"
         verbose_name_plural = "Publics concernés"
 
 
-class Requirement(models.Model):
-    name = models.CharField(max_length=140)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
+class Requirement(CustomizableChoice):
+    class Meta(CustomizableChoice.Meta):
         verbose_name = "Pré-requis ou compétence"
         verbose_name_plural = "Pré-requis ou compétences"
 
 
-class Credential(models.Model):
-    name = models.CharField(max_length=140)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
+class Credential(CustomizableChoice):
+    class Meta(CustomizableChoice.Meta):
         verbose_name = "Justificatif à fournir"
         verbose_name_plural = "Justificatifs à fournir"
 

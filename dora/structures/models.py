@@ -45,7 +45,8 @@ class StructureMember(models.Model):
         verbose_name = "Membre"
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "structure"], name="unique_user_structure"
+                fields=["user", "structure"],
+                name="%(app_label)s_unique_user_by_structure",
             )
         ]
 
