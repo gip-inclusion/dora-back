@@ -26,7 +26,11 @@ from dora.services.models import (
 )
 from dora.structures.models import Structure, StructureMember
 
-from .serializers import ServiceListSerializer, ServiceSerializer
+from .serializers import (
+    AnonymousServiceSerializer,
+    ServiceListSerializer,
+    ServiceSerializer,
+)
 
 
 class ServicePermission(permissions.BasePermission):
@@ -106,6 +110,8 @@ class ServiceViewSet(
     def get_serializer_class(self):
         if self.action == "list":
             return ServiceListSerializer
+        if not self.request.user.is_authenticated:
+            return AnonymousServiceSerializer
         return super().get_serializer_class()
 
     @action(detail=False, methods=["get"], url_path="last-draft")

@@ -299,6 +299,25 @@ class ServiceSerializer(serializers.ModelSerializer):
         return values
 
 
+class AnonymousServiceSerializer(ServiceSerializer):
+    contact_name = serializers.SerializerMethodField()
+    contact_phone = serializers.SerializerMethodField()
+    contact_email = serializers.SerializerMethodField()
+    is_contact_info_public = serializers.SerializerMethodField()
+
+    def get_contact_name(self, obj):
+        return obj.contact_name if obj.is_contact_info_public else ""
+
+    def get_contact_phone(self, obj):
+        return obj.contact_phone if obj.is_contact_info_public else ""
+
+    def get_contact_email(self, obj):
+        return obj.contact_email if obj.is_contact_info_public else ""
+
+    def get_is_contact_info_public(self, obj):
+        return True if obj.is_contact_info_public else None
+
+
 class ServiceListSerializer(ServiceSerializer):
     class Meta:
         model = Service
