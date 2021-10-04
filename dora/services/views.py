@@ -26,7 +26,11 @@ from dora.services.models import (
 )
 from dora.structures.models import Structure, StructureMember
 
-from .serializers import ServiceListSerializer, ServiceSerializer
+from .serializers import (
+    AnonymousServiceSerializer,
+    ServiceListSerializer,
+    ServiceSerializer,
+)
 
 
 class ServicePermission(permissions.BasePermission):
@@ -106,6 +110,8 @@ class ServiceViewSet(
     def get_serializer_class(self):
         if self.action == "list":
             return ServiceListSerializer
+        if not self.request.user.is_authenticated:
+            return AnonymousServiceSerializer
         return super().get_serializer_class()
 
     @action(detail=False, methods=["get"], url_path="last-draft")
@@ -257,10 +263,10 @@ def search(request):
     if subcategory:
         results = results.filter(subcategories__contains=[subcategory])
 
-    city_label = ""
+    # city_label = ""
     if city_code:
         city = get_object_or_404(City, pk=city_code)
-        city_label = f"{city.name} ({city.code})"
+        # city_label = f"{city.name} ({city.code})"
         results = (
             results.filter(geom__isnull=False)
             .annotate(distance=Distance("geom", city.geom))
@@ -268,15 +274,15 @@ def search(request):
             .order_by("distance")
         )
 
-    cat_label = ServiceCategories(category).label if category else ""
-    subcat_label = ServiceSubCategories(subcategory).label if subcategory else ""
-    results_count = results.count()
+    # cat_label = ServiceCategories(category).label if category else ""
+    # subcat_label = ServiceSubCategories(subcategory).label if subcategory else ""
+    # results_count = results.count()
 
-    if cat_label:
-        # Only log real searches, as the monitoring service uses this url too for the moment
-        send_mattermost_notification(
-            f"[{settings.ENVIRONMENT}] :mag_right: Nouvelle recherche {cat_label} / { subcat_label} / {city_label} avec un rayon de {radius} km.\n{results_count} resultat(s)\n{settings.FRONTEND_URL}/recherche/?cat={category}&sub={subcategory}&city={city_code}&cl={city_label}"
-        )
+    # if cat_label:
+    #     # Only log real searches, as the monitoring service uses this url too for the moment
+    #     send_mattermost_notification(
+    #         f"[{settings.ENVIRONMENT}] :mag_right: Nouvelle recherche {cat_label} / { subcat_label} / {city_label} avec un rayon de {radius} km.\n{results_count} resultat(s)\n{settings.FRONTEND_URL}/recherche/?cat={category}&sub={subcategory}&city={city_code}&cl={city_label}"
+    #     )
 
     return Response(
         DistanceServiceSerializer(results, many=True, context={"request": request}).data

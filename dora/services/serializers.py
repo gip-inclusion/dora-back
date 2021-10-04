@@ -25,6 +25,10 @@ logger = logging.getLogger(__name__)
 
 
 class CreatablePrimaryKeyRelatedField(PrimaryKeyRelatedField):
+    def __init__(self, **kwargs):
+        self.max_length = kwargs.pop("max_length", None)
+        super().__init__(**kwargs)
+
     def use_pk_only_optimization(self):
         return True
 
@@ -34,6 +38,16 @@ class CreatablePrimaryKeyRelatedField(PrimaryKeyRelatedField):
 
         # If we receive a string instead of a primary key, search
         # by value, and create a new object if not found
+
+        name = data.strip()
+        if name == "":
+            raise ValidationError("Cette valeur est vide")
+
+        if self.max_length is not None and len(name) > self.max_length:
+            raise ValidationError(
+                f"Cette valeur doit avoir moins de {self.max_length} caractères"
+            )
+
         if self.root.instance:
             structure = self.root.instance.structure
         else:
@@ -44,13 +58,13 @@ class CreatablePrimaryKeyRelatedField(PrimaryKeyRelatedField):
         queryset = self.queryset
 
         # find if it already exists in the same structure
-        obj = queryset.filter(name=data, structure=structure).first()
+        obj = queryset.filter(name=name, structure=structure).first()
         if not obj:
             # then in the global repository
-            obj = queryset.filter(name=data, structure=None).first()
+            obj = queryset.filter(name=name, structure=None).first()
         if not obj:
             # otherwise create it
-            obj = queryset.create(name=data, structure=structure)
+            obj = queryset.create(name=name, structure=structure)
         return obj
 
 
@@ -82,24 +96,28 @@ class ServiceSerializer(serializers.ModelSerializer):
     access_conditions = CreatablePrimaryKeyRelatedField(
         many=True,
         queryset=AccessCondition.objects.all(),
+        max_length=140,
         required=False,
     )
     access_conditions_display = serializers.SerializerMethodField()
     concerned_public = CreatablePrimaryKeyRelatedField(
         many=True,
         queryset=ConcernedPublic.objects.all(),
+        max_length=140,
         required=False,
     )
     concerned_public_display = serializers.SerializerMethodField()
     requirements = CreatablePrimaryKeyRelatedField(
         many=True,
         queryset=Requirement.objects.all(),
+        max_length=140,
         required=False,
     )
     requirements_display = serializers.SerializerMethodField()
     credentials = CreatablePrimaryKeyRelatedField(
         many=True,
         queryset=Credential.objects.all(),
+        max_length=140,
         required=False,
     )
     credentials_display = serializers.SerializerMethodField()
@@ -297,6 +315,25 @@ class ServiceSerializer(serializers.ModelSerializer):
                 )
 
         return values
+
+
+class AnonymousServiceSerializer(ServiceSerializer):
+    contact_name = serializers.SerializerMethodField()
+    contact_phone = serializers.SerializerMethodField()
+    contact_email = serializers.SerializerMethodField()
+    is_contact_info_public = serializers.SerializerMethodField()
+
+    def get_contact_name(self, obj):
+        return obj.contact_name if obj.is_contact_info_public else ""
+
+    def get_contact_phone(self, obj):
+        return obj.contact_phone if obj.is_contact_info_public else ""
+
+    def get_contact_email(self, obj):
+        return obj.contact_email if obj.is_contact_info_public else ""
+
+    def get_is_contact_info_public(self, obj):
+        return True if obj.is_contact_info_public else None
 
 
 class ServiceListSerializer(ServiceSerializer):

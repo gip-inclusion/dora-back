@@ -78,6 +78,15 @@ class ServiceTestCase(APITestCase):
         services_ids = [s["slug"] for s in response.data]
         self.assertNotIn(self.other_draft_service, services_ids)
 
+    def test_anonymous_user_cant_see_drafts(self):
+        self.client.force_authenticate(user=None)
+        service = baker.make(
+            "Service",
+            is_draft=True,
+        )
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.status_code, 404)
+
     # Modification
 
     def test_can_edit_my_services(self):
@@ -394,3 +403,77 @@ class ServiceTestCase(APITestCase):
         foobar = AccessCondition.objects.filter(name="foobar").first()
         self.assertEqual(foobar.structure, self.my_struct)
         self.assertEqual(service.access_conditions.first(), foobar)
+
+    def test_cant_add_empty_choice(self):
+        response = self.client.patch(
+            f"/services/{self.my_service.slug}/",
+            {"access_conditions": [""]},
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_cant_add_very_long_choice(self):
+        val = "." * 141
+        response = self.client.patch(
+            f"/services/{self.my_service.slug}/",
+            {"access_conditions": [val]},
+        )
+        self.assertEqual(response.status_code, 400)
+
+    # Confidentiality
+    def test_anonymous_user_can_see_public_contact_info(self):
+        self.client.force_authenticate(user=None)
+        service = baker.make(
+            "Service",
+            is_draft=False,
+            contact_name="FOO",
+            contact_phone="1234",
+            contact_email="foo@bar.buz",
+            is_contact_info_public=True,
+        )
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.data["contact_name"], "FOO")
+        self.assertEqual(response.data["contact_phone"], "1234")
+        self.assertEqual(response.data["contact_email"], "foo@bar.buz")
+
+    def test_anonymous_user_cant_see_private_contact_info(self):
+        self.client.force_authenticate(user=None)
+        service = baker.make(
+            "Service",
+            is_draft=False,
+            contact_name="FOO",
+            contact_phone="1234",
+            contact_email="foo@bar.buz",
+            is_contact_info_public=False,
+        )
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.data["contact_name"], "")
+        self.assertEqual(response.data["contact_phone"], "")
+        self.assertEqual(response.data["contact_email"], "")
+
+    def test_logged_user_can_see_public_contact_info(self):
+        service = baker.make(
+            "Service",
+            is_draft=False,
+            contact_name="FOO",
+            contact_phone="1234",
+            contact_email="foo@bar.buz",
+            is_contact_info_public=True,
+        )
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.data["contact_name"], "FOO")
+        self.assertEqual(response.data["contact_phone"], "1234")
+        self.assertEqual(response.data["contact_email"], "foo@bar.buz")
+
+    def test_logged_user_can_see_private_contact_info(self):
+        service = baker.make(
+            "Service",
+            is_draft=False,
+            contact_name="FOO",
+            contact_phone="1234",
+            contact_email="foo@bar.buz",
+            is_contact_info_public=False,
+        )
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.data["contact_name"], "FOO")
+        self.assertEqual(response.data["contact_phone"], "1234")
+        self.assertEqual(response.data["contact_email"], "foo@bar.buz")

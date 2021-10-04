@@ -50,6 +50,12 @@ class UserCreationForm(forms.ModelForm):
 
 
 class UserAdmin(BaseUserAdmin):
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if "delete_selected" in actions:
+            del actions["delete_selected"]
+        return actions
+
     # The forms to add and change user instances
     form = UserChangeForm
     add_form = UserCreationForm
