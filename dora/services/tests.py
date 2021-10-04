@@ -404,6 +404,21 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(foobar.structure, self.my_struct)
         self.assertEqual(service.access_conditions.first(), foobar)
 
+    def test_cant_add_empty_choice(self):
+        response = self.client.patch(
+            f"/services/{self.my_service.slug}/",
+            {"access_conditions": [""]},
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_cant_add_very_long_choice(self):
+        val = "." * 141
+        response = self.client.patch(
+            f"/services/{self.my_service.slug}/",
+            {"access_conditions": [val]},
+        )
+        self.assertEqual(response.status_code, 400)
+
     # Confidentiality
     def test_anonymous_user_can_see_public_contact_info(self):
         self.client.force_authenticate(user=None)
