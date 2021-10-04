@@ -56,6 +56,14 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ["DJANGO_DEBUG"] == "true"
 
+# DJANGO_ADMINS=Name1:email1,Name2:email2
+ADMINS = (
+    [u.split(":") for u in os.environ["DJANGO_ADMINS"].split(",")]
+    if os.environ.get("DJANGO_ADMINS")
+    else None
+)
+print(ADMINS)
+
 ALLOWED_HOSTS = [os.environ["DJANGO_ALLOWED_HOSTS"]]
 
 
