@@ -18,6 +18,7 @@ class ServiceAdmin(admin.OSMGeoAdmin):
         ("structure", RelatedOnlyFieldListFilter),
     ]
     ordering = ["-modification_date"]
+    save_as = True
 
 
 class CustomizableChoiceAdmin(admin.ModelAdmin):
