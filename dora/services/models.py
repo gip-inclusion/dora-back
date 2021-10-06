@@ -128,7 +128,7 @@ class Credential(CustomizableChoice):
 
 class Service(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    slug = models.SlugField(blank=True, null=True, unique=True)
+    slug = models.SlugField(max_length=100, blank=True, null=True, unique=True)
 
     ##############
     # Presentation
