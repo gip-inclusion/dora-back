@@ -175,7 +175,7 @@ class Structure(models.Model):
     )
     city_code = models.CharField(max_length=5, blank=True)
     city = models.CharField(max_length=255)
-    department = models.CharField(max_length=2, blank=True)
+    department = models.CharField(max_length=3, blank=True)
     address1 = models.CharField(max_length=255)
     address2 = models.CharField(max_length=255, blank=True)
     has_services = models.BooleanField(default=False, blank=True)
@@ -220,7 +220,8 @@ class Structure(models.Model):
         if not self.slug:
             self.slug = make_unique_slug(self, self.name)
         if not self.department and self.city_code:
-            self.department = self.city_code[:2]
+            code = self.city_code
+            self.department = code[:3] if code.startswith("97") else code[:2]
         return super().save(*args, **kwargs)
 
     def can_write(self, user):

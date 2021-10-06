@@ -245,7 +245,8 @@ class ServiceSerializer(serializers.ModelSerializer):
         return [item.name for item in obj.credentials.all()]
 
     def get_department(self, obj):
-        return obj.postal_code[0:2]
+        code = obj.postal_code
+        return code[:3] if code.startswith("97") else code[:2]
 
     def get_can_write(self, obj):
         user = self.context.get("request").user
