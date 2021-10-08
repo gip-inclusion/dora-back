@@ -184,7 +184,7 @@ def register_service_and_user(request):
 
     # Link them
     StructureMember.objects.create(
-        user=user, structure=structure, is_admin=is_new_structure
+        user=user, structure=structure, is_admin=is_new_structure, is_valid=True
     )
 
     # Send validation link email

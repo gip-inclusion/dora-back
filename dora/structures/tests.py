@@ -1,3 +1,4 @@
+from django.core import mail
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
@@ -169,3 +170,322 @@ class StructureTestCase(APITestCase):
 
     # def test_join_structure_makes_nonadmin(self):
     #     self.assertTrue(False)
+
+
+class StructureMemberTestCase(APITestCase):
+    def setUp(self):
+        self.me = baker.make("users.User")
+        self.user1 = baker.make("users.User")
+        self.user2 = baker.make("users.User")
+        self.my_other_struct_user = baker.make("users.User")
+        self.another_struct_user = baker.make("users.User")
+
+        self.superuser = baker.make("users.User", is_staff=True)
+
+        self.my_struct = baker.make("Structure")
+        self.my_struct.members.add(self.me, through_defaults={"is_admin": True}),
+        self.my_struct.members.add(self.user1, through_defaults={"is_admin": True})
+        self.my_struct.members.add(self.user2, through_defaults={"is_admin": False})
+
+        self.my_other_struct = baker.make("Structure", creator=None, last_editor=None)
+        self.my_other_struct.members.add(self.me, through_defaults={"is_admin": True})
+        self.my_other_struct.members.add(self.my_other_struct_user)
+
+        self.other_struct = baker.make("Structure")
+        self.other_struct.members.add(
+            self.another_struct_user, through_defaults={"is_admin": True}
+        )
+
+    # Visibility lists
+
+    def test_get_request_without_struct_empty(self):
+        self.client.force_authenticate(user=self.me)
+        response = self.client.get("/structure-members/")
+        self.assertEquals(response.data, [])
+
+    def test_admin_user_can_see_structure_members(self):
+        self.client.force_authenticate(user=self.me)
+        response = self.client.get(
+            f"/structure-members/?structure={self.my_struct.slug}"
+        )
+        self.assertEqual(response.status_code, 200)
+        emails = [m["user"]["email"] for m in response.data]
+        self.assertIn(self.me.email, emails)
+        self.assertIn(self.user1.email, emails)
+        self.assertIn(self.user2.email, emails)
+
+    def test_anonymous_user_cant_see_structure_members(self):
+        response = self.client.get(
+            f"/structure-members/?structure={self.my_struct.slug}"
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_standard_user_cant_see_structure_members(self):
+        self.client.force_authenticate(user=self.user2)
+        response = self.client.get(
+            f"/structure-members/?structure={self.my_struct.slug}"
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_super_user_can_see_structure_members(self):
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.get(
+            f"/structure-members/?structure={self.my_struct.slug}"
+        )
+        self.assertEqual(response.status_code, 200)
+        emails = [m["user"]["email"] for m in response.data]
+        self.assertIn(self.me.email, emails)
+        self.assertIn(self.user1.email, emails)
+        self.assertIn(self.user2.email, emails)
+
+    # Visibility instance
+
+    def test_admin_user_can_see_structure_member(self):
+        self.client.force_authenticate(user=self.me)
+        member = self.user1.membership.get(structure=self.my_struct)
+        response = self.client.get(f"/structure-members/{member.id}/")
+        self.assertEqual(response.status_code, 200)
+
+    def test_anonymous_user_cant_see_structure_member(self):
+        member = self.user1.membership.get(structure=self.my_struct)
+        response = self.client.get(f"/structure-members/{member.id}/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_standard_user_cant_see_structure_member(self):
+        self.client.force_authenticate(user=self.user2)
+        member = self.user1.membership.get(structure=self.my_struct)
+        response = self.client.get(f"/structure-members/{member.id}/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_super_user_can_see_structure_member(self):
+        self.client.force_authenticate(user=self.superuser)
+        member = self.user1.membership.get(structure=self.my_struct)
+        response = self.client.get(f"/structure-members/{member.id}/")
+        self.assertEqual(response.status_code, 200)
+
+    # Edition
+
+    def test_admin_user_can_change_structure_members(self):
+        self.client.force_authenticate(user=self.me)
+        member = self.user1.membership.get(structure=self.my_struct)
+        self.assertTrue(member.is_admin)
+        response = self.client.patch(
+            f"/structure-members/{member.id}/",
+            {"is_admin": False},
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(f"/structure-members/{member.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["is_admin"], False)
+
+    def test_cant_change_email(self):
+        self.client.force_authenticate(user=self.me)
+        member = self.user1.membership.get(structure=self.my_struct)
+        response = self.client.patch(
+            f"/structure-members/{member.id}/",
+            {"user": {"email": "FOO@BAR.BUZ"}},
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(f"/structure-members/{member.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotEqual(response.data["user"]["email"], "FOO@BAR.BUZ")
+
+    def test_cant_change_name(self):
+        self.client.force_authenticate(user=self.me)
+        member = self.user1.membership.get(structure=self.my_struct)
+        response = self.client.patch(
+            f"/structure-members/{member.id}/",
+            {"user": {"name": "FOO"}},
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(f"/structure-members/{member.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotEqual(response.data["user"]["name"], "FOO")
+
+    def test_anonymous_user_cant_change_structure_members(self):
+        member = self.user1.membership.get(structure=self.my_struct)
+        response = self.client.patch(
+            f"/structure-members/{member.id}/",
+            {"is_admin": False, "user": {"name": "FOO", "email": "FOO@BAR.BUZ"}},
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_standard_user_cant_change_structure_members(self):
+        self.client.force_authenticate(user=self.user2)
+        member = self.user1.membership.get(structure=self.my_struct)
+        response = self.client.patch(
+            f"/structure-members/{member.id}/",
+            {"is_admin": False, "user": {"name": "FOO", "email": "FOO@BAR.BUZ"}},
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_standard_user_cant_gain_admin_privilege(self):
+        self.client.force_authenticate(user=self.user2)
+        member = self.user2.membership.get(structure=self.my_struct)
+        self.assertFalse(member.is_admin)
+        response = self.client.patch(
+            f"/structure-members/{member.id}/",
+            {"is_admin": True},
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_super_user_can_change_structure_members(self):
+        self.client.force_authenticate(user=self.superuser)
+        member = self.user1.membership.get(structure=self.my_struct)
+        response = self.client.patch(
+            f"/structure-members/{member.id}/",
+            {"is_admin": False, "user": {"name": "FOO", "email": "FOO@BAR.BUZ"}},
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(f"/structure-members/{member.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["is_admin"], False)
+        self.assertNotEqual(response.data["user"]["name"], "FOO")
+        self.assertNotEqual(response.data["user"]["email"], "FOO@BAR.BUZ")
+
+    # Deletion
+
+    def test_admin_user_can_delete_structure_members(self):
+        self.client.force_authenticate(user=self.me)
+        member = self.user1.membership.get(structure=self.my_struct)
+        response = self.client.delete(
+            f"/structure-members/{member.id}/",
+        )
+        self.assertEqual(response.status_code, 204)
+        response = self.client.get(f"/structure-members/{member.id}/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_anonymous_user_cant_delete_structure_members(self):
+        member = self.user1.membership.get(structure=self.my_struct)
+        response = self.client.delete(
+            f"/structure-members/{member.id}/",
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_standard_user_cant_delete_structure_members(self):
+        self.client.force_authenticate(user=self.user2)
+        member = self.user1.membership.get(structure=self.my_struct)
+        response = self.client.delete(
+            f"/structure-members/{member.id}/",
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_super_user_can_delete_structure_members(self):
+        self.client.force_authenticate(user=self.superuser)
+        member = self.user1.membership.get(structure=self.my_struct)
+        response = self.client.delete(
+            f"/structure-members/{member.id}/",
+        )
+        self.assertEqual(response.status_code, 204)
+        response = self.client.get(f"/structure-members/{member.id}/")
+        self.assertEqual(response.status_code, 404)
+
+    # Creation
+    def test_post_request_without_struct_empty(self):
+        self.client.force_authenticate(user=self.me)
+        response = self.client.post(
+            "/structure-members/", {"user": {"name": "FOO", "email": "FOO@BAR.BUZ"}}
+        )
+        self.assertEquals(response.status_code, 403)
+
+    def test_admin_user_can_invite_new_user(self):
+        self.client.force_authenticate(user=self.me)
+
+        response = self.client.post(
+            f"/structure-members/?structure={self.my_struct.slug}",
+            {"is_admin": False, "user": {"name": "FOO", "email": "FOO@BAR.BUZ"}},
+        )
+        self.assertEqual(response.status_code, 201)
+        member = response.data["id"]
+        response = self.client.get(f"/structure-members/{member}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["is_admin"], False)
+        self.assertEqual(response.data["user"]["name"], "FOO")
+        self.assertEqual(response.data["user"]["email"], "FOO@BAR.BUZ")
+
+    def test_admin_user_cant_force_validation(self):
+        self.client.force_authenticate(user=self.me)
+
+        response = self.client.post(
+            f"/structure-members/?structure={self.my_struct.slug}",
+            {
+                "is_admin": False,
+                "is_valid": True,
+                "user": {"name": "FOO", "email": "FOO@BAR.BUZ"},
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        member = response.data["id"]
+        response = self.client.get(f"/structure-members/{member}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["is_valid"], False)
+
+    def test_admin_user_can_invite_existing_user(self):
+        self.client.force_authenticate(user=self.me)
+
+        response = self.client.post(
+            f"/structure-members/?structure={self.my_struct.slug}",
+            {
+                "is_admin": False,
+                "user": {"name": "FOO", "email": f"{self.another_struct_user.email}"},
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        member = response.data["id"]
+        response = self.client.get(f"/structure-members/{member}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["is_admin"], False)
+        self.assertNotEqual(response.data["user"]["name"], "FOO")
+        self.assertEqual(response.data["user"]["email"], self.another_struct_user.email)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_anonymous_user_cant_invite_structure_members(self):
+        response = self.client.post(
+            f"/structure-members/?structure={self.my_struct.slug}",
+            {
+                "is_admin": False,
+                "user": {"name": "FOO", "email": f"{self.another_struct_user.email}"},
+            },
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_standard_user_cant_invite_structure_members(self):
+        self.client.force_authenticate(user=self.user2)
+        response = self.client.post(
+            f"/structure-members/?structure={self.my_struct.slug}",
+            {
+                "is_admin": False,
+                "user": {"name": "FOO", "email": f"{self.another_struct_user.email}"},
+            },
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_super_user_can_invite_structure_members(self):
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.post(
+            f"/structure-members/?structure={self.my_struct.slug}",
+            {
+                "is_admin": False,
+                "user": {"name": "FOO", "email": f"{self.another_struct_user.email}"},
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        member = response.data["id"]
+        response = self.client.get(f"/structure-members/{member}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["is_admin"], False)
+        self.assertNotEqual(response.data["user"]["name"], "FOO")
+        self.assertEqual(response.data["user"]["email"], self.another_struct_user.email)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_admin_user_can_remove_its_admin_privilege(self):
+        self.client.force_authenticate(user=self.me)
+        member = self.me.membership.get(structure=self.my_struct)
+        self.assertTrue(member.is_admin)
+        response = self.client.patch(
+            f"/structure-members/{member.id}/",
+            {"is_admin": False},
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(f"/structure-members/{member.id}/")
+        self.assertEqual(response.status_code, 404)

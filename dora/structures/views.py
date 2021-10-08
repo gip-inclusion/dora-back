@@ -1,47 +1,30 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.shortcuts import get_object_or_404
-from rest_framework import mixins, permissions, viewsets
-from rest_framework.decorators import api_view, permission_classes
+from django.utils import timezone
+from rest_framework import exceptions, mixins, permissions, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from dora.core.notify import send_mattermost_notification
-from dora.structures.models import Structure, StructureSource, StructureTypology
+from dora.rest_auth.authentication import TokenAuthentication
+from dora.rest_auth.models import Token
+from dora.structures.models import (
+    Structure,
+    StructureMember,
+    StructureSource,
+    StructureTypology,
+)
+from dora.structures.permissions import StructureMemberPermission, StructurePermission
 
 from .serializers import (
+    InviteSerializer,
     SiretClaimedSerializer,
     StructureListSerializer,
+    StructureMemberSerializer,
     StructureSerializer,
 )
-
-
-class StructurePermission(permissions.BasePermission):
-    def has_permission(self, request, view):
-        user = request.user
-
-        # Nobody can delete a structure
-        if request.method == "DELETE":
-            return False
-
-        # Anybody can read
-        if request.method in permissions.SAFE_METHODS:
-            return True
-
-        # Authentified user can read and write
-        return user and user.is_authenticated
-
-    def has_object_permission(self, request, view, obj):
-        user = request.user
-        # Anybody can read
-        if request.method in permissions.SAFE_METHODS:
-            return True
-
-        # Staff can do anything
-        if user.is_staff:
-            return True
-
-        # People can only edit their Structures' stuff
-        user_structures = Structure.objects.filter(membership__user=user)
-        return obj in user_structures
 
 
 class StructureViewSet(
@@ -87,6 +70,91 @@ class StructureViewSet(
 
     def perform_update(self, serializer):
         serializer.save(last_editor=self.request.user)
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="accept-invite",
+        permission_classes=[permissions.AllowAny],
+    )
+    def accept_invite(self, request):
+        serializer = InviteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        key = serializer.validated_data["key"]
+        member_id = serializer.validated_data["member"]
+
+        try:
+            token_user, token = TokenAuthentication().authenticate_credentials(key)
+            token.delete()
+        except exceptions.AuthenticationFailed:
+            raise exceptions.PermissionDenied
+        try:
+            member = StructureMember.objects.get(id=member_id)
+        except StructureMember.DoesNotExist:
+            raise exceptions.PermissionDenied
+
+        if member.user.id != token_user.id:
+            raise exceptions.PermissionDenied
+
+        if not token_user.is_valid:
+            token_user.is_valid = True
+            token_user.save()
+
+        if not member.is_valid:
+            member.is_valid = True
+            member.save()
+
+        must_set_password = not token_user.has_usable_password()
+        if must_set_password:
+            # generate a new short term token for password reset
+            tmp_token = Token.objects.create(
+                user=token_user, expiration=timezone.now() + timedelta(minutes=30)
+            )
+
+        return Response(
+            {
+                "structure_name": member.structure.name,
+                "must_set_password": must_set_password,
+                "token": tmp_token.key if must_set_password else None,
+            },
+            status=200,
+        )
+
+
+class StructureMemberViewset(viewsets.ModelViewSet):
+    serializer_class = StructureMemberSerializer
+    permission_classes = [StructureMemberPermission]
+
+    def get_queryset(self):
+
+        structure_slug = self.request.query_params.get("structure")
+        user = self.request.user
+
+        if self.action in ("list", "create"):
+            if structure_slug is None:
+                return StructureMember.objects.none()
+
+            if user.is_staff:
+                return StructureMember.objects.filter(structure__slug=structure_slug)
+
+            try:
+                StructureMember.objects.get(
+                    user_id=user.id, is_admin=True, structure__slug=structure_slug
+                )
+            except StructureMember.DoesNotExist:
+                raise exceptions.PermissionDenied
+
+            return StructureMember.objects.filter(structure__slug=structure_slug)
+        else:
+            if user.is_staff:
+                return StructureMember.objects.all()
+
+            structures_administered = StructureMember.objects.filter(
+                user_id=user.id, is_admin=True
+            ).values_list("structure_id", flat=True)
+            return StructureMember.objects.filter(
+                structure_id__in=structures_administered
+            )
 
 
 @api_view()

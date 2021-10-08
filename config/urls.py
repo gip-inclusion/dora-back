@@ -16,7 +16,7 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path, register_converter
-from rest_framework.routers import DefaultRouter
+from rest_framework.routers import SimpleRouter
 
 import dora.core.views
 import dora.rest_auth
@@ -26,9 +26,14 @@ import dora.structures.views
 
 from .url_converters import InseeCodeConverter, SiretConverter
 
-router = DefaultRouter()
+router = SimpleRouter()
 router.register(
     r"structures", dora.structures.views.StructureViewSet, basename="structure"
+)
+router.register(
+    r"structure-members",
+    dora.structures.views.StructureMemberViewset,
+    basename="structure-member",
 )
 router.register(r"services", dora.services.views.ServiceViewSet, basename="service")
 
