@@ -1,6 +1,7 @@
 from django.conf import settings
-from django.core.mail import send_mail
 from django.template.loader import render_to_string
+
+from dora.core.emails import send_mail
 
 
 def send_password_reset_email(recipient_email, recipient_name, token):
