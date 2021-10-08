@@ -39,7 +39,9 @@ class User(AbstractBaseUser):
         max_length=255,
         unique=True,
     )
-    name = models.CharField("name", max_length=140, blank=True)
+    last_name = models.CharField("Nom de famille", max_length=140, blank=True)
+    first_name = models.CharField("Prénom", max_length=140, blank=True)
+
     is_active = models.BooleanField(
         "active",
         default=True,
@@ -86,3 +88,12 @@ class User(AbstractBaseUser):
         "Does the user have permissions to view the app `app_label`?"
         # Simplest possible answer: Yes, always
         return True
+
+    def get_full_name(self):
+        if self.first_name or self.last_name:
+            full_name = "%s %s" % (self.first_name, self.last_name)
+            return full_name.strip()
+        return self.email
+
+    def get_short_name(self):
+        return self.first_name or self.last_name or self.email

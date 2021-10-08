@@ -295,18 +295,19 @@ class StructureMemberTestCase(APITestCase):
         member = self.user1.membership.get(structure=self.my_struct)
         response = self.client.patch(
             f"/structure-members/{member.id}/",
-            {"user": {"name": "FOO"}},
+            {"user": {"last_name": "FOO", "first_name": "FIZ"}},
         )
         self.assertEqual(response.status_code, 200)
         response = self.client.get(f"/structure-members/{member.id}/")
         self.assertEqual(response.status_code, 200)
-        self.assertNotEqual(response.data["user"]["name"], "FOO")
+        self.assertNotEqual(response.data["user"]["last_name"], "FOO")
+        self.assertNotEqual(response.data["user"]["first_name"], "FIZ")
 
     def test_anonymous_user_cant_change_structure_members(self):
         member = self.user1.membership.get(structure=self.my_struct)
         response = self.client.patch(
             f"/structure-members/{member.id}/",
-            {"is_admin": False, "user": {"name": "FOO", "email": "FOO@BAR.BUZ"}},
+            {"is_admin": False, "user": {"last_name": "FOO", "email": "FOO@BAR.BUZ"}},
         )
         self.assertEqual(response.status_code, 404)
 
@@ -315,7 +316,7 @@ class StructureMemberTestCase(APITestCase):
         member = self.user1.membership.get(structure=self.my_struct)
         response = self.client.patch(
             f"/structure-members/{member.id}/",
-            {"is_admin": False, "user": {"name": "FOO", "email": "FOO@BAR.BUZ"}},
+            {"is_admin": False, "user": {"last_name": "FOO", "email": "FOO@BAR.BUZ"}},
         )
         self.assertEqual(response.status_code, 404)
 
@@ -334,13 +335,13 @@ class StructureMemberTestCase(APITestCase):
         member = self.user1.membership.get(structure=self.my_struct)
         response = self.client.patch(
             f"/structure-members/{member.id}/",
-            {"is_admin": False, "user": {"name": "FOO", "email": "FOO@BAR.BUZ"}},
+            {"is_admin": False, "user": {"last_name": "FOO", "email": "FOO@BAR.BUZ"}},
         )
         self.assertEqual(response.status_code, 200)
         response = self.client.get(f"/structure-members/{member.id}/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["is_admin"], False)
-        self.assertNotEqual(response.data["user"]["name"], "FOO")
+        self.assertNotEqual(response.data["user"]["last_name"], "FOO")
         self.assertNotEqual(response.data["user"]["email"], "FOO@BAR.BUZ")
 
     # Deletion
@@ -384,7 +385,8 @@ class StructureMemberTestCase(APITestCase):
     def test_post_request_without_struct_empty(self):
         self.client.force_authenticate(user=self.me)
         response = self.client.post(
-            "/structure-members/", {"user": {"name": "FOO", "email": "FOO@BAR.BUZ"}}
+            "/structure-members/",
+            {"user": {"last_name": "FOO", "email": "FOO@BAR.BUZ"}},
         )
         self.assertEquals(response.status_code, 403)
 
@@ -393,14 +395,22 @@ class StructureMemberTestCase(APITestCase):
 
         response = self.client.post(
             f"/structure-members/?structure={self.my_struct.slug}",
-            {"is_admin": False, "user": {"name": "FOO", "email": "FOO@BAR.BUZ"}},
+            {
+                "is_admin": False,
+                "user": {
+                    "last_name": "FOO",
+                    "first_name": "FIZZ",
+                    "email": "FOO@BAR.BUZ",
+                },
+            },
         )
         self.assertEqual(response.status_code, 201)
         member = response.data["id"]
         response = self.client.get(f"/structure-members/{member}/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["is_admin"], False)
-        self.assertEqual(response.data["user"]["name"], "FOO")
+        self.assertEqual(response.data["user"]["first_name"], "FIZZ")
+        self.assertEqual(response.data["user"]["last_name"], "FOO")
         self.assertEqual(response.data["user"]["email"], "FOO@BAR.BUZ")
 
     def test_admin_user_cant_force_validation(self):
@@ -411,7 +421,7 @@ class StructureMemberTestCase(APITestCase):
             {
                 "is_admin": False,
                 "is_valid": True,
-                "user": {"name": "FOO", "email": "FOO@BAR.BUZ"},
+                "user": {"last_name": "FOO", "email": "FOO@BAR.BUZ"},
             },
         )
         self.assertEqual(response.status_code, 201)
@@ -427,7 +437,10 @@ class StructureMemberTestCase(APITestCase):
             f"/structure-members/?structure={self.my_struct.slug}",
             {
                 "is_admin": False,
-                "user": {"name": "FOO", "email": f"{self.another_struct_user.email}"},
+                "user": {
+                    "last_name": "FOO",
+                    "email": f"{self.another_struct_user.email}",
+                },
             },
         )
         self.assertEqual(response.status_code, 201)
@@ -435,7 +448,7 @@ class StructureMemberTestCase(APITestCase):
         response = self.client.get(f"/structure-members/{member}/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["is_admin"], False)
-        self.assertNotEqual(response.data["user"]["name"], "FOO")
+        self.assertNotEqual(response.data["user"]["last_name"], "FOO")
         self.assertEqual(response.data["user"]["email"], self.another_struct_user.email)
         self.assertEqual(len(mail.outbox), 1)
 
@@ -444,7 +457,10 @@ class StructureMemberTestCase(APITestCase):
             f"/structure-members/?structure={self.my_struct.slug}",
             {
                 "is_admin": False,
-                "user": {"name": "FOO", "email": f"{self.another_struct_user.email}"},
+                "user": {
+                    "last_name": "FOO",
+                    "email": f"{self.another_struct_user.email}",
+                },
             },
         )
         self.assertEqual(response.status_code, 401)
@@ -455,7 +471,10 @@ class StructureMemberTestCase(APITestCase):
             f"/structure-members/?structure={self.my_struct.slug}",
             {
                 "is_admin": False,
-                "user": {"name": "FOO", "email": f"{self.another_struct_user.email}"},
+                "user": {
+                    "last_name": "FOO",
+                    "email": f"{self.another_struct_user.email}",
+                },
             },
         )
         self.assertEqual(response.status_code, 403)
@@ -466,7 +485,10 @@ class StructureMemberTestCase(APITestCase):
             f"/structure-members/?structure={self.my_struct.slug}",
             {
                 "is_admin": False,
-                "user": {"name": "FOO", "email": f"{self.another_struct_user.email}"},
+                "user": {
+                    "last_name": "FOO",
+                    "email": f"{self.another_struct_user.email}",
+                },
             },
         )
         self.assertEqual(response.status_code, 201)
@@ -474,7 +496,7 @@ class StructureMemberTestCase(APITestCase):
         response = self.client.get(f"/structure-members/{member}/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["is_admin"], False)
-        self.assertNotEqual(response.data["user"]["name"], "FOO")
+        self.assertNotEqual(response.data["user"]["last_name"], "FOO")
         self.assertEqual(response.data["user"]["email"], self.another_struct_user.email)
         self.assertEqual(len(mail.outbox), 1)
 

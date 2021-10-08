@@ -28,7 +28,7 @@ from dora.users.models import User
 from .emails import send_email_validation_email, send_password_reset_email
 from .serializers import (
     ResendEmailValidationSerializer,
-    ServiceAndUserSerializer,
+    StructureAndUserSerializer,
     UserInfoSerializer,
 )
 
@@ -60,7 +60,7 @@ def password_reset(request):
         tmp_token = Token.objects.create(
             user=user, expiration=timezone.now() + timedelta(minutes=30)
         )
-        send_password_reset_email(email, user.name, tmp_token.key)
+        send_password_reset_email(email, user.get_short_name(), tmp_token.key)
         return Response(status=204)
     except User.DoesNotExist:
         # We don't want to expose the fact that the user doesn't exist
@@ -145,7 +145,7 @@ def resend_validation_email(request):
         tmp_token = Token.objects.create(
             user=user, expiration=timezone.now() + timedelta(minutes=30)
         )
-        send_email_validation_email(email, user.name, tmp_token.key)
+        send_email_validation_email(email, user.get_short_name(), tmp_token.key)
         return Response(status=204)
     except User.DoesNotExist:
         # We don't want to expose the fact that the user doesn't exist
@@ -157,14 +157,19 @@ def resend_validation_email(request):
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 @transaction.atomic
-def register_service_and_user(request):
-    serializer = ServiceAndUserSerializer(data=request.data)
+def register_structure_and_user(request):
+    serializer = StructureAndUserSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
     data = serializer.validated_data
 
     # Create User
-    user = User.objects.create_user(data["email"], data["password"], name=data["name"])
+    user = User.objects.create_user(
+        data["email"],
+        data["password"],
+        first_name=data["first_name"],
+        last_name=data["last_name"],
+    )
 
     # Create Structure
     establishment = data["establishment"]
@@ -191,10 +196,10 @@ def register_service_and_user(request):
     tmp_token = Token.objects.create(
         user=user, expiration=timezone.now() + timedelta(minutes=30)
     )
-    send_email_validation_email(data["email"], user.name, tmp_token.key)
+    send_email_validation_email(data["email"], user.get_short_name(), tmp_token.key)
 
     send_mattermost_notification(
-        f"### [{settings.ENVIRONMENT}] :adult: Nouvel utilisateur “{user.name}” enregistré dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
+        f"### [{settings.ENVIRONMENT}] :adult: Nouvel utilisateur “{user.get_full_name()}” enregistré dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
     )
 
     return Response(status=201)

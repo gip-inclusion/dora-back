@@ -63,14 +63,21 @@ class UserAdmin(BaseUserAdmin):
     # The fields to be used in displaying the User model.
     # These override the definitions on the base UserAdmin
     # that reference specific fields on auth.User.
-    list_display = ("email", "name", "is_staff", "is_active", "is_valid", "date_joined")
+    list_display = (
+        "email",
+        "get_full_name",
+        "is_staff",
+        "is_active",
+        "is_valid",
+        "date_joined",
+    )
     list_filter = (
         "is_staff",
         "is_active",
         "is_valid",
     )
     fieldsets = (
-        (None, {"fields": ("email", "password", "name")}),
+        (None, {"fields": ("email", "password", "last_name", "first_name")}),
         ("Permissions", {"fields": ("is_staff", "is_active", "is_valid")}),
         ("Important dates", {"fields": ("last_login", "date_joined")}),
     )
@@ -85,7 +92,7 @@ class UserAdmin(BaseUserAdmin):
             },
         ),
     )
-    search_fields = ("email", "name")
+    search_fields = ("email", "last_name", "first_name")
     ordering = ("email",)
     filter_horizontal = ()
     inlines = [StructureMemberInline]
