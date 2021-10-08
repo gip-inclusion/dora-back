@@ -1,8 +1,7 @@
 from datetime import timedelta
 
 from django.utils import timezone
-from rest_framework import serializers
-from rest_framework.exceptions import NotFound
+from rest_framework import exceptions, serializers
 
 from dora.rest_auth.models import Token
 from dora.structures.emails import send_invitation_email
@@ -111,7 +110,7 @@ class StructureMemberSerializer(serializers.ModelSerializer):
             try:
                 structure = Structure.objects.get(slug=structure_slug)
             except Structure.DoesNotExist:
-                raise NotFound
+                raise exceptions.NotFound
             data["structure"] = structure
         return data
 
@@ -139,6 +138,13 @@ class StructureMemberSerializer(serializers.ModelSerializer):
             user = User.objects.create(**user_data)
             user.set_unusable_password()
             user.save()
+        try:
+            StructureMember.objects.get(
+                user=user, structure=validated_data["structure"]
+            )
+            raise exceptions.PermissionDenied
+        except StructureMember.DoesNotExist:
+            pass
         member = StructureMember.objects.create(user=user, **validated_data)
         # Send invitation email
         tmp_token = Token.objects.create(

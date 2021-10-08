@@ -452,6 +452,20 @@ class StructureMemberTestCase(APITestCase):
         self.assertEqual(response.data["user"]["email"], self.another_struct_user.email)
         self.assertEqual(len(mail.outbox), 1)
 
+    def test_admin_user_cannot_reinvite_valid_member(self):
+        self.client.force_authenticate(user=self.me)
+        response = self.client.post(
+            f"/structure-members/?structure={self.my_struct.slug}",
+            {
+                "is_admin": False,
+                "user": {
+                    "last_name": "FOO",
+                    "email": f"{self.user2.email}",
+                },
+            },
+        )
+        self.assertEqual(response.status_code, 403)
+
     def test_anonymous_user_cant_invite_structure_members(self):
         response = self.client.post(
             f"/structure-members/?structure={self.my_struct.slug}",
