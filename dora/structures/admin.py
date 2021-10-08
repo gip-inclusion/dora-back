@@ -34,13 +34,20 @@ class StructureAdmin(admin.ModelAdmin):
         "name",
         "slug",
         "department",
+        "typology",
         "city_code",
         "city",
         "modification_date",
         "last_editor",
     ]
-    list_filter = ["source", "department"]
-    search_fields = ("name", "siret", "code_safir_pe", "city", "department")
+    list_filter = ["source", "typology", "department"]
+    search_fields = (
+        "name",
+        "siret",
+        "code_safir_pe",
+        "city",
+        "department",
+    )
     ordering = ["-modification_date", "department"]
     inlines = [StructureMemberInline]
 
