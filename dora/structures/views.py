@@ -85,7 +85,7 @@ class StructureViewSet(
 
         try:
             token_user, token = TokenAuthentication().authenticate_credentials(key)
-            token.delete()
+
         except exceptions.AuthenticationFailed:
             raise exceptions.PermissionDenied
         try:
@@ -107,9 +107,14 @@ class StructureViewSet(
         must_set_password = not token_user.has_usable_password()
         if must_set_password:
             # generate a new short term token for password reset
+            # The invitation token will be deleted as soon as the user sets a password
             tmp_token = Token.objects.create(
                 user=token_user, expiration=timezone.now() + timedelta(minutes=30)
             )
+        else:
+            # The user already exists and hopefully know its password
+            # we can safely delete the invitation token
+            token.delete()
 
         return Response(
             {
