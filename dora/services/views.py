@@ -82,8 +82,6 @@ class ServiceViewSet(
     def get_my_services(self, user):
         if not user or not user.is_authenticated:
             return Service.objects.none()
-        if user.is_staff:
-            return Service.objects.all()
         return Service.objects.filter(structure__membership__user=user)
 
     def get_queryset(self):

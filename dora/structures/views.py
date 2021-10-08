@@ -39,18 +39,19 @@ class StructureViewSet(
     permission_classes = [StructurePermission]
     lookup_field = "slug"
 
+    def get_my_structures(self, user):
+        if not user or not user.is_authenticated:
+            return Structure.objects.none()
+        return Structure.objects.filter(membership__user=user)
+
     def get_queryset(self):
+        user = self.request.user
         only_mine = self.request.query_params.get("mine")
 
         if only_mine:
-            user = self.request.user
-            if user and user.is_authenticated:
-                if user.is_staff:
-                    return Structure.objects.all()
-                return Structure.objects.filter(membership__user=user)
-            else:
-                return Structure.objects.none()
-        return Structure.objects.all()
+            return self.get_my_structures(user)
+        else:
+            return Structure.objects.all()
 
     def get_serializer_class(self):
         if self.action == "list":
