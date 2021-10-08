@@ -49,9 +49,11 @@ class StructureViewSet(
         only_mine = self.request.query_params.get("mine")
 
         if only_mine:
-            return self.get_my_structures(user)
+            return (
+                self.get_my_structures(user).order_by("-modification_date").distinct()
+            )
         else:
-            return Structure.objects.all()
+            return Structure.objects.all().order_by("-modification_date")
 
     def get_serializer_class(self):
         if self.action == "list":

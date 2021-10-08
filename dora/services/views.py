@@ -103,7 +103,7 @@ class ServiceViewSet(
             qs = Service.objects.filter(
                 Q(is_draft=False) | Q(structure__membership__user=user)
             )
-        return qs.order_by("-modification_date")
+        return qs.order_by("-modification_date").distinct()
 
     def get_serializer_class(self):
         if self.action == "list":
