@@ -21,6 +21,18 @@
       "args": ["test"],
       "django": true,
       "justMyCode": false
+    },
+    {
+      "name": "Django Current Test",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": [
+        "test",
+        "dora.structures.tests"
+      ],
+      "django": true,
+      "justMyCode": false
     }
   ]
 }
