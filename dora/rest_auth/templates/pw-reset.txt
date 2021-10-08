@@ -1,4 +1,4 @@
-Bonjour {{recipient_name}} !
+{% autoescape off %}Bonjour {{recipient_name}} !
 
 Vous recevez cet e-mail parce qu'un changement de mot de passe a été demandé sur notre site pour l'identifiant {{recipient_email}}
 
@@ -7,3 +7,4 @@ Si vous êtes à l'origine de cette demande il vous suffit de cliquer sur le lie
 
 --
 (Ceci est un mail automatique, merci de ne pas répondre.)
+{% endautoescape %}
