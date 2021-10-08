@@ -478,6 +478,78 @@ class StructureMemberTestCase(APITestCase):
         self.assertEqual(response.data["user"]["email"], self.another_struct_user.email)
         self.assertEqual(len(mail.outbox), 1)
 
+    def test_admin_can_reinvite_user(self):
+        self.client.force_authenticate(user=self.me)
+        user = baker.make("users.User")
+        self.my_struct.members.add(user)
+        member = user.membership.get(structure=self.my_struct)
+        self.assertFalse(member.is_valid)
+        response = self.client.post(
+            f"/structure-members/{member.id}/resend-invite/",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Votre invitation sur DORA", mail.outbox[0].subject)
+
+    def test_admin_cant_reinvite_valid_user(self):
+        self.client.force_authenticate(user=self.me)
+        user = baker.make("users.User")
+        self.my_struct.members.add(user, through_defaults={"is_valid": True})
+        member = user.membership.get(structure=self.my_struct)
+        response = self.client.post(
+            f"/structure-members/{member.id}/resend-invite/",
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_admin_cant_reinvite_user_to_other_struct(self):
+        self.client.force_authenticate(user=self.me)
+        user = baker.make("users.User")
+        self.other_struct.members.add(user)
+        member = user.membership.get(structure=self.other_struct)
+        self.assertFalse(member.is_valid)
+        response = self.client.post(
+            f"/structure-members/{member.id}/resend-invite/",
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_anonymous_cant_reinvite_user(self):
+        user = baker.make("users.User")
+        self.my_struct.members.add(user)
+        member = user.membership.get(structure=self.my_struct)
+        self.assertFalse(member.is_valid)
+        response = self.client.post(
+            f"/structure-members/{member.id}/resend-invite/",
+        )
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_standard_user_cant_reinvite_user(self):
+        self.client.force_authenticate(user=self.user2)
+        user = baker.make("users.User")
+        self.my_struct.members.add(user)
+        member = user.membership.get(structure=self.my_struct)
+        self.assertFalse(member.is_valid)
+        response = self.client.post(
+            f"/structure-members/{member.id}/resend-invite/",
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_superuser_can_reinvite_user(self):
+        self.client.force_authenticate(user=self.superuser)
+        user = baker.make("users.User")
+        self.my_struct.members.add(user)
+        member = user.membership.get(structure=self.my_struct)
+        self.assertFalse(member.is_valid)
+        response = self.client.post(
+            f"/structure-members/{member.id}/resend-invite/",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Votre invitation sur DORA", mail.outbox[0].subject)
+
     def test_admin_user_can_remove_its_admin_privilege(self):
         self.client.force_authenticate(user=self.me)
         member = self.me.membership.get(structure=self.my_struct)

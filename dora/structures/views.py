@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from dora.core.notify import send_mattermost_notification
 from dora.rest_auth.authentication import TokenAuthentication
 from dora.rest_auth.models import Token
+from dora.structures.emails import send_invitation_email
 from dora.structures.models import (
     Structure,
     StructureMember,
@@ -160,6 +161,42 @@ class StructureMemberViewset(viewsets.ModelViewSet):
             return StructureMember.objects.filter(
                 structure_id__in=structures_administered
             )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="resend-invite",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def resend_invite(self, request, pk):
+        try:
+            member = StructureMember.objects.get(id=pk)
+        except StructureMember.DoesNotExist:
+            raise exceptions.NotFound
+        # Ensure the requester is admin of the structure, or superuser
+        structure = member.structure
+        request_user = request.user
+        if not request_user.is_staff:
+            try:
+                StructureMember.objects.get(
+                    user_id=request_user.id, is_admin=True, structure_id=structure.id
+                )
+            except StructureMember.DoesNotExist:
+                raise exceptions.PermissionDenied
+
+        # Can't reinvite a valid user
+        if member.is_valid:
+            raise exceptions.PermissionDenied
+
+        tmp_token = Token.objects.create(
+            user=member.user, expiration=timezone.now() + timedelta(days=7)
+        )
+        send_invitation_email(
+            member,
+            request_user,
+            tmp_token.key,
+        )
+        return Response(status=201)
 
 
 @api_view()
