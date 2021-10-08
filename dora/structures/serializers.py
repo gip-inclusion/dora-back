@@ -124,6 +124,15 @@ class StructureMemberSerializer(serializers.ModelSerializer):
 
         if "user" in validated_data:
             validated_data.pop("user")
+        if instance.is_admin and validated_data.get("is_admin") is False:
+            request_user = self.context["request"].user
+            if not request_user.is_staff:
+                # Only remove admin status if there's at least another one
+                num_admins = StructureMember.objects.filter(
+                    structure=instance.structure, is_admin=True
+                ).count()
+                if num_admins == 1:
+                    raise exceptions.PermissionDenied
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()

@@ -597,3 +597,30 @@ class StructureMemberTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         response = self.client.get(f"/structure-members/{member.id}/")
         self.assertEqual(response.status_code, 404)
+
+    # Fail safes
+    def test_super_user_can_remove_last_admin(self):
+        self.client.force_authenticate(user=self.superuser)
+        member = self.me.membership.get(structure=self.my_other_struct)
+        self.assertTrue(member.is_admin)
+        response = self.client.patch(
+            f"/structure-members/{member.id}/",
+            {"is_admin": False},
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(f"/structure-members/{member.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["is_admin"], False)
+
+    def test_admin_user_cant_remove_its_admin_privilege_if_last_admin(self):
+        self.client.force_authenticate(user=self.me)
+        member = self.me.membership.get(structure=self.my_other_struct)
+        self.assertTrue(member.is_admin)
+        response = self.client.patch(
+            f"/structure-members/{member.id}/",
+            {"is_admin": False},
+        )
+        self.assertEqual(response.status_code, 403)
+        response = self.client.get(f"/structure-members/{member.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["is_admin"], True)
