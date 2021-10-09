@@ -188,7 +188,7 @@ class StructureMemberViewset(viewsets.ModelViewSet):
                 raise exceptions.PermissionDenied
 
         # Can't reinvite a valid user
-        if member.is_valid:
+        if member.is_valid and member.user.has_usable_password():
             raise exceptions.PermissionDenied
 
         tmp_token = Token.objects.create(

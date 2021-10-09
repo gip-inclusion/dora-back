@@ -538,6 +538,20 @@ class StructureMemberTestCase(APITestCase):
         self.assertEqual(response.status_code, 403)
         self.assertEqual(len(mail.outbox), 0)
 
+    def test_admin_can_reinvite_valid_user_with_no_pw_set(self):
+        self.client.force_authenticate(user=self.me)
+        user = baker.make("users.User")
+        user.set_unusable_password()
+        user.save()
+        self.my_struct.members.add(user, through_defaults={"is_valid": True})
+        member = user.membership.get(structure=self.my_struct)
+        response = self.client.post(
+            f"/structure-members/{member.id}/resend-invite/",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Votre invitation sur DORA", mail.outbox[0].subject)
+
     def test_admin_cant_reinvite_user_to_other_struct(self):
         self.client.force_authenticate(user=self.me)
         user = baker.make("users.User")
