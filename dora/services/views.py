@@ -82,8 +82,6 @@ class ServiceViewSet(
     def get_my_services(self, user):
         if not user or not user.is_authenticated:
             return Service.objects.none()
-        if user.is_staff:
-            return Service.objects.all()
         return Service.objects.filter(structure__membership__user=user)
 
     def get_queryset(self):
@@ -105,7 +103,7 @@ class ServiceViewSet(
             qs = Service.objects.filter(
                 Q(is_draft=False) | Q(structure__membership__user=user)
             )
-        return qs.order_by("-modification_date")
+        return qs.order_by("-modification_date").distinct()
 
     def get_serializer_class(self):
         if self.action == "list":

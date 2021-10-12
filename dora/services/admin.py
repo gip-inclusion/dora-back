@@ -5,7 +5,11 @@ from .models import AccessCondition, ConcernedPublic, Credential, Requirement, S
 
 
 class ServiceAdmin(admin.OSMGeoAdmin):
-
+    search_fields = (
+        "name",
+        "structure__name",
+        "slug",
+    )
     list_display = [
         "name",
         "slug",

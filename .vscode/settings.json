@@ -11,6 +11,9 @@
   "[python]": {
     "editor.tabSize": 4
   },
+  "[html]": {
+    "editor.formatOnSave": false
+  },
   "editor.formatOnSave": true,
   "files.autoSave": "onFocusChange",
   "files.exclude": {

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.admin.filters import RelatedOnlyFieldListFilter
 
 from .models import Structure, StructureMember
 
@@ -11,8 +12,12 @@ class StructureMemberAdmin(admin.ModelAdmin):
         "structure__department",
     )
 
-    list_display = ["user", "structure", "is_admin"]
-    list_filter = ["is_admin"]
+    list_display = ["user", "structure", "is_admin", "is_valid", "creation_date"]
+    list_filter = [
+        "is_admin",
+        "is_valid",
+        ("structure", RelatedOnlyFieldListFilter),
+    ]
 
 
 class StructureMemberInline(admin.TabularInline):
@@ -29,13 +34,20 @@ class StructureAdmin(admin.ModelAdmin):
         "name",
         "slug",
         "department",
+        "typology",
         "city_code",
         "city",
         "modification_date",
         "last_editor",
     ]
-    list_filter = ["source", "department"]
-    search_fields = ("name", "siret", "code_safir_pe", "city", "department")
+    list_filter = ["source", "typology", "department"]
+    search_fields = (
+        "name",
+        "siret",
+        "code_safir_pe",
+        "city",
+        "department",
+    )
     ordering = ["-modification_date", "department"]
     inlines = [StructureMemberInline]
 

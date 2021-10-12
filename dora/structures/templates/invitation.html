@@ -1,0 +1,14 @@
+{% extends "email_cta.html" %}
+
+{% block cta_description %}
+<p>
+  {{ admin_name }} vous a invité(e) à rejoindre la structure
+  {{ structure_name }} sur la plate-forme DORA.
+</p>
+<p>
+  Pour accepter l’invitation, il vous suffit de cliquer sur le bouton
+  ci-dessous, ou de recopier le lien dans votre navigateur.
+</p>
+{% endblock %}
+
+{% block cta_text %}Rejoindre cette structure{% endblock %}

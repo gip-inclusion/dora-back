@@ -37,9 +37,19 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UserInfoSerializer(serializers.ModelSerializer):
+    full_name = serializers.CharField(source="get_full_name", read_only=True)
+    short_name = serializers.CharField(source="get_short_name", read_only=True)
+
     class Meta:
         model = User
-        fields = ["name", "is_staff"]
+        fields = [
+            "last_name",
+            "first_name",
+            "full_name",
+            "short_name",
+            "email",
+            "is_staff",
+        ]
 
 
 class TokenSerializer(serializers.Serializer):
@@ -58,8 +68,9 @@ class ResendEmailValidationSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
 
-class ServiceAndUserSerializer(serializers.Serializer):
-    name = serializers.CharField()
+class StructureAndUserSerializer(serializers.Serializer):
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
     email = serializers.EmailField()
     password = serializers.CharField()
     siret = serializers.CharField()
@@ -72,11 +83,12 @@ class ServiceAndUserSerializer(serializers.Serializer):
             return value
 
     def validate(self, attrs):
-        name = attrs.get("name")
+        first_name = attrs.get("first_name")
+        last_name = attrs.get("last_name")
         email = attrs.get("email")
         password = attrs.get("password")
         siret = attrs.get("siret")
-        tmp_user = User(name=name, email=email)
+        tmp_user = User(first_name=first_name, last_name=last_name, email=email)
 
         try:
             validate_password(password, tmp_user)
