@@ -196,7 +196,7 @@ class StructureMemberViewset(viewsets.ModelViewSet):
         )
         send_invitation_email(
             member,
-            request_user,
+            request_user.get_full_name(),
             tmp_token.key,
         )
         return Response(status=201)

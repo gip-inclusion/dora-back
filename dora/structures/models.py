@@ -61,6 +61,7 @@ class StructureSource(models.TextChoices):
     ITOU = "ITOU", "Import ITOU"
     STRUCT_STAFF = "PORTEUR", "Porteur"
     PE_API = "PE", "API Référentiel Agence PE"
+    BATCH_INVITE = "BI", "Invitations en masse"
 
 
 class StructureTypology(models.TextChoices):
@@ -214,6 +215,8 @@ class Structure(models.Model):
 
     members = models.ManyToManyField(User, through=StructureMember)
 
+    is_antenna = models.BooleanField(default=False, db_index=True)
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True)
     objects = StructureManager()
 
     # TODO: opening_hours, edit history, moderation

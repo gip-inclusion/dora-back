@@ -1,8 +1,14 @@
+import csv
+import tempfile
+from io import StringIO
+
 from django.core import mail
+from django.core.management import call_command
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
-from dora.structures.models import Structure, StructureSource
+from dora.structures.models import Structure, StructureMember, StructureSource
+from dora.users.models import User
 
 DUMMY_STRUCTURE = {
     "siret": "12345678901234",
@@ -638,3 +644,334 @@ class StructureMemberTestCase(APITestCase):
         response = self.client.get(f"/structure-members/{member.id}/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["is_admin"], True)
+
+
+class MassInviteTestCase(APITestCase):
+    def setUp(self):
+        self.tmp_file = tempfile.NamedTemporaryFile(mode="w", newline="")
+        self.csv_writer = self.create_csv(self.tmp_file)
+        self.inviter_name = "Mr. Inviter"
+
+    def create_csv(self, file):
+        writer = csv.writer(file, delimiter=",")
+        writer.writerow(
+            ["lastname", "firstname", "email", "siret", "code_insee", "admin"]
+        )
+        return writer
+
+    def create_structure(self, **kwargs):
+        return baker.make("Structure", **kwargs)
+
+    def add_row(self, row):
+        self.csv_writer.writerow(row)
+
+    def call_command(self):
+        self.tmp_file.seek(0)
+        out = StringIO()
+        err = StringIO()
+        call_command(
+            "mass_invite", self.tmp_file.name, self.inviter_name, stdout=out, stderr=err
+        )
+        self.tmp_file.seek(0)
+        return out.getvalue(), err.getvalue()
+
+    ########
+
+    def test_wrong_siret_wont_create_anything(self):
+        self.add_row(["foo", "buzz", "foo@buzz.com", "12345678901234", "", "FALSE"])
+        out, err = self.call_command()
+        self.assertIn("Structure 12345678901234 doesn't exist", err)
+        self.assertFalse(Structure.objects.filter(siret="12345").exists())
+        self.assertFalse(User.objects.filter(email="foo@buzz.com").exists())
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_invalid_siret_wont_create_anything(self):
+        self.add_row(["foo", "buzz", "foo@buzz.com", "12345", "", "FALSE"])
+        out, err = self.call_command()
+        self.assertIn("siret", err)
+        self.assertIn(
+            "Assurez-vous que ce champ comporte au moins 14\\xa0caractères.", err
+        )
+        self.assertFalse(Structure.objects.filter(siret="12345").exists())
+        self.assertFalse(User.objects.filter(email="foo@buzz.com").exists())
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_wrong_city_code_wont_create_anything(self):
+        structure = self.create_structure()
+        self.add_row(["foo", "buzz", "foo@buzz.com", structure.siret, "00000", "FALSE"])
+        out, err = self.call_command()
+        self.assertIn("Invalid insee code 00000", err)
+        self.assertFalse(User.objects.filter(email="foo@buzz.com").exists())
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_can_invite_new_user(self):
+        structure = self.create_structure()
+        self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
+        out, err = self.call_command()
+        user = User.objects.filter(email="foo@buzz.com").first()
+        self.assertIsNotNone(user)
+        self.assertEqual(user.get_full_name(), "Buzz Foo")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, "[DORA] Votre invitation sur DORA")
+        self.assertIn(
+            "Buzz",
+            mail.outbox[0].body,
+        )
+        self.assertIn(
+            f"{ self.inviter_name } vous a invité(e) à rejoindre la structure { structure.name }",
+            mail.outbox[0].body,
+        )
+
+    def test_idempotent(self):
+        structure = self.create_structure()
+        self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
+        out1, err1 = self.call_command()
+        out2, err2 = self.call_command()
+        self.assertIn("Member foo@buzz.com already exists", out2)
+        self.assertEquals(Structure.objects.filter(siret=structure.siret).count(), 1)
+        self.assertEquals(User.objects.filter(email="foo@buzz.com").count(), 1)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_can_invite_as_non_admin(self):
+        structure = self.create_structure()
+        self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
+        out, err = self.call_command()
+        member = StructureMember.objects.get(
+            user__email="foo@buzz.com", structure=structure
+        )
+        self.assertIsNotNone(member)
+        self.assertFalse(member.is_admin)
+
+    def test_can_invite_as_admin(self):
+        structure = self.create_structure()
+        self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "TRUE"])
+        out, err = self.call_command()
+        member = StructureMember.objects.get(
+            user__email="foo@buzz.com", structure=structure
+        )
+        self.assertIsNotNone(member)
+        self.assertTrue(member.is_admin)
+
+    def test_admin_is_TRUE_or_FALSE(self):
+        structure = self.create_structure()
+        self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "XXX"])
+        out, err = self.call_command()
+        self.assertIn("is_admin", err)
+        self.assertIn("«\\xa0XXX\\xa0» n'est pas un choix valide.", err)
+        self.assertEquals(User.objects.filter(email="foo@buzz.com").count(), 0)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_email_is_valid(self):
+        structure = self.create_structure()
+        self.add_row(["Foo", "Buzz", "foo.buzz.com", structure.siret, "", "FALSE"])
+        out, err = self.call_command()
+        self.assertIn("email", err)
+        self.assertIn("Saisissez une adresse e-mail valide.", err)
+        self.assertEquals(User.objects.filter(email="foo.buzz.com").count(), 0)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_firstname_is_valid(self):
+        structure = self.create_structure()
+        self.add_row(["Foo", "", "foo@buzz.com", structure.siret, "", "FALSE"])
+        out, err = self.call_command()
+        self.assertIn("first_name", err)
+        self.assertIn("Ce champ ne peut être vide.", err)
+        self.assertEquals(User.objects.filter(email="foo@buzz.com").count(), 0)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_lastname_is_valid(self):
+        structure = self.create_structure()
+        self.add_row(["", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
+        out, err = self.call_command()
+        self.assertIn("last_name", err)
+        self.assertIn("Ce champ ne peut être vide.", err)
+        self.assertEquals(User.objects.filter(email="foo@buzz.com").count(), 0)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_invitee_not_a_valid_user_yet(self):
+        structure = self.create_structure()
+        self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
+        out, err = self.call_command()
+        user = User.objects.filter(email="foo@buzz.com").first()
+        self.assertFalse(user.is_valid)
+
+    def test_invitee_not_a_valid_member_yet(self):
+        structure = self.create_structure()
+        self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
+        out, err = self.call_command()
+        member = StructureMember.objects.get(
+            user__email="foo@buzz.com", structure=structure
+        )
+        self.assertFalse(member.is_valid)
+
+    def test_can_invite_existing_user(self):
+        structure = self.create_structure()
+        user = baker.make(
+            "users.User", first_name="foo", last_name="bar", is_valid=True
+        )
+        self.add_row(
+            [user.last_name, user.first_name, user.email, structure.siret, "", "FALSE"]
+        )
+        out, err = self.call_command()
+        self.assertEqual(User.objects.filter(email=user.email).count(), 1)
+        fresh_user = User.objects.filter(email=user.email).first()
+        self.assertEqual(fresh_user.get_full_name(), user.get_full_name())
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, "[DORA] Votre invitation sur DORA")
+        self.assertIn(
+            fresh_user.get_short_name(),
+            mail.outbox[0].body,
+        )
+        self.assertEqual(
+            StructureMember.objects.filter(user=user, structure=structure).count(), 1
+        )
+
+    def test_wont_rename_existing_user(self):
+        structure = self.create_structure()
+        user = baker.make("users.User", is_valid=True)
+        self.add_row(
+            ["NEWNAME", "NEWFIRSTNAME", user.email, structure.siret, "", "FALSE"]
+        )
+        out, err = self.call_command()
+        fresh_user = User.objects.filter(email=user.email).first()
+        self.assertEqual(fresh_user.get_full_name(), user.get_full_name())
+
+    def test_existing_user_stay_valid_user(self):
+        structure = self.create_structure()
+        user = baker.make(
+            "users.User", first_name="foo", last_name="bar", is_valid=True
+        )
+        self.add_row(
+            [user.last_name, user.first_name, user.email, structure.siret, "", "FALSE"]
+        )
+        out, err = self.call_command()
+        fresh_user = User.objects.filter(email=user.email).first()
+        self.assertTrue(fresh_user.is_valid)
+
+    def test_existing_user_stay_valid_member(self):
+        structure = self.create_structure()
+        user = baker.make(
+            "users.User", first_name="foo", last_name="bar", is_valid=True
+        )
+        StructureMember.objects.create(structure=structure, user=user, is_valid=True)
+        self.add_row(
+            [user.last_name, user.first_name, user.email, structure.siret, "", "FALSE"]
+        )
+        out, err = self.call_command()
+        fresh_member = StructureMember.objects.get(user=user, structure=structure)
+        self.assertTrue(fresh_member.is_valid)
+        self.assertFalse(fresh_member.is_admin)
+
+    def test_member_can_be_promoted_to_admin(self):
+        structure = self.create_structure()
+        user = baker.make(
+            "users.User", first_name="foo", last_name="bar", is_valid=True
+        )
+        StructureMember.objects.create(
+            structure=structure, user=user, is_valid=True, is_admin=False
+        )
+        self.add_row(
+            [user.last_name, user.first_name, user.email, structure.siret, "", "TRUE"]
+        )
+        out, err = self.call_command()
+        fresh_member = StructureMember.objects.get(user=user, structure=structure)
+        self.assertTrue(fresh_member.is_admin)
+
+    def test_member_cant_be_demoted_from_admin(self):
+        structure = self.create_structure()
+        user = baker.make(
+            "users.User", first_name="foo", last_name="bar", is_valid=True
+        )
+        StructureMember.objects.create(
+            structure=structure, user=user, is_valid=True, is_admin=True
+        )
+        self.add_row(
+            [user.last_name, user.first_name, user.email, structure.siret, "", "FALSE"]
+        )
+        out, err = self.call_command()
+        fresh_member = StructureMember.objects.get(user=user, structure=structure)
+        self.assertTrue(fresh_member.is_admin)
+
+    def test_create_new_antenna_on_the_fly(self):
+        structure = self.create_structure(name="My Structure")
+        city = baker.make("City", code="93048", name="Montreuil")
+        self.add_row(
+            ["Foo", "Buzz", "foo@buzz.com", structure.siret, city.code, "FALSE"]
+        )
+        out, err = self.call_command()
+        antennas = Structure.objects.filter(parent=structure)
+        self.assertEqual(antennas.count(), 1)
+        antenna = antennas[0]
+        self.assertEqual(antenna.name, "My Structure – Montreuil")
+        self.assertEqual(antenna.ape, structure.ape)
+        self.assertEqual(antenna.siret, f"{structure.siret[:9]}{city.code}")
+        self.assertEqual(antenna.city, city.name)
+        self.assertEqual(antenna.typology, structure.typology)
+        self.assertEqual(antenna.short_desc, structure.short_desc)
+        self.assertEqual(antenna.full_desc, structure.full_desc)
+        self.assertEqual(antenna.creator, User.objects.get_dora_bot())
+        self.assertEqual(antenna.source, StructureSource.BATCH_INVITE)
+        self.assertEqual(antenna.parent, structure)
+        self.assertTrue(antenna.is_antenna)
+
+        user = User.objects.filter(email="foo@buzz.com").first()
+        self.assertIsNotNone(user)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_user_belong_to_antenna(self):
+        structure = self.create_structure(name="My Structure")
+        city = baker.make("City", code="93048", name="Montreuil")
+        self.add_row(
+            ["Foo", "Buzz", "foo@buzz.com", structure.siret, city.code, "FALSE"]
+        )
+        out, err = self.call_command()
+        antenna = Structure.objects.filter(parent=structure).first()
+        self.assertEqual(
+            StructureMember.objects.filter(
+                structure=antenna, user__email="foo@buzz.com"
+            ).count(),
+            1,
+        )
+        self.assertIn(
+            f"{ self.inviter_name } vous a invité(e) à rejoindre la structure { antenna.name }",
+            mail.outbox[0].body,
+        )
+
+    def test_user_dont_belong_to_parent(self):
+        structure = self.create_structure(name="My Structure")
+        city = baker.make("City", code="93048", name="Montreuil")
+        self.add_row(
+            ["Foo", "Buzz", "foo@buzz.com", structure.siret, city.code, "FALSE"]
+        )
+        out, err = self.call_command()
+        self.assertEqual(
+            StructureMember.objects.filter(
+                structure=structure, user__email="foo@buzz.com"
+            ).count(),
+            0,
+        )
+
+    def test_find_existing_antenna(self):
+        structure = self.create_structure(name="My Structure", siret="12345678901234")
+        antenna = baker.make(
+            "Structure", siret="12345678993048", is_antenna=True, parent=structure
+        )
+        city = baker.make("City", code="93048", name="Montreuil")
+        self.add_row(
+            ["Foo", "Buzz", "foo@buzz.com", structure.siret, city.code, "FALSE"]
+        )
+        out, err = self.call_command()
+        antennas = Structure.objects.filter(parent=structure)
+        self.assertEqual(antennas.count(), 1)
+        antenna = antennas[0]
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            StructureMember.objects.filter(
+                structure=antenna, user__email="foo@buzz.com"
+            ).count(),
+            1,
+        )
+        self.assertIn(
+            f"{ self.inviter_name } vous a invité(e) à rejoindre la structure { antenna.name }",
+            mail.outbox[0].body,
+        )
