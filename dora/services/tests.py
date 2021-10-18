@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
@@ -169,6 +172,7 @@ class ServiceTestCase(APITestCase):
         )
         response = self.client.get("/services/last-draft/")
         self.assertEqual(response.data["slug"], draft_service.slug)
+        draft_service = Service.objects.get(pk=draft_service.pk)
         draft_service.structure = baker.make("Structure")
         draft_service.save()
         response = self.client.get("/services/last-draft/")
@@ -477,3 +481,31 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.data["contact_name"], "FOO")
         self.assertEqual(response.data["contact_phone"], "1234")
         self.assertEqual(response.data["contact_email"], "foo@bar.buz")
+
+    # Modifications
+    def test_is_draft_by_default(self):
+        service = baker.make(
+            "Service",
+        )
+        self.assertTrue(service.is_draft)
+
+    def test_publishing_updates_publication_date(self):
+        service = baker.make("Service", is_draft=True, structure=self.my_struct)
+        self.assertIsNone(service.publication_date)
+        response = self.client.patch(f"/services/{service.slug}/", {"is_draft": False})
+        self.assertEqual(response.status_code, 200)
+        service.refresh_from_db()
+        self.assertFalse(service.is_draft)
+        self.assertIsNotNone(service.publication_date)
+        self.assertTrue(
+            timezone.now() - service.publication_date < timedelta(seconds=1)
+        )
+
+    def test_updating_without_publishing_doesnt_update_publication_date(self):
+        service = baker.make("Service", is_draft=True, structure=self.my_struct)
+        self.assertIsNone(service.publication_date)
+        response = self.client.patch(f"/services/{service.slug}/", {"name": "xxx"})
+        self.assertEqual(response.status_code, 200)
+        service.refresh_from_db()
+        self.assertTrue(service.is_draft)
+        self.assertIsNone(service.publication_date)
