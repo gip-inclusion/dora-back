@@ -686,11 +686,11 @@ class MassInviteTestCase(APITestCase):
         self.assertEqual(len(mail.outbox), 0)
 
     def test_invalid_siret_wont_create_anything(self):
-        self.add_row(["foo", "buzz", "foo@buzz.com", "12345", "", "FALSE"])
+        self.add_row(["foo", "buzz", "foo@buzz.com", "1234", "", "FALSE"])
         out, err = self.call_command()
-        self.assertIn("siret", err)
+        self.assertIn("code_structure", err)
         self.assertIn(
-            "Assurez-vous que ce champ comporte au moins 14\\xa0caractères.", err
+            "Assurez-vous que ce champ comporte au moins 5\\xa0caractères.", err
         )
         self.assertFalse(Structure.objects.filter(siret="12345").exists())
         self.assertFalse(User.objects.filter(email="foo@buzz.com").exists())
@@ -707,6 +707,26 @@ class MassInviteTestCase(APITestCase):
     def test_can_invite_new_user(self):
         structure = self.create_structure()
         self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
+        out, err = self.call_command()
+        user = User.objects.filter(email="foo@buzz.com").first()
+        self.assertIsNotNone(user)
+        self.assertEqual(user.get_full_name(), "Buzz Foo")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, "[DORA] Votre invitation sur DORA")
+        self.assertIn(
+            "Buzz",
+            mail.outbox[0].body,
+        )
+        self.assertIn(
+            f"{ self.inviter_name } vous a invité(e) à rejoindre la structure { structure.name }",
+            mail.outbox[0].body,
+        )
+
+    def test_can_invite_new_user_with_safir(self):
+        structure = self.create_structure(code_safir_pe="98765")
+        self.add_row(
+            ["Foo", "Buzz", "foo@buzz.com", structure.code_safir_pe, "", "FALSE"]
+        )
         out, err = self.call_command()
         user = User.objects.filter(email="foo@buzz.com").first()
         self.assertIsNotNone(user)

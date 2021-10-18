@@ -14,7 +14,7 @@ from dora.users.models import User
 
 
 class InviteSerializer(serializers.Serializer):
-    siret = serializers.CharField(min_length=14, max_length=14)
+    code_structure = serializers.CharField(min_length=5, max_length=14)
     insee_code = serializers.CharField(max_length=5, allow_blank=True)
     first_name = serializers.CharField()
     last_name = serializers.CharField()
@@ -22,11 +22,16 @@ class InviteSerializer(serializers.Serializer):
     is_admin = serializers.ChoiceField(choices=("TRUE", "FALSE"))
 
     def validate(self, data):
-        siret = data["siret"]
+        code_structure = data["code_structure"]
         try:
-            structure = Structure.objects.get(siret=siret)
+            structure = Structure.objects.get(siret=code_structure)
         except Structure.DoesNotExist:
-            raise serializers.ValidationError(f"Structure {siret} doesn't exist")
+            try:
+                structure = Structure.objects.get(code_safir_pe=code_structure)
+            except Structure.DoesNotExist:
+                raise serializers.ValidationError(
+                    f"Structure {code_structure} doesn't exist"
+                )
         data["structure"] = structure
 
         city_code = data["insee_code"]
@@ -61,7 +66,7 @@ class Command(BaseCommand):
             for i, row in enumerate(invites):
                 f = InviteSerializer(
                     data={
-                        "siret": row[3],
+                        "code_structure": row[3],
                         "insee_code": row[4],
                         "last_name": row[0][:140],
                         "first_name": row[1][:140],
