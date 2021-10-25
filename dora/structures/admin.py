@@ -6,7 +6,8 @@ from .models import Structure, StructureMember
 
 class StructureMemberAdmin(admin.ModelAdmin):
     search_fields = (
-        "user__name",
+        "user__first_name",
+        "user__last_name",
         "user__email",
         "structure__name",
         "structure__department",
