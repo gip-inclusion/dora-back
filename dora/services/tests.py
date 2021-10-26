@@ -6,7 +6,7 @@ from rest_framework.test import APITestCase
 
 from dora.structures.models import Structure
 
-from .models import AccessCondition, Service
+from .models import AccessCondition, Service, ServiceModificationHistoryItem
 
 DUMMY_SERVICE = {"name": "Mon service"}
 
@@ -509,3 +509,37 @@ class ServiceTestCase(APITestCase):
         service.refresh_from_db()
         self.assertTrue(service.is_draft)
         self.assertIsNone(service.publication_date)
+
+    # History logging
+    def test_editing_log_change(self):
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
+        response = self.client.patch(
+            f"/services/{self.my_service.slug}/", {"name": "xxx"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(ServiceModificationHistoryItem.objects.exists())
+        hitem = ServiceModificationHistoryItem.objects.all()[0]
+        self.assertEqual(hitem.user, self.me)
+        self.assertEqual(hitem.service, self.my_service)
+        self.assertEqual(hitem.fields, ["name"])
+        self.assertTrue(timezone.now() - hitem.date < timedelta(seconds=1))
+
+    def test_editing_log_multiple_change(self):
+        self.client.patch(
+            f"/services/{self.my_service.slug}/", {"name": "xxx", "address1": "yyy"}
+        )
+        hitem = ServiceModificationHistoryItem.objects.all()[0]
+        self.assertEqual(hitem.fields, ["name", "address1"])
+
+    def test_editing_log_m2m_change(self):
+        response = self.client.patch(
+            f"/services/{self.my_service.slug}/", {"access_conditions": ["xxx"]}
+        )
+        self.assertEqual(response.status_code, 200)
+        hitem = ServiceModificationHistoryItem.objects.all()[0]
+        self.assertEqual(
+            hitem.fields,
+            [
+                "access_conditions",
+            ],
+        )

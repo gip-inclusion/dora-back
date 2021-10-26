@@ -1,7 +1,23 @@
 from django.contrib.admin import RelatedOnlyFieldListFilter
 from django.contrib.gis import admin
 
-from .models import AccessCondition, ConcernedPublic, Credential, Requirement, Service
+from .models import (
+    AccessCondition,
+    ConcernedPublic,
+    Credential,
+    Requirement,
+    Service,
+    ServiceModificationHistoryItem,
+)
+
+
+class ServiceModificationHistoryItemInline(admin.TabularInline):
+    model = ServiceModificationHistoryItem
+    readonly_fields = ["user", "date", "fields"]
+    extra = 0
+
+    def has_add_permission(self, request, obj):
+        return False
 
 
 class ServiceAdmin(admin.OSMGeoAdmin):
@@ -23,6 +39,7 @@ class ServiceAdmin(admin.OSMGeoAdmin):
     list_filter = [
         ("structure", RelatedOnlyFieldListFilter),
     ]
+    inlines = [ServiceModificationHistoryItemInline]
     ordering = ["-modification_date"]
     save_as = True
 

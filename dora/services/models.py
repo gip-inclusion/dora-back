@@ -325,9 +325,7 @@ class Service(models.Model):
             original_is_draft = self._original["is_draft"]
             if original_is_draft is True and self.is_draft is False:
                 self.publication_date = timezone.now()
-        # else:
-        #     if self.is_draft is False and not self.publication_date:
-        #         self.publication_date = timezone.now()
+
         return super().save(*args, **kwargs)
 
     def can_write(self, user):
@@ -337,3 +335,22 @@ class Service(models.Model):
                 structure_id=self.structure_id, user_id=user.id
             ).exists()
         )
+
+
+class ServiceModificationHistoryItem(models.Model):
+    service = models.ForeignKey(Service, on_delete=models.CASCADE)
+    date = models.DateTimeField(auto_now=True, db_index=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
+    fields = ArrayField(
+        models.CharField(
+            max_length=50,
+        ),
+    )
+
+    class Meta:
+        ordering = ["-date"]
