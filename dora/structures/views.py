@@ -69,7 +69,7 @@ class StructureViewSet(
         )
         structure = serializer.save(creator=user, last_editor=user, source=source)
         send_mattermost_notification(
-            f"### [{settings.ENVIRONMENT}] :office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
+            f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
         )
 
     def perform_update(self, serializer):

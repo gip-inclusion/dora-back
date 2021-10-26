@@ -137,7 +137,7 @@ class ServiceViewSet(
         structure = service.structure
         draft = "(brouillon) " if service.is_draft else ""
         send_mattermost_notification(
-            f"[{settings.ENVIRONMENT}] :tada: Nouveau service {draft} “{service.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/services/{service.slug}"
+            f":tada: Nouveau service {draft} “{service.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/services/{service.slug}"
         )
 
     def perform_update(self, serializer):
@@ -261,26 +261,14 @@ def search(request):
     if subcategory:
         results = results.filter(subcategories__contains=[subcategory])
 
-    # city_label = ""
     if city_code:
         city = get_object_or_404(City, pk=city_code)
-        # city_label = f"{city.name} ({city.code})"
         results = (
             results.filter(geom__isnull=False)
             .annotate(distance=Distance("geom", city.geom))
             .filter(distance__lt=D(km=radius))
             .order_by("distance")
         )
-
-    # cat_label = ServiceCategories(category).label if category else ""
-    # subcat_label = ServiceSubCategories(subcategory).label if subcategory else ""
-    # results_count = results.count()
-
-    # if cat_label:
-    #     # Only log real searches, as the monitoring service uses this url too for the moment
-    #     send_mattermost_notification(
-    #         f"[{settings.ENVIRONMENT}] :mag_right: Nouvelle recherche {cat_label} / { subcat_label} / {city_label} avec un rayon de {radius} km.\n{results_count} resultat(s)\n{settings.FRONTEND_URL}/recherche/?cat={category}&sub={subcategory}&city={city_code}&cl={city_label}"
-    #     )
 
     return Response(
         DistanceServiceSerializer(results, many=True, context={"request": request}).data
