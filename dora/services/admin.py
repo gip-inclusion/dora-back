@@ -15,7 +15,9 @@ class ServiceAdmin(admin.OSMGeoAdmin):
         "slug",
         "structure",
         "category",
+        "creation_date",
         "modification_date",
+        "publication_date",
         "last_editor",
     ]
     list_filter = [
