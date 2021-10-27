@@ -543,3 +543,19 @@ class ServiceTestCase(APITestCase):
                 "access_conditions",
             ],
         )
+
+    def test_creating_draft_doesnt_log_changes(self):
+        DUMMY_SERVICE["structure"] = self.my_struct.slug
+        response = self.client.post(
+            "/services/",
+            DUMMY_SERVICE,
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
+
+    def test_editing_doesnt_log_draft_changes(self):
+        response = self.client.patch(
+            f"/services/{self.my_draft_service.slug}/", {"name": "xxx"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())

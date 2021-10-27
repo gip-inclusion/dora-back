@@ -142,22 +142,23 @@ class ServiceViewSet(
         )
 
     def perform_update(self, serializer):
-        changed_fields = []
-        for key, value in serializer.validated_data.items():
-            original_value = getattr(serializer.instance, key)
-            if type(original_value).__name__ == "ManyRelatedManager":
-                original_value = set(original_value.all())
-                has_changed = set(value) != original_value
-            else:
-                has_changed = value != original_value
-            if has_changed:
-                changed_fields.append(key)
-        if changed_fields:
-            ServiceModificationHistoryItem.objects.create(
-                service=serializer.instance,
-                user=self.request.user,
-                fields=changed_fields,
-            )
+        if not serializer.instance.is_draft:
+            changed_fields = []
+            for key, value in serializer.validated_data.items():
+                original_value = getattr(serializer.instance, key)
+                if type(original_value).__name__ == "ManyRelatedManager":
+                    original_value = set(original_value.all())
+                    has_changed = set(value) != original_value
+                else:
+                    has_changed = value != original_value
+                if has_changed:
+                    changed_fields.append(key)
+            if changed_fields:
+                ServiceModificationHistoryItem.objects.create(
+                    service=serializer.instance,
+                    user=self.request.user,
+                    fields=changed_fields,
+                )
         serializer.save(last_editor=self.request.user)
 
 
