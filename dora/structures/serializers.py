@@ -148,6 +148,7 @@ class StructureMemberSerializer(serializers.ModelSerializer):
         try:
             user = User.objects.get(email=user_data["email"])
         except User.DoesNotExist:
+            # TODO: use create_user instead
             user = User.objects.create(**user_data)
             user.set_unusable_password()
             user.save()
@@ -165,7 +166,7 @@ class StructureMemberSerializer(serializers.ModelSerializer):
         )
         send_invitation_email(
             member,
-            request_user,
+            request_user.get_full_name(),
             tmp_token.key,
         )
         return member

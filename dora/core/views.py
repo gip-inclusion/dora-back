@@ -7,6 +7,7 @@ from rest_framework.decorators import api_view, parser_classes, permission_class
 from rest_framework.parsers import FileUploadParser
 from rest_framework.response import Response
 
+from dora.services.models import Service
 from dora.structures.models import Structure
 
 
@@ -22,6 +23,15 @@ def upload(request, filename, structure_slug):
     )
     result = default_storage.save(clean_filename, file_obj)
     return Response({"key": result}, status=201)
+
+
+@api_view()
+@permission_classes([permissions.AllowAny])
+def ping(request):
+    check_services = Service.objects.exists()
+    if check_services:
+        return Response("ok", status=200)
+    return Response("ko", status=500)
 
 
 def trigger_error(request):

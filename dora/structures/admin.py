@@ -6,13 +6,20 @@ from .models import Structure, StructureMember
 
 class StructureMemberAdmin(admin.ModelAdmin):
     search_fields = (
-        "user__name",
+        "user__first_name",
+        "user__last_name",
         "user__email",
         "structure__name",
         "structure__department",
     )
 
-    list_display = ["user", "structure", "is_admin", "is_valid", "creation_date"]
+    list_display = [
+        "user",
+        "structure",
+        "is_admin",
+        "is_valid",
+        "creation_date",
+    ]
     list_filter = [
         "is_admin",
         "is_valid",
@@ -40,7 +47,12 @@ class StructureAdmin(admin.ModelAdmin):
         "modification_date",
         "last_editor",
     ]
-    list_filter = ["source", "typology", "department"]
+    list_filter = [
+        "source",
+        "typology",
+        "department",
+        "is_antenna",
+    ]
     search_fields = (
         "name",
         "siret",

@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.db.models.fields import CharField
+from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
@@ -295,6 +296,7 @@ class Service(models.Model):
 
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now=True)
+    publication_date = models.DateTimeField(blank=True, null=True)
 
     creator = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True
@@ -310,9 +312,20 @@ class Service(models.Model):
     def __str__(self):
         return self.name
 
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        instance = super().from_db(db, field_names, values)
+        instance._original = dict(zip(field_names, values))
+        return instance
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = make_unique_slug(self, self.structure.slug, self.name)
+        if not self._state.adding:
+            original_is_draft = self._original["is_draft"]
+            if original_is_draft is True and self.is_draft is False:
+                self.publication_date = timezone.now()
+
         return super().save(*args, **kwargs)
 
     def can_write(self, user):
@@ -322,3 +335,22 @@ class Service(models.Model):
                 structure_id=self.structure_id, user_id=user.id
             ).exists()
         )
+
+
+class ServiceModificationHistoryItem(models.Model):
+    service = models.ForeignKey(Service, on_delete=models.CASCADE)
+    date = models.DateTimeField(auto_now=True, db_index=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
+    fields = ArrayField(
+        models.CharField(
+            max_length=50,
+        ),
+    )
+
+    class Meta:
+        ordering = ["-date"]
