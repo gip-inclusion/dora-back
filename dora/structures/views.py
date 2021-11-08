@@ -71,6 +71,9 @@ class StructureViewSet(
         send_mattermost_notification(
             f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
         )
+        StructureMember.objects.create(
+            user=user, structure=structure, is_admin=True, is_valid=True
+        )
 
     def perform_update(self, serializer):
         serializer.save(last_editor=self.request.user)

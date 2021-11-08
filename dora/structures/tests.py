@@ -202,6 +202,29 @@ class StructureMemberTestCase(APITestCase):
             self.another_struct_user, through_defaults={"is_admin": True}
         )
 
+    # Structure creation
+    def test_register_new_user_and_struct_creates_member(self):
+        self.assertTrue(False, "TODO")
+        # register-structure-and-user/
+        # test that first (non staff?) member becomes admin
+
+    def test_create_struct_creates_member(self):
+        user = baker.make("users.User")
+        self.client.force_authenticate(user=user)
+        member = StructureMember.objects.filter(user=user).first()
+        self.assertIsNone(member)
+        response = self.client.post(
+            "/structures/",
+            DUMMY_STRUCTURE,
+        )
+        self.assertEqual(response.status_code, 201)
+        slug = response.data["slug"]
+        struct = Structure.objects.get(slug=slug)
+        member = StructureMember.objects.filter(user=user).first()
+        self.assertIsNotNone(member)
+        self.assertEqual(member.structure, struct)
+        self.assertTrue(member.is_admin)
+
     # Visibility lists
 
     def test_get_request_without_struct_empty(self):
