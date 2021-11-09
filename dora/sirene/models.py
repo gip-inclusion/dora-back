@@ -8,7 +8,7 @@ class Establishment(models.Model):
     denomination = models.CharField(verbose_name="Nom", max_length=100)
     # https://insee.fr/fr/information/2406147
     ape = models.CharField(max_length=6)
-    code_cedex = models.CharField(max_length=9)
+    code_cedex = models.CharField(max_length=5)
     code_commune = models.CharField(max_length=5, db_index=True)
     code_postal = models.CharField(max_length=5)
     complement_adresse = models.CharField(max_length=38)

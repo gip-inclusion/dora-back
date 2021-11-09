@@ -173,12 +173,10 @@ def register_structure_and_user(request):
 
     # Create Structure
     establishment = data["establishment"]
-    is_new_structure = False
     try:
         structure = Structure.objects.get(siret=establishment.siret)
     except Structure.DoesNotExist:
         structure = Structure.objects.create_from_establishment(establishment)
-        is_new_structure = True
         structure.creator = user
         structure.last_editor = user
         structure.source = StructureSource.STRUCT_STAFF
@@ -186,10 +184,12 @@ def register_structure_and_user(request):
         send_mattermost_notification(
             f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
         )
-
+    has_nonstaff_admin = structure.membership.filter(
+        user__is_staff=False, is_admin=True
+    ).exists()
     # Link them
     StructureMember.objects.create(
-        user=user, structure=structure, is_admin=is_new_structure, is_valid=True
+        user=user, structure=structure, is_admin=not has_nonstaff_admin, is_valid=True
     )
 
     # Send validation link email

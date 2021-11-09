@@ -69,6 +69,8 @@ class CreatablePrimaryKeyRelatedField(PrimaryKeyRelatedField):
 
 
 class StructureSerializer(serializers.ModelSerializer):
+    has_admin = serializers.SerializerMethodField()
+
     class Meta:
         model = Structure
         fields = [
@@ -80,7 +82,12 @@ class StructureSerializer(serializers.ModelSerializer):
             "postal_code",
             "city",
             "url",
+            "siret",
+            "has_admin",
         ]
+
+    def get_has_admin(self, structure):
+        return structure.membership.filter(is_admin=True, user__is_staff=False).exists()
 
 
 class ServiceSerializer(serializers.ModelSerializer):
