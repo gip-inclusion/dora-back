@@ -46,6 +46,7 @@ urlpatterns = [
     path("search/", dora.services.views.search),
     path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
     path("search-safir/", dora.structures.views.search_safir),
+    path("search-siret/", dora.sirene.views.search_siret),
     path("search-all-sirene/", dora.sirene.views.search_all_sirene),
     path("services-options/", dora.services.views.options),
     path("siret-claimed/<siret:siret>/", dora.structures.views.siret_was_claimed),

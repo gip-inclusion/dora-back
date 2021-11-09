@@ -1,6 +1,7 @@
 from django.contrib.postgres.search import TrigramSimilarity
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
 from .models import Establishment
@@ -46,4 +47,21 @@ def search_all_sirene(request):
         EstablishmentSerializer(
             results[:10], many=True, context={"request": request}
         ).data
+    )
+
+
+@api_view()
+@permission_classes([permissions.AllowAny])
+def search_siret(request):
+    siret = request.query_params.get("siret", "")
+    if not siret:
+        return Response("need siret")
+
+    try:
+        establishment = Establishment.objects.get(siret=siret)
+    except Establishment.DoesNotExist:
+        raise NotFound
+
+    return Response(
+        EstablishmentSerializer(establishment, context={"request": request}).data
     )
