@@ -58,8 +58,12 @@ ADMINS = (
     else None
 )
 
-ALLOWED_HOSTS = [os.environ["DJANGO_ALLOWED_HOSTS"]]
-
+ALLOWED_HOSTS = (
+    os.environ["DJANGO_ALLOWED_HOSTS"].split(",")
+    if os.environ.get("DJANGO_ALLOWED_HOSTS")
+    else None
+)
+print(ALLOWED_HOSTS)
 
 # Application definition
 
