@@ -63,7 +63,6 @@ ALLOWED_HOSTS = (
     if os.environ.get("DJANGO_ALLOWED_HOSTS")
     else None
 )
-print(ALLOWED_HOSTS)
 
 # Application definition
 
