@@ -4,7 +4,7 @@ from django.contrib.gis.measure import D
 from django.db.models import Q
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
-from rest_framework import mixins, permissions, serializers, viewsets
+from rest_framework import mixins, pagination, permissions, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
@@ -32,6 +32,13 @@ from .serializers import (
     ServiceListSerializer,
     ServiceSerializer,
 )
+
+
+class FlatPagination(pagination.PageNumberPagination):
+    page_size_query_param = "count"
+
+    def get_paginated_response(self, data):
+        return Response(data)
 
 
 class ServicePermission(permissions.BasePermission):
@@ -77,6 +84,7 @@ class ServiceViewSet(
 ):
     serializer_class = ServiceSerializer
     permission_classes = [ServicePermission]
+    pagination_class = FlatPagination
 
     lookup_field = "slug"
 
@@ -89,7 +97,9 @@ class ServiceViewSet(
         qs = None
         user = self.request.user
         only_mine = self.request.query_params.get("mine")
-
+        structure_slug = self.request.query_params.get("structure")
+        published_only = self.request.query_params.get("published")
+        print(published_only)
         if only_mine:
             qs = self.get_my_services(user)
         # Everybody can see published services
@@ -104,6 +114,10 @@ class ServiceViewSet(
             qs = Service.objects.filter(
                 Q(is_draft=False) | Q(structure__membership__user=user)
             )
+        if structure_slug:
+            qs = qs.filter(structure__slug=structure_slug)
+        if published_only:
+            qs = qs.filter(is_draft=False)
         return qs.order_by("-modification_date").distinct()
 
     def get_serializer_class(self):

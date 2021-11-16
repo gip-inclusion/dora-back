@@ -350,9 +350,14 @@ class ServiceListSerializer(ServiceSerializer):
         fields = [
             "slug",
             "name",
+            "structure",
             "structure_info",
+            "postal_code",
+            "city",
             "department",
             "is_draft",
             "modification_date",
+            "category_display",
+            "short_desc",
         ]
         lookup_field = "slug"
