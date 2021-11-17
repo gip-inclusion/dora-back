@@ -361,3 +361,9 @@ class ServiceListSerializer(ServiceSerializer):
             "short_desc",
         ]
         lookup_field = "slug"
+
+
+class FeedbackSerializer(serializers.Serializer):
+    full_name = serializers.CharField()
+    email = serializers.EmailField()
+    message = serializers.CharField()

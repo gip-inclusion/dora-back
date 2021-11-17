@@ -10,6 +10,7 @@ from rest_framework.response import Response
 
 from dora.admin_express.models import City
 from dora.core.notify import send_mattermost_notification
+from dora.services.emails import send_service_feedback_email
 from dora.services.models import (
     AccessCondition,
     BeneficiaryAccessMode,
@@ -29,6 +30,7 @@ from dora.structures.models import Structure, StructureMember
 
 from .serializers import (
     AnonymousServiceSerializer,
+    FeedbackSerializer,
     ServiceListSerializer,
     ServiceSerializer,
 )
@@ -99,7 +101,7 @@ class ServiceViewSet(
         only_mine = self.request.query_params.get("mine")
         structure_slug = self.request.query_params.get("structure")
         published_only = self.request.query_params.get("published")
-        print(published_only)
+
         if only_mine:
             qs = self.get_my_services(user)
         # Everybody can see published services
@@ -144,6 +146,20 @@ class ServiceViewSet(
                 ServiceSerializer(last_draft, context={"request": request}).data
             )
         raise Http404
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="feedback",
+        permission_classes=[permissions.AllowAny],
+    )
+    def post_feedback(self, request, slug):
+        service = self.get_object()
+        serializer = FeedbackSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        d = serializer.validated_data
+        send_service_feedback_email(service, d["full_name"], d["email"], d["message"])
+        return Response(status=201)
 
     def perform_create(self, serializer):
         service = serializer.save(
