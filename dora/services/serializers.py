@@ -170,8 +170,6 @@ class ServiceSerializer(serializers.ModelSerializer):
             "city_code",
             "city",
             "geom",
-            "start_date",
-            "end_date",
             "recurrence",
             "suspension_date",
             "structure",

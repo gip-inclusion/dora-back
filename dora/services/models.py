@@ -251,10 +251,6 @@ class Service(models.Model):
     )
 
     # Duration
-
-    start_date = models.DateField(verbose_name="Date de début", null=True, blank=True)
-    end_date = models.DateField(verbose_name="Date de fin", null=True, blank=True)
-
     recurrence = models.CharField(verbose_name="Autre", max_length=140, blank=True)
 
     suspension_date = models.DateField(
