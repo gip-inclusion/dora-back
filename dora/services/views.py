@@ -18,7 +18,6 @@ from dora.services.models import (
     ConcernedPublic,
     Credential,
     LocationKind,
-    RecurrenceKind,
     Requirement,
     Service,
     ServiceCategories,
@@ -269,7 +268,6 @@ def options(request):
         "location_kinds": [
             {"value": c[0], "label": c[1]} for c in LocationKind.choices
         ],
-        "recurrence": [{"value": c[0], "label": c[1]} for c in RecurrenceKind.choices],
     }
     return Response(result)
 

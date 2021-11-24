@@ -131,9 +131,6 @@ class ServiceSerializer(serializers.ModelSerializer):
     location_kinds_display = serializers.SerializerMethodField()
     beneficiaries_access_modes_display = serializers.SerializerMethodField()
     coach_orientation_modes_display = serializers.SerializerMethodField()
-    recurrence_display = serializers.CharField(
-        source="get_recurrence_display", read_only=True
-    )
     department = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
 
@@ -148,7 +145,6 @@ class ServiceSerializer(serializers.ModelSerializer):
             "kinds",
             "category",
             "subcategories",
-            "is_common_law",
             "access_conditions",
             "concerned_public",
             "is_cumulative",
@@ -177,8 +173,6 @@ class ServiceSerializer(serializers.ModelSerializer):
             "start_date",
             "end_date",
             "recurrence",
-            "recurrence_other",
-            "suspension_count",
             "suspension_date",
             "structure",
             "creation_date",
@@ -198,7 +192,6 @@ class ServiceSerializer(serializers.ModelSerializer):
             "location_kinds_display",
             "beneficiaries_access_modes_display",
             "coach_orientation_modes_display",
-            "recurrence_display",
             "department",
             "can_write",
         ]
