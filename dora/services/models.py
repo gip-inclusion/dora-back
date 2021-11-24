@@ -254,7 +254,7 @@ class Service(models.Model):
     recurrence = models.CharField(verbose_name="Autre", max_length=140, blank=True)
 
     suspension_date = models.DateField(
-        verbose_name="À partir d’une date", null=True, blank=True
+        verbose_name="À partir d’une date", null=True, blank=True, db_index=True
     )
 
     ##########

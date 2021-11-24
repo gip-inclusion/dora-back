@@ -4,6 +4,7 @@ from django.contrib.gis.measure import D
 from django.db.models import Q
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import mixins, pagination, permissions, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
@@ -315,6 +316,11 @@ def search(request):
             .filter(distance__lt=D(km=radius))
             .order_by("distance")
         )
+
+    # Exclude suspended services
+    results = results.filter(
+        Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
+    )
 
     return Response(
         DistanceServiceSerializer(results, many=True, context={"request": request}).data
