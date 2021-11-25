@@ -1,0 +1,14 @@
+{% autoescape off %}Bonjour {{recipient_name}} !
+
+{{ new_member_full_name }} ({{ new_member_email }}) a accepté l’invitation à votre structure “{{ structure_name }}” !
+Cette personne a désormais accès à Dora et au tableau de bord de cette structure.
+
+Si elle ne fait pas partie de votre organisation, voici le pas à pas à réaliser pour la retirer :
+<a href="https://documentation.dora.fabrique.social.gouv.fr/tutoriels/gerer-vos-collaborateurs#retirer-une-personne-de-la-structure">Gérer vos collaborateurs</a>
+
+Cordialement,
+
+Dora
+--
+(Ceci est un mail automatique, merci de ne pas répondre.)
+{% endautoescape %}

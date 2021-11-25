@@ -77,12 +77,23 @@ def password_reset_confirm(request):
     serializer.is_valid(raise_exception=True)
     new_password = serializer.validated_data["new_password"]
     try:
+        already_had_password = request.user.has_usable_password()
         validate_password(new_password, request.user)
         request.user.set_password(new_password)
         request.user.save()
         password_changed(new_password, request.user)
         # Cleanup all temporary tokens
         Token.objects.filter(user=request.user, expiration__isnull=False).delete()
+
+        if not already_had_password:
+            # it's a new user, created via invitation. Notify all administrators
+            # of the structures he was invited to.
+            memberships = StructureMember.objects.filter(
+                user=request.user, is_valid=True
+            )
+            for membership in memberships:
+                membership.notify_admins_invitation_accepted()
+
         return Response(status=204)
     except DjangoValidationError:
         raise

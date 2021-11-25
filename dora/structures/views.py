@@ -122,7 +122,8 @@ class StructureViewSet(
             # The user already exists and hopefully know its password
             # we can safely delete the invitation token
             token.delete()
-
+            # Then notify the administrators of this structure
+            member.notify_admins_invitation_accepted()
         return Response(
             {
                 "structure_name": member.structure.name,

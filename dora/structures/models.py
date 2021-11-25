@@ -7,6 +7,7 @@ from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
 from dora.sirene.serializers import EstablishmentSerializer
+from dora.structures.emails import send_invitation_accepted_notification
 from dora.users.models import User
 
 
@@ -54,6 +55,13 @@ class StructureMember(models.Model):
                 name="%(app_label)s_unique_user_by_structure",
             )
         ]
+
+    def notify_admins_invitation_accepted(self):
+        structure_admins = StructureMember.objects.filter(
+            structure=self.structure, is_admin=True, is_valid=True
+        ).exclude(user=self.user)
+        for admin in structure_admins:
+            send_invitation_accepted_notification(self, admin.user)
 
 
 class StructureSource(models.TextChoices):
