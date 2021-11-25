@@ -70,15 +70,18 @@ class UserAdmin(BaseUserAdmin):
         "is_active",
         "is_valid",
         "date_joined",
+        "newsletter",
     )
-    list_filter = (
-        "is_staff",
-        "is_active",
-        "is_valid",
-    )
+    list_filter = ("is_staff", "is_active", "is_valid", "newsletter")
     fieldsets = (
-        (None, {"fields": ("email", "password", "last_name", "first_name")}),
-        ("Permissions", {"fields": ("is_staff", "is_active", "is_valid")}),
+        (
+            None,
+            {"fields": ("email", "password", "last_name", "first_name")},
+        ),
+        (
+            "Permissions",
+            {"fields": ("is_staff", "is_active", "is_valid", "newsletter")},
+        ),
         ("Important dates", {"fields": ("last_login", "date_joined")}),
     )
     # add_fieldsets is not a standard ModelAdmin attribute. UserAdmin
@@ -93,6 +96,7 @@ class UserAdmin(BaseUserAdmin):
         ),
     )
     search_fields = ("email", "last_name", "first_name")
+    readonly_fields = ["newsletter"]
     ordering = ("email",)
     filter_horizontal = ()
     inlines = [StructureMemberInline]

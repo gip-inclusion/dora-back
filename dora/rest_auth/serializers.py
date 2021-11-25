@@ -74,6 +74,7 @@ class StructureAndUserSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
     siret = serializers.CharField()
+    newsletter = serializers.BooleanField(default=False)
 
     def validate_email(self, value):
         try:

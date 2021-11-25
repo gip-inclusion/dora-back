@@ -180,6 +180,7 @@ def register_structure_and_user(request):
         data["password"],
         first_name=data["first_name"],
         last_name=data["last_name"],
+        newsletter=data["newsletter"],
     )
 
     # Create Structure
