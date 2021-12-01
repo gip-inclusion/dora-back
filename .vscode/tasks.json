@@ -6,7 +6,7 @@
     {
       "label": "Django",
       "type": "shell",
-      "command": "source `dirname ${command:python.interpreterPath}`/activate; ${workspaceFolder}/manage.py runserver 0.0.0.0:8000",
+      "command": "source `dirname ${command:python.interpreterPath}`/activate; ${workspaceFolder}/manage.py runserver",
       "problemMatcher": [],
       "group": {
         "kind": "build",
