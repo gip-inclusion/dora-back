@@ -73,13 +73,6 @@ class LocationKind(models.TextChoices):
     REMOTE = ("RE", "À distance")
 
 
-class RecurrenceKind(models.TextChoices):
-    EVERY_DAY = ("DD", "Tous les jours")
-    EVERY_WEEK = ("WW", "Toutes les semaines")
-    EVERY_MONTH = ("MM", "Tous les mois")
-    OTHER = ("OT", "Autre")
-
-
 class CustomizableChoice(models.Model):
     name = models.CharField(max_length=140)
     structure = models.ForeignKey(
@@ -161,9 +154,6 @@ class Service(models.Model):
         verbose_name="Sous-catégorie",
         blank=True,
         default=list,
-    )
-    is_common_law = models.BooleanField(
-        verbose_name="Il s’agit d'un service de Droit commun ?", default=False
     )
 
     ############
@@ -261,25 +251,10 @@ class Service(models.Model):
     )
 
     # Duration
+    recurrence = models.CharField(verbose_name="Autre", max_length=140, blank=True)
 
-    start_date = models.DateField(verbose_name="Date de début", null=True, blank=True)
-    end_date = models.DateField(verbose_name="Date de fin", null=True, blank=True)
-
-    recurrence = models.CharField(
-        verbose_name="Récurrences",
-        max_length=2,
-        choices=RecurrenceKind.choices,
-        blank=True,
-    )
-    recurrence_other = models.CharField(
-        verbose_name="Autre", max_length=140, blank=True
-    )
-
-    suspension_count = models.IntegerField(
-        verbose_name="À partir d’un nombre d’inscriptions", null=True, blank=True
-    )
     suspension_date = models.DateField(
-        verbose_name="À partir d’une date", null=True, blank=True
+        verbose_name="À partir d’une date", null=True, blank=True, db_index=True
     )
 
     ##########

@@ -69,6 +69,7 @@ class StructureListSerializer(StructureSerializer):
             "name",
             "department",
             "typology_display",
+            "modification_date",
             # "num_services"
         ]
         lookup_field = "slug"

@@ -63,7 +63,6 @@ ALLOWED_HOSTS = (
     if os.environ.get("DJANGO_ALLOWED_HOSTS")
     else None
 )
-print(ALLOWED_HOSTS)
 
 # Application definition
 
@@ -258,6 +257,7 @@ EMAIL_PORT = os.environ["EMAIL_PORT"]
 EMAIL_USE_TLS = True
 EMAIL_DOMAIN = os.environ["EMAIL_DOMAIN"]
 FRONTEND_URL = os.environ["FRONTEND_URL"]
+SUPPORT_EMAIL = os.environ["SUPPORT_EMAIL"]
 
 ################
 # APP SETTINGS #

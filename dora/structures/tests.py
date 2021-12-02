@@ -2,11 +2,13 @@ import csv
 import tempfile
 from io import StringIO
 
+from django.contrib.auth import authenticate
 from django.core import mail
 from django.core.management import call_command
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
+from dora.rest_auth.models import Token
 from dora.structures.models import Structure, StructureMember, StructureSource
 from dora.users.models import User
 
@@ -166,17 +168,6 @@ class StructureTestCase(APITestCase):
         self.assertIn(self.my_other_struct.slug, services_ids)
         self.assertNotIn(self.other_struct.slug, services_ids)
 
-    # Test structure creation/joining; maybe in rest_auth app?
-    # Need to mock email sending
-    # def test_adding_structure_creates_membership(self):
-    #     self.assertTrue(False)
-
-    # def test_adding_structure_makes_admin(self):
-    #     self.assertTrue(False)
-
-    # def test_join_structure_makes_nonadmin(self):
-    #     self.assertTrue(False)
-
 
 class StructureMemberTestCase(APITestCase):
     def setUp(self):
@@ -189,18 +180,156 @@ class StructureMemberTestCase(APITestCase):
         self.superuser = baker.make("users.User", is_staff=True)
 
         self.my_struct = baker.make("Structure")
-        self.my_struct.members.add(self.me, through_defaults={"is_admin": True}),
-        self.my_struct.members.add(self.user1, through_defaults={"is_admin": True})
-        self.my_struct.members.add(self.user2, through_defaults={"is_admin": False})
+        self.my_struct.members.add(
+            self.me, through_defaults={"is_admin": True, "is_valid": True}
+        ),
+        self.my_struct.members.add(
+            self.user1, through_defaults={"is_admin": True, "is_valid": True}
+        )
+        self.my_struct.members.add(
+            self.user2, through_defaults={"is_admin": False, "is_valid": True}
+        )
 
         self.my_other_struct = baker.make("Structure", creator=None, last_editor=None)
-        self.my_other_struct.members.add(self.me, through_defaults={"is_admin": True})
+        self.my_other_struct.members.add(
+            self.me, through_defaults={"is_admin": True, "is_valid": True}
+        )
         self.my_other_struct.members.add(self.my_other_struct_user)
 
         self.other_struct = baker.make("Structure")
         self.other_struct.members.add(
-            self.another_struct_user, through_defaults={"is_admin": True}
+            self.another_struct_user,
+            through_defaults={"is_admin": True, "is_valid": True},
         )
+
+    # Registration
+    def test_register_new_user_and_struct_creates_user(self):
+        self.client.force_authenticate(user=None)
+        establishment = baker.make("Establishment", siret="12345678901234")
+        data = {
+            "first_name": "Foo",
+            "last_name": "Bar",
+            "email": "foo@bar.com",
+            "password": "lkqjfl123!)p",
+            "siret": establishment.siret,
+        }
+        response = self.client.post("/auth/register-structure-and-user/", data)
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(User.objects.filter(email="foo@bar.com").exists())
+        self.assertFalse(User.objects.get(email="foo@bar.com").is_valid)
+        self.assertIsNotNone(authenticate(email="foo@bar.com", password="lkqjfl123!)p"))
+
+    def test_register_new_user_and_struct_creates_structure_if_needed(self):
+        self.client.force_authenticate(user=None)
+        establishment = baker.make("Establishment", siret="12345678901234")
+        data = {
+            "first_name": "Foo",
+            "last_name": "Bar",
+            "email": "foo@bar.com",
+            "password": "lkqjfl123!)p",
+            "siret": establishment.siret,
+        }
+        response = self.client.post("/auth/register-structure-and-user/", data)
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(Structure.objects.filter(siret=establishment.siret).exists())
+
+    def test_register_new_user_and_struct_uses_existing_structure(self):
+        self.client.force_authenticate(user=None)
+        establishment = baker.make("Establishment", siret="12345678901234")
+        baker.make("Structure", siret=establishment.siret)
+        data = {
+            "first_name": "Foo",
+            "last_name": "Bar",
+            "email": "foo@bar.com",
+            "password": "lkqjfl123!)p",
+            "siret": establishment.siret,
+        }
+        response = self.client.post("/auth/register-structure-and-user/", data)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Structure.objects.filter(siret=establishment.siret).count(), 1)
+
+    def test_register_new_user_and_struct_first_user_becomes_admin(self):
+        self.client.force_authenticate(user=None)
+        establishment = baker.make("Establishment", siret="12345678901234")
+        data = {
+            "first_name": "Foo",
+            "last_name": "Bar",
+            "email": "foo@bar.com",
+            "password": "lkqjfl123!)p",
+            "siret": establishment.siret,
+        }
+        response = self.client.post("/auth/register-structure-and-user/", data)
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(StructureMember.objects.get(user__email="foo@bar.com").is_admin)
+
+    def test_register_new_user_and_struct_first_nonadmin_user_becomes_admin(self):
+        self.client.force_authenticate(user=None)
+        establishment = baker.make("Establishment", siret="12345678901234")
+        structure = baker.make("Structure", siret=establishment.siret)
+        baker.make(StructureMember, structure=structure, is_admin=False)
+        data = {
+            "first_name": "Foo",
+            "last_name": "Bar",
+            "email": "foo@bar.com",
+            "password": "lkqjfl123!)p",
+            "siret": establishment.siret,
+        }
+        response = self.client.post("/auth/register-structure-and-user/", data)
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(StructureMember.objects.get(user__email="foo@bar.com").is_admin)
+
+    def test_register_new_user_and_struct_following_users_dont_become_admin(self):
+        self.client.force_authenticate(user=None)
+        establishment = baker.make("Establishment", siret="12345678901234")
+        structure = baker.make("Structure", siret=establishment.siret)
+        baker.make(StructureMember, structure=structure, is_admin=True)
+        data = {
+            "first_name": "Foo",
+            "last_name": "Bar",
+            "email": "foo@bar.com",
+            "password": "lkqjfl123!)p",
+            "siret": establishment.siret,
+        }
+        response = self.client.post("/auth/register-structure-and-user/", data)
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(
+            StructureMember.objects.get(user__email="foo@bar.com").is_admin
+        )
+
+    def test_register_new_user_and_struct_first_non_staff_becomes_admin(self):
+        self.client.force_authenticate(user=None)
+        establishment = baker.make("Establishment", siret="12345678901234")
+        structure = baker.make("Structure", siret=establishment.siret)
+        staff_user = baker.make("users.User", is_staff=True)
+        baker.make(StructureMember, structure=structure, user=staff_user, is_admin=True)
+        data = {
+            "first_name": "Foo",
+            "last_name": "Bar",
+            "email": "foo@bar.com",
+            "password": "lkqjfl123!)p",
+            "siret": establishment.siret,
+        }
+        response = self.client.post("/auth/register-structure-and-user/", data)
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(StructureMember.objects.get(user__email="foo@bar.com").is_admin)
+
+    def test_create_struct_creates_member(self):
+        # For now, this is only open to staff members
+        user = baker.make("users.User")
+        self.client.force_authenticate(user=user)
+        member = StructureMember.objects.filter(user=user).first()
+        self.assertIsNone(member)
+        response = self.client.post(
+            "/structures/",
+            DUMMY_STRUCTURE,
+        )
+        self.assertEqual(response.status_code, 201)
+        slug = response.data["slug"]
+        struct = Structure.objects.get(slug=slug)
+        member = StructureMember.objects.filter(user=user).first()
+        self.assertIsNotNone(member)
+        self.assertEqual(member.structure, struct)
+        self.assertTrue(member.is_admin)
 
     # Visibility lists
 
@@ -617,6 +746,84 @@ class StructureMemberTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         response = self.client.get(f"/structure-members/{member.id}/")
         self.assertEqual(response.status_code, 404)
+
+    # Invitation acceptation
+    def test_user_can_accept_invitation(self):
+        admin = baker.make("users.User")
+        structure = baker.make("Structure")
+        structure.members.add(
+            admin, through_defaults={"is_admin": True, "is_valid": True}
+        ),
+        self.client.force_authenticate(user=admin)
+        response = self.client.post(
+            f"/structure-members/?structure={structure.slug}",
+            {
+                "is_admin": False,
+                "user": {
+                    "last_name": "FOO",
+                    "first_name": "FIZZ",
+                    "email": "FOO@BAR.BUZ",
+                },
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(mail.outbox), 1)
+        self.client.force_authenticate(user=None)
+
+        member = StructureMember.objects.get(pk=response.data["id"])
+
+        invit_key = Token.objects.get(user=member.user)
+        self.assertIn(invit_key.key, mail.outbox[0].body)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {invit_key.key}")
+        response = self.client.post(
+            "/structures/accept-invite/",
+            {"key": invit_key.key, "member": member.id},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["must_set_password"])
+        token = response.data["token"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token}")
+        response = self.client.post(
+            "/auth/password/reset/confirm/",
+            {"new_password": "aoinf156azfeAF&é"},
+            headers={"Authorization": f"Token {token}"},
+        )
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(Token.objects.filter(user=member.user).count(), 0)
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertIn("Invitation acceptée", mail.outbox[1].subject)
+        self.assertIn("FOO", mail.outbox[1].body)
+        self.assertIn("FIZZ", mail.outbox[1].body)
+        self.assertIn("FOO@BAR.BUZ", mail.outbox[1].body)
+        self.assertIn(structure.name, mail.outbox[1].body)
+
+        member.refresh_from_db()
+        self.assertTrue(member.user.is_valid)
+
+    def test_user_must_set_strong_pw(self):
+        self.client.force_authenticate(user=self.me)
+        response = self.client.post(
+            f"/structure-members/?structure={self.my_struct.slug}",
+            {
+                "is_admin": False,
+                "user": {
+                    "last_name": "FOO",
+                    "first_name": "FIZZ",
+                    "email": "FOO@BAR.BUZ",
+                },
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        member = StructureMember.objects.get(pk=response.data["id"])
+        self.client.force_authenticate(user=member.user)
+
+        response = self.client.post(
+            "/auth/password/reset/confirm/", {"new_password": "ABBA"}
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data["non_field_errors"][0]["code"], "password_too_short"
+        )
 
     # Fail safes
     def test_super_user_can_remove_last_admin(self):

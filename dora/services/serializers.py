@@ -69,6 +69,8 @@ class CreatablePrimaryKeyRelatedField(PrimaryKeyRelatedField):
 
 
 class StructureSerializer(serializers.ModelSerializer):
+    has_admin = serializers.SerializerMethodField()
+
     class Meta:
         model = Structure
         fields = [
@@ -80,7 +82,12 @@ class StructureSerializer(serializers.ModelSerializer):
             "postal_code",
             "city",
             "url",
+            "siret",
+            "has_admin",
         ]
+
+    def get_has_admin(self, structure):
+        return structure.membership.filter(is_admin=True, user__is_staff=False).exists()
 
 
 class ServiceSerializer(serializers.ModelSerializer):
@@ -124,9 +131,6 @@ class ServiceSerializer(serializers.ModelSerializer):
     location_kinds_display = serializers.SerializerMethodField()
     beneficiaries_access_modes_display = serializers.SerializerMethodField()
     coach_orientation_modes_display = serializers.SerializerMethodField()
-    recurrence_display = serializers.CharField(
-        source="get_recurrence_display", read_only=True
-    )
     department = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
 
@@ -141,7 +145,6 @@ class ServiceSerializer(serializers.ModelSerializer):
             "kinds",
             "category",
             "subcategories",
-            "is_common_law",
             "access_conditions",
             "concerned_public",
             "is_cumulative",
@@ -167,11 +170,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "city_code",
             "city",
             "geom",
-            "start_date",
-            "end_date",
             "recurrence",
-            "recurrence_other",
-            "suspension_count",
             "suspension_date",
             "structure",
             "creation_date",
@@ -191,7 +190,6 @@ class ServiceSerializer(serializers.ModelSerializer):
             "location_kinds_display",
             "beneficiaries_access_modes_display",
             "coach_orientation_modes_display",
-            "recurrence_display",
             "department",
             "can_write",
         ]
@@ -343,9 +341,20 @@ class ServiceListSerializer(ServiceSerializer):
         fields = [
             "slug",
             "name",
+            "structure",
             "structure_info",
+            "postal_code",
+            "city",
             "department",
             "is_draft",
             "modification_date",
+            "category_display",
+            "short_desc",
         ]
         lookup_field = "slug"
+
+
+class FeedbackSerializer(serializers.Serializer):
+    full_name = serializers.CharField()
+    email = serializers.EmailField()
+    message = serializers.CharField()

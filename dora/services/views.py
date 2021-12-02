@@ -4,12 +4,14 @@ from django.contrib.gis.measure import D
 from django.db.models import Q
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
-from rest_framework import mixins, permissions, serializers, viewsets
+from django.utils import timezone
+from rest_framework import mixins, pagination, permissions, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from dora.admin_express.models import City
 from dora.core.notify import send_mattermost_notification
+from dora.services.emails import send_service_feedback_email
 from dora.services.models import (
     AccessCondition,
     BeneficiaryAccessMode,
@@ -17,7 +19,6 @@ from dora.services.models import (
     ConcernedPublic,
     Credential,
     LocationKind,
-    RecurrenceKind,
     Requirement,
     Service,
     ServiceCategories,
@@ -29,9 +30,17 @@ from dora.structures.models import Structure, StructureMember
 
 from .serializers import (
     AnonymousServiceSerializer,
+    FeedbackSerializer,
     ServiceListSerializer,
     ServiceSerializer,
 )
+
+
+class FlatPagination(pagination.PageNumberPagination):
+    page_size_query_param = "count"
+
+    def get_paginated_response(self, data):
+        return Response(data)
 
 
 class ServicePermission(permissions.BasePermission):
@@ -77,6 +86,7 @@ class ServiceViewSet(
 ):
     serializer_class = ServiceSerializer
     permission_classes = [ServicePermission]
+    pagination_class = FlatPagination
 
     lookup_field = "slug"
 
@@ -89,6 +99,8 @@ class ServiceViewSet(
         qs = None
         user = self.request.user
         only_mine = self.request.query_params.get("mine")
+        structure_slug = self.request.query_params.get("structure")
+        published_only = self.request.query_params.get("published")
 
         if only_mine:
             qs = self.get_my_services(user)
@@ -104,6 +116,10 @@ class ServiceViewSet(
             qs = Service.objects.filter(
                 Q(is_draft=False) | Q(structure__membership__user=user)
             )
+        if structure_slug:
+            qs = qs.filter(structure__slug=structure_slug)
+        if published_only:
+            qs = qs.filter(is_draft=False)
         return qs.order_by("-modification_date").distinct()
 
     def get_serializer_class(self):
@@ -130,6 +146,20 @@ class ServiceViewSet(
                 ServiceSerializer(last_draft, context={"request": request}).data
             )
         raise Http404
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="feedback",
+        permission_classes=[permissions.AllowAny],
+    )
+    def post_feedback(self, request, slug):
+        service = self.get_object()
+        serializer = FeedbackSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        d = serializer.validated_data
+        send_service_feedback_email(service, d["full_name"], d["email"], d["message"])
+        return Response(status=201)
 
     def perform_create(self, serializer):
         service = serializer.save(
@@ -239,7 +269,6 @@ def options(request):
         "location_kinds": [
             {"value": c[0], "label": c[1]} for c in LocationKind.choices
         ],
-        "recurrence": [{"value": c[0], "label": c[1]} for c in RecurrenceKind.choices],
     }
     return Response(result)
 
@@ -287,6 +316,11 @@ def search(request):
             .filter(distance__lt=D(km=radius))
             .order_by("distance")
         )
+
+    # Exclude suspended services
+    results = results.filter(
+        Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
+    )
 
     return Response(
         DistanceServiceSerializer(results, many=True, context={"request": request}).data

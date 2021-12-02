@@ -77,12 +77,23 @@ def password_reset_confirm(request):
     serializer.is_valid(raise_exception=True)
     new_password = serializer.validated_data["new_password"]
     try:
+        already_had_password = request.user.has_usable_password()
         validate_password(new_password, request.user)
         request.user.set_password(new_password)
         request.user.save()
         password_changed(new_password, request.user)
         # Cleanup all temporary tokens
         Token.objects.filter(user=request.user, expiration__isnull=False).delete()
+
+        if not already_had_password:
+            # it's a new user, created via invitation. Notify all administrators
+            # of the structures he was invited to.
+            memberships = StructureMember.objects.filter(
+                user=request.user, is_valid=True
+            )
+            for membership in memberships:
+                membership.notify_admins_invitation_accepted()
+
         return Response(status=204)
     except DjangoValidationError:
         raise
@@ -169,16 +180,15 @@ def register_structure_and_user(request):
         data["password"],
         first_name=data["first_name"],
         last_name=data["last_name"],
+        newsletter=data["newsletter"],
     )
 
     # Create Structure
     establishment = data["establishment"]
-    is_new_structure = False
     try:
         structure = Structure.objects.get(siret=establishment.siret)
     except Structure.DoesNotExist:
         structure = Structure.objects.create_from_establishment(establishment)
-        is_new_structure = True
         structure.creator = user
         structure.last_editor = user
         structure.source = StructureSource.STRUCT_STAFF
@@ -186,10 +196,12 @@ def register_structure_and_user(request):
         send_mattermost_notification(
             f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
         )
-
+    has_nonstaff_admin = structure.membership.filter(
+        user__is_staff=False, is_admin=True
+    ).exists()
     # Link them
     StructureMember.objects.create(
-        user=user, structure=structure, is_admin=is_new_structure, is_valid=True
+        user=user, structure=structure, is_admin=not has_nonstaff_admin, is_valid=True
     )
 
     # Send validation link email

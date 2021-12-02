@@ -71,6 +71,9 @@ class StructureViewSet(
         send_mattermost_notification(
             f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
         )
+        StructureMember.objects.create(
+            user=user, structure=structure, is_admin=True, is_valid=True
+        )
 
     def perform_update(self, serializer):
         serializer.save(last_editor=self.request.user)
@@ -119,7 +122,8 @@ class StructureViewSet(
             # The user already exists and hopefully know its password
             # we can safely delete the invitation token
             token.delete()
-
+            # Then notify the administrators of this structure
+            member.notify_admins_invitation_accepted()
         return Response(
             {
                 "structure_name": member.structure.name,

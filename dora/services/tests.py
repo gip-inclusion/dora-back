@@ -559,3 +559,39 @@ class ServiceTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertFalse(ServiceModificationHistoryItem.objects.exists())
+
+
+class ServiceSearchTextCase(APITestCase):
+    def test_can_see_published_services(self):
+        service = baker.make("Service", is_draft=False)
+        response = self.client.get("/search/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], service.slug)
+
+    def test_cant_see_draft_services(self):
+        baker.make("Service", is_draft=True)
+        response = self.client.get("/search/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_can_see_service_with_future_suspension_date(self):
+        service = baker.make(
+            "Service",
+            is_draft=False,
+            suspension_date=timezone.now() + timedelta(days=1),
+        )
+        response = self.client.get("/search/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], service.slug)
+
+    def test_cannot_see_service_with_past_suspension_date(self):
+        baker.make(
+            "Service",
+            is_draft=False,
+            suspension_date=timezone.now() - timedelta(days=1),
+        )
+        response = self.client.get("/search/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
