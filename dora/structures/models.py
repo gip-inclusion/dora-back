@@ -73,62 +73,84 @@ class StructureSource(models.TextChoices):
 
 
 class StructureTypology(models.TextChoices):
-    # Prescripteurs habilités
-    # https://github.com/betagouv/itou/blob/master/itou/prescribers/models.py#L91
-    PE = "PE", "Pôle emploi"
-    CAP_EMPLOI = "CAP_EMPLOI", "CAP emploi"
-    ML = "ML", "Mission locale"
-    DEPT = "DEPT", "Service social du conseil départemental"
-    SPIP = "SPIP", "SPIP — Service pénitentiaire d'insertion et de probation"
-    PJJ = "PJJ", "PJJ — Protection judiciaire de la jeunesse"
-    CCAS = (
-        "CCAS",
-        "CCAS — Centre communal d'action sociale ou centre intercommunal d'action sociale",
-    )
-    PLIE = "PLIE", "PLIE — Plan local pour l'insertion et l'emploi"
-    CHRS = "CHRS", "CHRS — Centre d'hébergement et de réinsertion sociale"
-    CIDFF = (
-        "CIDFF",
-        "CIDFF — Centre d'information sur les droits des femmes et des familles",
-    )
-    PREVENTION = "PREVENTION", "Service ou club de prévention"
+    # https://docs.google.com/spreadsheets/d/1scfJUEcNWP9KMrHFf_7OCCSs4RyDZmH3dK70HJA-rIk/
+    AC = "AC", "Associations de chômeurs"
+    ACI = "ACI", "Structures porteuses d'ateliers et chantiers d'insertion (ACI)"
     AFPA = (
         "AFPA",
-        "AFPA — Agence nationale pour la formation professionnelle des adultes",
+        "Agence nationale pour la formation professionnelle des adultes (AFPA)",
     )
-    PIJ_BIJ = "PIJ_BIJ", "PIJ-BIJ — Point/Bureau information jeunesse"
-    CAF = "CAF", "CAF — Caisse d'allocation familiale"
-    CADA = "CADA", "CADA — Centre d'accueil de demandeurs d'asile"
-    ASE = "ASE", "ASE — Aide sociale à l'enfance"
-    CAVA = "CAVA", "CAVA — Centre d'adaptation à la vie active"
-    CPH = "CPH", "CPH — Centre provisoire d'hébergement"
-    CHU = "CHU", "CHU — Centre d'hébergement d'urgence"
-    OACAS = (
-        "OACAS",
-        (
-            "OACAS — Structure porteuse d'un agrément national organisme "
-            "d'accueil communautaire et d'activité solidaire"
-        ),
+    AI = "AI", "Associations intermédiaires (AI)"
+    ASE = "ASE", "Aide sociale à l’enfance (ASE)"
+    ASSO = "ASSO", "Associations"
+    CADA = "CADA", "Centres d'accueil de demandeurs d'asile (CADA)"
+    CAF = "CAF", "Caisses d’allocation familiale (CAF)"
+    CAP_EMPLOI = "CAP_EMPLOI", "Cap Emploi"
+    CAVA = "CAVA", "Centres d’adaptation à la vie active (CAVA)"
+    CC = "CC", "Communautés de Commune"
+    CCAS = "CCAS", "Centres communaux d'action sociale (CCAS)"
+    CD = "CD", "Conseils Départementaux (CD)"
+    CHRS = "CHRS", "Centres d'hébergement et de réinsertion sociale (CHRS)"
+    CHU = "CHU", "Centres d’hébergement d’urgence (CHU)"
+    CIAS = "CIAS", "Centres intercommunaux d'action sociale (CIAS)"
+    CIDFF = (
+        "CIDFF",
+        "Centres d'information sur les droits des femmes et des familles (CIDFF)",
     )
-    # SIAE
-    # https://github.com/betagouv/itou/blob/master/itou/siaes/models.py#L169
-    EI = "EI", "SIAE — Entreprise d'insertion"
-    AI = ("AI", "SIAE — Association intermédiaire")
-    ACI = ("ACI", "SIAE — Atelier chantier d'insertion")
-    ACIPHC = (
-        "ACIPHC",
-        "SIAE — Atelier chantier d'insertion premières heures en chantier",
+    CPH = "CPH", "Centres provisoires d’hébergement (CPH)"
+    CS = "CS", "Centre social"
+    CT = "CT", "Collectivités territoriales"
+    DEETS = (
+        "DEETS",
+        "Directions de l’Economie, de l’Emploi, du Travail et des Solidarités (DEETS)",
     )
-    ETTI = ("ETTI", "SIAE — Entreprise de travail temporaire d'insertion")
-    EITI = ("EITI", "SIAE — Entreprise d'insertion par le travail indépendant")
+    DIPLP = (
+        "DIPLP",
+        "Délégation interministérielles à la prévention et à la lutte contre la pauvreté",
+    )
+    EI = "EI", "Entreprises d'insertion (EI)"
+    EITI = "EITI", "Entreprises d'insertion par le travail indépendant (EITI)"
+    EPCI = "EPCI", "Intercommunalité (EPCI)"
+    ETTI = "ETTI", "Entreprises de travail temporaire d'insertion (ETTI)"
+    FAIS = "FAIS", "Fédérations d'acteurs de l'insertion et de la solidarité"
     GEIQ = (
         "GEIQ",
-        "SIAE — Groupement d'employeurs pour l'insertion et la qualification",
+        "Groupements d'employeurs pour l'insertion et la qualification (GEIQ)",
     )
-    EA = ("EA", "SIAE — Entreprise adaptée")
-    EATT = ("EATT", "SIAE — Entreprise adaptée de travail temporaire")
-
+    ML = "ML", "Mission Locale"
+    MQ = "MQ", "Maison de quartier"
+    MSA = "MSA", "Mutualité Sociale Agricole"
+    MSAP = "MSAP", "Maison de Service au Public (MSAP)"
+    MUNI = "MUNI", "Municipalités"
+    OACAS = (
+        "OACAS",
+        "Structures agréées Organisme d’accueil communautaire et d’activité solidaire (OACAS)",
+    )
+    OF = "OF", "Organisme de formations"
     OTHER = "OTHER", "Autre"
+    PE = "PE", "Pôle emploi"
+    PIJ_BIJ = "PIJ_BIJ", "Points et bureaux information jeunesse (PIJ/BIJ)"
+    PIMMS = "PIMMS", "Point Information Médiation Multi Services (PIMMS)"
+    PJJ = "PJJ", "Protection judiciaire de la jeunesse (PJJ)"
+    PLIE = "PLIE", "Plans locaux pour l'insertion et l'emploi (PLIE)"
+    PR = "PR", "Préfectures"
+    RE = "RE", "Région"
+    SCCD = "SCCD", "Services sociaux du Conseil départemental"
+    SCP = "SCP", "Services et clubs de prévention"
+    SPIP = "SPIP", "Services pénitentiaires d'insertion et de probation (SPIP)"
+    SPR = "SPR", "Préfecture, Sous-Préfecture"
+    TL = "TL", "Tiers lieu & coworking"
+    UDAF = "UDAF", "Union Départementale d'Aide aux Familles (UDAF)"
+
+    # OLD
+    # DEPT = "DEPT", "Service social du conseil départemental"
+    # PREVENTION = "PREVENTION", "Service ou club de prévention"
+    # ACIPHC = (
+    #     "ACIPHC",
+    #     "SIAE — Atelier chantier d'insertion premières heures en chantier",
+    # )
+    # EA = ("EA", "SIAE — Entreprise adaptée")
+    # EATT = ("EATT", "SIAE — Entreprise adaptée de travail temporaire")
 
 
 class StructureManager(models.Manager):
