@@ -48,7 +48,7 @@ class StructureViewSet(
         user = self.request.user
         only_mine = self.request.query_params.get("mine")
 
-        if only_mine:
+        if only_mine and not user.is_staff:
             return (
                 self.get_my_structures(user).order_by("-modification_date").distinct()
             )
