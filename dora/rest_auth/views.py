@@ -22,7 +22,12 @@ from dora.rest_auth.serializers import (
     PasswordResetSerializer,
     TokenSerializer,
 )
-from dora.structures.models import Structure, StructureMember, StructureSource
+from dora.structures.models import (
+    Structure,
+    StructureMember,
+    StructureSource,
+    StructureTypology,
+)
 from dora.users.models import User
 
 from .emails import send_email_validation_email, send_password_reset_email
@@ -199,6 +204,21 @@ def register_structure_and_user(request):
     has_nonstaff_admin = structure.membership.filter(
         user__is_staff=False, is_admin=True
     ).exists()
+
+    # If the structure is a Pole Emploi agencie, check that the email finishes
+    # in @pole-emploi.fr or @pole-emploi.net
+    if structure.typology == StructureTypology.PE and not (
+        user.email.endswith("@pole-emploi.fr")
+        or user.email.endswith("@pole-emploi.net")
+        or (
+            user.email.endswith("@dora.beta.gouv.fr")
+            and settings.ENVIRONMENT != "production"
+        )
+    ):
+        raise exceptions.PermissionDenied(
+            "Merci de renseigner une adresse valide (@pole-emploi.fr ou @pole-emploi.net)"
+        )
+
     # Link them
     StructureMember.objects.create(
         user=user, structure=structure, is_admin=not has_nonstaff_admin, is_valid=True
