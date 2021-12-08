@@ -102,8 +102,14 @@ class StructureMemberSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StructureMember
-        fields = ["id", "user", "is_admin", "is_valid", "must_set_password"]
-        read_only_fields = ["is_valid"]
+        fields = [
+            "id",
+            "user",
+            "is_admin",
+            "has_accepted_invitation",
+            "must_set_password",
+        ]
+        read_only_fields = ["has_accepted_invitation"]
         validators = []
 
     def get_must_set_password(self, obj):

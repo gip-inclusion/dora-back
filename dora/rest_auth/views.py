@@ -94,7 +94,7 @@ def password_reset_confirm(request):
             # it's a new user, created via invitation. Notify all administrators
             # of the structures he was invited to.
             memberships = StructureMember.objects.filter(
-                user=request.user, is_valid=True
+                user=request.user, has_accepted_invitation=True
             )
             for membership in memberships:
                 membership.notify_admins_invitation_accepted()
@@ -221,7 +221,10 @@ def register_structure_and_user(request):
 
     # Link them
     StructureMember.objects.create(
-        user=user, structure=structure, is_admin=not has_nonstaff_admin, is_valid=True
+        user=user,
+        structure=structure,
+        is_admin=not has_nonstaff_admin,
+        has_accepted_invitation=True,
     )
 
     # Send validation link email

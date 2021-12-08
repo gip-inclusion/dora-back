@@ -43,7 +43,7 @@ class StructureMember(models.Model):
         "Structure", on_delete=models.CASCADE, related_name="membership"
     )
     is_admin = models.BooleanField(default=False)
-    is_valid = models.BooleanField(default=False)
+    has_accepted_invitation = models.BooleanField(default=False)
 
     creation_date = models.DateTimeField(auto_now_add=True)
 
@@ -58,7 +58,7 @@ class StructureMember(models.Model):
 
     def notify_admins_invitation_accepted(self):
         structure_admins = StructureMember.objects.filter(
-            structure=self.structure, is_admin=True, is_valid=True
+            structure=self.structure, is_admin=True, has_accepted_invitation=True
         ).exclude(user=self.user)
         for admin in structure_admins:
             send_invitation_accepted_notification(self, admin.user)
