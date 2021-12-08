@@ -75,7 +75,11 @@ class StructureSource(models.TextChoices):
 class StructureTypology(models.TextChoices):
     # https://docs.google.com/spreadsheets/d/1scfJUEcNWP9KMrHFf_7OCCSs4RyDZmH3dK70HJA-rIk/
     AC = "AC", "Associations de chômeurs"
-    ACI = "ACI", "Structures porteuses d'ateliers et chantiers d'insertion (ACI)"
+    ACI = "ACI", "Structures porteuses d’ateliers et chantiers d’insertion (ACI)"
+    ACIPHC = (
+        "ACIPHC",
+        "SIAE — Atelier chantier d’insertion premières heures en chantier",
+    )
     AFPA = (
         "AFPA",
         "Agence nationale pour la formation professionnelle des adultes (AFPA)",
@@ -83,19 +87,19 @@ class StructureTypology(models.TextChoices):
     AI = "AI", "Associations intermédiaires (AI)"
     ASE = "ASE", "Aide sociale à l’enfance (ASE)"
     ASSO = "ASSO", "Associations"
-    CADA = "CADA", "Centres d'accueil de demandeurs d'asile (CADA)"
+    CADA = "CADA", "Centres d’accueil de demandeurs d’asile (CADA)"
     CAF = "CAF", "Caisses d’allocation familiale (CAF)"
     CAP_EMPLOI = "CAP_EMPLOI", "Cap Emploi"
     CAVA = "CAVA", "Centres d’adaptation à la vie active (CAVA)"
     CC = "CC", "Communautés de Commune"
-    CCAS = "CCAS", "Centres communaux d'action sociale (CCAS)"
+    CCAS = "CCAS", "Centres communaux d’action sociale (CCAS)"
     CD = "CD", "Conseils Départementaux (CD)"
-    CHRS = "CHRS", "Centres d'hébergement et de réinsertion sociale (CHRS)"
+    CHRS = "CHRS", "Centres d’hébergement et de réinsertion sociale (CHRS)"
     CHU = "CHU", "Centres d’hébergement d’urgence (CHU)"
-    CIAS = "CIAS", "Centres intercommunaux d'action sociale (CIAS)"
+    CIAS = "CIAS", "Centres intercommunaux d’action sociale (CIAS)"
     CIDFF = (
         "CIDFF",
-        "Centres d'information sur les droits des femmes et des familles (CIDFF)",
+        "Centres d’information sur les droits des femmes et des familles (CIDFF)",
     )
     CPH = "CPH", "Centres provisoires d’hébergement (CPH)"
     CS = "CS", "Centre social"
@@ -108,14 +112,16 @@ class StructureTypology(models.TextChoices):
         "DIPLP",
         "Délégation interministérielles à la prévention et à la lutte contre la pauvreté",
     )
-    EI = "EI", "Entreprises d'insertion (EI)"
-    EITI = "EITI", "Entreprises d'insertion par le travail indépendant (EITI)"
+    EA = "EA", "Entreprise adaptée (EA)"
+    EATT = "EATT", "Entreprise Adaptée (EATT)"
+    EI = "EI", "Entreprises d’insertion (EI)"
+    EITI = "EITI", "Entreprises d’insertion par le travail indépendant (EITI)"
     EPCI = "EPCI", "Intercommunalité (EPCI)"
-    ETTI = "ETTI", "Entreprises de travail temporaire d'insertion (ETTI)"
-    FAIS = "FAIS", "Fédérations d'acteurs de l'insertion et de la solidarité"
+    ETTI = "ETTI", "Entreprises de travail temporaire d’insertion (ETTI)"
+    FAIS = "FAIS", "Fédérations d’acteurs de l’insertion et de la solidarité"
     GEIQ = (
         "GEIQ",
-        "Groupements d'employeurs pour l'insertion et la qualification (GEIQ)",
+        "Groupements d’employeurs pour l’insertion et la qualification (GEIQ)",
     )
     ML = "ML", "Mission Locale"
     MQ = "MQ", "Maison de quartier"
@@ -132,25 +138,14 @@ class StructureTypology(models.TextChoices):
     PIJ_BIJ = "PIJ_BIJ", "Points et bureaux information jeunesse (PIJ/BIJ)"
     PIMMS = "PIMMS", "Point Information Médiation Multi Services (PIMMS)"
     PJJ = "PJJ", "Protection judiciaire de la jeunesse (PJJ)"
-    PLIE = "PLIE", "Plans locaux pour l'insertion et l'emploi (PLIE)"
-    PR = "PR", "Préfectures"
+    PLIE = "PLIE", "Plans locaux pour l’insertion et l’emploi (PLIE)"
+    PR = "PR", "Préfecture, Sous-Préfecture"
     RE = "RE", "Région"
     SCCD = "SCCD", "Services sociaux du Conseil départemental"
     SCP = "SCP", "Services et clubs de prévention"
-    SPIP = "SPIP", "Services pénitentiaires d'insertion et de probation (SPIP)"
-    SPR = "SPR", "Préfecture, Sous-Préfecture"
+    SPIP = "SPIP", "Services pénitentiaires d’insertion et de probation (SPIP)"
     TL = "TL", "Tiers lieu & coworking"
-    UDAF = "UDAF", "Union Départementale d'Aide aux Familles (UDAF)"
-
-    # OLD
-    # DEPT = "DEPT", "Service social du conseil départemental"
-    # PREVENTION = "PREVENTION", "Service ou club de prévention"
-    # ACIPHC = (
-    #     "ACIPHC",
-    #     "SIAE — Atelier chantier d'insertion premières heures en chantier",
-    # )
-    # EA = ("EA", "SIAE — Entreprise adaptée")
-    # EATT = ("EATT", "SIAE — Entreprise adaptée de travail temporaire")
+    UDAF = "UDAF", "Union Départementale d’Aide aux Familles (UDAF)"
 
 
 class StructureManager(models.Manager):
