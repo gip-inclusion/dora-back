@@ -3,3 +3,4 @@ __pycache__
 .DS_Store
 /envs/dev.env
 /envs/secrets.env
+.cache_ggshield
