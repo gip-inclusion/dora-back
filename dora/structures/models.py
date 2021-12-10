@@ -44,6 +44,7 @@ class StructureMember(models.Model):
     )
     is_admin = models.BooleanField(default=False)
     has_accepted_invitation = models.BooleanField(default=False)
+    has_been_accepted_by_admin = models.BooleanField(default=False)
 
     creation_date = models.DateTimeField(auto_now_add=True)
 
@@ -261,6 +262,6 @@ class Structure(models.Model):
         return (
             user.is_staff
             or StructureMember.objects.filter(
-                structure_id=self.id, user_id=user.id
+                structure_id=self.id, user_id=user.id, has_been_accepted_by_admin=True
             ).exists()
         )

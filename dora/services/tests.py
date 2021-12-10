@@ -14,9 +14,23 @@ DUMMY_SERVICE = {"name": "Mon service"}
 class ServiceTestCase(APITestCase):
     def setUp(self):
         self.me = baker.make("users.User")
+        self.unaccepted_user = baker.make("users.User")
         self.superuser = baker.make("users.User", is_staff=True)
         self.my_struct = baker.make("Structure")
-        self.my_struct.members.add(self.me)
+        self.my_struct.members.add(
+            self.me,
+            through_defaults={
+                "has_accepted_invitation": True,
+                "has_been_accepted_by_admin": True,
+            },
+        )
+        self.my_struct.members.add(
+            self.unaccepted_user,
+            through_defaults={
+                "has_accepted_invitation": True,
+                "has_been_accepted_by_admin": False,
+            },
+        )
         self.my_service = baker.make(
             "Service", structure=self.my_struct, is_draft=False, creator=self.me
         )
@@ -90,6 +104,16 @@ class ServiceTestCase(APITestCase):
         response = self.client.get(f"/services/{service.slug}/")
         self.assertEqual(response.status_code, 404)
 
+    def test_cant_see_draft_if_not_accepted_by_admin(self):
+        self.client.force_authenticate(user=self.unaccepted_user)
+        service = baker.make(
+            "Service",
+            structure=self.my_struct,
+            is_draft=True,
+        )
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.status_code, 404)
+
     # Modification
 
     def test_can_edit_my_services(self):
@@ -115,6 +139,15 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         response = self.client.get(f"/services/{self.colleague_service.slug}/")
         self.assertEqual(response.data["name"], "xxx")
+
+    def test_cant_edit_colleague_services_if_not_accepted_by_admin(self):
+        self.client.force_authenticate(user=self.unaccepted_user)
+        response = self.client.patch(
+            f"/services/{self.colleague_service.slug}/", {"name": "xxx"}
+        )
+        self.assertEqual(response.status_code, 403)
+        response = self.client.get(f"/services/{self.colleague_service.slug}/")
+        self.assertNotEqual(response.data["name"], "xxx")
 
     def test_can_edit_colleague_draft_services(self):
         response = self.client.patch(
@@ -227,6 +260,15 @@ class ServiceTestCase(APITestCase):
         slug = response.data["slug"]
         Service.objects.get(slug=slug)
 
+    def test_cant_add_service_if_not_accepted_by_admin(self):
+        self.client.force_authenticate(user=self.unaccepted_user)
+        DUMMY_SERVICE["structure"] = self.my_struct.slug
+        response = self.client.post(
+            "/services/",
+            DUMMY_SERVICE,
+        )
+        self.assertEqual(response.status_code, 403)
+
     def test_add_service_check_structure(self):
         DUMMY_SERVICE["structure"] = baker.make("Structure").slug
         response = self.client.post(
@@ -316,7 +358,7 @@ class ServiceTestCase(APITestCase):
         self.assertNotIn(self.other_struct_condition1.id, conds)
         self.assertNotIn(self.other_struct_condition2.id, conds)
 
-    def test_admin_sees_all_choices(self):
+    def test_superuser_sees_all_choices(self):
         self.client.force_authenticate(user=self.superuser)
 
         response = self.client.get(
@@ -468,6 +510,21 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.data["contact_phone"], "1234")
         self.assertEqual(response.data["contact_email"], "foo@bar.buz")
 
+    def test_logged_user_can_see_public_contact_info_if_not_accepted_by_admin(self):
+        self.client.force_authenticate(user=self.unaccepted_user)
+        service = baker.make(
+            "Service",
+            is_draft=False,
+            contact_name="FOO",
+            contact_phone="1234",
+            contact_email="foo@bar.buz",
+            is_contact_info_public=True,
+        )
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.data["contact_name"], "FOO")
+        self.assertEqual(response.data["contact_phone"], "1234")
+        self.assertEqual(response.data["contact_email"], "foo@bar.buz")
+
     def test_logged_user_can_see_private_contact_info(self):
         service = baker.make(
             "Service",
@@ -481,6 +538,21 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.data["contact_name"], "FOO")
         self.assertEqual(response.data["contact_phone"], "1234")
         self.assertEqual(response.data["contact_email"], "foo@bar.buz")
+
+    def test_logged_user_cant_see_public_contact_info_if_not_accepted_by_admin(self):
+        self.client.force_authenticate(user=self.unaccepted_user)
+        service = baker.make(
+            "Service",
+            is_draft=False,
+            contact_name="FOO",
+            contact_phone="1234",
+            contact_email="foo@bar.buz",
+            is_contact_info_public=True,
+        )
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.data["contact_name"], "")
+        self.assertEqual(response.data["contact_phone"], "")
+        self.assertEqual(response.data["contact_email"], "")
 
     # Modifications
     def test_is_draft_by_default(self):

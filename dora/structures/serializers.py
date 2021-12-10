@@ -140,7 +140,9 @@ class StructureMemberSerializer(serializers.ModelSerializer):
             if not request_user.is_staff:
                 # Only remove admin status if there's at least another one
                 num_admins = StructureMember.objects.filter(
-                    structure=instance.structure, is_admin=True
+                    structure=instance.structure,
+                    is_admin=True,
+                    has_been_accepted_by_admin=True,
                 ).count()
                 if num_admins == 1:
                     raise exceptions.PermissionDenied
@@ -166,7 +168,9 @@ class StructureMemberSerializer(serializers.ModelSerializer):
             raise exceptions.PermissionDenied
         except StructureMember.DoesNotExist:
             pass
-        member = StructureMember.objects.create(user=user, **validated_data)
+        member = StructureMember.objects.create(
+            user=user, has_been_accepted_by_admin=True, **validated_data
+        )
         # Send invitation email
         tmp_token = Token.objects.create(
             user=user, expiration=timezone.now() + timedelta(days=7)

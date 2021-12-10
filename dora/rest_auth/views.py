@@ -205,26 +205,30 @@ def register_structure_and_user(request):
         user__is_staff=False, is_admin=True
     ).exists()
 
+    need_admin_validation = True
+
     # If the structure is a Pole Emploi agencie, check that the email finishes
     # in @pole-emploi.fr or @pole-emploi.net
-    if structure.typology == StructureTypology.PE and not (
-        user.email.endswith("@pole-emploi.fr")
-        or user.email.endswith("@pole-emploi.net")
-        or (
-            user.email.endswith("@dora.beta.gouv.fr")
-            and settings.ENVIRONMENT != "production"
-        )
-    ):
-        raise exceptions.PermissionDenied(
-            "Merci de renseigner une adresse valide (@pole-emploi.fr ou @pole-emploi.net)"
-        )
+    if structure.typology == StructureTypology.PE:
+        need_admin_validation = False
+        if not (
+            user.email.endswith("@pole-emploi.fr")
+            or user.email.endswith("@pole-emploi.net")
+            or (
+                user.email.endswith("@dora.beta.gouv.fr")
+                and settings.ENVIRONMENT != "production"
+            )
+        ):
+            raise exceptions.PermissionDenied(
+                "Merci de renseigner une adresse valide (@pole-emploi.fr ou @pole-emploi.net)"
+            )
 
     # Link them
     StructureMember.objects.create(
         user=user,
         structure=structure,
         is_admin=not has_nonstaff_admin,
-        has_accepted_invitation=True,
+        has_been_accepted_by_admin=not need_admin_validation or not has_nonstaff_admin,
     )
 
     # Send validation link email

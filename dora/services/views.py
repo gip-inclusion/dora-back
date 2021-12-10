@@ -5,7 +5,14 @@ from django.db.models import Q
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import mixins, pagination, permissions, serializers, viewsets
+from rest_framework import (
+    exceptions,
+    mixins,
+    pagination,
+    permissions,
+    serializers,
+    viewsets,
+)
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
@@ -73,7 +80,9 @@ class ServicePermission(permissions.BasePermission):
             return True
 
         # People can only edit their Structures' stuff
-        user_structures = Structure.objects.filter(membership__user=user)
+        user_structures = Structure.objects.filter(
+            membership__user=user, membership__has_been_accepted_by_admin=True
+        )
         return obj.structure in user_structures
 
 
@@ -114,7 +123,11 @@ class ServiceViewSet(
             # Authentified users can see everything in their structure
             # plus published services for other structures
             qs = Service.objects.filter(
-                Q(is_draft=False) | Q(structure__membership__user=user)
+                Q(is_draft=False)
+                | Q(
+                    structure__membership__user=user,
+                    structure__membership__has_been_accepted_by_admin=True,
+                )
             )
         if structure_slug:
             qs = qs.filter(structure__slug=structure_slug)
@@ -125,7 +138,9 @@ class ServiceViewSet(
     def get_serializer_class(self):
         if self.action == "list":
             return ServiceListSerializer
-        if not self.request.user.is_authenticated:
+        if (
+            not self.request.user.is_authenticated
+        ):  # TODO check that it is admin-validated
             return AnonymousServiceSerializer
         return super().get_serializer_class()
 
@@ -162,6 +177,12 @@ class ServiceViewSet(
         return Response(status=201)
 
     def perform_create(self, serializer):
+        structure = serializer.validated_data["structure"]
+        # check that the membership is active
+        if not self.request.user.is_staff:
+            member = self.request.user.membership.get(structure=structure)
+            if not member.has_been_accepted_by_admin:
+                raise exceptions.PermissionDenied
         service = serializer.save(
             creator=self.request.user, last_editor=self.request.user
         )
@@ -225,9 +246,9 @@ def options(request):
             return choices.filter(structure_id=None)
         if user.is_staff:
             return choices
-        user_structures = StructureMember.objects.filter(user=user).values_list(
-            "structure_id", flat=True
-        )
+        user_structures = StructureMember.objects.filter(
+            user=user, has_been_accepted_by_admin=True
+        ).values_list("structure_id", flat=True)
         return choices.filter(
             Q(structure_id__in=user_structures) | Q(structure_id=None)
         )

@@ -139,11 +139,17 @@ class Command(BaseCommand):
             self.stdout.write(f"Member {member.user.email} already exists")
         except StructureMember.DoesNotExist:
             member = StructureMember.objects.create(
-                user=user, structure=structure, has_accepted_invitation=False
+                user=user,
+                structure=structure,
+                has_accepted_invitation=False,
+                has_been_accepted_by_admin=True,
             )
             was_already_member = False
         if is_admin is True and not member.is_admin:
             member.is_admin = True
+            member.save()
+        if not member.has_been_accepted_by_admin:
+            member.has_been_accepted_by_admin
             member.save()
         if not was_already_member:
             tmp_token = Token.objects.create(

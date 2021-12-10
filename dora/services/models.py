@@ -352,7 +352,9 @@ class Service(models.Model):
         return (
             user.is_staff
             or StructureMember.objects.filter(
-                structure_id=self.structure_id, user_id=user.id
+                structure_id=self.structure_id,
+                user_id=user.id,
+                has_been_accepted_by_admin=True,
             ).exists()
         )
 

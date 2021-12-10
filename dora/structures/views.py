@@ -148,22 +148,29 @@ class StructureMemberViewset(viewsets.ModelViewSet):
                 return StructureMember.objects.none()
 
             if user.is_staff:
-                return StructureMember.objects.filter(structure__slug=structure_slug)
+                return StructureMember.objects.filter(
+                    structure__slug=structure_slug, has_been_accepted_by_admin=True
+                )
 
             try:
                 StructureMember.objects.get(
-                    user_id=user.id, is_admin=True, structure__slug=structure_slug
+                    user_id=user.id,
+                    is_admin=True,
+                    structure__slug=structure_slug,
+                    has_been_accepted_by_admin=True,
                 )
             except StructureMember.DoesNotExist:
                 raise exceptions.PermissionDenied
 
-            return StructureMember.objects.filter(structure__slug=structure_slug)
+            return StructureMember.objects.filter(
+                structure__slug=structure_slug, has_been_accepted_by_admin=True
+            )
         else:
             if user.is_staff:
                 return StructureMember.objects.all()
 
             structures_administered = StructureMember.objects.filter(
-                user_id=user.id, is_admin=True
+                user_id=user.id, is_admin=True, has_been_accepted_by_admin=True
             ).values_list("structure_id", flat=True)
             return StructureMember.objects.filter(
                 structure_id__in=structures_administered

@@ -48,7 +48,10 @@ class StructureMemberPermission(permissions.BasePermission):
                 return True
             try:
                 StructureMember.objects.get(
-                    user_id=user.id, is_admin=True, structure__slug=structure_slug
+                    user_id=user.id,
+                    is_admin=True,
+                    has_been_accepted_by_admin=True,
+                    structure__slug=structure_slug,
                 )
                 return True
             except StructureMember.DoesNotExist:

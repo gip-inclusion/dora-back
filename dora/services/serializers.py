@@ -269,9 +269,9 @@ class ServiceSerializer(serializers.ModelSerializer):
         user = self.context.get("request").user
         structure = data.get("structure") or self.instance.structure
 
-        user_structures = StructureMember.objects.filter(user_id=user.id).values_list(
-            "structure_id", flat=True
-        )
+        user_structures = StructureMember.objects.filter(
+            user_id=user.id, has_been_accepted_by_admin=True
+        ).values_list("structure_id", flat=True)
 
         if "structure" in data:
             if not user.is_staff and data["structure"].id not in user_structures:
