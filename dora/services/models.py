@@ -24,33 +24,78 @@ def make_unique_slug(instance, parent_slug, value, length=20):
 
 class ServiceCategories(models.TextChoices):
     MOBILITY = ("MO", "Mobilité")
-    HOUSING = ("HO", "Logement")
+    HOUSING = ("HO", "Logement – Hébergement")
     CHILD_CARE = ("CC", "Garde d’enfant")
+    FFL = "FL", "Apprendre le Français"
+    ILLITERACY = "IL", "Illettrisme"
+    CREATION = "CR", "Création d’activité"
+    DIGITAL = "DI", "Numérique"
+    FINANCIAL = "FI", "Difficultés financières"
+    GLOBAL = "GL", "Accompagnement global individualisé"
 
 
 # Subcategories are prefixed by their category
 class ServiceSubCategories(models.TextChoices):
 
-    MO_MOBILITY = ("MO-MO", "Quand on veut se déplacer")
-    MO_WORK = ("MO-WK", "Quand on reprend un emploi ou une formation")
-    MO_LICENSE = ("MO-LI", "Quand on veut passer son permis")
-    MO_VEHICLE = ("MO-VE", "Quand on a son permis mais pas de véhicule")
-    MO_MAINTENANCE = ("MO-MA", "Quand on doit entretenir son véhicule")
+    MO_MOBILITY = ("MO-MO", "Se déplacer sans permis et/ou sans véhicule personnel")
+    MO_WORK = ("MO-WK", "Reprendre un emploi ou une formation")
+    MO_LICENSE = (
+        "MO-LI",
+        "Préparer son permis de conduire, se réentraîner à la conduite",
+    )
+    MO_VEHICLE = ("MO-VE", "Louer ou acheter un véhicule")
+    MO_MAINTENANCE = ("MO-MA", "Entretenir ou réparer son véhicule")
 
-    HO_SHORT = ("HO-SH", "Hebergement de courte durée")
-    HO_ACCESS = ("HO-AC", "Accéder au logement")
-    HO_KEEP = ("HO-KE", "Conserver son logement")
+    MO_2WHEELS = "MO_2W", "Apprendre à utiliser un deux roues"
+    MO_BLOCKS = "MO_BLK", "Identifier ses freins, et définir ses besoins en mobilité"
+    MO_HELP = "MO_HLP", "Être accompagné(e) dans son parcours mobilité"
+
+    HO_ADAPT = "HO_AD", "Besoin d’adapter mon logement"
+    HO_KEEP = ("HO-KE", "Problème avec son logement")
+    HO_SHORT = ("HO-SH", "Mal logé/sans logis")
+    HO_MOVE = "HO_MO", "Déménagement"
+    HO_ACCESS = ("HO-AC", "Être accompagné(e) pour se loger")
+    HO_WORK = "HO_WK", "Reprendre un emploi ou une formation"
 
     CC_INFO = ("CC-IN", "Information et accompagnement des parents")
     CC_TEMP = ("CC-TM", "Garde ponctuelle")
     CC_LONG = ("CC-LG", "Garde pérenne")
     CC_EXTRACURRICULAR = ("CC-EX", "Garde périscolaire")
 
+    FL_COM = "FL-CO", "Communiquer dans la vie de tous les jours"
+    FL_INSERTION = "FL-IN", "Accompagnement vers l’insertion professionnelle"
+    FL_FORMATION = "FL-FO", "Suivre une formation"
+
+    IL_COM = "IL-CO", "Communiquer dans la vie de tous les jours"
+    IL_INSERTION = "IL-IN", "Accompagnement vers l’insertion professionnelle"
+    IL_FORMATION = "IL-FO", "Suivre une formation"
+    IL_ADMIN = "IL-AD", "Être informé sur les  démarches administratives"
+
+    CR_IDEA = "CR-ID", "De l’idée au projet"
+    CR_ELABORATE = "CR-EL", "Élaborer son projet"
+    CR_START = "CR-ST", "Démarrer son activité"
+
+    DI_BASICS = "DI-BA", "Prendre en main un équipement informatique"
+    DI_NAVIGATE = "DI-NA", "Naviguer sur internet"
+    DI_EMAIL = "DI-EM", "Envoyer, recevoir, gérer ses courriels"
+    DI_PHONE = "DI-PH", "Utiliser son smartphone"
+    DI_CONTENT = "DI-CN", "Créer et gérer ses contenus numériques"
+    DI_WORDS = "DI-WD", "Connaitre l’environnement et le vocabulaire numérique"
+    DI_WORDPROC = "DI-WP", "Apprendre les bases du traitement de texte"
+    DI_COM = "DI-CO", "Échanger avec ses proches"
+    DI_JOB = "DI-JO", "Trouver un emploi ou une formation"
+    DI_CHILD = "DI-CH", "Accompagner son enfant"
+    DI_ADMIN = "DI-AD", "Réaliser une démarche en ligne"
+
 
 class ServiceKind(models.TextChoices):
     MATERIAL = ("MA", "Aide materielle")
     FINANCIAL = ("FI", "Aide financière")
     SUPPORT = ("SU", "Accompagnement")
+    FORMATION = "FO", "Formation"
+    INFORMATION = "IN", "Information"
+    RECEPTION = "RE", "Accueil"
+    WORKSHOP = "WK", "Atelier"
 
 
 class BeneficiaryAccessMode(models.TextChoices):
