@@ -89,13 +89,13 @@ class ServiceSubCategories(models.TextChoices):
 
 
 class ServiceKind(models.TextChoices):
-    MATERIAL = ("MA", "Aide materielle")
-    FINANCIAL = ("FI", "Aide financière")
     SUPPORT = ("SU", "Accompagnement")
+    RECEPTION = "RE", "Accueil"
+    FINANCIAL = ("FI", "Aide financière")
+    MATERIAL = ("MA", "Aide materielle")
+    WORKSHOP = "WK", "Atelier"
     FORMATION = "FO", "Formation"
     INFORMATION = "IN", "Information"
-    RECEPTION = "RE", "Accueil"
-    WORKSHOP = "WK", "Atelier"
 
 
 class BeneficiaryAccessMode(models.TextChoices):
