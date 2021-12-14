@@ -139,7 +139,7 @@ class Command(BaseCommand):
             self.stdout.write(f"Member {member.user.email} already exists")
         except StructureMember.DoesNotExist:
             member = StructureMember.objects.create(
-                user=user, structure=structure, is_valid=False
+                user=user, structure=structure, has_accepted_invitation=False
             )
             was_already_member = False
         if is_admin is True and not member.is_admin:

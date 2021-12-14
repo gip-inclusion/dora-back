@@ -17,12 +17,12 @@ class StructureMemberAdmin(admin.ModelAdmin):
         "user",
         "structure",
         "is_admin",
-        "is_valid",
+        "has_accepted_invitation",
         "creation_date",
     ]
     list_filter = [
         "is_admin",
-        "is_valid",
+        "has_accepted_invitation",
         ("structure", RelatedOnlyFieldListFilter),
     ]
 

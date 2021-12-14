@@ -72,7 +72,7 @@ class StructureViewSet(
             f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
         )
         StructureMember.objects.create(
-            user=user, structure=structure, is_admin=True, is_valid=True
+            user=user, structure=structure, is_admin=True, has_accepted_invitation=True
         )
 
     def perform_update(self, serializer):
@@ -107,8 +107,8 @@ class StructureViewSet(
             token_user.is_valid = True
             token_user.save()
 
-        if not member.is_valid:
-            member.is_valid = True
+        if not member.has_accepted_invitation:
+            member.has_accepted_invitation = True
             member.save()
 
         must_set_password = not token_user.has_usable_password()
@@ -192,7 +192,7 @@ class StructureMemberViewset(viewsets.ModelViewSet):
                 raise exceptions.PermissionDenied
 
         # Can't reinvite a valid user
-        if member.is_valid and member.user.has_usable_password():
+        if member.has_accepted_invitation and member.user.has_usable_password():
             raise exceptions.PermissionDenied
 
         tmp_token = Token.objects.create(

@@ -6,11 +6,18 @@ repos:
         language_version: python3.9
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.9.1 
+    rev: 5.9.1
     hooks:
-      - id: isort      
-      
+      - id: isort
+
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.9.2
     hooks:
-    - id: flake8
+      - id: flake8
+
+  - repo: https://github.com/gitguardian/ggshield
+    rev: v1.10.7
+    hooks:
+      - id: ggshield
+        language_version: python3
+        stages: [commit]
