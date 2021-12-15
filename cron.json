@@ -1,0 +1,5 @@
+{
+  "jobs": [
+    { "command": "*/10 * * * * tools/export-db-metabase.sh", "size": "S" }
+  ]
+}
