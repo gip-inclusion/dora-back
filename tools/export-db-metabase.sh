@@ -31,7 +31,7 @@ FROM ((structures_structure
   LEFT JOIN users_user last_editor ON ((last_editor.id = structures_structure.last_editor_id)))"
 psql $SRC_DB_URL -c "ALTER TABLE analytics_structure ADD PRIMARY KEY (id)"
 
-pg_dump $DATABASE_URL -O -t analytics_structure -c dora | psql $DEST_DB_URL
+pg_dump $DATABASE_URL -O -t analytics_structure -c | psql $DEST_DB_URL
 
 
 # analytics_member
@@ -53,7 +53,7 @@ FROM ((structures_structuremember
   JOIN users_user ON ((users_user.id = structures_structuremember.user_id)))"
 psql $SRC_DB_URL -c "ALTER TABLE analytics_member ADD PRIMARY KEY (id)"
 
-pg_dump $DATABASE_URL -O -t analytics_member -c dora | psql $DEST_DB_URL
+pg_dump $DATABASE_URL -O -t analytics_member -c | psql $DEST_DB_URL
 
 
 # analytics_orphan_structure
@@ -70,7 +70,7 @@ HAVING (count(*) FILTER (WHERE ((structures_structuremember.is_admin IS TRUE) AN
 ORDER BY structures_structure.siret"
 psql $SRC_DB_URL -c "ALTER TABLE analytics_orphan_structure ADD PRIMARY KEY (siret)"
 
-pg_dump $DATABASE_URL -O -t analytics_orphan_structure -c dora | psql $DEST_DB_URL
+pg_dump $DATABASE_URL -O -t analytics_orphan_structure -c | psql $DEST_DB_URL
 
 
 # analytics_service
@@ -103,7 +103,7 @@ FROM (((services_service
   LEFT JOIN structures_structure ON ((services_service.structure_id = structures_structure.id)))"
 psql $SRC_DB_URL -c "ALTER TABLE analytics_service ADD PRIMARY KEY (id)"
 
-pg_dump $DATABASE_URL -O -t analytics_service -c dora | psql $DEST_DB_URL
+pg_dump $DATABASE_URL -O -t analytics_service -c | psql $DEST_DB_URL
 
 
 # analytics_user
@@ -119,4 +119,4 @@ SELECT
 FROM users_user"
 psql $SRC_DB_URL -c "ALTER TABLE analytics_user ADD PRIMARY KEY (id)"
 
-pg_dump $DATABASE_URL -O -t analytics_user -c dora | psql $DEST_DB_URL
+pg_dump $DATABASE_URL -O -t analytics_user -c | psql $DEST_DB_URL
