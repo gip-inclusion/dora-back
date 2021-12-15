@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Only run on the production app
+if [ "$ENVIRONMENT" != "production" ];then exit 0; fi
+
 export SRC_DB_URL=$DATABASE_URL
 export DEST_DB_URL=$METABASE_DB_URL
 
