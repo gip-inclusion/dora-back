@@ -31,7 +31,7 @@ class ServiceCategories(models.TextChoices):
     CREATION = "CR", "Création d’activité"
     DIGITAL = "DI", "Numérique"
     FINANCIAL = "FI", "Difficultés financières"
-    GLOBAL = "GL", "Accompagnement global individualisé"
+    GLOBAL = "GL", "Acco. global individualisé"
 
 
 # Subcategories are prefixed by their category
