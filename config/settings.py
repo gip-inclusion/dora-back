@@ -275,3 +275,20 @@ PE_CLIENT_ID = os.environ["PE_CLIENT_ID"]
 PE_CLIENT_SECRET = os.environ["PE_CLIENT_SECRET"]
 
 MATTERMOST_HOOK_KEY = os.environ.get("MATTERMOST_HOOK_KEY")
+
+################
+# SECURITY     #
+################
+if not DEBUG:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    # TODO: increase this after the testing period
+    # https://docs.djangoproject.com/en/3.2/ref/middleware/#http-strict-transport-security
+    SECURE_HSTS_SECONDS = 3600
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    # https://hstspreload.org/
+    # SECURE_HSTS_PRELOAD = True
+    SECURE_REFERRER_POLICY = "same-origin"
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_SSL_REDIRECT = True
