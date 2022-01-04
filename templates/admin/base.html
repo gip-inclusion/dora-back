@@ -1,5 +1,5 @@
 {% extends 'admin/base.html' %} {% block extrahead %} {{ block.super }}
-<style>
+<style nonce="{{request.csp_nonce}}">
   :root {
     --accent: white;
     --header-color: white;
