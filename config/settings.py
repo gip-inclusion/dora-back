@@ -283,9 +283,8 @@ MATTERMOST_HOOK_KEY = os.environ.get("MATTERMOST_HOOK_KEY")
 if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
-    # TODO: increase this after the testing period
-    # https://docs.djangoproject.com/en/3.2/ref/middleware/#http-strict-transport-security
-    SECURE_HSTS_SECONDS = 3600
+    # Disabled as this is already managed by Scalingo
+    # SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     # https://hstspreload.org/
     # SECURE_HSTS_PRELOAD = True
