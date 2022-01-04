@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Django",
+      "name": "Django Server",
       "type": "python",
       "request": "launch",
       "program": "${workspaceFolder}/manage.py",
@@ -23,14 +23,22 @@
       "justMyCode": false
     },
     {
-      "name": "Django Current Test",
+      "name": "Django Test — current file",
       "type": "python",
       "request": "launch",
       "program": "${workspaceFolder}/manage.py",
       "args": [
         "test",
-        "dora.structures.tests"
+        "`echo -n ${relativeFileDirname} | tr / .`.${fileBasenameNoExtension}"
       ],
+      "django": true
+    },
+    {
+      "name": "Django Specific Test",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": ["test", "dora.MODEL.tests.TESTNAME"],
       "django": true,
       "justMyCode": false
     }
