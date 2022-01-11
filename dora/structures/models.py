@@ -33,6 +33,26 @@ def make_unique_slug(instance, value, length=20):
     return unique_slug
 
 
+class StructurePutativeMember(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    structure = models.ForeignKey("Structure", on_delete=models.CASCADE)
+    will_be_admin = models.BooleanField(default=False)
+    creation_date = models.DateTimeField(auto_now_add=True)
+
+    invited_by_admin = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "Membre Potentiel"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "structure"],
+                name="%(app_label)s_unique_putative_member_by_structure",
+            )
+        ]
+
+
 class StructureMember(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -43,7 +63,7 @@ class StructureMember(models.Model):
         "Structure", on_delete=models.CASCADE, related_name="membership"
     )
     is_admin = models.BooleanField(default=False)
-    has_accepted_invitation = models.BooleanField(default=False)
+    # has_accepted_invitation = models.BooleanField(default=False)
 
     creation_date = models.DateTimeField(auto_now_add=True)
 
@@ -58,7 +78,7 @@ class StructureMember(models.Model):
 
     def notify_admins_invitation_accepted(self):
         structure_admins = StructureMember.objects.filter(
-            structure=self.structure, is_admin=True, has_accepted_invitation=True
+            structure=self.structure, is_admin=True
         ).exclude(user=self.user)
         for admin in structure_admins:
             send_invitation_accepted_notification(self, admin.user)

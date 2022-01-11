@@ -35,6 +35,11 @@ router.register(
     dora.structures.views.StructureMemberViewset,
     basename="structure-member",
 )
+router.register(
+    r"structure-putative-members",
+    dora.structures.views.StructurePutativeMemberViewset,
+    basename="structure-putative-member",
+)
 router.register(r"services", dora.services.views.ServiceViewSet, basename="service")
 
 register_converter(InseeCodeConverter, "insee_code")

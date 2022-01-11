@@ -9,7 +9,12 @@ from rest_framework import serializers
 from dora.admin_express.models import City
 from dora.rest_auth.models import Token
 from dora.structures.emails import send_invitation_email
-from dora.structures.models import Structure, StructureMember, StructureSource
+from dora.structures.models import (
+    Structure,
+    StructureMember,
+    StructurePutativeMember,
+    StructureSource,
+)
 from dora.users.models import User
 
 
@@ -42,7 +47,7 @@ class InviteSerializer(serializers.Serializer):
                 raise serializers.ValidationError(f"Invalid insee code {city_code}")
             data["city"] = city
 
-        data["is_admin"] = True if data["is_admin"] == "TRUE" else "FALSE"
+        data["is_admin"] = True if data["is_admin"] == "TRUE" else False
         return data
 
 
@@ -134,24 +139,31 @@ class Command(BaseCommand):
                 last_name=last_name,
             )
         try:
-            member = StructureMember.objects.get(user=user, structure=structure)
-            was_already_member = True
-            self.stdout.write(f"Member {member.user.email} already exists")
-        except StructureMember.DoesNotExist:
-            member = StructureMember.objects.create(
-                user=user, structure=structure, has_accepted_invitation=False
-            )
-            was_already_member = False
-        if is_admin is True and not member.is_admin:
-            member.is_admin = True
-            member.save()
-        if not was_already_member:
-            tmp_token = Token.objects.create(
-                user=user, expiration=timezone.now() + timedelta(days=7)
-            )
-            self.stdout.write(f"Inviting {member.user.email}")
-            send_invitation_email(
-                member,
-                inviter_name,
-                tmp_token.key,
-            )
+            member = StructurePutativeMember.objects.get(user=user, structure=structure)
+            self.stdout.write(f"Member {member.user.email} already invited")
+            if is_admin is True and not member.will_be_admin:
+                member.will_be_admin = True
+                member.save()
+        except StructurePutativeMember.DoesNotExist:
+            try:
+                member = StructureMember.objects.get(user=user, structure=structure)
+                self.stdout.write(f"Member {member.user.email} already exists")
+                if is_admin is True and not member.is_admin:
+                    member.is_admin = True
+                    member.save()
+            except StructureMember.DoesNotExist:
+                member = StructurePutativeMember.objects.create(
+                    user=user,
+                    structure=structure,
+                    invited_by_admin=True,
+                    will_be_admin=is_admin,
+                )
+                tmp_token = Token.objects.create(
+                    user=user, expiration=timezone.now() + timedelta(days=7)
+                )
+                self.stdout.write(f"Inviting {member.user.email}")
+                send_invitation_email(
+                    member,
+                    inviter_name,
+                    tmp_token.key,
+                )

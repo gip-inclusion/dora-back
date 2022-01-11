@@ -46,6 +46,7 @@ SELECT
   structures_structuremember.is_admin,
   structures_structuremember.structure_id,
   structures_structuremember.user_id,
+  -- TODO: get rid of this field, but ensure that doesnt break MB requests
   structures_structuremember.has_accepted_invitation AS is_valid,
   structures_structuremember.creation_date,
   users_user.is_staff,
@@ -69,7 +70,7 @@ FROM ((structures_structure
   LEFT JOIN structures_structuremember ON ((structures_structure.id = structures_structuremember.structure_id)))
   LEFT JOIN users_user ON ((structures_structuremember.user_id = users_user.id)))
 GROUP BY structures_structure.siret
-HAVING (count(*) FILTER (WHERE ((structures_structuremember.is_admin IS TRUE) AND (users_user.is_staff IS FALSE) AND (structures_structuremember.has_accepted_invitation = true) AND (users_user.is_valid = true) AND (users_user.is_active = true))) = 0)
+HAVING (count(*) FILTER (WHERE ((structures_structuremember.is_admin IS TRUE) AND (users_user.is_staff IS FALSE) AND (users_user.is_valid = true) AND (users_user.is_active = true))) = 0)
 ORDER BY structures_structure.siret"
 psql $SRC_DB_URL -c "ALTER TABLE analytics_orphan_structure ADD PRIMARY KEY (siret)"
 
