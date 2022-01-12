@@ -287,13 +287,15 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
                 raise exceptions.PermissionDenied
 
         # TODO: atomic
-        StructureMember.objects.create(
+        # TODO: ensure that the user is valid
+        membership = StructureMember.objects.create(
             user=pm.user,
             structure=pm.structure,
             is_admin=pm.will_be_admin,
         )
         pm.delete()
-        # TODO: notify user he was accepted
+        membership.notify_access_granted()
+
         return Response(status=201)
 
 

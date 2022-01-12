@@ -7,7 +7,11 @@ from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
 from dora.sirene.serializers import EstablishmentSerializer
-from dora.structures.emails import send_invitation_accepted_notification
+from dora.structures.emails import (
+    send_access_granted_notification,
+    send_access_requested_notification,
+    send_invitation_accepted_notification,
+)
 from dora.users.models import User
 
 
@@ -45,12 +49,20 @@ class StructurePutativeMember(models.Model):
 
     class Meta:
         verbose_name = "Membre Potentiel"
+        verbose_name_plural = "Membres Potentiels"
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "structure"],
                 name="%(app_label)s_unique_putative_member_by_structure",
             )
         ]
+
+    def notify_admin_access_requested(self):
+        structure_admins = StructureMember.objects.filter(
+            structure=self.structure, is_admin=True
+        ).exclude(user=self.user)
+        for admin in structure_admins:
+            send_access_requested_notification(self, admin.user)
 
 
 class StructureMember(models.Model):
@@ -82,6 +94,9 @@ class StructureMember(models.Model):
         ).exclude(user=self.user)
         for admin in structure_admins:
             send_invitation_accepted_notification(self, admin.user)
+
+    def notify_access_granted(self):
+        send_access_granted_notification(self)
 
 
 class StructureSource(models.TextChoices):

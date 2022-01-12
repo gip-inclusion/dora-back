@@ -156,6 +156,14 @@ def validate_email(request):
         user.is_valid = True
         user.save()
 
+    # Once the email is valid, we can inform the admins that
+    # an access request was sent
+    putative_memberships = StructurePutativeMember.objects.filter(
+        user=user, invited_by_admin=False
+    )
+    for pm in putative_memberships:
+        pm.notify_admin_access_requested()
+
     return Response({"result": "ok"}, status=200)
 
 
