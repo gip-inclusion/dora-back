@@ -25,7 +25,7 @@ class UserManager(BaseUserManager):
         Creates and saves a superuser with the given email and password.
         """
         user = self.create_user(email, password=password, **extra_fields)
-        user.is_admin = True
+        user.is_staff = True
         user.save()
         return user
 

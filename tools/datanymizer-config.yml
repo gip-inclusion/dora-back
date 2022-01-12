@@ -1,0 +1,72 @@
+tables:
+  - name: users_user
+    rules:
+      email:
+        template:
+          # Preserve beta.gouv addresses
+          format: "{%if prev.email is ending_with('beta.gouv.fr') %}{{_0}}{% else %}{{_1}}{% endif %}"
+          rules:
+            - email:
+                safe: true
+                uniq: true
+      first_name:
+        template:
+          # Preserve beta.gouv addresses
+          format: "{%if prev.email is ending_with('beta.gouv.fr') %}{{_0}}{% else %}{{_1}}{% endif %}"
+          rules:
+            - first_name: {}
+      last_name:
+        template:
+          # Preserve beta.gouv addresses
+          format: "{%if prev.email is ending_with('beta.gouv.fr') %}{{_0}}{% else %}{{_1}}{% endif %}"
+          rules:
+            - last_name: {}
+      password:
+        template:
+          format: "!disabled"
+
+  - name: structures_structure
+    rules:
+      email:
+        email:
+          safe: true
+      phone:
+        phone:
+          format: "9^########"
+
+  - name: services_service
+    rules:
+      contact_name:
+        person_name: {}
+      contact_email:
+        email:
+          safe: true
+      contact_phone:
+        phone:
+          format: "9^########"
+
+  - name: django_admin_log
+    rules: {}
+    query:
+      dump_condition: "FALSE"
+
+  - name: django_session
+    rules: {}
+    query:
+      dump_condition: "FALSE"
+
+  - name: rest_auth_token
+    rules: {}
+    query:
+      dump_condition: "FALSE"
+
+  - name: authtoken_token
+    rules: {}
+    query:
+      dump_condition: "FALSE"
+
+filter:
+  except:
+    - public.spatial_ref_sys
+    - public.admin_express_city
+    - public.sirene_establishment

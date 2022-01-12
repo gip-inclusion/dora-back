@@ -98,6 +98,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "csp.middleware.CSPMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -137,7 +138,7 @@ except KeyError:
             "USER": os.environ["POSTGRES_USER"],
             "PASSWORD": os.environ["POSTGRES_PASSWORD"],
             "HOST": os.environ["POSTGRES_HOST"],
-            "PORT": 5432,
+            "PORT": os.environ["POSTGRES_PORT"],
         }
     }
 
@@ -275,3 +276,19 @@ PE_CLIENT_ID = os.environ["PE_CLIENT_ID"]
 PE_CLIENT_SECRET = os.environ["PE_CLIENT_SECRET"]
 
 MATTERMOST_HOOK_KEY = os.environ.get("MATTERMOST_HOOK_KEY")
+
+################
+# SECURITY     #
+################
+if not DEBUG:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    # Disabled as this is already managed by Scalingo
+    # SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    # https://hstspreload.org/
+    # SECURE_HSTS_PRELOAD = True
+    SECURE_REFERRER_POLICY = "same-origin"
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_SSL_REDIRECT = True
