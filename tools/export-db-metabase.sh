@@ -46,8 +46,7 @@ SELECT
   structures_structuremember.is_admin,
   structures_structuremember.structure_id,
   structures_structuremember.user_id,
-  -- TODO: get rid of this field, but ensure that doesnt break MB requests
-  structures_structuremember.has_accepted_invitation AS is_valid,
+  (select TRUE) AS is_valid, -- TODO: OBSOLETE
   structures_structuremember.creation_date,
   users_user.is_staff,
   structures_structure.department,
