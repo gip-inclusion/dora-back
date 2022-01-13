@@ -51,13 +51,25 @@ class StructureViewSet(
             return Structure.objects.none()
         return Structure.objects.filter(membership__user=user)
 
+    def get_my_pending_structures(self, user):
+        if not user or not user.is_authenticated:
+            return Structure.objects.none()
+        return Structure.objects.filter(putative_membership__user=user)
+
     def get_queryset(self):
         user = self.request.user
         only_mine = self.request.query_params.get("mine")
+        only_pending = self.request.query_params.get("pending")
 
         if only_mine:
             return (
                 self.get_my_structures(user).order_by("-modification_date").distinct()
+            )
+        elif only_pending:
+            return (
+                self.get_my_pending_structures(user)
+                .order_by("-modification_date")
+                .distinct()
             )
         else:
             return Structure.objects.all().order_by("-modification_date")

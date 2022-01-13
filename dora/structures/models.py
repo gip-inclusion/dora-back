@@ -40,8 +40,14 @@ def make_unique_slug(instance, value, length=20):
 class StructurePutativeMember(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    structure = models.ForeignKey("Structure", on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="putative_membership",
+    )
+    structure = models.ForeignKey(
+        "Structure", on_delete=models.CASCADE, related_name="putative_membership"
+    )
     will_be_admin = models.BooleanField(default=False)
     creation_date = models.DateTimeField(auto_now_add=True)
 
