@@ -176,31 +176,6 @@ class StructurePutativeMemberSerializer(serializers.ModelSerializer):
             data["structure"] = structure
         return data
 
-    def update(self, instance, validated_data):
-        # For now, we don't want the user to be editable this way
-        # user_data = validated_data.pop("user") if "user" in validated_data else {}
-        # user = instance.user
-        # for attr, value in user_data.items():
-        #     setattr(user, attr, value)
-        # user.save()
-
-        if "user" in validated_data:
-            validated_data.pop("user")
-        if instance.is_admin and validated_data.get("is_admin") is False:
-            request_user = self.context["request"].user
-            if not request_user.is_staff:
-                # Only remove admin status if there's at least another one
-                # TODO
-                num_admins = StructureMember.objects.filter(
-                    structure=instance.structure, is_admin=True
-                ).count()
-                if num_admins == 1:
-                    raise exceptions.PermissionDenied
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
-
     def create(self, validated_data):
         request_user = self.context["request"].user
         user_data = validated_data.pop("user")

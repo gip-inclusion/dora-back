@@ -141,8 +141,8 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
         structure_slug = self.request.query_params.get("structure")
         user = self.request.user
 
-        # TODO: simplify
         if self.action in ("list", "create"):
+            # Can't list or create without passing ?structure_slug
             if structure_slug is None:
                 return StructurePutativeMember.objects.none()
 
@@ -249,11 +249,6 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
             except StructureMember.DoesNotExist:
                 raise exceptions.PermissionDenied
 
-        # TODO: ensure we work on putative members and not members
-        # Can't reinvite a valid user
-        # if member.has_accepted_invitation and member.user.has_usable_password():
-        #     raise exceptions.PermissionDenied
-
         tmp_token = Token.objects.create(
             user=member.user, expiration=timezone.now() + timedelta(days=7)
         )
@@ -297,9 +292,7 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticated],
     )
     def accept_membership_request(self, request, pk):
-        # TODO: check permissions
         # TODO: add tests
-        # TODO: ensure the user is active
         try:
             pm = StructurePutativeMember.objects.get(
                 id=pk, user__is_valid=True, user__is_active=True
@@ -335,7 +328,6 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticated],
     )
     def reject_membership_request(self, request, pk):
-        # TODO: check permissions
         # TODO: add tests
         try:
             pm = StructurePutativeMember.objects.get(id=pk)

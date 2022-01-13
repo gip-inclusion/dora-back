@@ -99,7 +99,7 @@ def password_reset_confirm(request):
             )
             for pm in putative_memberships:
                 with transaction.atomic(durable=True):
-                    # TODO sanity check: check that membership.invited_by_admin is True
+                    assert pm.invited_by_admin is True
                     membership = StructureMember.objects.create(
                         user=pm.user,
                         structure=pm.structure,
