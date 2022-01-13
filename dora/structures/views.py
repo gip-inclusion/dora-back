@@ -298,10 +298,11 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
     def accept_membership_request(self, request, pk):
         # TODO: check permissions
         # TODO: add tests
-        # TODO: ensure the user has a valid email address
         # TODO: ensure the user is active
         try:
-            pm = StructurePutativeMember.objects.get(id=pk)
+            pm = StructurePutativeMember.objects.get(
+                id=pk, user__is_valid=True, user__is_active=True
+            )
         except StructurePutativeMember.DoesNotExist:
             raise exceptions.NotFound
         # Ensure the requester is admin of the structure, or superuser
@@ -316,7 +317,6 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
                 raise exceptions.PermissionDenied
 
         # TODO: atomic
-        # TODO: ensure that the user is valid
         membership = StructureMember.objects.create(
             user=pm.user,
             structure=pm.structure,
@@ -336,8 +336,6 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
     def reject_membership_request(self, request, pk):
         # TODO: check permissions
         # TODO: add tests
-        # TODO: ensure the user has a valid email address
-        # TODO: ensure the user is active
         try:
             pm = StructurePutativeMember.objects.get(id=pk)
         except StructurePutativeMember.DoesNotExist:
