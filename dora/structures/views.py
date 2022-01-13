@@ -266,10 +266,36 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=["post"],
-        url_path="accept",
+        url_path="cancel-invite",
         permission_classes=[permissions.IsAuthenticated],
     )
-    def accept(self, request, pk):
+    def cancel_invite(self, request, pk):
+        try:
+            member = StructurePutativeMember.objects.get(id=pk)
+        except StructurePutativeMember.DoesNotExist:
+            raise exceptions.NotFound
+        # Ensure the requester is admin of the structure, or superuser
+        structure = member.structure
+        request_user = request.user
+        if not request_user.is_staff:
+            try:
+                StructureMember.objects.get(
+                    user_id=request_user.id, is_admin=True, structure_id=structure.id
+                )
+            except StructureMember.DoesNotExist:
+                raise exceptions.PermissionDenied
+
+        member.delete()
+
+        return Response(status=201)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="accept-membership-request",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def accept_membership_request(self, request, pk):
         # TODO: check permissions
         # TODO: add tests
         # TODO: ensure the user has a valid email address
@@ -298,6 +324,37 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
         )
         pm.delete()
         membership.notify_access_granted()
+
+        return Response(status=201)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="reject-membership-request",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def reject_membership_request(self, request, pk):
+        # TODO: check permissions
+        # TODO: add tests
+        # TODO: ensure the user has a valid email address
+        # TODO: ensure the user is active
+        try:
+            pm = StructurePutativeMember.objects.get(id=pk)
+        except StructurePutativeMember.DoesNotExist:
+            raise exceptions.NotFound
+        # Ensure the requester is admin of the structure, or superuser
+        structure = pm.structure
+        request_user = request.user
+        if not request_user.is_staff:
+            try:
+                StructureMember.objects.get(
+                    user_id=request_user.id, is_admin=True, structure_id=structure.id
+                )
+            except StructureMember.DoesNotExist:
+                raise exceptions.PermissionDenied
+
+        pm.notify_access_rejected()
+        pm.delete()
 
         return Response(status=201)
 

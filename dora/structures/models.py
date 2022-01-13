@@ -9,6 +9,7 @@ from django.utils.text import slugify
 from dora.sirene.serializers import EstablishmentSerializer
 from dora.structures.emails import (
     send_access_granted_notification,
+    send_access_rejected_notification,
     send_access_requested_notification,
     send_invitation_accepted_notification,
 )
@@ -69,6 +70,9 @@ class StructurePutativeMember(models.Model):
         ).exclude(user=self.user)
         for admin in structure_admins:
             send_access_requested_notification(self, admin.user)
+
+    def notify_access_rejected(self):
+        send_access_rejected_notification(self)
 
 
 class StructureMember(models.Model):

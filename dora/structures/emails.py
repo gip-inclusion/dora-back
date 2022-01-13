@@ -79,3 +79,20 @@ def send_access_granted_notification(member):
         body,
         tags=["access-granted"],
     )
+
+
+def send_access_rejected_notification(member):
+    params = {
+        "structure_name": member.structure.name,
+        "support_email": settings.SUPPORT_EMAIL,
+        "homepage_url": settings.FRONTEND_URL,
+    }
+
+    body = render_to_string("notification-access-rejected.html", params)
+
+    send_mail(
+        "[DORA] Accès refusé",
+        member.user.email,
+        body,
+        tags=["access-rejected"],
+    )
