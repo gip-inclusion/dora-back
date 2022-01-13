@@ -98,15 +98,15 @@ def password_reset_confirm(request):
                 user=request.user
             )
             for pm in putative_memberships:
-                # TODO atomic
-                # TODO sanity check: check that membership.invited_by_admin is True
-                membership = StructureMember.objects.create(
-                    user=pm.user,
-                    structure=pm.structure,
-                    is_admin=pm.will_be_admin,
-                )
-                membership.notify_admins_invitation_accepted()
-                pm.delete()
+                with transaction.atomic(durable=True):
+                    # TODO sanity check: check that membership.invited_by_admin is True
+                    membership = StructureMember.objects.create(
+                        user=pm.user,
+                        structure=pm.structure,
+                        is_admin=pm.will_be_admin,
+                    )
+                    membership.notify_admins_invitation_accepted()
+                    pm.delete()
 
         return Response(status=204)
     except DjangoValidationError:

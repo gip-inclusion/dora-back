@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.conf import settings
+from django.db import transaction
 from django.db.models.query_utils import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -204,19 +205,19 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
                 user=user, expiration=timezone.now() + timedelta(minutes=30)
             )
         else:
-            membership = StructureMember.objects.create(
-                user=pm.user,
-                structure=pm.structure,
-                is_admin=pm.will_be_admin,
-            )
-            # TODO: atomic
-            pm.delete()
-            # The user already exists and hopefully know its password
-            # we can safely delete the invitation token
-            Token.objects.filter(user=user, expiration__isnull=False).delete()
+            with transaction.atomic(durable=True):
+                membership = StructureMember.objects.create(
+                    user=pm.user,
+                    structure=pm.structure,
+                    is_admin=pm.will_be_admin,
+                )
+                pm.delete()
+                # The user already exists and hopefully know its password
+                # we can safely delete the invitation token
+                Token.objects.filter(user=user, expiration__isnull=False).delete()
 
-            # Then notify the administrators of this structure
-            membership.notify_admins_invitation_accepted()
+                # Then notify the administrators of this structure
+                membership.notify_admins_invitation_accepted()
         return Response(
             {
                 "structure_name": structure_name,
@@ -316,14 +317,14 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
             except StructureMember.DoesNotExist:
                 raise exceptions.PermissionDenied
 
-        # TODO: atomic
-        membership = StructureMember.objects.create(
-            user=pm.user,
-            structure=pm.structure,
-            is_admin=pm.will_be_admin,
-        )
-        pm.delete()
-        membership.notify_access_granted()
+        with transaction.atomic(durable=True):
+            membership = StructureMember.objects.create(
+                user=pm.user,
+                structure=pm.structure,
+                is_admin=pm.will_be_admin,
+            )
+            pm.delete()
+            membership.notify_access_granted()
 
         return Response(status=201)
 
