@@ -768,8 +768,7 @@ class StructureMemberTestCase(APITestCase):
         self.assertIn(invit_key.key, mail.outbox[0].body)
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {invit_key.key}")
         response = self.client.post(
-            "/structures/accept-invite/",
-            {"key": invit_key.key, "member": member.id},
+            f"/structure-putative-members/{member.id}/accept-invite/",
         )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.data["must_set_password"])

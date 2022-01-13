@@ -233,8 +233,3 @@ class StructurePutativeMemberSerializer(serializers.ModelSerializer):
             tmp_token.key,
         )
         return member
-
-
-class InviteSerializer(serializers.Serializer):
-    key = serializers.CharField()
-    member = serializers.UUIDField()
