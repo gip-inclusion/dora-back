@@ -84,7 +84,6 @@ def send_access_granted_notification(member):
 def send_access_rejected_notification(member):
     params = {
         "structure_name": member.structure.name,
-        "support_email": settings.SUPPORT_EMAIL,
         "homepage_url": settings.FRONTEND_URL,
     }
 
