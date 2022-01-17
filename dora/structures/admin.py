@@ -16,12 +16,12 @@ class StructurePutativeMemberAdmin(admin.ModelAdmin):
     list_display = [
         "user",
         "structure",
-        "will_be_admin",
+        "is_admin",
         "invited_by_admin",
         "creation_date",
     ]
     list_filter = [
-        "will_be_admin",
+        "is_admin",
         "invited_by_admin",
         ("structure", RelatedOnlyFieldListFilter),
     ]

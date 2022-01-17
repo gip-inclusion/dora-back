@@ -49,7 +49,7 @@ class StructurePutativeMember(models.Model):
     structure = models.ForeignKey(
         "Structure", on_delete=models.CASCADE, related_name="putative_membership"
     )
-    will_be_admin = models.BooleanField(default=False)
+    is_admin = models.BooleanField(default=False)
     creation_date = models.DateTimeField(auto_now_add=True)
 
     invited_by_admin = models.BooleanField(default=False)

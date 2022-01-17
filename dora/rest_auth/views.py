@@ -103,7 +103,7 @@ def password_reset_confirm(request):
                     membership = StructureMember.objects.create(
                         user=pm.user,
                         structure=pm.structure,
-                        is_admin=pm.will_be_admin,
+                        is_admin=pm.is_admin,
                     )
                     membership.notify_admins_invitation_accepted()
                     pm.delete()
@@ -249,7 +249,7 @@ def register_structure_and_user(request):
         StructurePutativeMember.objects.create(
             user=user,
             structure=structure,
-            will_be_admin=not has_nonstaff_admin,
+            is_admin=not has_nonstaff_admin,
             invited_by_admin=False,
         )
 

@@ -209,7 +209,7 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
                 membership = StructureMember.objects.create(
                     user=pm.user,
                     structure=pm.structure,
-                    is_admin=pm.will_be_admin,
+                    is_admin=pm.is_admin,
                 )
                 pm.delete()
                 # The user already exists and hopefully know its password
@@ -314,7 +314,7 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
             membership = StructureMember.objects.create(
                 user=pm.user,
                 structure=pm.structure,
-                is_admin=pm.will_be_admin,
+                is_admin=pm.is_admin,
             )
             pm.delete()
             membership.notify_access_granted()

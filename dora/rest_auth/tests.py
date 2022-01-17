@@ -133,7 +133,7 @@ class AuthTestCase(APITestCase):
         response = self.client.post("/auth/register-structure-and-user/", data)
         self.assertEqual(response.status_code, 201)
         self.assertFalse(
-            StructurePutativeMember.objects.get(user__email="foo@bar.com").will_be_admin
+            StructurePutativeMember.objects.get(user__email="foo@bar.com").is_admin
         )
 
     def test_register_new_user_and_struct_following_users_need_admin_validation(self):
@@ -152,7 +152,7 @@ class AuthTestCase(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertTrue(
             StructurePutativeMember.objects.filter(
-                user__email="foo@bar.com", will_be_admin=False, invited_by_admin=False
+                user__email="foo@bar.com", is_admin=False, invited_by_admin=False
             ).exists()
         )
         self.assertFalse(

@@ -478,7 +478,7 @@ class StructureMemberTestCase(APITestCase):
         response = self.client.post(
             f"/structure-putative-members/?structure={self.my_struct.slug}",
             {
-                "will_be_admin": False,
+                "is_admin": False,
                 "user": {
                     "last_name": "FOO",
                     "first_name": "FIZZ",
@@ -487,7 +487,7 @@ class StructureMemberTestCase(APITestCase):
             },
         )
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.data["will_be_admin"], False)
+        self.assertEqual(response.data["is_admin"], False)
         self.assertEqual(response.data["user"]["first_name"], "FIZZ")
         self.assertEqual(response.data["user"]["last_name"], "FOO")
         self.assertEqual(response.data["user"]["email"], "FOO@BAR.BUZ")
@@ -498,7 +498,7 @@ class StructureMemberTestCase(APITestCase):
         response = self.client.post(
             f"/structure-putative-members/?structure={self.my_struct.slug}",
             {
-                "will_be_admin": False,
+                "is_admin": False,
                 "user": {
                     "last_name": "FOO",
                     "first_name": "FIZZ",
@@ -519,7 +519,7 @@ class StructureMemberTestCase(APITestCase):
         response = self.client.post(
             f"/structure-putative-members/?structure={self.my_struct.slug}",
             {
-                "will_be_admin": False,
+                "is_admin": False,
                 "user": {"last_name": "FOO", "email": "FOO@BAR.BUZ"},
             },
         )
@@ -542,7 +542,7 @@ class StructureMemberTestCase(APITestCase):
             },
         )
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.data["will_be_admin"], False)
+        self.assertEqual(response.data["is_admin"], False)
         self.assertNotEqual(response.data["user"]["last_name"], "FOO")
         self.assertEqual(response.data["user"]["email"], self.another_struct_user.email)
         self.assertEqual(len(mail.outbox), 1)
@@ -613,7 +613,7 @@ class StructureMemberTestCase(APITestCase):
         response = self.client.post(
             f"/structure-putative-members/?structure={self.my_struct.slug}",
             {
-                "will_be_admin": False,
+                "is_admin": False,
                 "user": {
                     "last_name": "FOO",
                     "email": f"{self.another_struct_user.email}",
@@ -624,7 +624,7 @@ class StructureMemberTestCase(APITestCase):
         member = response.data["id"]
         response = self.client.get(f"/structure-putative-members/{member}/")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["will_be_admin"], False)
+        self.assertEqual(response.data["is_admin"], False)
         self.assertNotEqual(response.data["user"]["last_name"], "FOO")
         self.assertEqual(response.data["user"]["email"], self.another_struct_user.email)
         self.assertEqual(len(mail.outbox), 1)
@@ -970,7 +970,7 @@ class MassInviteTestCase(APITestCase):
             user__email="foo@buzz.com", structure=structure
         )
         self.assertEqual(members.count(), 1)
-        self.assertFalse(members[0].will_be_admin)
+        self.assertFalse(members[0].is_admin)
 
     def test_can_invite_as_admin(self):
         structure = self.create_structure()
@@ -980,7 +980,7 @@ class MassInviteTestCase(APITestCase):
             user__email="foo@buzz.com", structure=structure, invited_by_admin=True
         )
         self.assertEqual(members.count(), 1)
-        self.assertTrue(members[0].will_be_admin)
+        self.assertTrue(members[0].is_admin)
 
     def test_admin_is_TRUE_or_FALSE(self):
         structure = self.create_structure()

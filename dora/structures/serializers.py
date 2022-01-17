@@ -157,7 +157,7 @@ class StructurePutativeMemberSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "user",
-            "will_be_admin",
+            "is_admin",
             "must_set_password",
             "invited_by_admin",
         ]

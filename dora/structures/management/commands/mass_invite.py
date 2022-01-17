@@ -141,8 +141,8 @@ class Command(BaseCommand):
         try:
             member = StructurePutativeMember.objects.get(user=user, structure=structure)
             self.stdout.write(f"Member {member.user.email} already invited")
-            if is_admin is True and not member.will_be_admin:
-                member.will_be_admin = True
+            if is_admin is True and not member.is_admin:
+                member.is_admin = True
                 member.save()
         except StructurePutativeMember.DoesNotExist:
             try:
@@ -156,7 +156,7 @@ class Command(BaseCommand):
                     user=user,
                     structure=structure,
                     invited_by_admin=True,
-                    will_be_admin=is_admin,
+                    is_admin=is_admin,
                 )
                 tmp_token = Token.objects.create(
                     user=user, expiration=timezone.now() + timedelta(days=7)
