@@ -7,7 +7,7 @@ from dora.rest_auth.models import Token
 from dora.structures.emails import send_invitation_email
 from dora.users.models import User
 
-from .models import Structure, StructureMember
+from .models import Structure, StructureMember, StructurePutativeMember
 
 
 class StructureSerializer(serializers.ModelSerializer):
@@ -98,7 +98,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 class StructureMemberSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-    must_set_password = serializers.SerializerMethodField()
 
     class Meta:
         model = StructureMember
@@ -106,14 +105,8 @@ class StructureMemberSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "is_admin",
-            "has_accepted_invitation",
-            "must_set_password",
         ]
-        read_only_fields = ["has_accepted_invitation"]
         validators = []
-
-    def get_must_set_password(self, obj):
-        return not obj.user.has_usable_password()
 
     def validate(self, data):
         structure_slug = self.context["request"].query_params.get("structure")
@@ -149,6 +142,35 @@ class StructureMemberSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
+class StructurePutativeMemberSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    must_set_password = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StructurePutativeMember
+        fields = [
+            "id",
+            "user",
+            "is_admin",
+            "must_set_password",
+            "invited_by_admin",
+        ]
+        validators = []
+
+    def get_must_set_password(self, obj):
+        return not obj.user.has_usable_password()
+
+    def validate(self, data):
+        structure_slug = self.context["request"].query_params.get("structure")
+        if structure_slug:
+            try:
+                structure = Structure.objects.get(slug=structure_slug)
+            except Structure.DoesNotExist:
+                raise exceptions.NotFound
+            data["structure"] = structure
+        return data
+
     def create(self, validated_data):
         request_user = self.context["request"].user
         user_data = validated_data.pop("user")
@@ -160,13 +182,17 @@ class StructureMemberSerializer(serializers.ModelSerializer):
             user.set_unusable_password()
             user.save()
         try:
-            StructureMember.objects.get(
+            StructurePutativeMember.objects.get(
                 user=user, structure=validated_data["structure"]
             )
             raise exceptions.PermissionDenied
-        except StructureMember.DoesNotExist:
+        except StructurePutativeMember.DoesNotExist:
             pass
-        member = StructureMember.objects.create(user=user, **validated_data)
+        member = StructurePutativeMember.objects.create(
+            user=user,
+            **validated_data,
+            invited_by_admin=True,
+        )
         # Send invitation email
         tmp_token = Token.objects.create(
             user=user, expiration=timezone.now() + timedelta(days=7)
@@ -177,8 +203,3 @@ class StructureMemberSerializer(serializers.ModelSerializer):
             tmp_token.key,
         )
         return member
-
-
-class InviteSerializer(serializers.Serializer):
-    key = serializers.CharField()
-    member = serializers.UUIDField()

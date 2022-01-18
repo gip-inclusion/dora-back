@@ -2,7 +2,12 @@ from django.contrib.auth import authenticate
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
-from dora.structures.models import Structure, StructureMember, StructureTypology
+from dora.structures.models import (
+    Structure,
+    StructureMember,
+    StructurePutativeMember,
+    StructureTypology,
+)
 from dora.users.models import User
 
 
@@ -67,7 +72,21 @@ class AuthTestCase(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertTrue(StructureMember.objects.get(user__email="foo@bar.com").is_admin)
 
-    def test_register_new_user_and_struct_first_nonadmin_user_becomes_admin(self):
+    def test_register_new_user_and_struct_first_user_dont_need_admin_validation(self):
+        self.client.force_authenticate(user=None)
+        establishment = baker.make("Establishment", siret="12345678901234")
+        data = {
+            "first_name": "Foo",
+            "last_name": "Bar",
+            "email": "foo@bar.com",
+            "password": "lkqjfl123!)p",
+            "siret": establishment.siret,
+        }
+        response = self.client.post("/auth/register-structure-and-user/", data)
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(StructureMember.objects.get(user__email="foo@bar.com"))
+
+    def test_register_new_user_and_struct_first_user_becomes_admin_when_no_admin(self):
         self.client.force_authenticate(user=None)
         establishment = baker.make("Establishment", siret="12345678901234")
         structure = baker.make("Structure", siret=establishment.siret)
@@ -82,6 +101,22 @@ class AuthTestCase(APITestCase):
         response = self.client.post("/auth/register-structure-and-user/", data)
         self.assertEqual(response.status_code, 201)
         self.assertTrue(StructureMember.objects.get(user__email="foo@bar.com").is_admin)
+
+    def test_register_new_user_and_struct_first_user_dont_need_admin_validation_when_no_admin(
+        self,
+    ):
+        self.client.force_authenticate(user=None)
+        establishment = baker.make("Establishment", siret="12345678901234")
+        data = {
+            "first_name": "Foo",
+            "last_name": "Bar",
+            "email": "foo@bar.com",
+            "password": "lkqjfl123!)p",
+            "siret": establishment.siret,
+        }
+        response = self.client.post("/auth/register-structure-and-user/", data)
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(StructureMember.objects.get(user__email="foo@bar.com"))
 
     def test_register_new_user_and_struct_following_users_dont_become_admin(self):
         self.client.force_authenticate(user=None)
@@ -98,14 +133,37 @@ class AuthTestCase(APITestCase):
         response = self.client.post("/auth/register-structure-and-user/", data)
         self.assertEqual(response.status_code, 201)
         self.assertFalse(
-            StructureMember.objects.get(user__email="foo@bar.com").is_admin
+            StructurePutativeMember.objects.get(user__email="foo@bar.com").is_admin
+        )
+
+    def test_register_new_user_and_struct_following_users_need_admin_validation(self):
+        self.client.force_authenticate(user=None)
+        establishment = baker.make("Establishment", siret="12345678901234")
+        structure = baker.make("Structure", siret=establishment.siret)
+        baker.make(StructureMember, structure=structure, is_admin=True)
+        data = {
+            "first_name": "Foo",
+            "last_name": "Bar",
+            "email": "foo@bar.com",
+            "password": "lkqjfl123!)p",
+            "siret": establishment.siret,
+        }
+        response = self.client.post("/auth/register-structure-and-user/", data)
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(
+            StructurePutativeMember.objects.filter(
+                user__email="foo@bar.com", is_admin=False, invited_by_admin=False
+            ).exists()
+        )
+        self.assertFalse(
+            StructureMember.objects.filter(user__email="foo@bar.com").exists()
         )
 
     def test_register_new_user_and_struct_first_non_staff_becomes_admin(self):
         self.client.force_authenticate(user=None)
         establishment = baker.make("Establishment", siret="12345678901234")
         structure = baker.make("Structure", siret=establishment.siret)
-        staff_user = baker.make("users.User", is_staff=True)
+        staff_user = baker.make("users.User", is_staff=True, is_valid=True)
         baker.make(StructureMember, structure=structure, user=staff_user, is_admin=True)
         data = {
             "first_name": "Foo",
@@ -151,3 +209,20 @@ class AuthTestCase(APITestCase):
         response = self.client.post("/auth/register-structure-and-user/", data)
         self.assertEqual(response.status_code, 201)
         self.assertTrue(User.objects.filter(email="foo@pole-emploi.fr").exists())
+
+    def test_register_PE_user_and_struct_with_PE_email_dont_need_admin_validation(self):
+        self.client.force_authenticate(user=None)
+        po_agency = baker.make(
+            "Structure", siret="12345678901234", typology=StructureTypology.PE
+        )
+        establishment = baker.make("Establishment", siret=po_agency.siret)
+        data = {
+            "first_name": "Foo",
+            "last_name": "Bar",
+            "email": "foo@pole-emploi.fr",
+            "password": "lkqjfl123!)p",
+            "siret": establishment.siret,
+        }
+        response = self.client.post("/auth/register-structure-and-user/", data)
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(StructureMember.objects.get(user__email="foo@pole-emploi.fr"))

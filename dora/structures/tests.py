@@ -8,7 +8,12 @@ from model_bakery import baker
 from rest_framework.test import APITestCase
 
 from dora.rest_auth.models import Token
-from dora.structures.models import Structure, StructureMember, StructureSource
+from dora.structures.models import (
+    Structure,
+    StructureMember,
+    StructurePutativeMember,
+    StructureSource,
+)
 from dora.users.models import User
 
 DUMMY_STRUCTURE = {
@@ -24,8 +29,8 @@ DUMMY_STRUCTURE = {
 
 class StructureTestCase(APITestCase):
     def setUp(self):
-        self.me = baker.make("users.User")
-        self.superuser = baker.make("users.User", is_staff=True)
+        self.me = baker.make("users.User", is_valid=True)
+        self.superuser = baker.make("users.User", is_staff=True, is_valid=True)
         self.my_struct = baker.make("Structure")
         self.my_struct.members.add(self.me)
 
@@ -170,44 +175,56 @@ class StructureTestCase(APITestCase):
 
 class StructureMemberTestCase(APITestCase):
     def setUp(self):
-        self.me = baker.make("users.User")
-        self.user1 = baker.make("users.User")
-        self.user2 = baker.make("users.User")
-        self.my_other_struct_user = baker.make("users.User")
-        self.another_struct_user = baker.make("users.User")
+        self.me = baker.make("users.User", is_valid=True)
+        self.user1 = baker.make("users.User", is_valid=True)
+        self.user2 = baker.make("users.User", is_valid=True)
+        self.my_other_struct_user = baker.make("users.User", is_valid=True)
+        self.another_struct_user = baker.make("users.User", is_valid=True)
+        self.unaccepted_admin = baker.make("users.User", is_valid=True)
 
-        self.superuser = baker.make("users.User", is_staff=True)
+        self.superuser = baker.make("users.User", is_staff=True, is_valid=True)
 
         self.my_struct = baker.make("Structure")
         self.my_struct.members.add(
             self.me,
-            through_defaults={"is_admin": True, "has_accepted_invitation": True},
-        ),
+            through_defaults={
+                "is_admin": True,
+            },
+        )
+
         self.my_struct.members.add(
             self.user1,
-            through_defaults={"is_admin": True, "has_accepted_invitation": True},
+            through_defaults={
+                "is_admin": True,
+            },
         )
         self.my_struct.members.add(
             self.user2,
-            through_defaults={"is_admin": False, "has_accepted_invitation": True},
+            through_defaults={
+                "is_admin": False,
+            },
         )
 
         self.my_other_struct = baker.make("Structure", creator=None, last_editor=None)
         self.my_other_struct.members.add(
             self.me,
-            through_defaults={"is_admin": True, "has_accepted_invitation": True},
+            through_defaults={
+                "is_admin": True,
+            },
         )
         self.my_other_struct.members.add(self.my_other_struct_user)
 
         self.other_struct = baker.make("Structure")
         self.other_struct.members.add(
             self.another_struct_user,
-            through_defaults={"is_admin": True, "has_accepted_invitation": True},
+            through_defaults={
+                "is_admin": True,
+            },
         )
 
     def test_create_struct_creates_member(self):
         # For now, this is only open to staff members
-        user = baker.make("users.User")
+        user = baker.make("users.User", is_valid=True)
         self.client.force_authenticate(user=user)
         member = StructureMember.objects.filter(user=user).first()
         self.assertIsNone(member)
@@ -241,6 +258,13 @@ class StructureMemberTestCase(APITestCase):
         self.assertIn(self.user1.email, emails)
         self.assertIn(self.user2.email, emails)
 
+    def test_unaccepted_admin_user_cant_see_structure_members(self):
+        self.client.force_authenticate(user=self.unaccepted_admin)
+        response = self.client.get(
+            f"/structure-members/?structure={self.my_struct.slug}"
+        )
+        self.assertEqual(response.status_code, 403)
+
     def test_anonymous_user_cant_see_structure_members(self):
         response = self.client.get(
             f"/structure-members/?structure={self.my_struct.slug}"
@@ -273,6 +297,12 @@ class StructureMemberTestCase(APITestCase):
         response = self.client.get(f"/structure-members/{member.id}/")
         self.assertEqual(response.status_code, 200)
 
+    def test_unaccepted_admin_user_cant_see_structure_member(self):
+        self.client.force_authenticate(user=self.unaccepted_admin)
+        member = self.user1.membership.get(structure=self.my_struct)
+        response = self.client.get(f"/structure-members/{member.id}/")
+        self.assertEqual(response.status_code, 404)
+
     def test_anonymous_user_cant_see_structure_member(self):
         member = self.user1.membership.get(structure=self.my_struct)
         response = self.client.get(f"/structure-members/{member.id}/")
@@ -304,6 +334,16 @@ class StructureMemberTestCase(APITestCase):
         response = self.client.get(f"/structure-members/{member.id}/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["is_admin"], False)
+
+    def test_unaccepted_admin_user_cant_change_structure_members(self):
+        self.client.force_authenticate(user=self.unaccepted_admin)
+        member = self.user1.membership.get(structure=self.my_struct)
+        self.assertTrue(member.is_admin)
+        response = self.client.patch(
+            f"/structure-members/{member.id}/",
+            {"is_admin": False},
+        )
+        self.assertEqual(response.status_code, 404)
 
     def test_cant_change_email(self):
         self.client.force_authenticate(user=self.me)
@@ -383,6 +423,14 @@ class StructureMemberTestCase(APITestCase):
         response = self.client.get(f"/structure-members/{member.id}/")
         self.assertEqual(response.status_code, 404)
 
+    def test_unaccepted_admin_user_cant_delete_structure_members(self):
+        self.client.force_authenticate(user=self.unaccepted_admin)
+        member = self.user1.membership.get(structure=self.my_struct)
+        response = self.client.delete(
+            f"/structure-members/{member.id}/",
+        )
+        self.assertEqual(response.status_code, 404)
+
     def test_anonymous_user_cant_delete_structure_members(self):
         member = self.user1.membership.get(structure=self.my_struct)
         response = self.client.delete(
@@ -421,7 +469,7 @@ class StructureMemberTestCase(APITestCase):
         self.client.force_authenticate(user=self.me)
 
         response = self.client.post(
-            f"/structure-members/?structure={self.my_struct.slug}",
+            f"/structure-putative-members/?structure={self.my_struct.slug}",
             {
                 "is_admin": False,
                 "user": {
@@ -432,33 +480,68 @@ class StructureMemberTestCase(APITestCase):
             },
         )
         self.assertEqual(response.status_code, 201)
-        member = response.data["id"]
-        response = self.client.get(f"/structure-members/{member}/")
-        self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["is_admin"], False)
         self.assertEqual(response.data["user"]["first_name"], "FIZZ")
         self.assertEqual(response.data["user"]["last_name"], "FOO")
         self.assertEqual(response.data["user"]["email"], "FOO@BAR.BUZ")
 
+    def test_unaccepted_admin_user_cant_invite_new_user(self):
+        self.client.force_authenticate(user=self.unaccepted_admin)
+
+        response = self.client.post(
+            f"/structure-putative-members/?structure={self.my_struct.slug}",
+            {
+                "is_admin": False,
+                "user": {
+                    "last_name": "FOO",
+                    "first_name": "FIZZ",
+                    "email": "FOO@BAR.BUZ",
+                },
+            },
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(
+            StructurePutativeMember.objects.filter(
+                structure=self.my_struct, user__email="FOO@BAR.BUZ"
+            ).exists()
+        )
+
     def test_admin_user_cant_force_validation(self):
         self.client.force_authenticate(user=self.me)
 
         response = self.client.post(
-            f"/structure-members/?structure={self.my_struct.slug}",
+            f"/structure-putative-members/?structure={self.my_struct.slug}",
             {
                 "is_admin": False,
-                "has_accepted_invitation": True,
                 "user": {"last_name": "FOO", "email": "FOO@BAR.BUZ"},
             },
         )
         self.assertEqual(response.status_code, 201)
         member = response.data["id"]
         response = self.client.get(f"/structure-members/{member}/")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["has_accepted_invitation"], False)
+        self.assertEqual(response.status_code, 404)
 
     def test_admin_user_can_invite_existing_user(self):
         self.client.force_authenticate(user=self.me)
+
+        response = self.client.post(
+            f"/structure-putative-members/?structure={self.my_struct.slug}",
+            {
+                "is_admin": False,
+                "user": {
+                    "last_name": "FOO",
+                    "email": f"{self.another_struct_user.email}",
+                },
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["is_admin"], False)
+        self.assertNotEqual(response.data["user"]["last_name"], "FOO")
+        self.assertEqual(response.data["user"]["email"], self.another_struct_user.email)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_unaccepted_admin_user_cant_invite_existing_user(self):
+        self.client.force_authenticate(user=self.unaccepted_admin)
 
         response = self.client.post(
             f"/structure-members/?structure={self.my_struct.slug}",
@@ -470,14 +553,12 @@ class StructureMemberTestCase(APITestCase):
                 },
             },
         )
-        self.assertEqual(response.status_code, 201)
-        member = response.data["id"]
-        response = self.client.get(f"/structure-members/{member}/")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["is_admin"], False)
-        self.assertNotEqual(response.data["user"]["last_name"], "FOO")
-        self.assertEqual(response.data["user"]["email"], self.another_struct_user.email)
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(
+            StructureMember.objects.filter(
+                structure=self.my_struct, user__email="FOO@BAR.BUZ"
+            ).exists()
+        )
 
     def test_admin_user_cannot_reinvite_valid_member(self):
         self.client.force_authenticate(user=self.me)
@@ -523,7 +604,7 @@ class StructureMemberTestCase(APITestCase):
     def test_super_user_can_invite_structure_members(self):
         self.client.force_authenticate(user=self.superuser)
         response = self.client.post(
-            f"/structure-members/?structure={self.my_struct.slug}",
+            f"/structure-putative-members/?structure={self.my_struct.slug}",
             {
                 "is_admin": False,
                 "user": {
@@ -534,7 +615,7 @@ class StructureMemberTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 201)
         member = response.data["id"]
-        response = self.client.get(f"/structure-members/{member}/")
+        response = self.client.get(f"/structure-putative-members/{member}/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["is_admin"], False)
         self.assertNotEqual(response.data["user"]["last_name"], "FOO")
@@ -543,41 +624,46 @@ class StructureMemberTestCase(APITestCase):
 
     def test_admin_can_reinvite_user(self):
         self.client.force_authenticate(user=self.me)
-        user = baker.make("users.User")
-        self.my_struct.members.add(user)
-        member = user.membership.get(structure=self.my_struct)
-        self.assertFalse(member.has_accepted_invitation)
+        user = baker.make("users.User", is_valid=True)
+        pm = StructurePutativeMember.objects.create(
+            user=user, structure=self.my_struct, invited_by_admin=True
+        )
         response = self.client.post(
-            f"/structure-members/{member.id}/resend-invite/",
+            f"/structure-putative-members/{pm.id}/resend-invite/",
         )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn("Votre invitation sur DORA", mail.outbox[0].subject)
 
-    def test_admin_cant_reinvite_valid_user(self):
+    def test_admin_cant_reinvite_valid_member(self):
         self.client.force_authenticate(user=self.me)
-        user = baker.make("users.User")
+        user = baker.make("users.User", is_valid=True)
         self.my_struct.members.add(
-            user, through_defaults={"has_accepted_invitation": True}
+            user,
         )
         member = user.membership.get(structure=self.my_struct)
+
         response = self.client.post(
             f"/structure-members/{member.id}/resend-invite/",
         )
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(len(mail.outbox), 0)
+        response = self.client.post(
+            f"/structure-putative-members/{member.id}/resend-invite/",
+        )
+        self.assertEqual(response.status_code, 404)
         self.assertEqual(len(mail.outbox), 0)
 
     def test_admin_can_reinvite_valid_user_with_no_pw_set(self):
         self.client.force_authenticate(user=self.me)
-        user = baker.make("users.User")
+        user = baker.make("users.User", is_valid=True)
         user.set_unusable_password()
         user.save()
-        self.my_struct.members.add(
-            user, through_defaults={"has_accepted_invitation": True}
+        pm = StructurePutativeMember.objects.create(
+            user=user, structure=self.my_struct, invited_by_admin=True
         )
-        member = user.membership.get(structure=self.my_struct)
         response = self.client.post(
-            f"/structure-members/{member.id}/resend-invite/",
+            f"/structure-putative-members/{pm.id}/resend-invite/",
         )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(len(mail.outbox), 1)
@@ -585,47 +671,47 @@ class StructureMemberTestCase(APITestCase):
 
     def test_admin_cant_reinvite_user_to_other_struct(self):
         self.client.force_authenticate(user=self.me)
-        user = baker.make("users.User")
-        self.other_struct.members.add(user)
-        member = user.membership.get(structure=self.other_struct)
-        self.assertFalse(member.has_accepted_invitation)
+        user = baker.make("users.User", is_valid=True)
+        pm = StructurePutativeMember.objects.create(
+            user=user, structure=self.other_struct, invited_by_admin=True
+        )
         response = self.client.post(
-            f"/structure-members/{member.id}/resend-invite/",
+            f"/structure-putative-members/{pm.id}/resend-invite/",
         )
         self.assertEqual(response.status_code, 403)
         self.assertEqual(len(mail.outbox), 0)
 
     def test_anonymous_cant_reinvite_user(self):
-        user = baker.make("users.User")
-        self.my_struct.members.add(user)
-        member = user.membership.get(structure=self.my_struct)
-        self.assertFalse(member.has_accepted_invitation)
+        user = baker.make("users.User", is_valid=True)
+        pm = StructurePutativeMember.objects.create(
+            user=user, structure=self.my_struct, invited_by_admin=True
+        )
         response = self.client.post(
-            f"/structure-members/{member.id}/resend-invite/",
+            f"/structure-putative-members/{pm.id}/resend-invite/",
         )
         self.assertEqual(response.status_code, 401)
         self.assertEqual(len(mail.outbox), 0)
 
     def test_standard_user_cant_reinvite_user(self):
         self.client.force_authenticate(user=self.user2)
-        user = baker.make("users.User")
-        self.my_struct.members.add(user)
-        member = user.membership.get(structure=self.my_struct)
-        self.assertFalse(member.has_accepted_invitation)
+        user = baker.make("users.User", is_valid=True)
+        pm = StructurePutativeMember.objects.create(
+            user=user, structure=self.my_struct, invited_by_admin=True
+        )
         response = self.client.post(
-            f"/structure-members/{member.id}/resend-invite/",
+            f"/structure-putative-members/{pm.id}/resend-invite/",
         )
         self.assertEqual(response.status_code, 403)
         self.assertEqual(len(mail.outbox), 0)
 
     def test_superuser_can_reinvite_user(self):
         self.client.force_authenticate(user=self.superuser)
-        user = baker.make("users.User")
-        self.my_struct.members.add(user)
-        member = user.membership.get(structure=self.my_struct)
-        self.assertFalse(member.has_accepted_invitation)
+        user = baker.make("users.User", is_valid=True)
+        pm = StructurePutativeMember.objects.create(
+            user=user, structure=self.my_struct, invited_by_admin=True
+        )
         response = self.client.post(
-            f"/structure-members/{member.id}/resend-invite/",
+            f"/structure-putative-members/{pm.id}/resend-invite/",
         )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(len(mail.outbox), 1)
@@ -645,14 +731,17 @@ class StructureMemberTestCase(APITestCase):
 
     # Invitation acceptation
     def test_user_can_accept_invitation(self):
-        admin = baker.make("users.User")
+        admin = baker.make("users.User", is_valid=True)
         structure = baker.make("Structure")
         structure.members.add(
-            admin, through_defaults={"is_admin": True, "has_accepted_invitation": True}
+            admin,
+            through_defaults={
+                "is_admin": True,
+            },
         ),
         self.client.force_authenticate(user=admin)
         response = self.client.post(
-            f"/structure-members/?structure={structure.slug}",
+            f"/structure-putative-members/?structure={structure.slug}",
             {
                 "is_admin": False,
                 "user": {
@@ -666,14 +755,13 @@ class StructureMemberTestCase(APITestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.client.force_authenticate(user=None)
 
-        member = StructureMember.objects.get(pk=response.data["id"])
+        member = StructurePutativeMember.objects.get(pk=response.data["id"])
 
         invit_key = Token.objects.get(user=member.user)
         self.assertIn(invit_key.key, mail.outbox[0].body)
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {invit_key.key}")
         response = self.client.post(
-            "/structures/accept-invite/",
-            {"key": invit_key.key, "member": member.id},
+            f"/structure-putative-members/{member.id}/accept-invite/",
         )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.data["must_set_password"])
@@ -693,13 +781,15 @@ class StructureMemberTestCase(APITestCase):
         self.assertIn("FOO@BAR.BUZ", mail.outbox[1].body)
         self.assertIn(structure.name, mail.outbox[1].body)
 
-        member.refresh_from_db()
+        member = StructureMember.objects.get(
+            user=member.user, structure=member.structure
+        )
         self.assertTrue(member.user.is_valid)
 
     def test_user_must_set_strong_pw(self):
         self.client.force_authenticate(user=self.me)
         response = self.client.post(
-            f"/structure-members/?structure={self.my_struct.slug}",
+            f"/structure-putative-members/?structure={self.my_struct.slug}",
             {
                 "is_admin": False,
                 "user": {
@@ -710,7 +800,7 @@ class StructureMemberTestCase(APITestCase):
             },
         )
         self.assertEqual(response.status_code, 201)
-        member = StructureMember.objects.get(pk=response.data["id"])
+        member = StructurePutativeMember.objects.get(pk=response.data["id"])
         self.client.force_authenticate(user=member.user)
 
         response = self.client.post(
@@ -825,6 +915,16 @@ class MassInviteTestCase(APITestCase):
             mail.outbox[0].body,
         )
 
+    def test_new_users_are_automatically_accepted(self):
+        structure = self.create_structure()
+        self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
+        out, err = self.call_command()
+        self.assertTrue(
+            StructurePutativeMember.objects.filter(
+                user__email="foo@buzz.com", invited_by_admin=True
+            ).exists()
+        )
+
     def test_can_invite_new_user_with_safir(self):
         structure = self.create_structure(code_safir_pe="98765")
         self.add_row(
@@ -850,7 +950,7 @@ class MassInviteTestCase(APITestCase):
         self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
         out1, err1 = self.call_command()
         out2, err2 = self.call_command()
-        self.assertIn("Member foo@buzz.com already exists", out2)
+        self.assertIn("Member foo@buzz.com already invited", out2)
         self.assertEquals(Structure.objects.filter(siret=structure.siret).count(), 1)
         self.assertEquals(User.objects.filter(email="foo@buzz.com").count(), 1)
         self.assertEqual(len(mail.outbox), 1)
@@ -859,21 +959,21 @@ class MassInviteTestCase(APITestCase):
         structure = self.create_structure()
         self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
         out, err = self.call_command()
-        member = StructureMember.objects.get(
+        members = StructurePutativeMember.objects.filter(
             user__email="foo@buzz.com", structure=structure
         )
-        self.assertIsNotNone(member)
-        self.assertFalse(member.is_admin)
+        self.assertEqual(members.count(), 1)
+        self.assertFalse(members[0].is_admin)
 
     def test_can_invite_as_admin(self):
         structure = self.create_structure()
         self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "TRUE"])
         out, err = self.call_command()
-        member = StructureMember.objects.get(
-            user__email="foo@buzz.com", structure=structure
+        members = StructurePutativeMember.objects.filter(
+            user__email="foo@buzz.com", structure=structure, invited_by_admin=True
         )
-        self.assertIsNotNone(member)
-        self.assertTrue(member.is_admin)
+        self.assertEqual(members.count(), 1)
+        self.assertTrue(members[0].is_admin)
 
     def test_admin_is_TRUE_or_FALSE(self):
         structure = self.create_structure()
@@ -922,10 +1022,14 @@ class MassInviteTestCase(APITestCase):
         structure = self.create_structure()
         self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
         out, err = self.call_command()
-        member = StructureMember.objects.get(
+        members = StructurePutativeMember.objects.filter(
             user__email="foo@buzz.com", structure=structure
         )
-        self.assertFalse(member.has_accepted_invitation)
+        self.assertTrue(members.exists())
+        real_members = StructureMember.objects.filter(
+            user__email="foo@buzz.com", structure=structure
+        )
+        self.assertFalse(real_members.exists())
 
     def test_can_invite_existing_user(self):
         structure = self.create_structure()
@@ -946,7 +1050,10 @@ class MassInviteTestCase(APITestCase):
             mail.outbox[0].body,
         )
         self.assertEqual(
-            StructureMember.objects.filter(user=user, structure=structure).count(), 1
+            StructurePutativeMember.objects.filter(
+                user=user, structure=structure
+            ).count(),
+            1,
         )
 
     def test_wont_rename_existing_user(self):
@@ -977,14 +1084,14 @@ class MassInviteTestCase(APITestCase):
             "users.User", first_name="foo", last_name="bar", is_valid=True
         )
         StructureMember.objects.create(
-            structure=structure, user=user, has_accepted_invitation=True
+            structure=structure,
+            user=user,
         )
         self.add_row(
             [user.last_name, user.first_name, user.email, structure.siret, "", "FALSE"]
         )
         out, err = self.call_command()
         fresh_member = StructureMember.objects.get(user=user, structure=structure)
-        self.assertTrue(fresh_member.has_accepted_invitation)
         self.assertFalse(fresh_member.is_admin)
 
     def test_member_can_be_promoted_to_admin(self):
@@ -992,9 +1099,7 @@ class MassInviteTestCase(APITestCase):
         user = baker.make(
             "users.User", first_name="foo", last_name="bar", is_valid=True
         )
-        StructureMember.objects.create(
-            structure=structure, user=user, has_accepted_invitation=True, is_admin=False
-        )
+        StructureMember.objects.create(structure=structure, user=user, is_admin=False)
         self.add_row(
             [user.last_name, user.first_name, user.email, structure.siret, "", "TRUE"]
         )
@@ -1007,9 +1112,7 @@ class MassInviteTestCase(APITestCase):
         user = baker.make(
             "users.User", first_name="foo", last_name="bar", is_valid=True
         )
-        StructureMember.objects.create(
-            structure=structure, user=user, has_accepted_invitation=True, is_admin=True
-        )
+        StructureMember.objects.create(structure=structure, user=user, is_admin=True)
         self.add_row(
             [user.last_name, user.first_name, user.email, structure.siret, "", "FALSE"]
         )
@@ -1052,7 +1155,7 @@ class MassInviteTestCase(APITestCase):
         out, err = self.call_command()
         antenna = Structure.objects.filter(parent=structure).first()
         self.assertEqual(
-            StructureMember.objects.filter(
+            StructurePutativeMember.objects.filter(
                 structure=antenna, user__email="foo@buzz.com"
             ).count(),
             1,
@@ -1091,7 +1194,7 @@ class MassInviteTestCase(APITestCase):
         antenna = antennas[0]
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(
-            StructureMember.objects.filter(
+            StructurePutativeMember.objects.filter(
                 structure=antenna, user__email="foo@buzz.com"
             ).count(),
             1,

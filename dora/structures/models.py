@@ -7,7 +7,12 @@ from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
 from dora.sirene.serializers import EstablishmentSerializer
-from dora.structures.emails import send_invitation_accepted_notification
+from dora.structures.emails import (
+    send_access_granted_notification,
+    send_access_rejected_notification,
+    send_access_requested_notification,
+    send_invitation_accepted_notification,
+)
 from dora.users.models import User
 
 
@@ -33,6 +38,43 @@ def make_unique_slug(instance, value, length=20):
     return unique_slug
 
 
+class StructurePutativeMember(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="putative_membership",
+    )
+    structure = models.ForeignKey(
+        "Structure", on_delete=models.CASCADE, related_name="putative_membership"
+    )
+    is_admin = models.BooleanField(default=False)
+    creation_date = models.DateTimeField(auto_now_add=True)
+
+    invited_by_admin = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "Membre Potentiel"
+        verbose_name_plural = "Membres Potentiels"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "structure"],
+                name="%(app_label)s_unique_putative_member_by_structure",
+            )
+        ]
+
+    def notify_admin_access_requested(self):
+        structure_admins = StructureMember.objects.filter(
+            structure=self.structure, is_admin=True
+        ).exclude(user=self.user)
+        for admin in structure_admins:
+            send_access_requested_notification(self, admin.user)
+
+    def notify_access_rejected(self):
+        send_access_rejected_notification(self)
+
+
 class StructureMember(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -43,7 +85,6 @@ class StructureMember(models.Model):
         "Structure", on_delete=models.CASCADE, related_name="membership"
     )
     is_admin = models.BooleanField(default=False)
-    has_accepted_invitation = models.BooleanField(default=False)
 
     creation_date = models.DateTimeField(auto_now_add=True)
 
@@ -58,10 +99,13 @@ class StructureMember(models.Model):
 
     def notify_admins_invitation_accepted(self):
         structure_admins = StructureMember.objects.filter(
-            structure=self.structure, is_admin=True, has_accepted_invitation=True
+            structure=self.structure, is_admin=True
         ).exclude(user=self.user)
         for admin in structure_admins:
             send_invitation_accepted_notification(self, admin.user)
+
+    def notify_access_granted(self):
+        send_access_granted_notification(self)
 
 
 class StructureSource(models.TextChoices):

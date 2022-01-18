@@ -1,8 +1,0 @@
-{% autoescape off %}Bonjour {{recipient_name}} !
-
-Merci de bien vouloir vérifier l’adresse email de votre compte DORA {{recipient_email}} en cliquant sur le lien ci-dessous, ou en le recopiant dans votre navigateur.
-{{email_validation_url}}
-
---
-(Ceci est un mail automatique, merci de ne pas répondre.)
-{% endautoescape %}

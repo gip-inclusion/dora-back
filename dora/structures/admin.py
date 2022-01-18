@@ -1,7 +1,30 @@
 from django.contrib import admin
 from django.contrib.admin.filters import RelatedOnlyFieldListFilter
 
-from .models import Structure, StructureMember
+from .models import Structure, StructureMember, StructurePutativeMember
+
+
+class StructurePutativeMemberAdmin(admin.ModelAdmin):
+    search_fields = (
+        "user__first_name",
+        "user__last_name",
+        "user__email",
+        "structure__name",
+        "structure__department",
+    )
+
+    list_display = [
+        "user",
+        "structure",
+        "is_admin",
+        "invited_by_admin",
+        "creation_date",
+    ]
+    list_filter = [
+        "is_admin",
+        "invited_by_admin",
+        ("structure", RelatedOnlyFieldListFilter),
+    ]
 
 
 class StructureMemberAdmin(admin.ModelAdmin):
@@ -17,18 +40,25 @@ class StructureMemberAdmin(admin.ModelAdmin):
         "user",
         "structure",
         "is_admin",
-        "has_accepted_invitation",
         "creation_date",
     ]
     list_filter = [
         "is_admin",
-        "has_accepted_invitation",
         ("structure", RelatedOnlyFieldListFilter),
     ]
 
 
 class StructureMemberInline(admin.TabularInline):
     model = StructureMember
+    readonly_fields = ["user", "structure"]
+    extra = 0
+
+    def has_add_permission(self, request, obj):
+        return False
+
+
+class StructurePutativeMemberInline(admin.TabularInline):
+    model = StructurePutativeMember
     readonly_fields = ["user", "structure"]
     extra = 0
 
@@ -55,8 +85,9 @@ class StructureAdmin(admin.ModelAdmin):
     ]
     search_fields = ("name", "siret", "code_safir_pe", "city", "department", "slug")
     ordering = ["-modification_date", "department"]
-    inlines = [StructureMemberInline]
+    inlines = [StructureMemberInline, StructurePutativeMemberInline]
 
 
 admin.site.register(Structure, StructureAdmin)
 admin.site.register(StructureMember, StructureMemberAdmin)
+admin.site.register(StructurePutativeMember, StructurePutativeMemberAdmin)

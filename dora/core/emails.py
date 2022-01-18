@@ -1,14 +1,13 @@
 import json
 
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMessage
 
 
 def send_mail(
     subject,
     to,
-    text_content,
-    html_content=None,
+    body,
     from_email=settings.DEFAULT_FROM_EMAIL,
     tags=None,
     reply_to=None,
@@ -18,15 +17,15 @@ def send_mail(
         "X-TM-TAGS": json.dumps(tags) if tags else "",
         "X-TM-TRACKING": '{"html":{"open":0,"click":0,"text":{"click":0}}}',
         "X-TM-GOOGLEANALYTICS": '{"enable":"0"}',
+        "X-TM-TEXTVERSION": 1,
     }
-    msg = EmailMultiAlternatives(
+    msg = EmailMessage(
         subject,
-        text_content,
+        body,
         from_email,
         [to],
         headers=headers,
         reply_to=reply_to,
     )
-    if html_content:
-        msg.attach_alternative(html_content, "text/html"),
+    msg.content_subtype = "html"
     msg.send()
