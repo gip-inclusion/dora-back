@@ -85,7 +85,6 @@ class StructureMember(models.Model):
         "Structure", on_delete=models.CASCADE, related_name="membership"
     )
     is_admin = models.BooleanField(default=False)
-    # has_accepted_invitation = models.BooleanField(default=False)
 
     creation_date = models.DateTimeField(auto_now_add=True)
 

@@ -98,7 +98,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 class StructureMemberSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-    must_set_password = serializers.SerializerMethodField()
 
     class Meta:
         model = StructureMember
@@ -106,12 +105,8 @@ class StructureMemberSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "is_admin",
-            "must_set_password",
         ]
         validators = []
-
-    def get_must_set_password(self, obj):
-        return not obj.user.has_usable_password()
 
     def validate(self, data):
         structure_slug = self.context["request"].query_params.get("structure")

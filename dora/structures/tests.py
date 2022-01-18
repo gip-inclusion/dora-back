@@ -190,15 +190,8 @@ class StructureMemberTestCase(APITestCase):
             through_defaults={
                 "is_admin": True,
             },
-        ),
-        # self.my_struct.members.add(
-        #     self.unaccepted_admin,
-        #     through_defaults={
-        #         "is_admin": True,
-        #         "has_accepted_invitation": True,
-        #         "has_been_accepted_by_admin": False,
-        #     },
-        # ),
+        )
+
         self.my_struct.members.add(
             self.user1,
             through_defaults={
