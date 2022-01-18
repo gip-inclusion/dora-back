@@ -53,7 +53,9 @@ class StructureViewSet(
     def get_my_pending_structures(self, user):
         if not user or not user.is_authenticated:
             return Structure.objects.none()
-        return Structure.objects.filter(putative_membership__user=user)
+        return Structure.objects.filter(putative_membership__user=user).exclude(
+            putative_membership__invited_by_admin=True
+        )
 
     def get_queryset(self):
         user = self.request.user
