@@ -121,7 +121,9 @@ class StructureMemberViewset(viewsets.ModelViewSet):
             except StructureMember.DoesNotExist:
                 raise exceptions.PermissionDenied
 
-            return StructureMember.objects.filter(structure__slug=structure_slug)
+            return StructureMember.objects.filter(
+                structure__slug=structure_slug, user__is_valid=True
+            )
         else:
             if user.is_staff:
                 return StructureMember.objects.all()
