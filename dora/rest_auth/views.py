@@ -25,6 +25,7 @@ from dora.rest_auth.serializers import (
 from dora.structures.models import (
     Structure,
     StructureMember,
+    StructurePutativeMember,
     StructureSource,
     StructureTypology,
 )
@@ -93,11 +94,19 @@ def password_reset_confirm(request):
         if not already_had_password:
             # it's a new user, created via invitation. Notify all administrators
             # of the structures he was invited to.
-            memberships = StructureMember.objects.filter(
-                user=request.user, has_accepted_invitation=True
+            putative_memberships = StructurePutativeMember.objects.filter(
+                user=request.user
             )
-            for membership in memberships:
-                membership.notify_admins_invitation_accepted()
+            for pm in putative_memberships:
+                with transaction.atomic(durable=True):
+                    assert pm.invited_by_admin is True
+                    membership = StructureMember.objects.create(
+                        user=pm.user,
+                        structure=pm.structure,
+                        is_admin=pm.is_admin,
+                    )
+                    membership.notify_admins_invitation_accepted()
+                    pm.delete()
 
         return Response(status=204)
     except DjangoValidationError:
@@ -146,6 +155,14 @@ def validate_email(request):
     if not user.is_valid:
         user.is_valid = True
         user.save()
+
+    # Once the email is valid, we can inform the admins that
+    # an access request was sent
+    putative_memberships = StructurePutativeMember.objects.filter(
+        user=user, invited_by_admin=False
+    )
+    for pm in putative_memberships:
+        pm.notify_admin_access_requested()
 
     return Response({"result": "ok"}, status=200)
 
@@ -205,27 +222,36 @@ def register_structure_and_user(request):
         user__is_staff=False, is_admin=True
     ).exists()
 
+    need_admin_validation = True
+
     # If the structure is a Pole Emploi agencie, check that the email finishes
     # in @pole-emploi.fr or @pole-emploi.net
-    if structure.typology == StructureTypology.PE and not (
-        user.email.endswith("@pole-emploi.fr")
-        or user.email.endswith("@pole-emploi.net")
-        or (
-            user.email.endswith("@dora.beta.gouv.fr")
-            and settings.ENVIRONMENT != "production"
-        )
-    ):
-        raise exceptions.PermissionDenied(
-            "Merci de renseigner une adresse valide (@pole-emploi.fr ou @pole-emploi.net)"
-        )
+    if structure.typology == StructureTypology.PE:
+        need_admin_validation = False
+        if not (
+            user.email.endswith("@pole-emploi.fr")
+            or user.email.endswith("@pole-emploi.net")
+            or (
+                user.email.endswith("@dora.beta.gouv.fr")
+                and settings.ENVIRONMENT != "production"
+            )
+        ):
+            raise exceptions.PermissionDenied(
+                "Merci de renseigner une adresse valide (@pole-emploi.fr ou @pole-emploi.net)"
+            )
 
     # Link them
-    StructureMember.objects.create(
-        user=user,
-        structure=structure,
-        is_admin=not has_nonstaff_admin,
-        has_accepted_invitation=True,
-    )
+    if not need_admin_validation or not has_nonstaff_admin:
+        StructureMember.objects.create(
+            user=user, structure=structure, is_admin=not has_nonstaff_admin
+        )
+    else:
+        StructurePutativeMember.objects.create(
+            user=user,
+            structure=structure,
+            is_admin=not has_nonstaff_admin,
+            invited_by_admin=False,
+        )
 
     # Send validation link email
     tmp_token = Token.objects.create(

@@ -84,7 +84,6 @@ class ServiceViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
-    serializer_class = ServiceSerializer
     permission_classes = [ServicePermission]
     pagination_class = FlatPagination
 
@@ -125,9 +124,17 @@ class ServiceViewSet(
     def get_serializer_class(self):
         if self.action == "list":
             return ServiceListSerializer
-        if not self.request.user.is_authenticated:
-            return AnonymousServiceSerializer
-        return super().get_serializer_class()
+        # We only want to expose the full ServiceSerializer if the user was
+        # effectively validated:
+        # - either they are staff
+        # - either they have a validated email, and are members of a structure
+        user = self.request.user
+        if user.is_authenticated and (
+            user.is_staff
+            or (user.is_valid and StructureMember.objects.filter(user=user).exists())
+        ):
+            return ServiceSerializer
+        return AnonymousServiceSerializer
 
     @action(detail=False, methods=["get"], url_path="last-draft")
     def get_last_draft(self, request):

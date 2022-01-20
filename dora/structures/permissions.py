@@ -39,6 +39,25 @@ class StructureMemberPermission(permissions.BasePermission):
         if not user and user.is_authenticated:
             return False
 
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # You can't create a Member via the API (must be a Putative Member)
+        if request.method == "POST":
+            return False
+
+        return True
+
+
+class StructurePutativeMemberPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        if not user and user.is_authenticated:
+            return False
+
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
         if request.method == "POST":
             structure_slug = request.query_params.get("structure")
             if not structure_slug:
@@ -53,4 +72,4 @@ class StructureMemberPermission(permissions.BasePermission):
                 return True
             except StructureMember.DoesNotExist:
                 return False
-        return True
+        return False

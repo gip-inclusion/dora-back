@@ -13,14 +13,12 @@ def send_invitation_email(member, admin_user_fullname, token):
         "cta_link": f"{settings.FRONTEND_URL}/auth/accepter-invitation?token={token}&membership={member.id}",
         "homepage_url": settings.FRONTEND_URL,
     }
-    txt_msg = render_to_string("invitation.txt", params)
-    html_msg = render_to_string("invitation.html", params)
+    body = render_to_string("invitation.html", params)
 
     send_mail(
         "[DORA] Votre invitation sur DORA",
         member.user.email,
-        txt_msg,
-        html_content=html_msg,
+        body,
         tags=["invitation"],
     )
 
@@ -35,13 +33,65 @@ def send_invitation_accepted_notification(member, admin_user):
         "homepage_url": settings.FRONTEND_URL,
     }
 
-    txt_msg = render_to_string("notification-invitation-accepted.txt", params)
-    html_msg = render_to_string("notification-invitation-accepted.html", params)
+    body = render_to_string("notification-invitation-accepted.html", params)
 
     send_mail(
         "[DORA] Invitation acceptée",
         admin_user.email,
-        txt_msg,
-        html_content=html_msg,
+        body,
         tags=["invitation-accepted"],
+    )
+
+
+def send_access_requested_notification(member, admin_user):
+    params = {
+        "recipient_email": admin_user.email,
+        "recipient_name": admin_user.get_short_name(),
+        "new_member_full_name": member.user.get_full_name(),
+        "new_member_email": member.user.email,
+        "structure_name": member.structure.name,
+        "cta_link": f"{settings.FRONTEND_URL}/tableau-de-bord/structures/{member.structure.slug}",
+        "homepage_url": settings.FRONTEND_URL,
+    }
+
+    body = render_to_string("notification-access-request.html", params)
+
+    send_mail(
+        "[DORA] Demande d’accès à votre structure",
+        admin_user.email,
+        body,
+        tags=["access-request"],
+    )
+
+
+def send_access_granted_notification(member):
+    params = {
+        "structure_name": member.structure.name,
+        "cta_link": f"{settings.FRONTEND_URL}/tableau-de-bord/structures/{member.structure.slug}",
+        "homepage_url": settings.FRONTEND_URL,
+    }
+
+    body = render_to_string("notification-access-granted.html", params)
+
+    send_mail(
+        "[DORA] Accès accordé",
+        member.user.email,
+        body,
+        tags=["access-granted"],
+    )
+
+
+def send_access_rejected_notification(member):
+    params = {
+        "structure_name": member.structure.name,
+        "homepage_url": settings.FRONTEND_URL,
+    }
+
+    body = render_to_string("notification-access-rejected.html", params)
+
+    send_mail(
+        "[DORA] Accès refusé",
+        member.user.email,
+        body,
+        tags=["access-rejected"],
     )
