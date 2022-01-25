@@ -1,11 +1,11 @@
 import uuid
 
 from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
+from dora.core.validators import validate_safir, validate_siret
 from dora.sirene.serializers import EstablishmentSerializer
 from dora.structures.emails import (
     send_access_granted_notification,
@@ -14,17 +14,6 @@ from dora.structures.emails import (
     send_invitation_accepted_notification,
 )
 from dora.users.models import User
-
-
-# From: https://github.com/betagouv/itou/blob/master/itou/utils/validators.py
-def validate_siret(siret):
-    if not siret.isdigit() or len(siret) != 14:
-        raise ValidationError("Le numéro SIRET doit être composé de 14 chiffres.")
-
-
-def validate_safir(safir):
-    if not safir.isdigit() or len(safir) != 5:
-        raise ValidationError("Le code SAFIR doit être composé de 14 chiffres.")
 
 
 def make_unique_slug(instance, value, length=20):
@@ -114,6 +103,7 @@ class StructureSource(models.TextChoices):
     STRUCT_STAFF = "PORTEUR", "Porteur"
     PE_API = "PE", "API Référentiel Agence PE"
     BATCH_INVITE = "BI", "Invitations en masse"
+    COLLAB = "COL", "Suggestion collaborative"
 
 
 class StructureTypology(models.TextChoices):
