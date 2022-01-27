@@ -5,6 +5,7 @@ from django.core.files.storage import default_storage
 from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 
+from dora.core.utils import code_insee_to_code_dept
 from dora.structures.models import Structure, StructureMember
 
 from .models import (
@@ -243,8 +244,8 @@ class ServiceSerializer(serializers.ModelSerializer):
         return [item.name for item in obj.credentials.all()]
 
     def get_department(self, obj):
-        code = obj.postal_code
-        return code[:3] if code.startswith("97") else code[:2]
+        code = obj.city_code
+        return code_insee_to_code_dept(code)
 
     def get_can_write(self, obj):
         user = self.context.get("request").user
