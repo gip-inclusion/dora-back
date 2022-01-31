@@ -47,9 +47,8 @@ class ServicePermission(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
 
-        # Nobody can delete a service
         if request.method == "DELETE":
-            return False
+            return user and user.is_authenticated
 
         # Only authentified users can get the last draft
         if view.action == "get_last_draft":
@@ -64,6 +63,10 @@ class ServicePermission(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         user = request.user
+        # Only suggestions can be deleted
+        if request.method == "DELETE" and not obj.is_suggestion:
+            return False
+
         # Anybody can read
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -79,6 +82,7 @@ class ServicePermission(permissions.BasePermission):
 
 class ServiceViewSet(
     mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
     mixins.ListModelMixin,
@@ -105,7 +109,7 @@ class ServiceViewSet(
             qs = self.get_my_services(user)
         # Everybody can see published services
         elif not user or not user.is_authenticated:
-            qs = Service.objects.filter(is_draft=False)
+            qs = Service.objects.filter(is_draft=False, is_suggestion=False)
         # Staff can see everything
         elif user.is_staff:
             qs = Service.objects.all()
@@ -113,7 +117,8 @@ class ServiceViewSet(
             # Authentified users can see everything in their structure
             # plus published services for other structures
             qs = Service.objects.filter(
-                Q(is_draft=False) | Q(structure__membership__user=user)
+                Q(is_draft=False, is_suggestion=False)
+                | Q(structure__membership__user=user)
             )
         if structure_slug:
             qs = qs.filter(structure__slug=structure_slug)

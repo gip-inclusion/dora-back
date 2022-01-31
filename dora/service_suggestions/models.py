@@ -2,7 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.contrib.gis.geos import Point
-from django.db import models
+from django.db import models, transaction
 from rest_framework import serializers
 
 from dora.core.utils import code_insee_to_code_dept
@@ -72,22 +72,21 @@ class ServiceSuggestion(models.Model):
             geom = Point(lon, lat, srid=4326)
         else:
             geom = None
+        with transaction.atomic(durable=True):
+            service = Service.objects.create(
+                name=self.name,
+                structure=structure,
+                geom=geom,
+                creator=self.creator,
+                last_editor=self.creator,
+                is_draft=True,
+                is_suggestion=True,
+                **self.contents,
+            )
+            service.access_conditions.set(access_conditions)
+            service.concerned_public.set(concerned_public)
+            service.requirements.set(requirements)
+            service.credentials.set(credentials)
 
-        service = Service.objects.create(
-            name=self.name,
-            structure=structure,
-            geom=geom,
-            creator=self.creator,
-            last_editor=self.creator,
-            is_draft=True,
-            is_suggestion=True,
-            **self.contents,
-        )
-        service.access_conditions.set(access_conditions)
-        service.concerned_public.set(concerned_public)
-        service.requirements.set(requirements)
-        service.credentials.set(credentials)
+            self.delete()
         return service
-
-        # TODO atomically
-        # self.delete()

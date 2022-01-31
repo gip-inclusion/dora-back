@@ -43,8 +43,9 @@ class ServiceSuggestionSerializer(serializers.ModelSerializer):
         # Crée un service fictif, immédiatement suivi d'un rollback
         set_autocommit(False)
         service = suggestion.convert_to_service()
-        rollback()
-        set_autocommit(True)
-        return ServiceSerializer(
+        result = ServiceSerializer(
             service, context={"request": self.context.get("request")}
         ).data
+        rollback()
+        set_autocommit(True)
+        return result
