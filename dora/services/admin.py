@@ -35,8 +35,12 @@ class ServiceAdmin(admin.OSMGeoAdmin):
         "modification_date",
         "publication_date",
         "last_editor",
+        "is_draft",
+        "is_suggestion",
     ]
     list_filter = [
+        "is_draft",
+        "is_suggestion",
         ("structure", RelatedOnlyFieldListFilter),
     ]
     inlines = [ServiceModificationHistoryItemInline]

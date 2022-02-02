@@ -5,6 +5,7 @@ from django.db import models
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
+from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import validate_safir, validate_siret
 from dora.sirene.serializers import EstablishmentSerializer
 from dora.structures.emails import (
@@ -288,7 +289,7 @@ class Structure(models.Model):
             self.slug = make_unique_slug(self, self.name)
         if not self.department and self.city_code:
             code = self.city_code
-            self.department = code[:3] if code.startswith("97") else code[:2]
+            self.department = code_insee_to_code_dept(code)
         return super().save(*args, **kwargs)
 
     def can_write(self, user):
