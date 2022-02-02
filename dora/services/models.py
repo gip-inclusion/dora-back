@@ -313,6 +313,7 @@ class Service(models.Model):
         related_name="services",
     )
     is_draft = models.BooleanField(default=True)
+    is_suggestion = models.BooleanField(default=False)
 
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now=True)

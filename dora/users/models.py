@@ -60,6 +60,12 @@ class User(AbstractBaseUser):
         default=False,
         help_text="Designates whether the user can log into this admin site.",
     )
+    is_bizdev = models.BooleanField(
+        "bizdev status",
+        default=False,
+        help_text="Indique si l’utilisateur a les droits bizdev (valider les contributions…)",
+    )
+
     date_joined = models.DateTimeField("date joined", default=timezone.now)
     newsletter = models.BooleanField(default=False, db_index=True)
 

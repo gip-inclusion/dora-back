@@ -67,12 +67,13 @@ class UserAdmin(BaseUserAdmin):
         "email",
         "get_full_name",
         "is_staff",
+        "is_bizdev",
         "is_active",
         "is_valid",
         "date_joined",
         "newsletter",
     )
-    list_filter = ("is_staff", "is_active", "is_valid", "newsletter")
+    list_filter = ("is_staff", "is_bizdev", "is_active", "is_valid", "newsletter")
     fieldsets = (
         (
             None,
@@ -80,7 +81,15 @@ class UserAdmin(BaseUserAdmin):
         ),
         (
             "Permissions",
-            {"fields": ("is_staff", "is_active", "is_valid", "newsletter")},
+            {
+                "fields": (
+                    "is_staff",
+                    "is_bizdev",
+                    "is_active",
+                    "is_valid",
+                    "newsletter",
+                )
+            },
         ),
         ("Important dates", {"fields": ("last_login", "date_joined")}),
     )
