@@ -1,0 +1,51 @@
+import logging
+
+from django.db.transaction import rollback, set_autocommit
+from rest_framework import serializers
+
+from dora.services.serializers import ServiceSerializer
+from dora.users.models import User
+
+from .models import ServiceSuggestion
+
+logger = logging.getLogger(__name__)
+
+
+class CreatorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["get_full_name", "email"]
+
+
+class ServiceSuggestionSerializer(serializers.ModelSerializer):
+    structure_info = serializers.SerializerMethodField()
+    service_info = serializers.SerializerMethodField()
+    creator = CreatorSerializer(read_only=True)
+
+    class Meta:
+        model = ServiceSuggestion
+        extra_kwargs = {"contents": {"write_only": True}}
+
+        fields = [
+            "id",
+            "name",
+            "siret",
+            "structure_info",
+            "contents",
+            "creator",
+            "service_info",
+        ]
+
+    def get_structure_info(self, suggestion):
+        return suggestion.get_structure_info()
+
+    def get_service_info(self, suggestion):
+        # Crée un service fictif, immédiatement suivi d'un rollback
+        set_autocommit(False)
+        service = suggestion.convert_to_service()
+        result = ServiceSerializer(
+            service, context={"request": self.context.get("request")}
+        ).data
+        rollback()
+        set_autocommit(True)
+        return result
