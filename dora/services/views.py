@@ -1,6 +1,7 @@
 from django.conf import settings
-from django.contrib.gis.db.models.functions import Distance
-from django.contrib.gis.measure import D
+
+# from django.contrib.gis.db.models.functions import Distance
+# from django.contrib.gis.measure import D
 from django.db.models import Q
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
@@ -14,6 +15,7 @@ from dora.core.notify import send_mattermost_notification
 from dora.services.emails import send_service_feedback_email
 from dora.services.models import (
     AccessCondition,
+    AdminDivisionType,
     BeneficiaryAccessMode,
     CoachOrientationMode,
     ConcernedPublic,
@@ -281,19 +283,22 @@ def options(request):
         "location_kinds": [
             {"value": c[0], "label": c[1]} for c in LocationKind.choices
         ],
+        "diffusion_zone_type": [
+            {"value": c[0], "label": c[1]} for c in AdminDivisionType.choices
+        ],
     }
     return Response(result)
 
 
-class DistanceServiceSerializer(ServiceSerializer):
-    distance = serializers.SerializerMethodField()
+class SearchResultSerializer(ServiceSerializer):
+    # distance = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
         fields = [
             "category_display",
             "city",
-            "distance",
+            # "distance",
             "name",
             "postal_code",
             "short_desc",
@@ -302,10 +307,10 @@ class DistanceServiceSerializer(ServiceSerializer):
             "structure",
         ]
 
-    def get_distance(self, obj):
-        if hasattr(obj, "distance"):
-            return int(obj.distance.km)
-        return None
+    # def get_distance(self, obj):
+    #     if hasattr(obj, "distance"):
+    #         return int(obj.distance.km)
+    #     return None
 
 
 @api_view()
@@ -314,26 +319,39 @@ def search(request):
     category = request.GET.get("cat", "")
     subcategory = request.GET.get("sub", "")
     city_code = request.GET.get("city", "")
-    radius = request.GET.get("radius", settings.DEFAULT_SEARCH_RADIUS)
+    # radius = request.GET.get("radius", settings.DEFAULT_SEARCH_RADIUS)
 
-    results = Service.objects.filter(category=category, is_draft=False)
+    services = Service.objects.filter(category=category, is_draft=False)
     if subcategory:
-        results = results.filter(subcategories__contains=[subcategory])
+        services = services.filter(subcategories__contains=[subcategory])
 
-    if city_code:
-        city = get_object_or_404(City, pk=city_code)
-        results = (
-            results.filter(geom__isnull=False)
-            .annotate(distance=Distance("geom", city.geom))
-            .filter(distance__lt=D(km=radius))
-            .order_by("distance")
+    city = get_object_or_404(City, pk=city_code)
+
+    geofiltered_services = services.filter(
+        Q(diffusion_zone_type=AdminDivisionType.COUNTRY)
+        | (
+            Q(diffusion_zone_type=AdminDivisionType.CITY)
+            & Q(diffusion_zone_details=city.code)
         )
+        | (
+            Q(diffusion_zone_type=AdminDivisionType.EPCI)
+            & Q(diffusion_zone_details__in=city.epci.split("/"))
+        )
+        | (
+            Q(diffusion_zone_type=AdminDivisionType.DEPARTMENT)
+            & Q(diffusion_zone_details=city.department)
+        )
+        | (
+            Q(diffusion_zone_type=AdminDivisionType.REGION)
+            & Q(diffusion_zone_details=city.region)
+        )
+    )
 
     # Exclude suspended services
-    results = results.filter(
+    results = geofiltered_services.filter(
         Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
     )
 
     return Response(
-        DistanceServiceSerializer(results, many=True, context={"request": request}).data
+        SearchResultSerializer(results, many=True, context={"request": request}).data
     )
