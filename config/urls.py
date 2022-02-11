@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import include, path, register_converter
 from rest_framework.routers import SimpleRouter
 
+import dora.admin_express.views
 import dora.core.views
 import dora.rest_auth
 import dora.service_suggestions.views
@@ -38,6 +39,7 @@ register_converter(SiretConverter, "siret")
 urlpatterns = [
     path("auth/", include("dora.rest_auth.urls")),
     path("search/", dora.services.views.search),
+    path("admin-division-search/", dora.admin_express.views.search),
     path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
     path("search-safir/", dora.structures.views.search_safir),
     path("search-siret/", dora.sirene.views.search_siret),
