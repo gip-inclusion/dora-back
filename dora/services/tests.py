@@ -4,6 +4,7 @@ from django.utils import timezone
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
+from dora.admin_express.models import AdminDivisionType
 from dora.structures.models import Structure
 
 from .models import AccessCondition, Service, ServiceModificationHistoryItem
@@ -640,16 +641,23 @@ class ServiceTestCase(APITestCase):
 
 
 class ServiceSearchTextCase(APITestCase):
+    def setUp(self):
+        baker.make("City", code="12345")
+
     def test_can_see_published_services(self):
-        service = baker.make("Service", is_draft=False)
-        response = self.client.get("/search/")
+        service = baker.make(
+            "Service", is_draft=False, diffusion_zone_type=AdminDivisionType.COUNTRY
+        )
+        response = self.client.get("/search/?city=12345")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service.slug)
 
     def test_cant_see_draft_services(self):
-        baker.make("Service", is_draft=True)
-        response = self.client.get("/search/")
+        baker.make(
+            "Service", is_draft=True, diffusion_zone_type=AdminDivisionType.COUNTRY
+        )
+        response = self.client.get("/search/?city=12345")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
@@ -657,9 +665,10 @@ class ServiceSearchTextCase(APITestCase):
         service = baker.make(
             "Service",
             is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
             suspension_date=timezone.now() + timedelta(days=1),
         )
-        response = self.client.get("/search/")
+        response = self.client.get("/search/?city=12345")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service.slug)
@@ -668,8 +677,9 @@ class ServiceSearchTextCase(APITestCase):
         baker.make(
             "Service",
             is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
             suspension_date=timezone.now() - timedelta(days=1),
         )
-        response = self.client.get("/search/")
+        response = self.client.get("/search/?city=12345")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
