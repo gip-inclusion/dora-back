@@ -679,6 +679,19 @@ class ServiceSearchTextCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
+    def test_cant_see_suggested_services(self):
+        # En théorie, on ne peut pas avoir un service avec is_draft False et is_suggestion True
+        # mais vérifions quand même qu'ils sont exclus des resultats de recherche
+        baker.make(
+            "Service",
+            is_draft=False,
+            is_suggestion=True,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+        )
+        response = self.client.get(f"/search/?city={self.city1.code}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
     def test_can_see_service_with_future_suspension_date(self):
         service = baker.make(
             "Service",

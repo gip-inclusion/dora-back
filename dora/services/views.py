@@ -122,7 +122,7 @@ class ServiceViewSet(
         if structure_slug:
             qs = qs.filter(structure__slug=structure_slug)
         if published_only:
-            qs = qs.filter(is_draft=False)
+            qs = qs.filter(is_draft=False, is_suggestion=False)
         return qs.order_by("-modification_date").distinct()
 
     def get_serializer_class(self):
@@ -309,7 +309,9 @@ def search(request):
     subcategory = request.GET.get("sub", "")
     city_code = request.GET.get("city", "")
 
-    services = Service.objects.filter(category=category, is_draft=False)
+    services = Service.objects.filter(
+        category=category, is_draft=False, is_suggestion=False
+    )
     if subcategory:
         services = services.filter(subcategories__contains=[subcategory])
 
