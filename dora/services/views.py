@@ -1,7 +1,4 @@
 from django.conf import settings
-
-# from django.contrib.gis.db.models.functions import Distance
-# from django.contrib.gis.measure import D
 from django.db.models import Q
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
@@ -291,14 +288,11 @@ def options(request):
 
 
 class SearchResultSerializer(ServiceSerializer):
-    # distance = serializers.SerializerMethodField()
-
     class Meta:
         model = Service
         fields = [
             "category_display",
             "city",
-            # "distance",
             "name",
             "postal_code",
             "short_desc",
@@ -307,11 +301,6 @@ class SearchResultSerializer(ServiceSerializer):
             "structure",
         ]
 
-    # def get_distance(self, obj):
-    #     if hasattr(obj, "distance"):
-    #         return int(obj.distance.km)
-    #     return None
-
 
 @api_view()
 @permission_classes([permissions.AllowAny])
@@ -319,7 +308,6 @@ def search(request):
     category = request.GET.get("cat", "")
     subcategory = request.GET.get("sub", "")
     city_code = request.GET.get("city", "")
-    # radius = request.GET.get("radius", settings.DEFAULT_SEARCH_RADIUS)
 
     services = Service.objects.filter(category=category, is_draft=False)
     if subcategory:

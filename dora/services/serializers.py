@@ -227,16 +227,20 @@ class ServiceSerializer(serializers.ModelSerializer):
         )
 
     def get_diffusion_zone_details_display(self, obj):
-        if obj.diffusion_zone_type == AdminDivisionType.CITY:
-            return City.objects.get_from_code(obj.diffusion_zone_details).name
-        elif obj.diffusion_zone_type == AdminDivisionType.EPCI:
-            return EPCI.objects.get_from_code(obj.diffusion_zone_details).name
-        elif obj.diffusion_zone_type == AdminDivisionType.DEPARTMENT:
-            return Department.objects.get_from_code(obj.diffusion_zone_details).name
-        elif obj.diffusion_zone_type == AdminDivisionType.REGION:
-            return Region.objects.get_from_code(obj.diffusion_zone_details).name
-        elif obj.diffusion_zone_type == AdminDivisionType.COUNTRY:
+        if obj.diffusion_zone_type == AdminDivisionType.COUNTRY:
             return "France entière"
+
+        item = None
+        if obj.diffusion_zone_type == AdminDivisionType.CITY:
+            item = City.objects.get_from_code(obj.diffusion_zone_details)
+        elif obj.diffusion_zone_type == AdminDivisionType.EPCI:
+            item = EPCI.objects.get_from_code(obj.diffusion_zone_details)
+        elif obj.diffusion_zone_type == AdminDivisionType.DEPARTMENT:
+            item = Department.objects.get_from_code(obj.diffusion_zone_details)
+        elif obj.diffusion_zone_type == AdminDivisionType.REGION:
+            item = Region.objects.get_from_code(obj.diffusion_zone_details)
+        # TODO: we'll probably want to log and correct a missing code
+        return item.name if item else ""
 
     def get_category_display(self, obj):
         return ServiceCategories(obj.category).label if obj.category else ""
