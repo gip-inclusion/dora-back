@@ -230,10 +230,14 @@ class ServiceSerializer(serializers.ModelSerializer):
         if obj.diffusion_zone_type == AdminDivisionType.COUNTRY:
             return "France entière"
 
-        item = None
         if obj.diffusion_zone_type == AdminDivisionType.CITY:
-            item = City.objects.get_from_code(obj.diffusion_zone_details)
-        elif obj.diffusion_zone_type == AdminDivisionType.EPCI:
+            city = City.objects.get_from_code(obj.diffusion_zone_details)
+            # TODO: we'll probably want to log and correct a missing code
+            return f"{city.name} ({city.department})" if city else ""
+
+        item = None
+
+        if obj.diffusion_zone_type == AdminDivisionType.EPCI:
             item = EPCI.objects.get_from_code(obj.diffusion_zone_details)
         elif obj.diffusion_zone_type == AdminDivisionType.DEPARTMENT:
             item = Department.objects.get_from_code(obj.diffusion_zone_details)
