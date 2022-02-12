@@ -642,13 +642,31 @@ class ServiceTestCase(APITestCase):
 
 class ServiceSearchTextCase(APITestCase):
     def setUp(self):
-        baker.make("City", code="12345")
+        self.region = baker.make("Region", code="99")
+        self.dept = baker.make("Department", region=self.region.code, code="77")
+        self.epci11 = baker.make("EPCI", code="11111")
+        self.epci12 = baker.make("EPCI", code="22222")
+        self.city1 = baker.make(
+            "City",
+            code="12345",
+            epci=f"{self.epci11.code}/{self.epci12.code}",
+            department=self.dept.code,
+            region=self.region.code,
+        )
+        self.city2 = baker.make("City")
+
+    def test_needs_city_code(self):
+        baker.make(
+            "Service", is_draft=False, diffusion_zone_type=AdminDivisionType.COUNTRY
+        )
+        response = self.client.get("/search/")
+        self.assertEqual(response.status_code, 404)
 
     def test_can_see_published_services(self):
         service = baker.make(
             "Service", is_draft=False, diffusion_zone_type=AdminDivisionType.COUNTRY
         )
-        response = self.client.get("/search/?city=12345")
+        response = self.client.get(f"/search/?city={self.city1.code}")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service.slug)
@@ -657,7 +675,7 @@ class ServiceSearchTextCase(APITestCase):
         baker.make(
             "Service", is_draft=True, diffusion_zone_type=AdminDivisionType.COUNTRY
         )
-        response = self.client.get("/search/?city=12345")
+        response = self.client.get(f"/search/?city={self.city1.code}")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
@@ -668,7 +686,7 @@ class ServiceSearchTextCase(APITestCase):
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             suspension_date=timezone.now() + timedelta(days=1),
         )
-        response = self.client.get("/search/?city=12345")
+        response = self.client.get(f"/search/?city={self.city1.code}")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service.slug)
@@ -680,6 +698,98 @@ class ServiceSearchTextCase(APITestCase):
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             suspension_date=timezone.now() - timedelta(days=1),
         )
-        response = self.client.get("/search/?city=12345")
+        response = self.client.get(f"/search/?city={self.city1.code}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_find_services_in_city(self):
+        service = baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.CITY,
+            diffusion_zone_details=self.city1.code,
+        )
+        response = self.client.get(f"/search/?city={self.city1.code}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], service.slug)
+
+    def test_find_services_in_epci(self):
+        service = baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.EPCI,
+            diffusion_zone_details=self.epci11.code,
+        )
+        response = self.client.get(f"/search/?city={self.city1.code}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], service.slug)
+
+    def test_find_services_in_dept(self):
+        service = baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.DEPARTMENT,
+            diffusion_zone_details=self.dept.code,
+        )
+        response = self.client.get(f"/search/?city={self.city1.code}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], service.slug)
+
+    def test_find_services_in_region(self):
+        service = baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.REGION,
+            diffusion_zone_details=self.region.code,
+        )
+        response = self.client.get(f"/search/?city={self.city1.code}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], service.slug)
+
+    def test_dont_find_services_in_other_city(self):
+        baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.CITY,
+            diffusion_zone_details=self.city1.code,
+        )
+        response = self.client.get(f"/search/?city={self.city2.code}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_dont_find_services_in_other_epci(self):
+        baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.EPCI,
+            diffusion_zone_details=self.epci11.code,
+        )
+        response = self.client.get(f"/search/?city={self.city2.code}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_dont_find_services_in_other_department(self):
+        baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.DEPARTMENT,
+            diffusion_zone_details=self.dept.code,
+        )
+        response = self.client.get(f"/search/?city={self.city2.code}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_dont_find_services_in_other_region(self):
+        baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.REGION,
+            diffusion_zone_details=self.region.code,
+        )
+        response = self.client.get(f"/search/?city={self.city2.code}")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
