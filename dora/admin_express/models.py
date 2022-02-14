@@ -4,7 +4,7 @@ from django.contrib.postgres.indexes import GinIndex
 
 class AdminDivisionType(models.TextChoices):
     CITY = ("city", "Commune")
-    EPCI = ("epci", "EPCI")
+    EPCI = ("epci", "Intercommunalité (EPCI)")
     DEPARTMENT = ("department", "Département")
     REGION = ("region", "Région")
     COUNTRY = ("country", "France entière")
