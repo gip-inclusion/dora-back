@@ -14,7 +14,7 @@ class GeoManager(models.Manager):
     def get_from_code(self, insee_code):
         # TODO: cache it
         try:
-            return self.get(code=insee_code)
+            return self.defer("geom").get(code=insee_code)
         except self.model.DoesNotExist:
             return None
 
@@ -48,7 +48,6 @@ class City(AdminDivision):
 
 
 class EPCI(AdminDivision):
-    geom = models.MultiPolygonField(srid=4326, geography=True, spatial_index=True)
     nature = models.CharField(max_length=150, db_index=True)
 
     class Meta:

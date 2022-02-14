@@ -31,17 +31,14 @@ def search(request):
 
     sort_fields = ["-similarity"]
     if type == AdminDivisionType.CITY:
-        # Il y a trop de ville pour pouvoir faire une recherche rapide avec
-        # une correspondance n'importe où dans la chaine.
-        # On ancre donc sur le premier caractère
-        qs = City.objects.filter(normalized_name__startswith=norm_q[0])
+        qs = City.objects.defer("geom").all()
         sort_fields = ["-similarity", "-population"]
     elif type == AdminDivisionType.EPCI:
-        qs = EPCI.objects.all()
+        qs = EPCI.objects.defer("geom").all()
     elif type == AdminDivisionType.DEPARTMENT:
-        qs = Department.objects.all()
+        qs = Department.objects.defer("geom").all()
     elif type == AdminDivisionType.REGION:
-        qs = Region.objects.all()
+        qs = Region.objects.defer("geom").all()
 
     if qs:
         qs = (
