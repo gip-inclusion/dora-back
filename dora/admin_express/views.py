@@ -31,7 +31,8 @@ def search(request):
 
     sort_fields = ["-similarity"]
     if type == AdminDivisionType.CITY:
-        qs = City.objects.defer("geom").all()
+        # On accelère la recherche sur les villes en ancrant le premier caractère
+        qs = City.objects.defer("geom").filter(normalized_name__startswith=norm_q[0])
         sort_fields = ["-similarity", "-population"]
     elif type == AdminDivisionType.EPCI:
         qs = EPCI.objects.defer("geom").all()
