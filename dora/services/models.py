@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
+from dora.admin_express.models import AdminDivisionType
 from dora.structures.models import Structure, StructureMember
 
 
@@ -294,6 +295,16 @@ class Service(models.Model):
     geom = models.PointField(
         srid=4326, geography=True, spatial_index=True, null=True, blank=True
     )
+
+    diffusion_zone_type = models.CharField(
+        max_length=10,
+        choices=AdminDivisionType.choices,
+        verbose_name="Zone de diffusion",
+        db_index=True,
+        blank=True,
+    )
+    diffusion_zone_details = models.CharField(max_length=9, db_index=True, blank=True)
+    qpv_or_zrr = models.BooleanField(default=False)
 
     # Duration
     recurrence = models.CharField(verbose_name="Autre", max_length=140, blank=True)

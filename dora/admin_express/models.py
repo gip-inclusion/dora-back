@@ -13,7 +13,10 @@ class AdminDivisionType(models.TextChoices):
 class GeoManager(models.Manager):
     def get_from_code(self, insee_code):
         # TODO: cache it
-        return self.get(code=insee_code)
+        try:
+            return self.get(code=insee_code)
+        except self.model.DoesNotExist:
+            return None
 
 
 class AdminDivision(models.Model):
