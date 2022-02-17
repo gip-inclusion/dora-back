@@ -9,6 +9,7 @@ import dora.service_suggestions.views
 import dora.services.views
 import dora.sirene.views
 import dora.structures.views
+import dora.users.views
 
 from .url_converters import InseeCodeConverter, SiretConverter
 
@@ -39,6 +40,8 @@ register_converter(SiretConverter, "siret")
 urlpatterns = [
     path("auth/", include("dora.rest_auth.urls")),
     path("search/", dora.services.views.search),
+    path("profile/change/", dora.users.views.update_profile),
+    path("profile/password/change/", dora.users.views.password_change),
     path("admin-division-search/", dora.admin_express.views.search),
     path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
     path("search-safir/", dora.structures.views.search_safir),

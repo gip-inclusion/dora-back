@@ -48,6 +48,8 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "full_name",
             "short_name",
             "email",
+            "phone_number",
+            "newsletter",
             "is_staff",
             "is_bizdev",
         ]
