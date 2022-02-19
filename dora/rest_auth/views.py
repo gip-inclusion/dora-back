@@ -39,7 +39,7 @@ from .serializers import (
 )
 
 
-@sensitive_post_parameters(["password"])
+@sensitive_post_parameters(["email", "password"])
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 def login(request):
@@ -55,6 +55,7 @@ def login(request):
         return Response({"token": token.key, "valid_user": True})
 
 
+@sensitive_post_parameters(["email"])
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 def password_reset(request):
@@ -113,6 +114,7 @@ def password_reset_confirm(request):
         raise
 
 
+@sensitive_post_parameters(["key"])
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 def token_verify(request):
@@ -127,6 +129,7 @@ def token_verify(request):
     return Response({"result": "ok"}, status=200)
 
 
+@sensitive_post_parameters(["key"])
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 def user_info(request):
@@ -140,6 +143,7 @@ def user_info(request):
     return Response(UserInfoSerializer(user).data, status=200)
 
 
+@sensitive_post_parameters(["key"])
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 @transaction.atomic
@@ -167,6 +171,7 @@ def validate_email(request):
     return Response({"result": "ok"}, status=200)
 
 
+@sensitive_post_parameters(["email"])
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 def resend_validation_email(request):
@@ -187,6 +192,7 @@ def resend_validation_email(request):
         return Response(status=204)
 
 
+@sensitive_post_parameters(["first_name", "last_name", "email", "password"])
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 @transaction.atomic
