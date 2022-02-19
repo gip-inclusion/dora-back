@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.views.decorators.debug import sensitive_post_parameters
 from rest_framework import exceptions, permissions, serializers
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from .models import User
@@ -27,10 +28,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
 def update_profile(request):
     serializer = UserProfileSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    request.user.first_name = serializer.validated_data["first_name"]
-    request.user.last_name = serializer.validated_data["last_name"]
-    request.user.phone_number = serializer.validated_data["phone_number"]
-    request.user.newsletter = serializer.validated_data["newsletter"]
+    params = request.data
+    for attr, value in serializer.validated_data.items():
+        params.pop(attr)
+        setattr(request.user, attr, value)
+    if params:
+        raise ValidationError(f"Invalid field(s): {', '.join(params.keys())}")
     request.user.save()
     return Response(UserProfileSerializer(request.user).data)
 
