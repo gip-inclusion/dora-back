@@ -41,9 +41,8 @@ class InviteSerializer(serializers.Serializer):
 
         city_code = data["insee_code"]
         if city_code:
-            try:
-                city = City.objects.get_from_code(city_code)
-            except City.DoesNotExist:
+            city = City.objects.get_from_code(city_code)
+            if city is None:
                 raise serializers.ValidationError(f"Invalid insee code {city_code}")
             data["city"] = city
 
