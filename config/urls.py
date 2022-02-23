@@ -38,6 +38,7 @@ register_converter(SiretConverter, "siret")
 
 
 urlpatterns = [
+    path("api/", include("dora.api.urls")),
     path("auth/", include("dora.rest_auth.urls")),
     path("search/", dora.services.views.search),
     path("profile/change/", dora.users.views.update_profile),
