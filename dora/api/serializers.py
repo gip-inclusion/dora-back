@@ -18,6 +18,8 @@ from dora.structures.models import Structure
 class StructureSerializer(serializers.ModelSerializer):
     typology = serializers.CharField(source="get_typology_display")
     source = serializers.CharField(source="get_source_display")
+    creation_date = serializers.DateTimeField(format="%Y-%m-%d")
+    modification_date = serializers.DateTimeField(format="%Y-%m-%d")
 
     class Meta:
         model = Structure
@@ -69,6 +71,9 @@ class ServiceSerializer(serializers.ModelSerializer):
         source="get_diffusion_zone_type_display"
     )
     structure = serializers.SlugRelatedField(slug_field="siret", read_only=True)
+    creation_date = serializers.DateTimeField(format="%Y-%m-%d")
+    modification_date = serializers.DateTimeField(format="%Y-%m-%d")
+    publication_date = serializers.DateTimeField(format="%Y-%m-%d")
 
     class Meta:
         model = Service
