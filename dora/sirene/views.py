@@ -20,7 +20,7 @@ def search_sirene(request, citycode):
         return Response("need q")
 
     results = (
-        Establishment.objects.filter(code_commune=citycode)
+        Establishment.objects.filter(city_code=citycode)
         .annotate(similarity=TrigramSimilarity("full_search_text", q))
         .order_by("-similarity")
     )
