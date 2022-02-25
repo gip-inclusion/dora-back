@@ -8,12 +8,14 @@ from dora.admin_express.models import AdminDivisionType
 def set_default_diffusion_zone(apps, schema_editor):
     Service = apps.get_model("services", "Service")
     for service in Service.objects.all():
-        service.diffusion_zone_type = AdminDivisionType.CITY
         if service.city_code:
-            service.diffusion_zone_details = service.city_code
+            diffusion_zone_details = service.city_code
         else:
-            service.diffusion_zone_details = service.structure.city_code
-        service.save()
+            diffusion_zone_details = service.structure.city_code
+        Service.objects.filter(pk=service.pk).update(
+            diffusion_zone_type=AdminDivisionType.CITY,
+            diffusion_zone_details=diffusion_zone_details,
+        )
 
 
 def noop(apps, schema_editor):

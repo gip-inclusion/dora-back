@@ -9,21 +9,23 @@ from dora.core.utils import code_insee_to_code_dept
 def set_default_diffusion_zone(apps, schema_editor):
     Service = apps.get_model("services", "Service")
     for service in Service.objects.all():
-        # Don't change diffusion zone for CD974
+        # On ne veut pas changer la zone de diffusion pour le CD 974
         if service.structure.siret != "22974001400019":
-            service.diffusion_zone_type = AdminDivisionType.DEPARTMENT
+            diffusion_zone_type = AdminDivisionType.DEPARTMENT
             if service.city_code:
-                service.diffusion_zone_details = code_insee_to_code_dept(
-                    service.city_code
-                )
+                diffusion_zone_details = code_insee_to_code_dept(service.city_code)
             elif service.structure.city_code:
-                service.diffusion_zone_details = code_insee_to_code_dept(
+                diffusion_zone_details = code_insee_to_code_dept(
                     service.structure.city_code
                 )
             else:
                 print("missing diffusion zone:", service.slug)
-                service.diffusion_zone_details = ""
-            service.save()
+                diffusion_zone_details = ""
+            # On ne veut pas mettre à jour la date de modification
+            Service.objects.filter(pk=service.pk).update(
+                diffusion_zone_type=diffusion_zone_type,
+                diffusion_zone_details=diffusion_zone_details,
+            )
 
 
 def noop(apps, schema_editor):
