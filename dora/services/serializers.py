@@ -93,6 +93,35 @@ class StructureSerializer(serializers.ModelSerializer):
         return structure.membership.filter(is_admin=True, user__is_staff=False).exists()
 
 
+def _get_diffusion_zone_type_display(obj):
+    return (
+        AdminDivisionType(obj.diffusion_zone_type).label
+        if obj.diffusion_zone_type
+        else ""
+    )
+
+
+def _get_diffusion_zone_details_display(obj):
+    if obj.diffusion_zone_type == AdminDivisionType.COUNTRY:
+        return "France entière"
+
+    if obj.diffusion_zone_type == AdminDivisionType.CITY:
+        city = City.objects.get_from_code(obj.diffusion_zone_details)
+        # TODO: we'll probably want to log and correct a missing code
+        return f"{city.name} ({city.department})" if city else ""
+
+    item = None
+
+    if obj.diffusion_zone_type == AdminDivisionType.EPCI:
+        item = EPCI.objects.get_from_code(obj.diffusion_zone_details)
+    elif obj.diffusion_zone_type == AdminDivisionType.DEPARTMENT:
+        item = Department.objects.get_from_code(obj.diffusion_zone_details)
+    elif obj.diffusion_zone_type == AdminDivisionType.REGION:
+        item = Region.objects.get_from_code(obj.diffusion_zone_details)
+    # TODO: we'll probably want to log and correct a missing code
+    return item.name if item else ""
+
+
 class ServiceSerializer(serializers.ModelSerializer):
     is_available = serializers.SerializerMethodField()
     forms_info = serializers.SerializerMethodField()
@@ -220,31 +249,10 @@ class ServiceSerializer(serializers.ModelSerializer):
         return [LocationKind(kind).label for kind in obj.location_kinds]
 
     def get_diffusion_zone_type_display(self, obj):
-        return (
-            AdminDivisionType(obj.diffusion_zone_type).label
-            if obj.diffusion_zone_type
-            else ""
-        )
+        return _get_diffusion_zone_type_display(obj)
 
     def get_diffusion_zone_details_display(self, obj):
-        if obj.diffusion_zone_type == AdminDivisionType.COUNTRY:
-            return "France entière"
-
-        if obj.diffusion_zone_type == AdminDivisionType.CITY:
-            city = City.objects.get_from_code(obj.diffusion_zone_details)
-            # TODO: we'll probably want to log and correct a missing code
-            return f"{city.name} ({city.department})" if city else ""
-
-        item = None
-
-        if obj.diffusion_zone_type == AdminDivisionType.EPCI:
-            item = EPCI.objects.get_from_code(obj.diffusion_zone_details)
-        elif obj.diffusion_zone_type == AdminDivisionType.DEPARTMENT:
-            item = Department.objects.get_from_code(obj.diffusion_zone_details)
-        elif obj.diffusion_zone_type == AdminDivisionType.REGION:
-            item = Region.objects.get_from_code(obj.diffusion_zone_details)
-        # TODO: we'll probably want to log and correct a missing code
-        return item.name if item else ""
+        return _get_diffusion_zone_details_display(obj)
 
     def get_category_display(self, obj):
         return ServiceCategories(obj.category).label if obj.category else ""
@@ -374,6 +382,9 @@ class AnonymousServiceSerializer(ServiceSerializer):
 
 
 class ServiceListSerializer(ServiceSerializer):
+    diffusion_zone_type_display = serializers.SerializerMethodField()
+    diffusion_zone_details_display = serializers.SerializerMethodField()
+
     class Meta:
         model = Service
         fields = [
@@ -389,8 +400,17 @@ class ServiceListSerializer(ServiceSerializer):
             "modification_date",
             "category_display",
             "short_desc",
+            "diffusion_zone_type",
+            "diffusion_zone_type_display",
+            "diffusion_zone_details_display",
         ]
         lookup_field = "slug"
+
+    def get_diffusion_zone_type_display(self, obj):
+        return _get_diffusion_zone_type_display(obj)
+
+    def get_diffusion_zone_details_display(self, obj):
+        return _get_diffusion_zone_details_display(obj)
 
 
 class FeedbackSerializer(serializers.Serializer):
