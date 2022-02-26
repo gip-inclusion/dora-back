@@ -46,7 +46,7 @@ class ServiceSuggestionViewSet(
     serializer_class = ServiceSuggestionSerializer
 
     def get_queryset(self):
-        return ServiceSuggestion.objects.all()
+        return ServiceSuggestion.objects.all().order_by("-creation_date")
 
     def perform_create(self, serializer):
         user = self.request.user if self.request.user.is_authenticated else None
