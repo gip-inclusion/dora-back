@@ -115,7 +115,7 @@ class Command(BaseCommand):
             longitude=row["longitude"] if row["longitude"] else None,
             latitude=row["latitude"] if row["latitude"] else None,
         )
-        e.full_search_text = f"{e.name} {e.address1} {e.city} {e.postal_code} {e.siret}"
+        e.full_search_text = f"{e.name} {e.siret}"
         return e
 
     def handle(self, *args, **options):
