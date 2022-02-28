@@ -7,7 +7,12 @@ from rest_framework.test import APITestCase
 from dora.admin_express.models import AdminDivisionType
 from dora.structures.models import Structure
 
-from .models import AccessCondition, Service, ServiceModificationHistoryItem
+from .models import (
+    AccessCondition,
+    Service,
+    ServiceKind,
+    ServiceModificationHistoryItem,
+)
 
 DUMMY_SERVICE = {"name": "Mon service"}
 
@@ -640,7 +645,7 @@ class ServiceTestCase(APITestCase):
         self.assertFalse(ServiceModificationHistoryItem.objects.exists())
 
 
-class ServiceSearchTextCase(APITestCase):
+class ServiceSearchTestCase(APITestCase):
     def setUp(self):
         self.region = baker.make("Region", code="99")
         self.dept = baker.make("Department", region=self.region.code, code="77")
@@ -804,5 +809,128 @@ class ServiceSearchTextCase(APITestCase):
             diffusion_zone_details=self.region.code,
         )
         response = self.client.get(f"/search/?city={self.city2.code}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_filter_by_fee_true(self):
+        service1 = baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            has_fee=True,
+        )
+        baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            has_fee=False,
+        )
+        response = self.client.get(f"/search/?city={self.city1.code}&has_fee=1")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], service1.slug)
+
+    def test_filter_by_fee_false(self):
+        baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            has_fee=True,
+        )
+        service2 = baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            has_fee=False,
+        )
+        response = self.client.get(f"/search/?city={self.city1.code}&has_fee=0")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], service2.slug)
+
+    def test_filter_without_fee(self):
+        baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            has_fee=True,
+        )
+        baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            has_fee=False,
+        )
+        response = self.client.get(f"/search/?city={self.city1.code}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+
+    def test_filter_kinds_one(self):
+        allowed_kinds = [c[0] for c in ServiceKind.choices]
+        service1 = baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            kinds=[allowed_kinds[0], allowed_kinds[1]],
+        )
+        baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            kinds=[allowed_kinds[2]],
+        )
+        response = self.client.get(
+            f"/search/?city={self.city1.code}&kinds={allowed_kinds[0]}"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], service1.slug)
+
+    def test_filter_kinds_several(self):
+        allowed_kinds = [c[0] for c in ServiceKind.choices]
+        service1 = baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            kinds=[allowed_kinds[0], allowed_kinds[1]],
+        )
+        service2 = baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            kinds=[allowed_kinds[1], allowed_kinds[2]],
+        )
+        baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            kinds=[allowed_kinds[3]],
+        )
+        response = self.client.get(
+            f"/search/?city={self.city1.code}&kinds={allowed_kinds[1]},{allowed_kinds[2]}"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        response_slugs = [r["slug"] for r in response.data]
+        self.assertIn(service1.slug, response_slugs)
+        self.assertIn(service2.slug, response_slugs)
+
+    def test_filter_kinds_nomatch(self):
+        allowed_kinds = [c[0] for c in ServiceKind.choices]
+        baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            kinds=[allowed_kinds[0], allowed_kinds[1]],
+        )
+        baker.make(
+            "Service",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            kinds=[allowed_kinds[1], allowed_kinds[2]],
+        )
+        response = self.client.get(
+            f"/search/?city={self.city1.code}&kinds={allowed_kinds[3]}"
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
