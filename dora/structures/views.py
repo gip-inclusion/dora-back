@@ -111,7 +111,7 @@ class StructureMemberViewset(viewsets.ModelViewSet):
             if structure_slug is None:
                 return StructureMember.objects.none()
 
-            if user.is_staff:
+            if user.is_authenticated and (user.is_staff or user.is_bizdev):
                 return StructureMember.objects.filter(structure__slug=structure_slug)
 
             try:
@@ -125,7 +125,7 @@ class StructureMemberViewset(viewsets.ModelViewSet):
                 structure__slug=structure_slug, user__is_valid=True
             )
         else:
-            if user.is_staff:
+            if user.is_authenticated and (user.is_staff or user.is_bizdev):
                 return StructureMember.objects.all()
 
             structures_administered = StructureMember.objects.filter(
@@ -150,7 +150,7 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
             if structure_slug is None:
                 return StructurePutativeMember.objects.none()
 
-            if user.is_staff:
+            if user.is_authenticated and (user.is_staff or user.is_bizdev):
                 return StructurePutativeMember.objects.filter(
                     structure__slug=structure_slug
                 )
@@ -168,7 +168,7 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
                 structure__slug=structure_slug,
             )
         else:
-            if user.is_staff:
+            if user.is_authenticated and (user.is_staff or user.is_bizdev):
                 return StructurePutativeMember.objects.all()
 
             structures_administered = StructureMember.objects.filter(

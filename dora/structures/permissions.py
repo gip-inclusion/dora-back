@@ -48,6 +48,21 @@ class StructureMemberPermission(permissions.BasePermission):
 
         return True
 
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+
+        # Staff can do anything
+        if user.is_staff:
+            return True
+
+        # bizdevs can read only
+        if user.is_bizdev:
+            return request.method in permissions.SAFE_METHODS
+
+        # People can only edit their Structures' stuff
+        user_structures = Structure.objects.filter(membership__user=user)
+        return obj.structure in user_structures
+
 
 class StructurePutativeMemberPermission(permissions.BasePermission):
     def has_permission(self, request, view):

@@ -22,6 +22,7 @@ class ServiceTestCase(APITestCase):
         self.me = baker.make("users.User", is_valid=True)
         self.unaccepted_user = baker.make("users.User", is_valid=True)
         self.superuser = baker.make("users.User", is_staff=True, is_valid=True)
+        self.bizdev = baker.make("users.User", is_bizdev=True, is_valid=True)
         self.my_struct = baker.make("Structure")
         self.my_struct.members.add(
             self.me,
@@ -224,6 +225,15 @@ class ServiceTestCase(APITestCase):
         self.assertIn(self.other_service.slug, services_ids)
         self.assertNotIn(self.other_draft_service, services_ids)
 
+    def test_bizdev_cant_sees_everything(self):
+        self.client.force_authenticate(user=self.bizdev)
+        response = self.client.get("/services/")
+        services_ids = [s["slug"] for s in response.data]
+        self.assertIn(self.my_service.slug, services_ids)
+        self.assertNotIn(self.my_draft_service.slug, services_ids)
+        self.assertIn(self.other_service.slug, services_ids)
+        self.assertNotIn(self.other_draft_service, services_ids)
+
     def test_superuser_can_edit_everything(self):
         self.client.force_authenticate(user=self.superuser)
         response = self.client.patch(
@@ -232,6 +242,13 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         response = self.client.get(f"/services/{self.my_draft_service.slug}/")
         self.assertEqual(response.data["name"], "xxx")
+
+    def test_bizdev_cant_edit_everything(self):
+        self.client.force_authenticate(user=self.bizdev)
+        response = self.client.patch(
+            f"/services/{self.my_service.slug}/", {"name": "xxx"}
+        )
+        self.assertEqual(response.status_code, 403)
 
     def test_superuser_last_draft_doesnt_return_others(self):
         self.client.force_authenticate(user=self.superuser)
@@ -243,6 +260,12 @@ class ServiceTestCase(APITestCase):
         response = self.client.get(f"/services/{self.my_service.slug}/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["can_write"], True)
+
+    def test_bizdev_can_write_field_false(self):
+        self.client.force_authenticate(user=self.bizdev)
+        response = self.client.get(f"/services/{self.my_service.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_write"], False)
 
     # Adding
 
@@ -287,6 +310,18 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.status_code, 201)
         slug = response.data["slug"]
         Service.objects.get(slug=slug)
+
+    def test_bizdev_cant_add_to_any_structure(self):
+        self.client.force_authenticate(user=self.bizdev)
+        slug = baker.make("Structure").slug
+        Structure.objects.get(slug=slug)
+        DUMMY_SERVICE["structure"] = slug
+        response = self.client.post(
+            "/services/",
+            DUMMY_SERVICE,
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["structure"][0]["code"], "not_member_of_struct")
 
     def test_adding_service_populates_creator_last_editor(self):
         DUMMY_SERVICE["structure"] = self.my_struct.slug
@@ -357,6 +392,21 @@ class ServiceTestCase(APITestCase):
 
     def test_superuser_sees_all_choices(self):
         self.client.force_authenticate(user=self.superuser)
+
+        response = self.client.get(
+            "/services-options/",
+        )
+        conds = [d["value"] for d in response.data["access_conditions"]]
+
+        self.assertIn(self.global_condition1.id, conds)
+        self.assertIn(self.global_condition2.id, conds)
+        self.assertIn(self.struct_condition1.id, conds)
+        self.assertIn(self.struct_condition2.id, conds)
+        self.assertIn(self.other_struct_condition1.id, conds)
+        self.assertIn(self.other_struct_condition2.id, conds)
+
+    def test_bizdev_sees_all_choices(self):
+        self.client.force_authenticate(user=self.bizdev)
 
         response = self.client.get(
             "/services-options/",

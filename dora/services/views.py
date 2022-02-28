@@ -234,7 +234,7 @@ def options(request):
         user = request.user
         if not user.is_authenticated:
             return choices.filter(structure_id=None)
-        if user.is_staff:
+        if user.is_staff or user.is_bizdev:
             return choices
         user_structures = StructureMember.objects.filter(user=user).values_list(
             "structure_id", flat=True
