@@ -234,7 +234,7 @@ def options(request):
         user = request.user
         if not user.is_authenticated:
             return choices.filter(structure_id=None)
-        if user.is_staff:
+        if user.is_staff or user.is_bizdev:
             return choices
         user_structures = StructureMember.objects.filter(user=user).values_list(
             "structure_id", flat=True
@@ -308,10 +308,25 @@ def search(request):
     category = request.GET.get("cat", "")
     subcategory = request.GET.get("sub", "")
     city_code = request.GET.get("city", "")
+    kinds = request.GET.get("kinds", "")
+    has_fee_param = request.GET.get("has_fee", "")
+
+    has_fee = None
+    if has_fee_param in ("1", 1, "True", "true", "t", "T"):
+        has_fee = True
+    elif has_fee_param in ("0", 0, "False", "false", "f", "F"):
+        has_fee = False
 
     services = Service.objects.filter(
         category=category, is_draft=False, is_suggestion=False
     )
+    if has_fee is True:
+        services = services.filter(has_fee=True)
+    elif has_fee is False:
+        services = services.filter(has_fee=False)
+    if kinds:
+        services = services.filter(kinds__overlap=kinds.split(","))
+
     if subcategory:
         services = services.filter(subcategories__contains=[subcategory])
 

@@ -9,6 +9,14 @@ from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
 from dora.admin_express.models import AdminDivisionType
+from dora.services.enums import (
+    BeneficiaryAccessMode,
+    CoachOrientationMode,
+    LocationKind,
+    ServiceCategories,
+    ServiceKind,
+    ServiceSubCategories,
+)
 from dora.structures.models import Structure, StructureMember
 
 
@@ -21,102 +29,6 @@ def make_unique_slug(instance, parent_slug, value, length=20):
             base_slug + "-" + get_random_string(4, "abcdefghijklmnopqrstuvwxyz")
         )
     return unique_slug
-
-
-class ServiceCategories(models.TextChoices):
-    MOBILITY = ("MO", "Mobilité")
-    HOUSING = ("HO", "Logement – Hébergement")
-    CHILD_CARE = ("CC", "Garde d’enfant")
-    FFL = "FL", "Apprendre le Français"
-    ILLITERACY = "IL", "Illettrisme"
-    CREATION = "CR", "Création d’activité"
-    DIGITAL = "DI", "Numérique"
-    FINANCIAL = "FI", "Difficultés financières"
-    GLOBAL = "GL", "Acco. global individualisé"
-
-
-# Subcategories are prefixed by their category
-class ServiceSubCategories(models.TextChoices):
-
-    MO_MOBILITY = ("MO-MO", "Se déplacer sans permis et/ou sans véhicule personnel")
-    MO_WORK = ("MO-WK", "Reprendre un emploi ou une formation")
-    MO_LICENSE = (
-        "MO-LI",
-        "Préparer son permis de conduire, se réentraîner à la conduite",
-    )
-    MO_VEHICLE = ("MO-VE", "Louer ou acheter un véhicule")
-    MO_MAINTENANCE = ("MO-MA", "Entretenir ou réparer son véhicule")
-
-    MO_2WHEELS = "MO_2W", "Apprendre à utiliser un deux roues"
-    MO_BLOCKS = "MO_BLK", "Identifier ses freins, et définir ses besoins en mobilité"
-    MO_HELP = "MO_HLP", "Être accompagné(e) dans son parcours mobilité"
-
-    HO_ADAPT = "HO_AD", "Besoin d’adapter mon logement"
-    HO_KEEP = ("HO-KE", "Problème avec son logement")
-    HO_SHORT = ("HO-SH", "Mal logé/sans logis")
-    HO_MOVE = "HO_MO", "Déménagement"
-    HO_ACCESS = ("HO-AC", "Être accompagné(e) pour se loger")
-    HO_WORK = "HO_WK", "Reprendre un emploi ou une formation"
-
-    CC_INFO = ("CC-IN", "Information et accompagnement des parents")
-    CC_TEMP = ("CC-TM", "Garde ponctuelle")
-    CC_LONG = ("CC-LG", "Garde pérenne")
-    CC_EXTRACURRICULAR = ("CC-EX", "Garde périscolaire")
-
-    FL_COM = "FL-CO", "Communiquer dans la vie de tous les jours"
-    FL_INSERTION = "FL-IN", "Accompagnement vers l’insertion professionnelle"
-    FL_FORMATION = "FL-FO", "Suivre une formation"
-
-    IL_COM = "IL-CO", "Communiquer dans la vie de tous les jours"
-    IL_INSERTION = "IL-IN", "Accompagnement vers l’insertion professionnelle"
-    IL_FORMATION = "IL-FO", "Suivre une formation"
-    IL_ADMIN = "IL-AD", "Être informé sur les  démarches administratives"
-
-    CR_IDEA = "CR-ID", "De l’idée au projet"
-    CR_ELABORATE = "CR-EL", "Élaborer son projet"
-    CR_START = "CR-ST", "Démarrer son activité"
-
-    DI_BASICS = "DI-BA", "Prendre en main un équipement informatique"
-    DI_NAVIGATE = "DI-NA", "Naviguer sur internet"
-    DI_EMAIL = "DI-EM", "Envoyer, recevoir, gérer ses courriels"
-    DI_PHONE = "DI-PH", "Utiliser son smartphone"
-    DI_CONTENT = "DI-CN", "Créer et gérer ses contenus numériques"
-    DI_WORDS = "DI-WD", "Connaitre l’environnement et le vocabulaire numérique"
-    DI_WORDPROC = "DI-WP", "Apprendre les bases du traitement de texte"
-    DI_COM = "DI-CO", "Échanger avec ses proches"
-    DI_JOB = "DI-JO", "Trouver un emploi ou une formation"
-    DI_CHILD = "DI-CH", "Accompagner son enfant"
-    DI_ADMIN = "DI-AD", "Réaliser une démarche en ligne"
-
-
-class ServiceKind(models.TextChoices):
-    SUPPORT = ("SU", "Accompagnement")
-    RECEPTION = "RE", "Accueil"
-    FINANCIAL = ("FI", "Aide financière")
-    MATERIAL = ("MA", "Aide materielle")
-    WORKSHOP = "WK", "Atelier"
-    FORMATION = "FO", "Formation"
-    INFORMATION = "IN", "Information"
-
-
-class BeneficiaryAccessMode(models.TextChoices):
-    ONSITE = ("OS", "Se présenter")
-    PHONE = ("PH", "Téléphoner")
-    EMAIL = ("EM", "Envoyer un mail")
-    OTHER = ("OT", "Autre (préciser)")
-
-
-class CoachOrientationMode(models.TextChoices):
-    PHONE = ("PH", "Téléphoner")
-    EMAIL = ("EM", "Envoyer un mail")
-    FORM = ("FO", "Envoyer le formulaire d’adhésion")
-    EMAIL_PRESCRIPTION = ("EP", "Envoyer un mail avec une fiche de prescription")
-    OTHER = ("OT", "Autre (préciser)")
-
-
-class LocationKind(models.TextChoices):
-    ONSITE = ("OS", "En présentiel")
-    REMOTE = ("RE", "À distance")
 
 
 class CustomizableChoice(models.Model):
@@ -196,7 +108,7 @@ class Service(models.Model):
     )
 
     subcategories = ArrayField(
-        models.CharField(max_length=6, choices=ServiceSubCategories.choices),
+        models.CharField(max_length=100, choices=ServiceSubCategories.choices),
         verbose_name="Sous-catégorie",
         blank=True,
         default=list,

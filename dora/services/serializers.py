@@ -9,19 +9,21 @@ from dora.admin_express.models import EPCI, City, Department, Region
 from dora.core.utils import code_insee_to_code_dept
 from dora.structures.models import Structure, StructureMember
 
-from .models import (
-    AccessCondition,
-    AdminDivisionType,
+from .enums import (
     BeneficiaryAccessMode,
     CoachOrientationMode,
-    ConcernedPublic,
-    Credential,
     LocationKind,
-    Requirement,
-    Service,
     ServiceCategories,
     ServiceKind,
     ServiceSubCategories,
+)
+from .models import (
+    AccessCondition,
+    AdminDivisionType,
+    ConcernedPublic,
+    Credential,
+    Requirement,
+    Service,
 )
 
 logger = logging.getLogger(__name__)
