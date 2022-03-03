@@ -671,7 +671,7 @@ class StructureMemberTestCase(APITestCase):
         self.assertEqual(response.data["user"]["email"], self.another_struct_user.email)
         self.assertEqual(len(mail.outbox), 1)
 
-    def test_bizdev_cant_invite_structure_members(self):
+    def test_bizdev_can_invite_structure_members(self):
         self.client.force_authenticate(user=self.bizdev)
         response = self.client.post(
             f"/structure-putative-members/?structure={self.my_struct.slug}",
@@ -683,7 +683,14 @@ class StructureMemberTestCase(APITestCase):
                 },
             },
         )
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 201)
+        member = response.data["id"]
+        response = self.client.get(f"/structure-putative-members/{member}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["is_admin"], False)
+        self.assertNotEqual(response.data["user"]["last_name"], "FOO")
+        self.assertEqual(response.data["user"]["email"], self.another_struct_user.email)
+        self.assertEqual(len(mail.outbox), 1)
 
     def test_admin_can_reinvite_user(self):
         self.client.force_authenticate(user=self.me)
