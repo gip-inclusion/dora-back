@@ -79,8 +79,8 @@ class StructurePutativeMemberPermission(permissions.BasePermission):
             structure_slug = request.query_params.get("structure")
             if not structure_slug:
                 return False
-            # Check that we are staff or admin of this structure
-            if user.is_staff:
+            # Check that we are staff, bizdev or admin of this structure
+            if user.is_staff or user.is_bizdev:
                 return True
             try:
                 StructureMember.objects.get(
