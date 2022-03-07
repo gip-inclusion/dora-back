@@ -39,6 +39,11 @@ from .serializers import (
 )
 
 
+def update_last_login(user):
+    user.last_login = timezone.now()
+    user.save(update_fields=["last_login"])
+
+
 @sensitive_post_parameters(["email", "password"])
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
@@ -49,6 +54,7 @@ def login(request):
     if not user.is_valid:
         return Response({"valid_user": False})
     else:
+        update_last_login(user)
         # We don't want to return expirable tokens, they are just here for password
         # resets !
         token, _created = Token.objects.get_or_create(user=user, expiration=None)
@@ -140,6 +146,7 @@ def user_info(request):
         user, _token = TokenAuthentication().authenticate_credentials(key)
     except exceptions.AuthenticationFailed:
         raise Http404
+    update_last_login(user)
     return Response(UserInfoSerializer(user).data, status=200)
 
 
