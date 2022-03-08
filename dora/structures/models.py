@@ -5,6 +5,7 @@ from django.db import models
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
+from dora.core.models import EnumModel
 from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import validate_safir, validate_siret
 from dora.sirene.serializers import EstablishmentSerializer
@@ -96,17 +97,6 @@ class StructureMember(models.Model):
 
     def notify_access_granted(self):
         send_access_granted_notification(self)
-
-
-class EnumModel(models.Model):
-    value = models.CharField(max_length=255, unique=True, db_index=True)
-    label = models.CharField(max_length=255)
-
-    class Meta:
-        abstract = True
-
-    def __str__(self):
-        return self.label
 
 
 class StructureSource(EnumModel):

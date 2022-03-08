@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.contrib.admin.filters import RelatedOnlyFieldListFilter
 
+from dora.core.admin import EnumAdmin
+
 from .models import (
     Structure,
     StructureMember,
@@ -92,18 +94,6 @@ class StructureAdmin(admin.ModelAdmin):
     search_fields = ("name", "siret", "code_safir_pe", "city", "department", "slug")
     ordering = ["-modification_date", "department"]
     inlines = [StructureMemberInline, StructurePutativeMemberInline]
-
-
-class EnumAdmin(admin.ModelAdmin):
-    list_display = [
-        "value",
-        "label",
-    ]
-    search_fields = (
-        "value",
-        "label",
-    )
-    ordering = ["label"]
 
 
 admin.site.register(Structure, StructureAdmin)
