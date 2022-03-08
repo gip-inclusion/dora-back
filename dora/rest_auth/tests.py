@@ -179,7 +179,9 @@ class AuthTestCase(APITestCase):
     def test_register_PE_user_and_struct_without_PE_email(self):
         self.client.force_authenticate(user=None)
         po_agency = baker.make(
-            "Structure", siret="12345678901234", typology=StructureTypology.PE
+            "Structure",
+            siret="12345678901234",
+            typology=StructureTypology.objects.get(value="PE"),
         )
         establishment = baker.make("Establishment", siret=po_agency.siret)
         data = {
@@ -196,7 +198,9 @@ class AuthTestCase(APITestCase):
     def test_register_PE_user_and_struct_with_PE_email(self):
         self.client.force_authenticate(user=None)
         po_agency = baker.make(
-            "Structure", siret="12345678901234", typology=StructureTypology.PE
+            "Structure",
+            siret="12345678901234",
+            typology=StructureTypology.objects.get(value="PE"),
         )
         establishment = baker.make("Establishment", siret=po_agency.siret)
         data = {
@@ -213,7 +217,9 @@ class AuthTestCase(APITestCase):
     def test_register_PE_user_and_struct_with_PE_email_dont_need_admin_validation(self):
         self.client.force_authenticate(user=None)
         po_agency = baker.make(
-            "Structure", siret="12345678901234", typology=StructureTypology.PE
+            "Structure",
+            siret="12345678901234",
+            typology=StructureTypology.objects.get(value="PE"),
         )
         establishment = baker.make("Establishment", siret=po_agency.siret)
         data = {

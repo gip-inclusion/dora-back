@@ -83,9 +83,9 @@ class StructureViewSet(
     def perform_create(self, serializer):
         user = self.request.user
         source = (
-            StructureSource.DORA_STAFF
+            StructureSource.objects.get(value="DORA")
             if user.is_staff
-            else StructureSource.STRUCT_STAFF
+            else StructureSource.objects.get(value="PORTEUR")
         )
         structure = serializer.save(creator=user, last_editor=user, source=source)
         send_mattermost_notification(
@@ -368,7 +368,8 @@ def options(request):
 
     result = {
         "typologies": [
-            {"value": c[0], "label": c[1]} for c in StructureTypology.choices
+            {"value": c.value, "label": c.label}
+            for c in StructureTypology.objects.all()
         ],
     }
     return Response(result)

@@ -56,7 +56,7 @@ class ServiceSuggestion(models.Model):
                 structure = Structure.objects.create_from_establishment(establishment)
                 structure.creator = self.creator
                 structure.last_editor = self.creator
-                structure.source = StructureSource.COLLAB
+                structure.source = StructureSource.objects.get(value="COL")
                 structure.save()
             except Establishment.DoesNotExist:
                 raise serializers.ValidationError("SIRET inconnu", code="wrong_siret")

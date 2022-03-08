@@ -157,7 +157,7 @@ class StructureTestCase(APITestCase):
         self.assertEqual(response.status_code, 201)
         slug = response.data["slug"]
         s = Structure.objects.get(slug=slug)
-        self.assertEqual(s.source, StructureSource.STRUCT_STAFF)
+        self.assertEqual(s.source, StructureSource.objects.get(value="PORTEUR"))
 
     def test_adding_structure_by_superuser_sets_source(self):
         self.client.force_authenticate(user=self.superuser)
@@ -168,7 +168,7 @@ class StructureTestCase(APITestCase):
         self.assertEqual(response.status_code, 201)
         slug = response.data["slug"]
         s = Structure.objects.get(slug=slug)
-        self.assertEqual(s.source, StructureSource.DORA_STAFF)
+        self.assertEqual(s.source, StructureSource.objects.get(value="DORA"))
 
     # Deleting
 
@@ -1219,7 +1219,7 @@ class MassInviteTestCase(APITestCase):
         self.assertEqual(antenna.short_desc, structure.short_desc)
         self.assertEqual(antenna.full_desc, structure.full_desc)
         self.assertEqual(antenna.creator, User.objects.get_dora_bot())
-        self.assertEqual(antenna.source, StructureSource.BATCH_INVITE)
+        self.assertEqual(antenna.source, StructureSource.objects.get(value="BI"))
         self.assertEqual(antenna.parent, structure)
         self.assertTrue(antenna.is_antenna)
 
