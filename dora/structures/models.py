@@ -105,13 +105,18 @@ class EnumModel(models.Model):
     class Meta:
         abstract = True
 
+    def __str__(self):
+        return self.label
+
 
 class StructureSource(EnumModel):
-    pass
+    class Meta:
+        verbose_name = "Source"
 
 
 class StructureTypology(EnumModel):
-    pass
+    class Meta:
+        verbose_name = "Typologie"
 
 
 class StructureManager(models.Manager):
