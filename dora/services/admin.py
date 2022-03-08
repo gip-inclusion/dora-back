@@ -1,13 +1,21 @@
 from django.contrib.admin import RelatedOnlyFieldListFilter
 from django.contrib.gis import admin
 
+from dora.core.admin import EnumAdmin
+
 from .models import (
     AccessCondition,
+    BeneficiaryAccessMode,
+    CoachOrientationMode,
     ConcernedPublic,
     Credential,
+    LocationKind,
     Requirement,
     Service,
+    ServiceCategory,
+    ServiceKind,
     ServiceModificationHistoryItem,
+    ServiceSubCategory,
 )
 
 
@@ -30,7 +38,6 @@ class ServiceAdmin(admin.OSMGeoAdmin):
         "name",
         "slug",
         "structure",
-        "category",
         "creation_date",
         "modification_date",
         "publication_date",
@@ -60,3 +67,10 @@ admin.site.register(AccessCondition, CustomizableChoiceAdmin)
 admin.site.register(ConcernedPublic, CustomizableChoiceAdmin)
 admin.site.register(Requirement, CustomizableChoiceAdmin)
 admin.site.register(Credential, CustomizableChoiceAdmin)
+
+admin.site.register(BeneficiaryAccessMode, EnumAdmin)
+admin.site.register(CoachOrientationMode, EnumAdmin)
+admin.site.register(LocationKind, EnumAdmin)
+admin.site.register(ServiceCategory, EnumAdmin)
+admin.site.register(ServiceKind, EnumAdmin)
+admin.site.register(ServiceSubCategory, EnumAdmin)

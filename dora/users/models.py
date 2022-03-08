@@ -76,8 +76,8 @@ class User(AbstractBaseUser):
     REQUIRED_FIELDS = []
 
     class Meta:
-        verbose_name = "user"
-        verbose_name_plural = "users"
+        verbose_name = "utilisateur"
+        verbose_name_plural = "utilisateurs"
         abstract = False
 
     def __str__(self):

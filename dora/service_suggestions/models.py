@@ -7,7 +7,13 @@ from rest_framework import serializers
 
 from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import validate_siret
-from dora.services.models import Service
+from dora.services.models import (
+    LocationKind,
+    Service,
+    ServiceCategory,
+    ServiceKind,
+    ServiceSubCategory,
+)
 from dora.sirene.models import Establishment
 from dora.sirene.serializers import EstablishmentSerializer
 from dora.structures.models import Structure, StructureSource
@@ -29,6 +35,10 @@ class ServiceSuggestion(models.Model):
         related_name="+",
     )
 
+    class Meta:
+        verbose_name = "Contribution de service"
+        verbose_name_plural = "Contributions de service"
+
     def get_structure_info(self):
         try:
             structure = Structure.objects.get(siret=self.siret)
@@ -48,6 +58,9 @@ class ServiceSuggestion(models.Model):
                 raise serializers.ValidationError("SIRET inconnu", code="wrong_siret")
 
     def convert_to_service(self):
+        def values_to_objects(Model, values):
+            return [Model.objects.get(value=v) for v in values]
+
         try:
             structure = Structure.objects.get(siret=self.siret)
         except Structure.DoesNotExist:
@@ -65,6 +78,16 @@ class ServiceSuggestion(models.Model):
         concerned_public = self.contents.pop("concerned_public", [])
         requirements = self.contents.pop("requirements", [])
         credentials = self.contents.pop("credentials", [])
+        categories = self.contents.pop("categories", [])
+        subcategories = self.contents.pop("subcategories", [])
+        kinds = self.contents.pop("kinds", [])
+        location_kinds = self.contents.pop("location_kinds", [])
+
+        # rétrocompatibilité: les anciennes suggestion avaient uniquement
+        # un champ "category" au lieu du champ "categories" multiple
+        category = self.contents.pop("category", "")
+        if category:
+            categories = [category]
 
         lon = self.contents.pop("longitude", None)
         lat = self.contents.pop("latitude", None)
@@ -87,6 +110,13 @@ class ServiceSuggestion(models.Model):
             service.concerned_public.set(concerned_public)
             service.requirements.set(requirements)
             service.credentials.set(credentials)
+
+            service.categories.set(values_to_objects(ServiceCategory, categories))
+            service.subcategories.set(
+                values_to_objects(ServiceSubCategory, subcategories)
+            )
+            service.kinds.set(values_to_objects(ServiceKind, kinds))
+            service.location_kinds.set(values_to_objects(LocationKind, location_kinds))
 
             self.delete()
         return service

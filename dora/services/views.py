@@ -20,10 +20,10 @@ from dora.services.models import (
     LocationKind,
     Requirement,
     Service,
-    ServiceCategories,
+    ServiceCategory,
     ServiceKind,
     ServiceModificationHistoryItem,
-    ServiceSubCategories,
+    ServiceSubCategory,
 )
 from dora.structures.models import Structure, StructureMember
 
@@ -245,12 +245,15 @@ def options(request):
 
     result = {
         "categories": [
-            {"value": c[0], "label": c[1]} for c in ServiceCategories.choices
+            {"value": c.value, "label": c.label} for c in ServiceCategory.objects.all()
         ],
         "subcategories": [
-            {"value": c[0], "label": c[1]} for c in ServiceSubCategories.choices
+            {"value": c.value, "label": c.label}
+            for c in ServiceSubCategory.objects.all()
         ],
-        "kinds": [{"value": c[0], "label": c[1]} for c in ServiceKind.choices],
+        "kinds": [
+            {"value": c.value, "label": c.label} for c in ServiceKind.objects.all()
+        ],
         "access_conditions": AccessConditionSerializer(
             filter_custom_choices(AccessCondition.objects.all()),
             many=True,
@@ -272,13 +275,15 @@ def options(request):
             context={"request": request},
         ).data,
         "beneficiaries_access_modes": [
-            {"value": c[0], "label": c[1]} for c in BeneficiaryAccessMode.choices
+            {"value": c.value, "label": c.label}
+            for c in BeneficiaryAccessMode.objects.all()
         ],
         "coach_orientation_modes": [
-            {"value": c[0], "label": c[1]} for c in CoachOrientationMode.choices
+            {"value": c.value, "label": c.label}
+            for c in CoachOrientationMode.objects.all()
         ],
         "location_kinds": [
-            {"value": c[0], "label": c[1]} for c in LocationKind.choices
+            {"value": c.value, "label": c.label} for c in LocationKind.objects.all()
         ],
         "diffusion_zone_type": [
             {"value": c[0], "label": c[1]} for c in AdminDivisionType.choices
@@ -291,7 +296,7 @@ class SearchResultSerializer(ServiceSerializer):
     class Meta:
         model = Service
         fields = [
-            "category_display",
+            "categories_display",
             "city",
             "name",
             "postal_code",
@@ -317,15 +322,15 @@ def search(request):
     elif has_fee_param in ("0", 0, "False", "false", "f", "F"):
         has_fee = False
 
-    services = Service.objects.filter(
-        category=category, is_draft=False, is_suggestion=False
-    )
+    services = Service.objects.filter(is_draft=False, is_suggestion=False)
+    if category:
+        services = services.filter(categories__value=category)
     if has_fee is True:
         services = services.filter(has_fee=True)
     elif has_fee is False:
         services = services.filter(has_fee=False)
     if kinds:
-        services = services.filter(kinds__overlap=kinds.split(","))
+        services = services.filter(kinds__value__in=kinds.split(","))
 
     if subcategory:
         services = services.filter(subcategories__contains=[subcategory])
@@ -358,5 +363,7 @@ def search(request):
     )
 
     return Response(
-        SearchResultSerializer(results, many=True, context={"request": request}).data
+        SearchResultSerializer(
+            results.distinct(), many=True, context={"request": request}
+        ).data
     )
