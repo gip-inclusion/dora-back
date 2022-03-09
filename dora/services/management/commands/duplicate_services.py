@@ -29,7 +29,7 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f"Service {slug} not found"))
 
         dests = Structure.objects.filter(
-            department=dept, typology=StructureTypology.PE
+            department=dept, typology=StructureTypology.objects.get(value="PE")
         ).exclude(id=source.structure_id)
         if not dests.exists():
             self.stderr.write(self.style.ERROR("No destination found"))

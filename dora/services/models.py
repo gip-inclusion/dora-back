@@ -9,14 +9,7 @@ from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
 from dora.admin_express.models import AdminDivisionType
-from dora.services.enums import (
-    BeneficiaryAccessMode,
-    CoachOrientationMode,
-    LocationKind,
-    ServiceCategories,
-    ServiceKind,
-    ServiceSubCategories,
-)
+from dora.core.models import EnumModel
 from dora.structures.models import Structure, StructureMember
 
 
@@ -78,6 +71,41 @@ class Credential(CustomizableChoice):
         verbose_name_plural = "Justificatifs à fournir"
 
 
+class ServiceCategory(EnumModel):
+    class Meta:
+        verbose_name = "Catégorie principale"
+        verbose_name_plural = "Catégories principales"
+
+
+class ServiceSubCategory(EnumModel):
+    class Meta:
+        verbose_name = "Sous-catégorie"
+
+
+class ServiceKind(EnumModel):
+    class Meta:
+        verbose_name = "Type de service"
+        verbose_name_plural = "Types de service"
+
+
+class BeneficiaryAccessMode(EnumModel):
+    class Meta:
+        verbose_name = "Mode d'orientation bénéficiaire"
+        verbose_name_plural = "Modes d'orientation bénéficiaire"
+
+
+class CoachOrientationMode(EnumModel):
+    class Meta:
+        verbose_name = "Mode d'orientation accompagnateur"
+        verbose_name_plural = "Modes d'orientation accompagnateur"
+
+
+class LocationKind(EnumModel):
+    class Meta:
+        verbose_name = "Lieu de déroulement"
+        verbose_name_plural = "Lieux de déroulement"
+
+
 class Service(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     slug = models.SlugField(max_length=100, blank=True, null=True, unique=True)
@@ -92,26 +120,23 @@ class Service(models.Model):
 
     ##########
     # Typology
-    kinds = ArrayField(
-        models.CharField(max_length=2, choices=ServiceKind.choices),
+
+    kinds = models.ManyToManyField(
+        ServiceKind,
         verbose_name="Type de service",
-        db_index=True,
-        blank=True,
-        default=list,
-    )
-    category = models.CharField(
-        max_length=2,
-        choices=ServiceCategories.choices,
-        verbose_name="Catégorie principale",
-        db_index=True,
         blank=True,
     )
 
-    subcategories = ArrayField(
-        models.CharField(max_length=100, choices=ServiceSubCategories.choices),
+    categories = models.ManyToManyField(
+        ServiceCategory,
+        verbose_name="Catégories principales",
+        blank=True,
+    )
+
+    subcategories = models.ManyToManyField(
+        ServiceSubCategory,
         verbose_name="Sous-catégorie",
         blank=True,
-        default=list,
     )
 
     ############
@@ -132,20 +157,20 @@ class Service(models.Model):
     ############
     # Modalities
 
-    beneficiaries_access_modes = ArrayField(
-        models.CharField(max_length=2, choices=BeneficiaryAccessMode.choices),
+    beneficiaries_access_modes = models.ManyToManyField(
+        BeneficiaryAccessMode,
         verbose_name="Comment mobiliser la solution en tant que bénéficiaire",
         blank=True,
-        default=list,
     )
+
     beneficiaries_access_modes_other = CharField(
         verbose_name="Autre", max_length=280, blank=True
     )
-    coach_orientation_modes = ArrayField(
-        models.CharField(max_length=2, choices=CoachOrientationMode.choices),
+
+    coach_orientation_modes = models.ManyToManyField(
+        CoachOrientationMode,
         verbose_name="Comment orienter un bénéficiaire en tant qu’accompagnateur",
         blank=True,
-        default=list,
     )
     coach_orientation_modes_other = CharField(
         verbose_name="Autre", max_length=280, blank=True
@@ -189,11 +214,10 @@ class Service(models.Model):
 
     # Location
 
-    location_kinds = ArrayField(
-        models.CharField(max_length=2, choices=LocationKind.choices),
+    location_kinds = models.ManyToManyField(
+        LocationKind,
         verbose_name="Lieu de déroulement",
         blank=True,
-        default=list,
     )
 
     remote_url = models.URLField(verbose_name="Lien visioconférence", blank=True)

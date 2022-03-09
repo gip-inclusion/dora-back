@@ -20,10 +20,10 @@ from dora.services.models import (
     LocationKind,
     Requirement,
     Service,
-    ServiceCategories,
+    ServiceCategory,
     ServiceKind,
     ServiceModificationHistoryItem,
-    ServiceSubCategories,
+    ServiceSubCategory,
 )
 from dora.structures.models import Structure, StructureMember
 
@@ -230,6 +230,36 @@ def options(request):
         class Meta(CustomChoiceSerializer.Meta):
             model = Credential
 
+    class ServiceCategorySerializer(serializers.ModelSerializer):
+        class Meta:
+            model = ServiceCategory
+            fields = ["value", "label"]
+
+    class ServiceSubCategorySerializer(serializers.ModelSerializer):
+        class Meta:
+            model = ServiceSubCategory
+            fields = ["value", "label"]
+
+    class ServiceKindSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = ServiceKind
+            fields = ["value", "label"]
+
+    class BeneficiaryAccessModeSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = BeneficiaryAccessMode
+            fields = ["value", "label"]
+
+    class CoachOrientationModeSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = CoachOrientationMode
+            fields = ["value", "label"]
+
+    class LocationKindSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = LocationKind
+            fields = ["value", "label"]
+
     def filter_custom_choices(choices):
         user = request.user
         if not user.is_authenticated:
@@ -244,13 +274,22 @@ def options(request):
         )
 
     result = {
-        "categories": [
-            {"value": c[0], "label": c[1]} for c in ServiceCategories.choices
-        ],
-        "subcategories": [
-            {"value": c[0], "label": c[1]} for c in ServiceSubCategories.choices
-        ],
-        "kinds": [{"value": c[0], "label": c[1]} for c in ServiceKind.choices],
+        "categories": ServiceCategorySerializer(
+            ServiceCategory.objects.all(), many=True
+        ).data,
+        "subcategories": ServiceSubCategorySerializer(
+            ServiceSubCategory.objects.all(), many=True
+        ).data,
+        "kinds": ServiceKindSerializer(ServiceKind.objects.all(), many=True).data,
+        "beneficiaries_access_modes": BeneficiaryAccessModeSerializer(
+            BeneficiaryAccessMode.objects.all(), many=True
+        ).data,
+        "coach_orientation_modes": CoachOrientationModeSerializer(
+            CoachOrientationMode.objects.all(), many=True
+        ).data,
+        "location_kinds": LocationKindSerializer(
+            LocationKind.objects.all(), many=True
+        ).data,
         "access_conditions": AccessConditionSerializer(
             filter_custom_choices(AccessCondition.objects.all()),
             many=True,
@@ -271,15 +310,6 @@ def options(request):
             many=True,
             context={"request": request},
         ).data,
-        "beneficiaries_access_modes": [
-            {"value": c[0], "label": c[1]} for c in BeneficiaryAccessMode.choices
-        ],
-        "coach_orientation_modes": [
-            {"value": c[0], "label": c[1]} for c in CoachOrientationMode.choices
-        ],
-        "location_kinds": [
-            {"value": c[0], "label": c[1]} for c in LocationKind.choices
-        ],
         "diffusion_zone_type": [
             {"value": c[0], "label": c[1]} for c in AdminDivisionType.choices
         ],
@@ -291,7 +321,7 @@ class SearchResultSerializer(ServiceSerializer):
     class Meta:
         model = Service
         fields = [
-            "category_display",
+            "categories_display",
             "city",
             "name",
             "postal_code",
@@ -317,15 +347,15 @@ def search(request):
     elif has_fee_param in ("0", 0, "False", "false", "f", "F"):
         has_fee = False
 
-    services = Service.objects.filter(
-        category=category, is_draft=False, is_suggestion=False
-    )
+    services = Service.objects.filter(is_draft=False, is_suggestion=False)
+    if category:
+        services = services.filter(categories__value=category)
     if has_fee is True:
         services = services.filter(has_fee=True)
     elif has_fee is False:
         services = services.filter(has_fee=False)
     if kinds:
-        services = services.filter(kinds__overlap=kinds.split(","))
+        services = services.filter(kinds__value__in=kinds.split(","))
 
     if subcategory:
         services = services.filter(subcategories__contains=[subcategory])
@@ -358,5 +388,7 @@ def search(request):
     )
 
     return Response(
-        SearchResultSerializer(results, many=True, context={"request": request}).data
+        SearchResultSerializer(
+            results.distinct(), many=True, context={"request": request}
+        ).data
     )

@@ -119,7 +119,7 @@ class Command(BaseCommand):
                         siret=agency["siret"]
                     )
                     if created:
-                        structure.source = StructureSource.PE_API
+                        structure.source = StructureSource.objects.get(value="PE")
                         structure.creator = bot_user
                     else:
                         self.stdout.write(
@@ -129,7 +129,7 @@ class Command(BaseCommand):
                         )
                         print(agency)
                     structure.code_safir_pe = code_safir
-                    structure.typology = StructureTypology.PE
+                    structure.typology = StructureTypology.objects.get(value="PE")
                     structure.name = agency["libelleEtendu"]
                     structure.phone = normalize_phone_number(
                         agency["contact"].get("telephonePublic", "")

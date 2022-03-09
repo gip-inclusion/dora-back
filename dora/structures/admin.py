@@ -1,7 +1,15 @@
 from django.contrib import admin
 from django.contrib.admin.filters import RelatedOnlyFieldListFilter
 
-from .models import Structure, StructureMember, StructurePutativeMember
+from dora.core.admin import EnumAdmin
+
+from .models import (
+    Structure,
+    StructureMember,
+    StructurePutativeMember,
+    StructureSource,
+    StructureTypology,
+)
 
 
 class StructurePutativeMemberAdmin(admin.ModelAdmin):
@@ -91,3 +99,5 @@ class StructureAdmin(admin.ModelAdmin):
 admin.site.register(Structure, StructureAdmin)
 admin.site.register(StructureMember, StructureMemberAdmin)
 admin.site.register(StructurePutativeMember, StructurePutativeMemberAdmin)
+admin.site.register(StructureSource, EnumAdmin)
+admin.site.register(StructureTypology, EnumAdmin)
