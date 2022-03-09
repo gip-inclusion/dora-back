@@ -230,6 +230,36 @@ def options(request):
         class Meta(CustomChoiceSerializer.Meta):
             model = Credential
 
+    class ServiceCategorySerializer(serializers.ModelSerializer):
+        class Meta:
+            model = ServiceCategory
+            fields = ["value", "label"]
+
+    class ServiceSubCategorySerializer(serializers.ModelSerializer):
+        class Meta:
+            model = ServiceSubCategory
+            fields = ["value", "label"]
+
+    class ServiceKindSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = ServiceKind
+            fields = ["value", "label"]
+
+    class BeneficiaryAccessModeSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = BeneficiaryAccessMode
+            fields = ["value", "label"]
+
+    class CoachOrientationModeSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = CoachOrientationMode
+            fields = ["value", "label"]
+
+    class LocationKindSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = LocationKind
+            fields = ["value", "label"]
+
     def filter_custom_choices(choices):
         user = request.user
         if not user.is_authenticated:
@@ -244,16 +274,22 @@ def options(request):
         )
 
     result = {
-        "categories": [
-            {"value": c.value, "label": c.label} for c in ServiceCategory.objects.all()
-        ],
-        "subcategories": [
-            {"value": c.value, "label": c.label}
-            for c in ServiceSubCategory.objects.all()
-        ],
-        "kinds": [
-            {"value": c.value, "label": c.label} for c in ServiceKind.objects.all()
-        ],
+        "categories": ServiceCategorySerializer(
+            ServiceCategory.objects.all(), many=True
+        ).data,
+        "subcategories": ServiceSubCategorySerializer(
+            ServiceSubCategory.objects.all(), many=True
+        ).data,
+        "kinds": ServiceKindSerializer(ServiceKind.objects.all(), many=True).data,
+        "beneficiaries_access_modes": BeneficiaryAccessModeSerializer(
+            BeneficiaryAccessMode.objects.all(), many=True
+        ).data,
+        "coach_orientation_modes": CoachOrientationModeSerializer(
+            CoachOrientationMode.objects.all(), many=True
+        ).data,
+        "location_kinds": LocationKindSerializer(
+            LocationKind.objects.all(), many=True
+        ).data,
         "access_conditions": AccessConditionSerializer(
             filter_custom_choices(AccessCondition.objects.all()),
             many=True,
@@ -274,17 +310,6 @@ def options(request):
             many=True,
             context={"request": request},
         ).data,
-        "beneficiaries_access_modes": [
-            {"value": c.value, "label": c.label}
-            for c in BeneficiaryAccessMode.objects.all()
-        ],
-        "coach_orientation_modes": [
-            {"value": c.value, "label": c.label}
-            for c in CoachOrientationMode.objects.all()
-        ],
-        "location_kinds": [
-            {"value": c.value, "label": c.label} for c in LocationKind.objects.all()
-        ],
         "diffusion_zone_type": [
             {"value": c[0], "label": c[1]} for c in AdminDivisionType.choices
         ],
