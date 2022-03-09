@@ -123,6 +123,10 @@ def _get_diffusion_zone_details_display(obj):
 
 
 class ServiceSerializer(serializers.ModelSerializer):
+    # pour rétrocompatibilité temporaire
+    category = serializers.SerializerMethodField()
+    category_display = serializers.SerializerMethodField()
+
     is_available = serializers.SerializerMethodField()
     forms_info = serializers.SerializerMethodField()
     structure = serializers.SlugRelatedField(
@@ -223,6 +227,8 @@ class ServiceSerializer(serializers.ModelSerializer):
         model = Service
 
         fields = [
+            "category",
+            "category_display",
             "slug",
             "name",
             "short_desc",
@@ -285,6 +291,14 @@ class ServiceSerializer(serializers.ModelSerializer):
             "can_write",
         ]
         lookup_field = "slug"
+
+    def get_category(self, obj):
+        cat = obj.categories.first()
+        return cat.value if cat else ""
+
+    def get_category_display(self, obj):
+        cat = obj.categories.first()
+        return cat.label if cat else ""
 
     def get_is_available(self, obj):
         return True
@@ -390,12 +404,15 @@ class AnonymousServiceSerializer(ServiceSerializer):
 
 
 class ServiceListSerializer(ServiceSerializer):
+
     diffusion_zone_type_display = serializers.SerializerMethodField()
     diffusion_zone_details_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
         fields = [
+            "category",
+            "category_display",
             "slug",
             "name",
             "structure",

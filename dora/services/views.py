@@ -321,6 +321,7 @@ class SearchResultSerializer(ServiceSerializer):
     class Meta:
         model = Service
         fields = [
+            "category_display",
             "categories_display",
             "city",
             "name",
@@ -358,7 +359,7 @@ def search(request):
         services = services.filter(kinds__value__in=kinds.split(","))
 
     if subcategory:
-        services = services.filter(subcategories__contains=[subcategory])
+        services = services.filter(subcategories__value=subcategory)
 
     city = get_object_or_404(City, pk=city_code)
 
