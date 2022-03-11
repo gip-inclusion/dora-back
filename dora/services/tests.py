@@ -916,7 +916,7 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(len(response.data), 2)
 
     def test_filter_kinds_one(self):
-        allowed_kinds = [c[0] for c in ServiceKind.choices]
+        allowed_kinds = ServiceKind.objects.all()
         service1 = baker.make(
             "Service",
             is_draft=False,
@@ -930,14 +930,14 @@ class ServiceSearchTestCase(APITestCase):
             kinds=[allowed_kinds[2]],
         )
         response = self.client.get(
-            f"/search/?city={self.city1.code}&kinds={allowed_kinds[0]}"
+            f"/search/?city={self.city1.code}&kinds={allowed_kinds[0].value}"
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service1.slug)
 
     def test_filter_kinds_several(self):
-        allowed_kinds = [c[0] for c in ServiceKind.choices]
+        allowed_kinds = ServiceKind.objects.all()
         service1 = baker.make(
             "Service",
             is_draft=False,
@@ -957,7 +957,7 @@ class ServiceSearchTestCase(APITestCase):
             kinds=[allowed_kinds[3]],
         )
         response = self.client.get(
-            f"/search/?city={self.city1.code}&kinds={allowed_kinds[1]},{allowed_kinds[2]}"
+            f"/search/?city={self.city1.code}&kinds={allowed_kinds[1].value},{allowed_kinds[2].value}"
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
@@ -966,7 +966,7 @@ class ServiceSearchTestCase(APITestCase):
         self.assertIn(service2.slug, response_slugs)
 
     def test_filter_kinds_nomatch(self):
-        allowed_kinds = [c[0] for c in ServiceKind.choices]
+        allowed_kinds = ServiceKind.objects.all()
         baker.make(
             "Service",
             is_draft=False,
@@ -980,7 +980,7 @@ class ServiceSearchTestCase(APITestCase):
             kinds=[allowed_kinds[1], allowed_kinds[2]],
         )
         response = self.client.get(
-            f"/search/?city={self.city1.code}&kinds={allowed_kinds[3]}"
+            f"/search/?city={self.city1.code}&kinds={allowed_kinds[3].value}"
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)

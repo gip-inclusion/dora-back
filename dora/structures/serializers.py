@@ -7,13 +7,19 @@ from dora.rest_auth.models import Token
 from dora.structures.emails import send_invitation_email
 from dora.users.models import User
 
-from .models import Structure, StructureMember, StructurePutativeMember
+from .models import (
+    Structure,
+    StructureMember,
+    StructurePutativeMember,
+    StructureTypology,
+)
 
 
 class StructureSerializer(serializers.ModelSerializer):
-    typology_display = serializers.CharField(
-        source="get_typology_display", read_only=True
+    typology = serializers.SlugRelatedField(
+        slug_field="value", queryset=StructureTypology.objects.all()
     )
+    typology_display = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
 
     class Meta:
@@ -57,6 +63,9 @@ class StructureSerializer(serializers.ModelSerializer):
     def get_can_write(self, obj):
         user = self.context.get("request").user
         return obj.can_write(user)
+
+    def get_typology_display(self, obj):
+        return obj.typology.label if obj.typology else ""
 
 
 class StructureListSerializer(StructureSerializer):

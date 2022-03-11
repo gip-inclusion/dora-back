@@ -9,21 +9,19 @@ from dora.admin_express.models import EPCI, City, Department, Region
 from dora.core.utils import code_insee_to_code_dept
 from dora.structures.models import Structure, StructureMember
 
-from .enums import (
-    BeneficiaryAccessMode,
-    CoachOrientationMode,
-    LocationKind,
-    ServiceCategories,
-    ServiceKind,
-    ServiceSubCategories,
-)
 from .models import (
     AccessCondition,
     AdminDivisionType,
+    BeneficiaryAccessMode,
+    CoachOrientationMode,
     ConcernedPublic,
     Credential,
+    LocationKind,
     Requirement,
     Service,
+    ServiceCategory,
+    ServiceKind,
+    ServiceSubCategory,
 )
 
 logger = logging.getLogger(__name__)
@@ -125,15 +123,43 @@ def _get_diffusion_zone_details_display(obj):
 
 
 class ServiceSerializer(serializers.ModelSerializer):
+    # pour rétrocompatibilité temporaire
+    category = serializers.SerializerMethodField()
+    category_display = serializers.SerializerMethodField()
+
     is_available = serializers.SerializerMethodField()
     forms_info = serializers.SerializerMethodField()
     structure = serializers.SlugRelatedField(
         queryset=Structure.objects.all(), slug_field="slug"
     )
     structure_info = StructureSerializer(source="structure", read_only=True)
-    kinds_display = serializers.SerializerMethodField()
-    category_display = serializers.SerializerMethodField()
-    subcategories_display = serializers.SerializerMethodField()
+    kinds = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=ServiceKind.objects.all(),
+        many=True,
+        required=False,
+    )
+    kinds_display = serializers.SlugRelatedField(
+        source="kinds", slug_field="label", many=True, read_only=True
+    )
+    categories = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=ServiceCategory.objects.all(),
+        many=True,
+        required=False,
+    )
+    categories_display = serializers.SlugRelatedField(
+        source="categories", slug_field="label", many=True, read_only=True
+    )
+    subcategories = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=ServiceSubCategory.objects.all(),
+        many=True,
+        required=False,
+    )
+    subcategories_display = serializers.SlugRelatedField(
+        source="subcategories", slug_field="label", many=True, read_only=True
+    )
     access_conditions = CreatablePrimaryKeyRelatedField(
         many=True,
         queryset=AccessCondition.objects.all(),
@@ -162,11 +188,38 @@ class ServiceSerializer(serializers.ModelSerializer):
         required=False,
     )
     credentials_display = serializers.SerializerMethodField()
-    location_kinds_display = serializers.SerializerMethodField()
+    location_kinds = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=LocationKind.objects.all(),
+        many=True,
+        required=False,
+    )
+    location_kinds_display = serializers.SlugRelatedField(
+        source="location_kinds", slug_field="label", many=True, read_only=True
+    )
     diffusion_zone_type_display = serializers.SerializerMethodField()
     diffusion_zone_details_display = serializers.SerializerMethodField()
-    beneficiaries_access_modes_display = serializers.SerializerMethodField()
-    coach_orientation_modes_display = serializers.SerializerMethodField()
+    beneficiaries_access_modes = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=BeneficiaryAccessMode.objects.all(),
+        many=True,
+        required=False,
+    )
+    beneficiaries_access_modes_display = serializers.SlugRelatedField(
+        source="beneficiaries_access_modes",
+        slug_field="label",
+        many=True,
+        read_only=True,
+    )
+    coach_orientation_modes = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=CoachOrientationMode.objects.all(),
+        many=True,
+        required=False,
+    )
+    coach_orientation_modes_display = serializers.SlugRelatedField(
+        source="coach_orientation_modes", slug_field="label", many=True, read_only=True
+    )
     department = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
 
@@ -174,12 +227,14 @@ class ServiceSerializer(serializers.ModelSerializer):
         model = Service
 
         fields = [
+            "category",
+            "category_display",
             "slug",
             "name",
             "short_desc",
             "full_desc",
             "kinds",
-            "category",
+            "categories",
             "subcategories",
             "access_conditions",
             "concerned_public",
@@ -221,7 +276,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "structure",
             "structure_info",
             "kinds_display",
-            "category_display",
+            "categories_display",
             "subcategories_display",
             "access_conditions_display",
             "concerned_public_display",
@@ -237,6 +292,14 @@ class ServiceSerializer(serializers.ModelSerializer):
         ]
         lookup_field = "slug"
 
+    def get_category(self, obj):
+        cat = obj.categories.first()
+        return cat.value if cat else ""
+
+    def get_category_display(self, obj):
+        cat = obj.categories.first()
+        return cat.label if cat else ""
+
     def get_is_available(self, obj):
         return True
 
@@ -244,39 +307,11 @@ class ServiceSerializer(serializers.ModelSerializer):
         forms = [{"name": form, "url": default_storage.url(form)} for form in obj.forms]
         return forms
 
-    def get_kinds_display(self, obj):
-        return [ServiceKind(kind).label for kind in obj.kinds]
-
-    def get_location_kinds_display(self, obj):
-        return [LocationKind(kind).label for kind in obj.location_kinds]
-
     def get_diffusion_zone_type_display(self, obj):
         return _get_diffusion_zone_type_display(obj)
 
     def get_diffusion_zone_details_display(self, obj):
         return _get_diffusion_zone_details_display(obj)
-
-    def get_category_display(self, obj):
-        return ServiceCategories(obj.category).label if obj.category else ""
-
-    def get_subcategories_display(self, obj):
-        try:
-            return [ServiceSubCategories(cat).label for cat in obj.subcategories]
-        except ValueError:
-            logger.exception(
-                "Incorrect Service sub-category", extra={"values": obj.subcategories}
-            )
-            return []
-
-    def get_beneficiaries_access_modes_display(self, obj):
-        return [
-            BeneficiaryAccessMode(mode).label for mode in obj.beneficiaries_access_modes
-        ]
-
-    def get_coach_orientation_modes_display(self, obj):
-        return [
-            CoachOrientationMode(mode).label for mode in obj.coach_orientation_modes
-        ]
 
     def get_access_conditions_display(self, obj):
         return [item.name for item in obj.access_conditions.all()]
@@ -297,21 +332,6 @@ class ServiceSerializer(serializers.ModelSerializer):
     def get_can_write(self, obj):
         user = self.context.get("request").user
         return obj.can_write(user)
-
-    # def validate_structure(self, value):
-    #     user = self.context.get("request").user
-
-    #     if (
-    #         not user.is_staff
-    #         and not StructureMember.objects.filter(
-    #             structure_id=value.id, user_id=user.id
-    #         ).exists()
-    #     ):
-    #         raise serializers.ValidationError(
-    #             "Vous n’appartenez pas à cette structure", "not_member_of_struct"
-    #         )
-
-    #     return value
 
     def validate(self, data):
         user = self.context.get("request").user
@@ -384,12 +404,15 @@ class AnonymousServiceSerializer(ServiceSerializer):
 
 
 class ServiceListSerializer(ServiceSerializer):
+
     diffusion_zone_type_display = serializers.SerializerMethodField()
     diffusion_zone_details_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
         fields = [
+            "category",
+            "category_display",
             "slug",
             "name",
             "structure",
@@ -400,7 +423,7 @@ class ServiceListSerializer(ServiceSerializer):
             "is_draft",
             "is_suggestion",
             "modification_date",
-            "category_display",
+            "categories_display",
             "short_desc",
             "diffusion_zone_type",
             "diffusion_zone_type_display",

@@ -6,120 +6,114 @@ if [ "$ENVIRONMENT" != "production" ];then exit 0; fi
 export SRC_DB_URL=$DATABASE_URL
 export DEST_DB_URL=$METABASE_DB_URL
 
-
-# analytics_structure
-psql $SRC_DB_URL -c "DROP TABLE IF EXISTS analytics_structure"
+# mb_structure
+psql $SRC_DB_URL -c "DROP TABLE IF EXISTS mb_structure"
 psql $SRC_DB_URL -c "
-CREATE TABLE analytics_structure AS
-SELECT
-  structures_structure.id,
-  structures_structure.siret,
-  structures_structure.name,
-  structures_structure.slug,
-  structures_structure.short_desc,
-  structures_structure.city_code,
-  structures_structure.city,
-  structures_structure.creation_date,
-  structures_structure.modification_date,
-  structures_structure.ape,
-  structures_structure.latitude,
-  structures_structure.longitude,
-  structures_structure.typology,
-  structures_structure.source,
-  structures_structure.department,
-  creator.is_staff AS staff_created,
-  last_editor.is_staff AS staff_edited
-FROM ((structures_structure
-  LEFT JOIN users_user creator ON ((creator.id = structures_structure.creator_id)))
-  LEFT JOIN users_user last_editor ON ((last_editor.id = structures_structure.last_editor_id)))"
-psql $SRC_DB_URL -c "ALTER TABLE analytics_structure ADD PRIMARY KEY (id)"
+CREATE TABLE mb_structure AS
+SELECT structures_structure.id,
+    structures_structure.siret,
+    structures_structure.name,
+    structures_structure.short_desc,
+    structures_structure.url,
+    structures_structure.full_desc,
+    structures_structure.postal_code,
+    structures_structure.city_code,
+    structures_structure.city,
+    structures_structure.creation_date,
+    structures_structure.modification_date,
+    structures_structure.creator_id,
+    structures_structure.address1,
+    structures_structure.address2,
+    structures_structure.last_editor_id,
+    structures_structure.ape,
+    structures_structure.latitude,
+    structures_structure.longitude,
+    structures_structure.slug,
+    structures_structure.code_safir_pe,
+    structures_structure.department,
+    structures_structure.is_antenna,
+    structures_structure.parent_id,
+    structures_structure.source_id,
+    structures_structure.typology_id
+   FROM structures_structure"
+psql $SRC_DB_URL -c "ALTER TABLE mb_structure ADD PRIMARY KEY (id)"
 
-pg_dump $DATABASE_URL -O -t analytics_structure -c | psql $DEST_DB_URL
+pg_dump $DATABASE_URL -O -t mb_structure -c | psql $DEST_DB_URL
 
 
-# analytics_member
-psql $SRC_DB_URL -c "DROP TABLE IF EXISTS analytics_member"
+# mb_service
+psql $SRC_DB_URL -c "DROP TABLE IF EXISTS mb_service"
 psql $SRC_DB_URL -c "
-CREATE TABLE analytics_member AS
-SELECT
-  structures_structuremember.id,
-  structures_structuremember.is_admin,
-  structures_structuremember.structure_id,
-  structures_structuremember.user_id,
-  (select TRUE) AS is_valid, -- TODO: OBSOLETE
-  structures_structuremember.creation_date,
-  users_user.is_staff,
-  structures_structure.department,
-  structures_structure.typology
-FROM ((structures_structuremember
-  JOIN structures_structure ON ((structures_structure.id = structures_structuremember.structure_id)))
-  JOIN users_user ON ((users_user.id = structures_structuremember.user_id)))"
-psql $SRC_DB_URL -c "ALTER TABLE analytics_member ADD PRIMARY KEY (id)"
+CREATE TABLE mb_service AS
+ SELECT services_service.id,
+    services_service.name,
+    services_service.short_desc,
+    services_service.full_desc,
+    services_service.is_cumulative,
+    services_service.has_fee,
+    services_service.fee_details,
+    services_service.beneficiaries_access_modes_other,
+    services_service.coach_orientation_modes_other,
+    services_service.forms,
+    services_service.is_contact_info_public,
+    services_service.remote_url,
+    services_service.address1,
+    services_service.address2,
+    services_service.postal_code,
+    services_service.city_code,
+    services_service.city,
+    services_service.recurrence,
+    services_service.suspension_date,
+    services_service.creation_date,
+    services_service.modification_date,
+    services_service.creator_id,
+    services_service.last_editor_id,
+    services_service.structure_id,
+    services_service.slug,
+    services_service.online_form,
+    services_service.is_draft,
+    services_service.publication_date,
+    services_service.is_suggestion,
+    services_service.diffusion_zone_details,
+    services_service.diffusion_zone_type,
+    services_service.qpv_or_zrr,
+    ( SELECT st_y((services_service.geom)::geometry) AS st_y) AS latitude,
+    ( SELECT st_x((services_service.geom)::geometry) AS st_x) AS longitude
+   FROM services_service"
+psql $SRC_DB_URL -c "ALTER TABLE mb_service ADD PRIMARY KEY (id)"
 
-pg_dump $DATABASE_URL -O -t analytics_member -c | psql $DEST_DB_URL
+pg_dump $DATABASE_URL -O -t mb_service -c | psql $DEST_DB_URL
 
-
-# analytics_orphan_structure
-psql $SRC_DB_URL -c "DROP TABLE IF EXISTS analytics_orphan_structure"
+# mb_service
+psql $SRC_DB_URL -c "DROP TABLE IF EXISTS mb_service_suggestion"
 psql $SRC_DB_URL -c "
-CREATE TABLE analytics_orphan_structure AS
-SELECT
-  structures_structure.siret
-FROM ((structures_structure
-  LEFT JOIN structures_structuremember ON ((structures_structure.id = structures_structuremember.structure_id)))
-  LEFT JOIN users_user ON ((structures_structuremember.user_id = users_user.id)))
-GROUP BY structures_structure.siret
-HAVING (count(*) FILTER (WHERE ((structures_structuremember.is_admin IS TRUE) AND (users_user.is_staff IS FALSE) AND (users_user.is_valid = true) AND (users_user.is_active = true))) = 0)
-ORDER BY structures_structure.siret"
-psql $SRC_DB_URL -c "ALTER TABLE analytics_orphan_structure ADD PRIMARY KEY (siret)"
+CREATE TABLE mb_service_suggestion AS
+ SELECT service_suggestions_servicesuggestion.id,
+    service_suggestions_servicesuggestion.siret,
+    service_suggestions_servicesuggestion.name,
+    service_suggestions_servicesuggestion.creation_date,
+    service_suggestions_servicesuggestion.creator_id
+   FROM service_suggestions_servicesuggestion"
+psql $SRC_DB_URL -c "ALTER TABLE mb_service_suggestion ADD PRIMARY KEY (id)"
 
-pg_dump $DATABASE_URL -O -t analytics_orphan_structure -c | psql $DEST_DB_URL
+pg_dump $DATABASE_URL -O -t mb_service_suggestion -c | psql $DEST_DB_URL
 
 
-# analytics_service
-psql $SRC_DB_URL -c "DROP TABLE IF EXISTS analytics_service"
+# mb_user
+psql $SRC_DB_URL -c "DROP TABLE IF EXISTS mb_user"
 psql $SRC_DB_URL -c "
-CREATE TABLE analytics_service AS
-SELECT
-  services_service.id,
-  services_service.name,
-  services_service.short_desc,
-  services_service.category,
-  services_service.kinds,
-  services_service.subcategories,
-  services_service.city_code,
-  services_service.city,
-  services_service.creation_date,
-  services_service.modification_date,
-  services_service.publication_date,
-  services_service.structure_id,
-  structures_structure.department,
-  (SELECT st_y((services_service.geom)::geometry) AS st_y) AS latitude,
-  (SELECT st_x((services_service.geom)::geometry) AS st_x) AS longitude,
-  (SELECT (NOT services_service.is_draft)) AS published,
-  creator.is_staff AS staff_created,
-  last_editor.is_staff AS staff_edited,
-  (SELECT ((services_service.modification_date - services_service.creation_date) > '1 day'::interval)) AS modified
-FROM (((services_service
-  LEFT JOIN users_user creator ON ((creator.id = services_service.creator_id)))
-  LEFT JOIN users_user last_editor ON ((last_editor.id = services_service.last_editor_id)))
-  LEFT JOIN structures_structure ON ((services_service.structure_id = structures_structure.id)))"
-psql $SRC_DB_URL -c "ALTER TABLE analytics_service ADD PRIMARY KEY (id)"
+CREATE TABLE mb_user AS
+ SELECT users_user.id,
+    users_user.is_valid,
+    users_user.is_staff,
+    users_user.is_bizdev,
+    users_user.last_login,
+    users_user.date_joined,
+    users_user.newsletter
+   FROM users_user
+  WHERE (users_user.is_active IS TRUE)"
+psql $SRC_DB_URL -c "ALTER TABLE mb_user ADD PRIMARY KEY (id)"
 
-pg_dump $DATABASE_URL -O -t analytics_service -c | psql $DEST_DB_URL
+pg_dump $DATABASE_URL -O -t mb_user -c | psql $DEST_DB_URL
 
-
-# analytics_user
-psql $SRC_DB_URL -c "DROP TABLE IF EXISTS analytics_user"
-psql $SRC_DB_URL -c "
-CREATE TABLE analytics_user AS
-SELECT
-  users_user.id,
-  users_user.is_staff,
-  users_user.is_active,
-  users_user.date_joined,
-  users_user.is_valid
-FROM users_user"
-psql $SRC_DB_URL -c "ALTER TABLE analytics_user ADD PRIMARY KEY (id)"
-
-pg_dump $DATABASE_URL -O -t analytics_user -c | psql $DEST_DB_URL
+pg_dump $DATABASE_URL -O -t services_accesscondition -t services_beneficiaryaccessmode -t services_coachorientationmode -t services_concernedpublic -t services_credential -t services_locationkind -t services_requirement -t services_service_access_conditions -t services_service_beneficiaries_access_modes -t services_service_categories -t services_service_coach_orientation_modes -t services_service_concerned_public -t services_service_credentials -t services_service_kinds -t services_service_location_kinds -t services_service_requirements -t services_service_subcategories -t services_servicecategory -t services_servicekind -t services_servicemodificationhistoryitem -t services_servicesubcategory -t structures_structuremember -t structures_structureputativemember -t structures_structuresource -t structures_structuretypology -c | psql $DEST_DB_URL

@@ -119,7 +119,7 @@ class Command(BaseCommand):
                 full_desc=structure.full_desc,
                 creator=bot_user,
                 last_editor=bot_user,
-                source=StructureSource.BATCH_INVITE,
+                source=StructureSource.objects.get(value="BI"),
                 is_antenna=True,
                 parent=structure,
             )

@@ -25,6 +25,10 @@ tables:
         template:
           format: "!disabled"
 
+      phone_number:
+        phone:
+          format: "9^########"
+
   - name: structures_structure
     rules:
       email:
@@ -68,5 +72,5 @@ tables:
 filter:
   except:
     - public.spatial_ref_sys
-    - public.admin_express_city
-    - public.sirene_establishment
+    #- public.admin_express_city
+    #- public.sirene_establishment
