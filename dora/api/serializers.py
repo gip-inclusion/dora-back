@@ -1,5 +1,3 @@
-from asyncio.log import logger
-
 from django.core.files.storage import default_storage
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -9,15 +7,28 @@ from dora.services.models import (
     CoachOrientationMode,
     LocationKind,
     Service,
+    ServiceCategory,
     ServiceKind,
-    ServiceSubCategories,
+    ServiceSubCategory,
 )
-from dora.structures.models import Structure
+from dora.structures.models import Structure, StructureSource, StructureTypology
+
+
+class StructureTypologySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StructureTypology
+        fields = ["value", "label"]
+
+
+class StructureSourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StructureSource
+        fields = ["value", "label"]
 
 
 class StructureSerializer(serializers.ModelSerializer):
-    typology = serializers.CharField(source="get_typology_display")
-    source = serializers.CharField(source="get_source_display")
+    typology = StructureTypologySerializer(read_only=True)
+    source = StructureSourceSerializer(read_only=True)
     creation_date = serializers.DateTimeField(format="%Y-%m-%d")
     modification_date = serializers.DateTimeField(format="%Y-%m-%d")
 
@@ -53,18 +64,56 @@ class StringListField(serializers.ListField):
     child = serializers.CharField()
 
 
+class ServiceCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ServiceCategory
+        fields = ["value", "label"]
+
+
+class ServiceSubCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ServiceSubCategory
+        fields = ["value", "label"]
+
+
+class ServiceKindSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ServiceKind
+        fields = ["value", "label"]
+
+
+class BeneficiaryAccessModeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BeneficiaryAccessMode
+        fields = ["value", "label"]
+
+
+class CoachOrientationModeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CoachOrientationMode
+        fields = ["value", "label"]
+
+
+class LocationKindSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LocationKind
+        fields = ["value", "label"]
+
+
 class ServiceSerializer(serializers.ModelSerializer):
-    kinds = serializers.SerializerMethodField()
-    category = serializers.CharField(source="get_category_display")
-    subcategories = serializers.SerializerMethodField()
+    categories = ServiceCategorySerializer(read_only=True, many=True)
+    subcategories = ServiceSubCategorySerializer(read_only=True, many=True)
+    kinds = ServiceKindSerializer(read_only=True, many=True)
     access_conditions = serializers.SerializerMethodField()
     concerned_public = serializers.SerializerMethodField()
-    beneficiaries_access_modes = serializers.SerializerMethodField()
-    coach_orientation_modes = serializers.SerializerMethodField()
+    beneficiaries_access_modes = BeneficiaryAccessModeSerializer(
+        read_only=True, many=True
+    )
+    coach_orientation_modes = CoachOrientationModeSerializer(read_only=True, many=True)
     requirements = serializers.SerializerMethodField()
     credentials = serializers.SerializerMethodField()
     forms = serializers.SerializerMethodField()
-    location_kinds = serializers.SerializerMethodField()
+    location_kinds = LocationKindSerializer(read_only=True, many=True)
     longitude = serializers.SerializerMethodField()
     latitude = serializers.SerializerMethodField()
     diffusion_zone_type = serializers.CharField(
@@ -83,7 +132,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "short_desc",
             "full_desc",
             "kinds",
-            "category",
+            "categories",
             "subcategories",
             "access_conditions",
             "concerned_public",
@@ -124,30 +173,6 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(
         StringListField(
-            label="Type de service",
-            help_text="",
-        )
-    )
-    def get_kinds(self, obj):
-        return [ServiceKind(kind).label for kind in obj.kinds]
-
-    @extend_schema_field(
-        StringListField(
-            label="Sous-catégorie",
-            help_text="",
-        )
-    )
-    def get_subcategories(self, obj) -> list[str]:
-        try:
-            return [ServiceSubCategories(cat).label for cat in obj.subcategories]
-        except ValueError:
-            logger.exception(
-                "Incorrect Service sub-category", extra={"values": obj.subcategories}
-            )
-            return []
-
-    @extend_schema_field(
-        StringListField(
             label="Critères d’admission",
             help_text="",
         )
@@ -163,28 +188,6 @@ class ServiceSerializer(serializers.ModelSerializer):
     )
     def get_concerned_public(self, obj) -> list[str]:
         return [item.name for item in obj.concerned_public.all()]
-
-    @extend_schema_field(
-        StringListField(
-            label="Comment mobiliser la solution en tant que bénéficiaire",
-            help_text="",
-        )
-    )
-    def get_beneficiaries_access_modes(self, obj) -> list[str]:
-        return [
-            BeneficiaryAccessMode(mode).label for mode in obj.beneficiaries_access_modes
-        ]
-
-    @extend_schema_field(
-        StringListField(
-            label="Comment orienter un bénéficiaire en tant qu’accompagnateur",
-            help_text="",
-        )
-    )
-    def get_coach_orientation_modes(self, obj) -> list[str]:
-        return [
-            CoachOrientationMode(mode).label for mode in obj.coach_orientation_modes
-        ]
 
     @extend_schema_field(
         StringListField(
@@ -213,15 +216,6 @@ class ServiceSerializer(serializers.ModelSerializer):
     def get_forms(self, obj) -> list[str]:
         forms = [default_storage.url(form) for form in obj.forms]
         return forms
-
-    @extend_schema_field(
-        StringListField(
-            label="Lieu de déroulement",
-            help_text="",
-        )
-    )
-    def get_location_kinds(self, obj) -> list[str]:
-        return [LocationKind(kind).label for kind in obj.location_kinds]
 
     @extend_schema_field(
         serializers.FloatField(
