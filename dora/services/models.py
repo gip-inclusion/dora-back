@@ -322,3 +322,4 @@ class ServiceModificationHistoryItem(models.Model):
 
     class Meta:
         ordering = ["-date"]
+        verbose_name = "Historique de modification de service"
