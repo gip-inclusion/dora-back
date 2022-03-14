@@ -1,4 +1,4 @@
-from django.core.files.storage import default_storage
+# from django.core.files.storage import default_storage
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -112,7 +112,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     coach_orientation_modes = CoachOrientationModeSerializer(read_only=True, many=True)
     requirements = serializers.SerializerMethodField()
     credentials = serializers.SerializerMethodField()
-    forms = serializers.SerializerMethodField()
+    # forms = serializers.SerializerMethodField()
     location_kinds = LocationKindSerializer(read_only=True, many=True)
     longitude = serializers.SerializerMethodField()
     latitude = serializers.SerializerMethodField()
@@ -145,7 +145,8 @@ class ServiceSerializer(serializers.ModelSerializer):
             "coach_orientation_modes_other",
             "requirements",
             "credentials",
-            "forms",
+            # Peut-on récupérer des URLs persistentes sur Azure?
+            # "forms",
             "online_form",
             # "contact_name",
             # "contact_phone",
@@ -207,15 +208,15 @@ class ServiceSerializer(serializers.ModelSerializer):
     def get_credentials(self, obj) -> list[str]:
         return [item.name for item in obj.credentials.all()]
 
-    @extend_schema_field(
-        StringListField(
-            label="Partagez les documents à compléter",
-            help_text="",
-        )
-    )
-    def get_forms(self, obj) -> list[str]:
-        forms = [default_storage.url(form) for form in obj.forms]
-        return forms
+    # @extend_schema_field(
+    #     StringListField(
+    #         label="Partagez les documents à compléter",
+    #         help_text="",
+    #     )
+    # )
+    # def get_forms(self, obj) -> list[str]:
+    #     forms = [default_storage.url(form) for form in obj.forms]
+    #     return forms
 
     @extend_schema_field(
         serializers.FloatField(
