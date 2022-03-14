@@ -1,5 +1,4 @@
 import random
-from datetime import timedelta
 from time import sleep
 
 from django.conf import settings
@@ -71,7 +70,7 @@ def password_reset(request):
     try:
         user = User.objects.get(email=email)
         tmp_token = Token.objects.create(
-            user=user, expiration=timezone.now() + timedelta(minutes=30)
+            user=user, expiration=timezone.now() + settings.AUTH_LINK_EXPIRATION
         )
         send_password_reset_email(email, user.get_short_name(), tmp_token.key)
         return Response(status=204)
@@ -188,7 +187,7 @@ def resend_validation_email(request):
     try:
         user = User.objects.get(email=email)
         tmp_token = Token.objects.create(
-            user=user, expiration=timezone.now() + timedelta(minutes=30)
+            user=user, expiration=timezone.now() + settings.AUTH_LINK_EXPIRATION
         )
         send_email_validation_email(email, user.get_short_name(), tmp_token.key)
         return Response(status=204)
@@ -268,7 +267,7 @@ def register_structure_and_user(request):
 
     # Send validation link email
     tmp_token = Token.objects.create(
-        user=user, expiration=timezone.now() + timedelta(minutes=30)
+        user=user, expiration=timezone.now() + settings.AUTH_LINK_EXPIRATION
     )
     send_email_validation_email(data["email"], user.get_short_name(), tmp_token.key)
 

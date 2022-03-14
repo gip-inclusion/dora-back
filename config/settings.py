@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import os
 import random
+from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
@@ -260,6 +261,9 @@ EMAIL_USE_TLS = True
 EMAIL_DOMAIN = os.environ["EMAIL_DOMAIN"]
 FRONTEND_URL = os.environ["FRONTEND_URL"]
 SUPPORT_EMAIL = os.environ["SUPPORT_EMAIL"]
+
+INVITATION_LINK_EXPIRATION = timedelta(days=15)
+AUTH_LINK_EXPIRATION = timedelta(days=1)
 
 ################
 # APP SETTINGS #
