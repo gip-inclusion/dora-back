@@ -153,15 +153,7 @@ class Structure(models.Model):
     short_desc = models.CharField(max_length=280)
     url = models.URLField(blank=True)
     full_desc = models.TextField(blank=True)
-    facebook_url = models.URLField(blank=True)
-    linkedin_url = models.URLField(blank=True)
-    twitter_url = models.URLField(blank=True)
-    youtube_url = models.URLField(blank=True)
-    instagram_url = models.URLField(blank=True)
-    ressources_url = models.URLField(blank=True)
     phone = models.CharField(max_length=10, blank=True)
-    faq_url = models.URLField(blank=True)
-    contact_form_url = models.URLField(blank=True)
     email = models.EmailField(blank=True)
     postal_code = models.CharField(
         max_length=5,
@@ -171,7 +163,6 @@ class Structure(models.Model):
     department = models.CharField(max_length=3, blank=True)
     address1 = models.CharField(max_length=255)
     address2 = models.CharField(max_length=255, blank=True)
-    has_services = models.BooleanField(default=False, blank=True)
     ape = models.CharField(max_length=6, blank=True)
     longitude = models.FloatField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)
