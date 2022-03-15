@@ -30,6 +30,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         data = MesAidesClient(base_url=options["api_url"]).list_garages_solidaires()
+        filtered_data = [
+            d
+            for d in data
+            if "norauto" not in d["name"].lower() and "rrg" not in d["name"].lower()
+        ]
 
         with transaction.atomic():
             bot_user = User.objects.get_dora_bot()
