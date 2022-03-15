@@ -41,6 +41,15 @@
       "args": ["test", "dora.MODEL.tests.TESTNAME"],
       "django": true,
       "justMyCode": false
-    }
+    },
+    {
+        "name": "Django Command - Current file",
+        "type": "python",
+        "request": "launch",
+        "program": "${workspaceFolder}/manage.py",
+        "args": ["${fileBasenameNoExtension}"],
+        "django": true,
+        "justMyCode": false
+      }
   ]
 }
