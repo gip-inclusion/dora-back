@@ -89,7 +89,6 @@ class StructureAdmin(admin.ModelAdmin):
         "source",
         "typology",
         "department",
-        "is_antenna",
     ]
     search_fields = ("name", "siret", "code_safir_pe", "city", "department", "slug")
     ordering = ["-modification_date", "department"]
