@@ -1,5 +1,4 @@
-from datetime import timedelta
-
+from django.conf import settings
 from django.utils import timezone
 from rest_framework import exceptions, serializers
 
@@ -204,7 +203,7 @@ class StructurePutativeMemberSerializer(serializers.ModelSerializer):
         )
         # Send invitation email
         tmp_token = Token.objects.create(
-            user=user, expiration=timezone.now() + timedelta(days=7)
+            user=user, expiration=timezone.now() + settings.INVITATION_LINK_EXPIRATION
         )
         send_invitation_email(
             member,

@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from django.conf import settings
 from django.db import transaction
 from django.db.models.query_utils import Q
@@ -83,9 +81,9 @@ class StructureViewSet(
     def perform_create(self, serializer):
         user = self.request.user
         source = (
-            StructureSource.objects.get(value="DORA")
+            StructureSource.objects.get(value="equipe-dora")
             if user.is_staff
-            else StructureSource.objects.get(value="PORTEUR")
+            else StructureSource.objects.get(value="porteur")
         )
         structure = serializer.save(creator=user, last_editor=user, source=source)
         send_mattermost_notification(
@@ -206,7 +204,7 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
             # generate a new short term token for password reset
             # The invitation token will be deleted as soon as the user sets a password
             tmp_token = Token.objects.create(
-                user=user, expiration=timezone.now() + timedelta(minutes=30)
+                user=user, expiration=timezone.now() + settings.AUTH_LINK_EXPIRATION
             )
         else:
             with transaction.atomic(durable=True):
@@ -254,7 +252,8 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
                 raise exceptions.PermissionDenied
 
         tmp_token = Token.objects.create(
-            user=member.user, expiration=timezone.now() + timedelta(days=7)
+            user=member.user,
+            expiration=timezone.now() + settings.INVITATION_LINK_EXPIRATION,
         )
         send_invitation_email(
             member,

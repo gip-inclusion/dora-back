@@ -35,7 +35,7 @@ class ServiceSuggestionsTransactionTestCase(APITransactionTestCase):
         self.assertTrue(timezone.now() - db_obj.creation_date < timedelta(seconds=1))
 
     def test_can_create_nonanonymous_suggestion(self):
-        baker.make("StructureSource", value="COL")
+        baker.make("StructureSource", value="suggestion-collaborative")
         user = baker.make("users.User", is_valid=True)
         self.client.force_authenticate(user=user)
         response = self.client.post("/services-suggestions/", DUMMY_SUGGESTION)
