@@ -225,7 +225,7 @@ def register_structure_and_user(request):
         structure = Structure.objects.create_from_establishment(establishment)
         structure.creator = user
         structure.last_editor = user
-        structure.source = StructureSource.objects.get(value="PORTEUR")
+        structure.source = StructureSource.objects.get(value="porteur")
         structure.save()
         send_mattermost_notification(
             f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"

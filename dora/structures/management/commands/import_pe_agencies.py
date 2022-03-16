@@ -119,7 +119,9 @@ class Command(BaseCommand):
                         siret=agency["siret"]
                     )
                     if created:
-                        structure.source = StructureSource.objects.get(value="PE")
+                        structure.source = StructureSource.objects.get(
+                            value="api-referentiel-agences-pole-emploi"
+                        )
                         structure.creator = bot_user
                     else:
                         self.stdout.write(
