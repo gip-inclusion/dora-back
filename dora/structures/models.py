@@ -123,6 +123,7 @@ class StructureManager(models.Manager):
             ape=data["ape"],
             longitude=data["longitude"],
             latitude=data["latitude"],
+            department=establishment.department,
         )
         structure.save()
         return structure

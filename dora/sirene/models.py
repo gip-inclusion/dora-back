@@ -1,6 +1,8 @@
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 
+from dora.core.utils import code_insee_to_code_dept
+
 
 class Establishment(models.Model):
     siret = models.CharField(verbose_name="Siret", max_length=14, primary_key=True)
@@ -30,3 +32,7 @@ class Establishment(models.Model):
                 opclasses=("gin_trgm_ops",),
             )
         ]
+
+    @property
+    def department(self) -> str:
+        return code_insee_to_code_dept(self.city_code)

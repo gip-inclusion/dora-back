@@ -7,10 +7,10 @@ from tqdm import tqdm
 from django.contrib.postgres.search import TrigramSimilarity
 from django.core.management.base import BaseCommand, CommandParser
 from django.db import transaction
-from dora.services.models import Service, ServiceCategory, ServiceSubCategory
 
+from dora.services.models import Service, ServiceCategory, ServiceSubCategory
 from dora.sirene.models import Establishment
-from dora.structures.models import Structure, StructureSource, StructureTypology
+from dora.structures.models import Structure, StructureSource
 from dora.users.models import User
 
 
@@ -38,11 +38,11 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             bot_user = User.objects.get_dora_bot()
-            structure_source, _ = StructureSource.objects.update_or_create(
-                label="API Mes Aides", value="MESAIDES"
+            structure_source, _ = StructureSource.objects.get_or_create(
+                value="MESAIDES", defaults={"label": "API Mes Aides"}
             )
 
-            for garage_data in tqdm(data):
+            for garage_data in tqdm(filtered_data):
                 establishment = (
                     Establishment.objects.filter(postal_code=garage_data["zipcode"])
                     .annotate(
@@ -53,42 +53,27 @@ class Command(BaseCommand):
                     .order_by("-similarity")
                     .first()
                 )
-
                 if establishment is None:
                     continue
 
-                structure, created = Structure.objects.get_or_create(
-                    siret=establishment.siret
-                )
+                structure = Structure.objects.filter(siret=establishment.siret).first()
+                if structure is not None:
+                    continue
 
-                if created:
-                    structure.source = structure_source
-                    structure.creator = bot_user
-
-                structure.department = garage_data["zipcode"][
-                    : 3 if garage_data["zipcode"].startswith("97") else 2
-                ]
-                structure.typology = StructureTypology.objects.get(
-                    value="OTHER"
-                )  # TODO
+                # Nouvelle structure
+                structure = Structure.objects.create_from_establishment(establishment)
+                structure.source = structure_source
+                structure.creator = bot_user
                 structure.name = garage_data["name"]
                 structure.email = garage_data["email"] or ""
                 structure.short_desc = ""
                 structure.full_desc = ""
                 structure.url = garage_data["url"] or ""
-                # garaga_data sometimes contains 2 concatenated phone numbers
+                # garage_data["phone"] peut contenir 2 numéros de téléphone, le 1er est gardé
                 structure.phone = "".join(
                     re.findall(r"\d{2}", garage_data["phone"] or "")[:5]
                 )
                 structure.last_editor = bot_user
-                structure.ape = establishment.ape
-                structure.postal_code = establishment.postal_code
-                structure.city_code = establishment.city_code
-                structure.city = establishment.city
-                structure.address1 = establishment.address1
-                structure.address2 = establishment.address2
-                structure.longitude = establishment.longitude
-                structure.latitude = establishment.latitude
                 structure.save()
 
                 service = Service.objects.create(
