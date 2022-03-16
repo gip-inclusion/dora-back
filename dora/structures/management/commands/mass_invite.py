@@ -119,7 +119,7 @@ class Command(BaseCommand):
                 full_desc=structure.full_desc,
                 creator=bot_user,
                 last_editor=bot_user,
-                source=StructureSource.objects.get(value="BI"),
+                source=StructureSource.objects.get(value="invitations-masse"),
                 is_antenna=True,
                 parent=structure,
             )

@@ -81,9 +81,9 @@ class StructureViewSet(
     def perform_create(self, serializer):
         user = self.request.user
         source = (
-            StructureSource.objects.get(value="DORA")
+            StructureSource.objects.get(value="equipe-dora")
             if user.is_staff
-            else StructureSource.objects.get(value="PORTEUR")
+            else StructureSource.objects.get(value="porteur")
         )
         structure = serializer.save(creator=user, last_editor=user, source=source)
         send_mattermost_notification(
