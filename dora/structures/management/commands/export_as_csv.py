@@ -51,12 +51,13 @@ CREATE VIEW services_export AS (
         s.qpv_or_zrr AS qpvOrZrr,
         s.recurrence,
         s.suspension_date AS suspensionDate,
-        s.structure_id AS STRUCTURE,
+        stru.siret AS structure,
         s.creation_date AS creationDate,
         s.modification_date AS modificationDate,
         s.publication_date AS publicationDate
     FROM
         services_service AS s
+        INNER JOIN structures_structure AS stru ON stru.id = s.structure_id
         LEFT JOIN (
             SELECT
                 sk.service_id AS service_id,
