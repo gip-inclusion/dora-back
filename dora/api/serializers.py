@@ -1,3 +1,5 @@
+from django.conf import settings
+
 # from django.core.files.storage import default_storage
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -31,6 +33,7 @@ class StructureSerializer(serializers.ModelSerializer):
     source = StructureSourceSerializer(read_only=True)
     creation_date = serializers.DateTimeField(format="%Y-%m-%d")
     modification_date = serializers.DateTimeField(format="%Y-%m-%d")
+    link_on_source = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
@@ -57,7 +60,11 @@ class StructureSerializer(serializers.ModelSerializer):
             "creation_date",
             "modification_date",
             "source",
+            "link_on_source",
         ]
+
+    def get_link_on_source(self, obj):
+        return f"{settings.FRONTEND_URL}/structures/{obj.slug}"
 
 
 class StringListField(serializers.ListField):
@@ -124,6 +131,8 @@ class ServiceSerializer(serializers.ModelSerializer):
     modification_date = serializers.DateTimeField(format="%Y-%m-%d")
     publication_date = serializers.DateTimeField(format="%Y-%m-%d")
 
+    link_on_source = serializers.SerializerMethodField()
+
     class Meta:
         model = Service
         fields = [
@@ -170,7 +179,11 @@ class ServiceSerializer(serializers.ModelSerializer):
             "creation_date",
             "modification_date",
             "publication_date",
+            "link_on_source",
         ]
+
+    def get_link_on_source(self, obj):
+        return f"{settings.FRONTEND_URL}/services/{obj.slug}"
 
     @extend_schema_field(
         StringListField(
