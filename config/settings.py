@@ -88,6 +88,7 @@ INSTALLED_APPS = [
     "dora.service_suggestions",
     "dora.sirene",
     "dora.admin_express",
+    "dora.stats",
 ]
 
 MIDDLEWARE = [
