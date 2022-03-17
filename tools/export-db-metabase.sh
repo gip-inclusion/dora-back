@@ -31,7 +31,6 @@ SELECT structures_structure.id,
     structures_structure.slug,
     structures_structure.code_safir_pe,
     structures_structure.department,
-    structures_structure.is_antenna,
     structures_structure.parent_id,
     structures_structure.source_id,
     structures_structure.typology_id

@@ -2,6 +2,8 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.db.models import CharField, Q
+from django.db.models.functions import Length
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
@@ -16,6 +18,8 @@ from dora.structures.emails import (
     send_invitation_accepted_notification,
 )
 from dora.users.models import User
+
+CharField.register_lookup(Length)
 
 
 def make_unique_slug(instance, value, length=20):
@@ -131,9 +135,17 @@ class StructureManager(models.Manager):
 class Structure(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
+    # Les antennes peuvent avoir un Siret null
     siret = models.CharField(
-        verbose_name="Siret", max_length=14, validators=[validate_siret], unique=True
+        verbose_name="Siret",
+        max_length=14,
+        validators=[validate_siret],
+        null=True,
+        unique=True,
     )
+    branch_id = models.CharField(max_length=5, blank=True, default="")
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True)
+
     code_safir_pe = models.CharField(
         verbose_name="Code Safir Pole Emploi",
         max_length=5,
@@ -153,15 +165,7 @@ class Structure(models.Model):
     short_desc = models.CharField(max_length=280)
     url = models.URLField(blank=True)
     full_desc = models.TextField(blank=True)
-    facebook_url = models.URLField(blank=True)
-    linkedin_url = models.URLField(blank=True)
-    twitter_url = models.URLField(blank=True)
-    youtube_url = models.URLField(blank=True)
-    instagram_url = models.URLField(blank=True)
-    ressources_url = models.URLField(blank=True)
     phone = models.CharField(max_length=10, blank=True)
-    faq_url = models.URLField(blank=True)
-    contact_form_url = models.URLField(blank=True)
     email = models.EmailField(blank=True)
     postal_code = models.CharField(
         max_length=5,
@@ -171,7 +175,6 @@ class Structure(models.Model):
     department = models.CharField(max_length=3, blank=True)
     address1 = models.CharField(max_length=255)
     address2 = models.CharField(max_length=255, blank=True)
-    has_services = models.BooleanField(default=False, blank=True)
     ape = models.CharField(max_length=6, blank=True)
     longitude = models.FloatField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)
@@ -199,9 +202,19 @@ class Structure(models.Model):
 
     members = models.ManyToManyField(User, through=StructureMember)
 
-    is_antenna = models.BooleanField(default=False, db_index=True)
-    parent = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True)
     objects = StructureManager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["branch_id", "parent"],
+                name="%(app_label)s_%(class)s_unique_branch_by_parent",
+            ),
+            models.CheckConstraint(
+                name="%(app_label)s_%(class)s_valid_or_null_siren",
+                check=Q(siret__length=14) | Q(siret__isnull=True),
+            ),
+        ]
 
     # TODO: opening_hours, edit history, moderation
 
