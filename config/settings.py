@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_gis",
     "corsheaders",
+    "drf_spectacular",
     # local
     "config.apps.AdminConfig",
     "dora.core",
@@ -234,6 +235,7 @@ REST_FRAMEWORK = {
     },
     "EXCEPTION_HANDLER": "dora.core.exceptions_handler.custom_exception_handler",
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 
@@ -298,3 +300,20 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_SSL_REDIRECT = True
+
+CSP_EXCLUDE_URL_PREFIXES = "/api/schema/redoc/"
+
+###################
+# DRF-SPECTACULAR #
+###################
+SPECTACULAR_SETTINGS = {
+    "TITLE": "API référentiel de l’offre d’insertion",
+    "DESCRIPTION": "Concevoir ensemble un commun de l'insertion, facilitant l'interopérabilité entre producteurs et consommateurs de données.",
+    "VERSION": "0.0.1",
+    "CAMELIZE_NAMES": True,
+    "SERVE_AUTHENTICATION": None,
+    "POSTPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.postprocess_schema_enums",
+        "drf_spectacular.contrib.djangorestframework_camel_case.camelize_serializer_fields",
+    ],
+}
