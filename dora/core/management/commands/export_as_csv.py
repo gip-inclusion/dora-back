@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connection, transaction
 
@@ -15,7 +16,7 @@ def directory(s: str) -> Path:
     return path
 
 
-CREATE_SERVICES_VIEW = """
+CREATE_SERVICES_VIEW = f"""
 CREATE VIEW services_export AS (
     SELECT
         s.slug,
@@ -52,16 +53,17 @@ CREATE VIEW services_export AS (
         s.recurrence,
         s.suspension_date AS "suspensionDate",
         stru.siret AS "structure",
-        s.creation_date AS "creationDate",
-        s.modification_date AS "modificationDate",
-        s.publication_date AS "publicationDate"
+        cast(s.creation_date as date) AS "creationDate",
+        cast(s.modification_date as date) AS "modificationDate",
+        cast(s.publication_date as date) AS "publicationDate",
+        concat('{settings.FRONTEND_URL}/services/', s.slug) AS "linkOnSource"
     FROM
         services_service AS s
         INNER JOIN structures_structure AS stru ON stru.id = s.structure_id
         LEFT JOIN (
             SELECT
                 sk.service_id AS service_id,
-                string_agg(k.value, ' ') AS kinds
+                string_agg(k.label, '|') AS kinds
             FROM
                 services_service_kinds AS sk
                 INNER JOIN services_servicekind AS k ON k.id = sk.servicekind_id
@@ -71,7 +73,7 @@ CREATE VIEW services_export AS (
         LEFT JOIN (
             SELECT
                 sc.service_id AS service_id,
-                string_agg(c.value, ' ') AS categories
+                string_agg(c.label, '|') AS categories
             FROM
                 services_service_categories AS sc
                 INNER JOIN services_servicecategory AS c ON c.id = sc.servicecategory_id
@@ -81,7 +83,7 @@ CREATE VIEW services_export AS (
         LEFT JOIN (
             SELECT
                 ssc.service_id AS service_id,
-                string_agg(sc.value, ' ') AS subcategories
+                string_agg(sc.label, '|') AS subcategories
             FROM
                 services_service_subcategories AS ssc
                 INNER JOIN services_servicesubcategory AS sc ON sc.id = ssc.servicesubcategory_id
@@ -91,7 +93,7 @@ CREATE VIEW services_export AS (
         LEFT JOIN (
             SELECT
                 sac.service_id AS service_id,
-                string_agg(ac.name, ' ') AS access_conditions
+                string_agg(ac.name, '|') AS access_conditions
             FROM
                 services_service_access_conditions AS sac
                 INNER JOIN services_accesscondition AS ac ON ac.id = sac.accesscondition_id
@@ -101,7 +103,7 @@ CREATE VIEW services_export AS (
         LEFT JOIN (
             SELECT
                 scp.service_id AS service_id,
-                string_agg(cp.name, ' ') AS concerned_public
+                string_agg(cp.name, '|') AS concerned_public
             FROM
                 services_service_concerned_public AS scp
                 INNER JOIN services_concernedpublic AS cp ON cp.id = scp.concernedpublic_id
@@ -111,7 +113,7 @@ CREATE VIEW services_export AS (
         LEFT JOIN (
             SELECT
                 sbam.service_id AS service_id,
-                string_agg(bam.value, ' ') AS beneficiaries_access_modes
+                string_agg(bam.label, '|') AS beneficiaries_access_modes
             FROM
                 services_service_beneficiaries_access_modes AS sbam
                 INNER JOIN services_beneficiaryaccessmode AS bam ON bam.id = sbam.beneficiaryaccessmode_id
@@ -121,7 +123,7 @@ CREATE VIEW services_export AS (
         LEFT JOIN (
             SELECT
                 scom.service_id AS service_id,
-                string_agg(com.value, ' ') AS coach_orientation_modes
+                string_agg(com.label, '|') AS coach_orientation_modes
             FROM
                 services_service_coach_orientation_modes AS scom
                 INNER JOIN services_coachorientationmode AS com ON com.id = scom.coachorientationmode_id
@@ -131,7 +133,7 @@ CREATE VIEW services_export AS (
         LEFT JOIN (
             SELECT
                 sr.service_id AS service_id,
-                string_agg(r.name, ' ') AS requirements
+                string_agg(r.name, '|') AS requirements
             FROM
                 services_service_requirements AS sr
                 INNER JOIN services_requirement AS r ON r.id = sr.requirement_id
@@ -141,7 +143,7 @@ CREATE VIEW services_export AS (
         LEFT JOIN (
             SELECT
                 scr.service_id AS service_id,
-                string_agg(cr.name, ' ') AS credentials
+                string_agg(cr.name, '|') AS credentials
             FROM
                 services_service_credentials AS scr
                 INNER JOIN services_credential AS cr ON cr.id = scr.credential_id
@@ -151,13 +153,14 @@ CREATE VIEW services_export AS (
         LEFT JOIN (
             SELECT
                 slk.service_id AS service_id,
-                string_agg(lk.value, ' ') AS location_kinds
+                string_agg(lk.label, '|') AS location_kinds
             FROM
                 services_service_location_kinds AS slk
                 INNER JOIN services_locationkind AS lk ON lk.id = slk.locationkind_id
             GROUP BY
                 slk.service_id
         ) AS lk ON lk.service_id = s.id
+        WHERE s.is_draft is FALSE AND s.is_suggestion is FALSE
 );
 """
 
@@ -179,16 +182,19 @@ class Command(BaseCommand):
             with connection.cursor() as cursor:
                 # export des structures
                 cursor.execute(
-                    """
+                    f"""
                     CREATE VIEW structures_export As (
                         SELECT
                             s.slug,
                             s.name,
                             s.siret,
+                            s.code_safir_pe,
                             t.value AS "typology",
                             s.short_desc AS "shortDesc",
                             s.full_desc AS "fullDesc",
                             s.url,
+                            s.email,
+                            s.phone,
                             s.postal_code AS "postalCode",
                             s.city_code AS "cityCode",
                             s.city,
@@ -198,9 +204,10 @@ class Command(BaseCommand):
                             s.ape,
                             s.longitude,
                             s.latitude,
-                            s.creation_date AS "creationDate",
-                            s.modification_date AS "modificationDate",
-                            ss.value
+                            cast(s.creation_date as date) AS "creationDate",
+                            cast(s.modification_date as date) AS "modificationDate",
+                            ss.value AS "source",
+                            concat('{settings.FRONTEND_URL}/structures/', s.slug) AS "linkOnSource"
                         FROM
                             structures_structure AS s
                             LEFT JOIN structures_structuretypology AS t ON s.typology_id = t.id
