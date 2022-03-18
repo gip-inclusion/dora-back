@@ -1,5 +1,4 @@
-from datetime import timedelta
-
+from django.conf import settings
 from django.utils import timezone
 from rest_framework import exceptions, serializers
 
@@ -34,15 +33,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "short_desc",
             "url",
             "full_desc",
-            "facebook_url",
-            "linkedin_url",
-            "twitter_url",
-            "youtube_url",
-            "instagram_url",
-            "ressources_url",
             "phone",
-            "faq_url",
-            "contact_form_url",
             "email",
             "postal_code",
             "city_code",
@@ -50,7 +41,6 @@ class StructureSerializer(serializers.ModelSerializer):
             "department",
             "address1",
             "address2",
-            "has_services",
             "ape",
             "longitude",
             "latitude",
@@ -204,7 +194,7 @@ class StructurePutativeMemberSerializer(serializers.ModelSerializer):
         )
         # Send invitation email
         tmp_token = Token.objects.create(
-            user=user, expiration=timezone.now() + timedelta(days=7)
+            user=user, expiration=timezone.now() + settings.INVITATION_LINK_EXPIRATION
         )
         send_invitation_email(
             member,

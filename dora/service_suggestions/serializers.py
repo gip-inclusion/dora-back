@@ -2,6 +2,7 @@ import logging
 
 from django.db.transaction import rollback, set_autocommit
 from rest_framework import serializers
+from sentry_sdk import capture_exception
 
 from dora.services.serializers import ServiceSerializer
 from dora.users.models import User
@@ -42,10 +43,14 @@ class ServiceSuggestionSerializer(serializers.ModelSerializer):
     def get_service_info(self, suggestion):
         # Crée un service fictif, immédiatement suivi d'un rollback
         set_autocommit(False)
-        service = suggestion.convert_to_service()
-        result = ServiceSerializer(
-            service, context={"request": self.context.get("request")}
-        ).data
+        try:
+            service = suggestion.convert_to_service()
+            result = ServiceSerializer(
+                service, context={"request": self.context.get("request")}
+            ).data
+        except Exception as e:
+            capture_exception(e)
+            result = {}
         rollback()
         set_autocommit(True)
         return result

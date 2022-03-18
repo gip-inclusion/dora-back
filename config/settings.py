@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import os
 import random
+from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
@@ -77,6 +78,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_gis",
     "corsheaders",
+    "drf_spectacular",
     # local
     "config.apps.AdminConfig",
     "dora.core",
@@ -87,6 +89,7 @@ INSTALLED_APPS = [
     "dora.service_suggestions",
     "dora.sirene",
     "dora.admin_express",
+    "dora.stats",
 ]
 
 MIDDLEWARE = [
@@ -232,6 +235,7 @@ REST_FRAMEWORK = {
     },
     "EXCEPTION_HANDLER": "dora.core.exceptions_handler.custom_exception_handler",
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 
@@ -260,6 +264,9 @@ EMAIL_USE_TLS = True
 EMAIL_DOMAIN = os.environ["EMAIL_DOMAIN"]
 FRONTEND_URL = os.environ["FRONTEND_URL"]
 SUPPORT_EMAIL = os.environ["SUPPORT_EMAIL"]
+
+INVITATION_LINK_EXPIRATION = timedelta(days=15)
+AUTH_LINK_EXPIRATION = timedelta(days=1)
 
 ################
 # APP SETTINGS #
@@ -293,3 +300,20 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_SSL_REDIRECT = True
+
+CSP_EXCLUDE_URL_PREFIXES = "/api/schema/redoc/"
+
+###################
+# DRF-SPECTACULAR #
+###################
+SPECTACULAR_SETTINGS = {
+    "TITLE": "API référentiel de l’offre d’insertion",
+    "DESCRIPTION": "Concevoir ensemble un commun de l'insertion, facilitant l'interopérabilité entre producteurs et consommateurs de données.",
+    "VERSION": "0.0.1",
+    "CAMELIZE_NAMES": True,
+    "SERVE_AUTHENTICATION": None,
+    "POSTPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.postprocess_schema_enums",
+        "drf_spectacular.contrib.djangorestframework_camel_case.camelize_serializer_fields",
+    ],
+}

@@ -1,6 +1,6 @@
 import csv
-from datetime import timedelta
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
@@ -119,7 +119,7 @@ class Command(BaseCommand):
                 full_desc=structure.full_desc,
                 creator=bot_user,
                 last_editor=bot_user,
-                source=StructureSource.objects.get(value="BI"),
+                source=StructureSource.objects.get(value="invitations-masse"),
                 is_antenna=True,
                 parent=structure,
             )
@@ -158,7 +158,8 @@ class Command(BaseCommand):
                     is_admin=is_admin,
                 )
                 tmp_token = Token.objects.create(
-                    user=user, expiration=timezone.now() + timedelta(days=7)
+                    user=user,
+                    expiration=timezone.now() + settings.INVITATION_LINK_EXPIRATION,
                 )
                 self.stdout.write(f"Inviting {member.user.email}")
                 send_invitation_email(

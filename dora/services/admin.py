@@ -21,10 +21,31 @@ from .models import (
 
 class ServiceModificationHistoryItemInline(admin.TabularInline):
     model = ServiceModificationHistoryItem
-    readonly_fields = ["user", "date", "fields"]
+    readonly_fields = ["user", "date", "fields", "service"]
     extra = 0
 
     def has_add_permission(self, request, obj):
+        return False
+
+    def has_change_permission(self, request, obj):
+        return False
+
+    def has_delete_permission(self, request, obj):
+        return False
+
+
+class ServiceModificationHistoryItemAdmin(admin.ModelAdmin):
+    list_display = ("service", "date", "user")
+    date_hierarchy = "date"
+    readonly_fields = ["user", "date", "fields", "service"]
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False
 
 
@@ -67,6 +88,7 @@ admin.site.register(AccessCondition, CustomizableChoiceAdmin)
 admin.site.register(ConcernedPublic, CustomizableChoiceAdmin)
 admin.site.register(Requirement, CustomizableChoiceAdmin)
 admin.site.register(Credential, CustomizableChoiceAdmin)
+admin.site.register(ServiceModificationHistoryItem, ServiceModificationHistoryItemAdmin)
 
 admin.site.register(BeneficiaryAccessMode, EnumAdmin)
 admin.site.register(CoachOrientationMode, EnumAdmin)
