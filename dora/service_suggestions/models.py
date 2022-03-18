@@ -93,6 +93,9 @@ class ServiceSuggestion(models.Model):
 
         lon = self.contents.pop("longitude", None)
         lat = self.contents.pop("latitude", None)
+        contact_phone = "".join(
+            [s for s in self.contents.pop("contact_phone", "") if s.isdigit()]
+        )[:10]
         if lon and lat:
             geom = Point(lon, lat, srid=4326)
         else:
@@ -106,6 +109,7 @@ class ServiceSuggestion(models.Model):
                 last_editor=self.creator,
                 is_draft=True,
                 is_suggestion=True,
+                contact_phone=contact_phone,
                 **self.contents,
             )
             service.access_conditions.set(access_conditions)
