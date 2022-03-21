@@ -123,9 +123,6 @@ class Command(BaseCommand):
                 # antennes associées
                 if "asp_id" in datum and datum["asp_id"] in antennes_by_asp_id:
                     for antenne_datum in antennes_by_asp_id[datum["asp_id"]]:
-                        logger.debug(f"{siret} has antenne {antenne_datum['siret']}")
-                        continue  # TODO(vmttn): supprimer une fois les antennes bien gérées
-
                         antenne = Structure.objects.create_from_parent_structure(
                             parent=structure,
                             name=antenne_datum["name"],
@@ -137,7 +134,7 @@ class Command(BaseCommand):
                             postal_code=antenne_datum["post_code"],
                             city=antenne_datum["city"],
                             email=antenne_datum["email"],
-                            phone=antenne_datum["phone"],
+                            phone=normalize_phone_number(antenne_datum["phone"]),
                             url=antenne_datum["website"],
                             typology=StructureTypology.objects.get(value=datum["kind"]),
                             creation_date=antenne_datum["created_at"],
@@ -160,4 +157,6 @@ class Command(BaseCommand):
 
                         antenne.save()
 
-                        logger.debug(f"{siret} : new antenne created")
+                        logger.debug(
+                            f"{antenne_datum['siret']} created as antenne of {siret}"
+                        )

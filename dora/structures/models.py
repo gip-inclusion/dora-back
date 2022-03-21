@@ -136,8 +136,9 @@ class StructureManager(models.Manager):
         # mieux renseignées dans la structure parente, déterminer si on
         # duplique dans l'antenne ou si on laisse vide
         structure = self.model(
-            siret=None,  # TODO
+            siret=None,
             parent=parent,
+            branch_id=get_random_string(5, "abcdefghijklmnopqrstuvwxyz"),
             **kwargs,
         )
         structure.save()
