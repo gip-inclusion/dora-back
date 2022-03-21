@@ -236,3 +236,13 @@ class Structure(models.Model):
                 structure_id=self.id, user_id=user.id
             ).exists()
         )
+
+    def is_member(self, user):
+        return StructureMember.objects.filter(
+            structure_id=self.id, user_id=user.id
+        ).exists()
+
+    def is_admin(self, user):
+        return StructureMember.objects.filter(
+            structure_id=self.id, user_id=user.id, is_admin=True
+        ).exists()

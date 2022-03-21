@@ -20,6 +20,8 @@ class StructureSerializer(serializers.ModelSerializer):
     )
     typology_display = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
+    is_member = serializers.SerializerMethodField()
+    is_admin = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
@@ -47,12 +49,23 @@ class StructureSerializer(serializers.ModelSerializer):
             "creation_date",
             "modification_date",
             "can_write",
+            "is_admin",
+            "is_member",
         ]
         lookup_field = "slug"
 
     def get_can_write(self, obj):
+        # TODO: DEPRECATED
         user = self.context.get("request").user
         return obj.can_write(user)
+
+    def get_is_member(self, obj):
+        user = self.context.get("request").user
+        return obj.is_member(user)
+
+    def get_is_admin(self, obj):
+        user = self.context.get("request").user
+        return obj.is_admin(user)
 
     def get_typology_display(self, obj):
         return obj.typology.label if obj.typology else ""
