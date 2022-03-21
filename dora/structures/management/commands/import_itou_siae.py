@@ -17,9 +17,6 @@ logging.basicConfig()
 logger = logging.getLogger()
 
 
-SIAES_FILE_PATH = Path(__file__).parent.parent.parent / "data" / "siaes_08_974.csv"
-
-
 def normalize_description(desc: str, limit: int) -> Tuple[str, str]:
     if len(desc) < limit:
         return desc, ""
@@ -40,16 +37,22 @@ def normalize_coords(coords: str) -> Tuple[float, float]:
 
 
 class Command(BaseCommand):
+    """Commande d'import des données SIAE d'ITOU depuis format csv"""
+
+    help = __doc__
+
     def add_arguments(self, parser):
         parser.add_argument("--log-level", default="INFO", type=str)
+        parser.add_argument("input_path", type=Path)
 
     def handle(self, *args, **options):
         logger.setLevel(options["log_level"])
+        itou_siae_input_path = options["input_path"]
 
-        with open(SIAES_FILE_PATH, newline="") as f:
+        with itou_siae_input_path.open(newline="") as f:
             data = [row for row in csv.DictReader(f)]
 
-        logger.debug(f"total: {len(data)}")
+        logger.info(f"{len(data)} lignes en entrée")
 
         antennes = [d for d in data if d["source"] == "USER_CREATED"]
         structures = [d for d in data if d not in antennes]
@@ -61,8 +64,8 @@ class Command(BaseCommand):
             k: list(g) for k, g in groupby(antennes, lambda d: d["asp_id"])
         }
 
-        logger.debug(f"total antennes: {len(antennes)}")
-        logger.debug(f"total structures: {len(structures)}")
+        logger.info(f"{len(structures)} structures mères en entrée")
+        logger.info(f"{len(antennes)} antennes en entrée")
 
         with transaction.atomic():
             bot_user = User.objects.get_dora_bot()
@@ -75,20 +78,19 @@ class Command(BaseCommand):
             ):
                 if len(data) > 1:
                     # 2 structures mères partagent le même siret
-                    logger.debug(f"{siret} has two parent rows. skipping")
+                    logger.debug(f"{siret} commun à 2 structures mères. Ignoré")
                     continue
 
                 datum = data[0]
                 establishment = Establishment.objects.filter(siret=siret).first()
-
                 if establishment is None:
-                    logger.debug(f"{siret} probably closed. skipping")
+                    logger.debug(f"{siret} probablement fermé. Ignoré")
                     # structure probablement fermée
                     continue
 
                 structure = Structure.objects.filter(siret=establishment.siret).first()
                 if structure is not None:
-                    logger.debug(f"{siret} already known. skipping")
+                    logger.debug(f"{siret} déjà référencé. Ignoré")
                     # structure déjà référencée
                     continue
 
@@ -118,7 +120,7 @@ class Command(BaseCommand):
                 structure.typology = StructureTypology.objects.get(value=datum["kind"])
                 structure.save()
 
-                logger.debug(f"{siret} created")
+                logger.debug(f"{siret} nouvellement référencé")
 
                 # antennes associées
                 if "asp_id" in datum and datum["asp_id"] in antennes_by_asp_id:
@@ -158,5 +160,5 @@ class Command(BaseCommand):
                         antenne.save()
 
                         logger.debug(
-                            f"{antenne_datum['siret']} created as antenne of {siret}"
+                            f"{antenne_datum['siret']} nouvellement référencé comme antenne de {siret}"
                         )
