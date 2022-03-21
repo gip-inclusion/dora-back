@@ -29,15 +29,6 @@ tables:
         phone:
           format: "9^########"
 
-  - name: structures_structure
-    rules:
-      email:
-        email:
-          safe: true
-      phone:
-        phone:
-          format: "9^########"
-
   - name: services_service
     rules:
       contact_name:
@@ -48,6 +39,12 @@ tables:
       contact_phone:
         phone:
           format: "9^########"
+
+  - name: service_suggestions_servicesuggestion
+    rules:
+      contents:
+        template:
+          format: "{% raw %}{}{% endraw %}"
 
   - name: django_admin_log
     rules: {}
@@ -72,5 +69,3 @@ tables:
 filter:
   except:
     - public.spatial_ref_sys
-    #- public.admin_express_city
-    #- public.sirene_establishment
