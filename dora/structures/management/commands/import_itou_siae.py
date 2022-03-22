@@ -24,6 +24,8 @@ class Command(BaseCommand):
     Leurs sirets sont valides et ces structures sont des structures mères.
     * soit des données de structures qui doivent être considérées comme des antennes.
     Structure mères et antennes partagent le même asp_id.
+
+    Parmi les structures mères, un siret peut être dupliqué (le type change notamment).
     """
 
     help = __doc__
@@ -64,11 +66,18 @@ class Command(BaseCommand):
                 structures_by_siret.items(), disable=logger.level < logging.INFO
             ):
                 if len(data) > 1:
-                    # 2 structures mères partagent le même siret
-                    logger.debug(f"{siret} commun à 2 structures mères. Ignoré")
-                    continue
+                    # plusieurs structures mères partagent le même siret
+                    # la structure ayant le plus de champs renseignés est utilisée
+                    datum_by_number_of_fields_set = {
+                        len(list(filter(lambda v: v == "", d.values()))): d
+                        for d in data
+                    }
+                    datum = datum_by_number_of_fields_set[
+                        min(datum_by_number_of_fields_set)
+                    ]
+                else:
+                    datum = data[0]
 
-                datum = data[0]
                 establishment = Establishment.objects.filter(siret=siret).first()
                 if establishment is None:
                     logger.debug(f"{siret} probablement fermé. Ignoré")
