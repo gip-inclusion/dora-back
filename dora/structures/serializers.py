@@ -19,6 +19,9 @@ class StructureSerializer(serializers.ModelSerializer):
         slug_field="value", queryset=StructureTypology.objects.all()
     )
     typology_display = serializers.SerializerMethodField()
+    parent = serializers.SlugRelatedField(
+        queryset=Structure.objects.all(), slug_field="slug"
+    )
     can_write = serializers.SerializerMethodField()
     is_member = serializers.SerializerMethodField()
     is_admin = serializers.SerializerMethodField()
@@ -51,6 +54,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "can_write",
             "is_admin",
             "is_member",
+            "parent",
         ]
         lookup_field = "slug"
 
@@ -82,6 +86,7 @@ class StructureListSerializer(StructureSerializer):
             "department",
             "typology_display",
             "modification_date",
+            "parent"
             # "num_services"
         ]
         lookup_field = "slug"
