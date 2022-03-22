@@ -6,6 +6,7 @@ from typing import Tuple
 from django.contrib.gis.geos import GEOSGeometry
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.db.models.expressions import RawSQL
 from tqdm import tqdm
 
 from dora.sirene.models import Establishment
@@ -15,9 +16,7 @@ from dora.users.models import User
 logging.basicConfig()
 logger = logging.getLogger()
 
-SIAES_FILE_PATH = (
-    Path(__file__).parent.parent.parent / "data" / "prescriber_organizations_08_974.csv"
-)
+SIREN_POLE_EMPLOI = "130005481"
 
 
 def normalize_description(desc: str, limit: int) -> Tuple[str, str]:
@@ -46,11 +45,12 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--log-level", default="INFO", type=str)
+        parser.add_argument("input_path", type=Path)
 
     def handle(self, *args, **options):
         logger.setLevel(options["log_level"])
 
-        with open(SIAES_FILE_PATH, newline="") as f:
+        with open(options["input_path"], newline="") as f:
             data = [row for row in csv.DictReader(f)]
 
         logger.info(f"{len(data)} lignes en entrée")
@@ -61,48 +61,82 @@ class Command(BaseCommand):
         )
 
         known_structures = []
-        unknown_sirets = []
+        unidentifiables = []
         new_structures = []
 
         with transaction.atomic():
             for datum in tqdm(data, disable=logger.level < logging.INFO):
+                # ignore les Pole Emploi déjà référencés
                 if (
-                    "code_safir_pole_emploi" in datum
+                    datum["code_safir_pole_emploi"] != ""
                     and Structure.objects.filter(
                         code_safir_pe=datum["code_safir_pole_emploi"]
                     ).exists()
                 ):
-                    # code saphir déjà référencé
                     logger.debug(
-                        f"code_saphir={datum['code_safir_pole_emploi']} déjà référencé. Ignoré"
+                        f"code_safir={datum['code_safir_pole_emploi']} déjà référencé. Ignoré"
                     )
                     known_structures.append(datum)
                     continue
 
-                try:
-                    establishment = Establishment.objects.get(siret=datum["siret"])
-                except Establishment.DoesNotExist:
-                    # siret invalide
-                    logger.debug(f"{datum['siret']} n'existe pas")
+                establishment = None
 
-                    # tentative d'identification du siret à partir du siren
-                    # si l'entreprise n'a qu'un seul établissement
-                    try:
-                        establishment = Establishment.objects.get(
-                            siren=datum["siret"][:9]
+                # tentative d'identification via siret/siren
+                if datum["siret"] != "":
+                    establishment = Establishment.objects.filter(
+                        siret=datum["siret"]
+                    ).first()
+
+                    if establishment is None:
+                        # siret invalide
+                        logger.debug(f"{datum['siret']} n'existe pas")
+
+                        # tentative d'identification du siret à partir du siren
+                        # si l'entreprise n'a qu'un seul établissement
+                        try:
+                            establishment = Establishment.objects.get(
+                                siren=datum["siret"][:9]
+                            )
+                            logger.debug(
+                                f"{datum['siret']} -> {establishment.siret} unique établissement pour siren"
+                            )
+                        except Establishment.MultipleObjectsReturned:
+                            # plusieurs établissement pour ce siren
+                            pass
+                        except Establishment.DoesNotExist:
+                            # siren invalide
+                            unidentifiables.append(datum)
+                            continue
+
+                # tentative d'identification des pole emplois via proximité géographique
+                if (
+                    establishment is None
+                    and datum["code_safir_pole_emploi"] != ""
+                    and datum["coords"] != ""
+                ):
+                    establishment = (
+                        Establishment.objects.filter(siren=SIREN_POLE_EMPLOI)
+                        .filter(postal_code__startswith=datum["post_code"][:2])
+                        .annotate(
+                            distance=RawSQL(
+                                "ST_Distance(ST_SetSRID(ST_MakePoint(longitude, latitude), 4326), %s)",
+                                params=[datum["coords"]],
+                            )
                         )
-                    except Establishment.MultipleObjectsReturned:
-                        # plusieurs établissement pour ce siren
-                        unknown_sirets.append(datum)
-                        continue
-                    except Establishment.DoesNotExist:
-                        # siren invalide
-                        unknown_sirets.append(datum)
-                        continue
-
-                    logger.debug(
-                        f"{datum['siret']} -> {establishment.siret} unique établissement pour siren"
+                        .filter(distance__lt=0.001)
+                        .order_by("distance")
+                        .first()
                     )
+                    logger.debug(
+                        f"{establishment.siret}, PE identifié par proximité géographique (safir={datum['code_safir_pole_emploi']})"
+                    )
+
+                if establishment is None:
+                    logger.debug(
+                        f"(id={datum['id']},siret={datum['siret']}, safir={datum['code_safir_pole_emploi']}) non identifiable"
+                    )
+                    unidentifiables.append(datum)
+                    continue
 
                 structure = Structure.objects.filter(siret=establishment.siret).first()
                 if structure is not None:
@@ -140,6 +174,6 @@ class Command(BaseCommand):
                 logger.debug(f"{establishment.siret} nouvellement référencé")
                 new_structures.append(structure)
 
-            logger.info(f"{len(unknown_sirets)} sirets inconnus")
-            logger.info(f"{len(known_structures)} sirets déjà référencés")
-            logger.info(f"{len(new_structures)} nouvelles structures")
+        logger.info(f"{len(unidentifiables)} entrées non identifiables")
+        logger.info(f"{len(known_structures)} sirets déjà référencés")
+        logger.info(f"{len(new_structures)} nouvelles structures")
