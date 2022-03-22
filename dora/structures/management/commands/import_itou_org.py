@@ -1,15 +1,14 @@
 import csv
 import logging
 from pathlib import Path
-from typing import Tuple
 
-from django.contrib.gis.geos import GEOSGeometry
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models.expressions import RawSQL
 from tqdm import tqdm
 
 from dora.sirene.models import Establishment
+from dora.structures import utils
 from dora.structures.models import Structure, StructureSource, StructureTypology
 from dora.users.models import User
 
@@ -19,27 +18,12 @@ logger = logging.getLogger()
 SIREN_POLE_EMPLOI = "130005481"
 
 
-def normalize_description(desc: str, limit: int) -> Tuple[str, str]:
-    if len(desc) < limit:
-        return desc, ""
-    else:
-        return desc[: limit - 3] + "...", desc
-
-
-def normalize_phone_number(phone: str) -> str:
-    ret = phone.replace(" ", "").replace("-", "").replace(".", "")
-    if len(ret) < 10:
-        return ""
-    return ret
-
-
-def normalize_coords(coords: str) -> Tuple[float, float]:
-    pos = GEOSGeometry(coords)
-    return pos.x, pos.y
-
-
 class Command(BaseCommand):
-    """Commande d'import des données prescribers d'ITOU depuis format csv"""
+    """Commande d'import des données organisations d'ITOU depuis format csv
+
+    Les données prescribers ITOU contiennent soit des données avec SIRET,
+    soit des données de structures type pole emploi (pas exclusivement des agences).
+    """
 
     help = __doc__
 
@@ -74,7 +58,8 @@ class Command(BaseCommand):
                     ).exists()
                 ):
                     logger.debug(
-                        f"code_safir={datum['code_safir_pole_emploi']} déjà référencé. Ignoré"
+                        f"code_safir={datum['code_safir_pole_emploi']} déjà référencé. "
+                        "Ignoré"
                     )
                     known_structures.append(datum)
                     continue
@@ -98,7 +83,8 @@ class Command(BaseCommand):
                                 siren=datum["siret"][:9]
                             )
                             logger.debug(
-                                f"{datum['siret']} -> {establishment.siret} unique établissement pour siren"
+                                f"{datum['siret']} -> {establishment.siret} unique "
+                                "établissement pour siren"
                             )
                         except Establishment.MultipleObjectsReturned:
                             # plusieurs établissement pour ce siren
@@ -128,12 +114,14 @@ class Command(BaseCommand):
                         .first()
                     )
                     logger.debug(
-                        f"{establishment.siret}, PE identifié par proximité géographique (safir={datum['code_safir_pole_emploi']})"
+                        f"{establishment.siret}, PE identifié par proximité "
+                        f"géographique (safir={datum['code_safir_pole_emploi']})"
                     )
 
                 if establishment is None:
                     logger.debug(
-                        f"(id={datum['id']},siret={datum['siret']}, safir={datum['code_safir_pole_emploi']}) non identifiable"
+                        f"(id={datum['id']},siret={datum['siret']}, "
+                        f"safir={datum['code_safir_pole_emploi']}) non identifiable"
                     )
                     unidentifiables.append(datum)
                     continue
@@ -152,13 +140,13 @@ class Command(BaseCommand):
                 structure.last_editor = bot_user
                 structure.name = datum["name"]
                 structure.email = datum["email"]
-                structure.phone = normalize_phone_number(datum["phone"])
+                structure.phone = utils.normalize_phone_number(datum["phone"])
                 structure.url = datum["website"]
-                structure.short_desc, structure.full_desc = normalize_description(
+                structure.short_desc, structure.full_desc = utils.normalize_description(
                     datum["description"], limit=Structure.short_desc.field.max_length
                 )
                 if datum["coords"] != "":
-                    structure.longitude, structure.latitude = normalize_coords(
+                    structure.longitude, structure.latitude = utils.normalize_coords(
                         datum["coords"]
                     )
                 else:

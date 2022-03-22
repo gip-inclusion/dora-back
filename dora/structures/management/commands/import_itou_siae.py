@@ -2,14 +2,13 @@ import csv
 import logging
 from itertools import groupby
 from pathlib import Path
-from typing import Tuple
 
-from django.contrib.gis.geos import GEOSGeometry
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from tqdm import tqdm
 
 from dora.sirene.models import Establishment
+from dora.structures import utils
 from dora.structures.models import Structure, StructureSource, StructureTypology
 from dora.users.models import User
 
@@ -17,27 +16,15 @@ logging.basicConfig()
 logger = logging.getLogger()
 
 
-def normalize_description(desc: str, limit: int) -> Tuple[str, str]:
-    if len(desc) < limit:
-        return desc, ""
-    else:
-        return desc[: limit - 3] + "...", desc
-
-
-def normalize_phone_number(phone: str) -> str:
-    ret = phone.replace(" ", "").replace("-", "").replace(".", "")
-    if len(ret) < 10:
-        return ""
-    return ret
-
-
-def normalize_coords(coords: str) -> Tuple[float, float]:
-    pos = GEOSGeometry(coords)
-    return pos.x, pos.y
-
-
 class Command(BaseCommand):
-    """Commande d'import des données SIAE d'ITOU depuis format csv"""
+    """Commande d'import des données SIAE d'ITOU depuis format csv
+
+    Les données ITOU siae sont:
+    * soit des données de structures taggées comment étant créées par un utilisateur.
+    Leurs sirets sont valides et ces structures sont des structures mères.
+    * soit des données de structures qui doivent être considérées comme des antennes.
+    Structure mères et antennes partagent le même asp_id.
+    """
 
     help = __doc__
 
@@ -101,13 +88,13 @@ class Command(BaseCommand):
                 structure.last_editor = bot_user
                 structure.name = datum["name"]
                 structure.email = datum["email"]
-                structure.phone = normalize_phone_number(datum["phone"])
+                structure.phone = utils.normalize_phone_number(datum["phone"])
                 structure.url = datum["website"]
-                structure.short_desc, structure.full_desc = normalize_description(
+                structure.short_desc, structure.full_desc = utils.normalize_description(
                     datum["description"], limit=Structure.short_desc.field.max_length
                 )
                 if datum["coords"] != "":
-                    structure.longitude, structure.latitude = normalize_coords(
+                    structure.longitude, structure.latitude = utils.normalize_coords(
                         datum["coords"]
                     )
                 else:
@@ -136,7 +123,7 @@ class Command(BaseCommand):
                             postal_code=antenne_datum["post_code"],
                             city=antenne_datum["city"],
                             email=antenne_datum["email"],
-                            phone=normalize_phone_number(antenne_datum["phone"]),
+                            phone=utils.normalize_phone_number(antenne_datum["phone"]),
                             url=antenne_datum["website"],
                             typology=StructureTypology.objects.get(value=datum["kind"]),
                             creation_date=antenne_datum["created_at"],
@@ -147,18 +134,20 @@ class Command(BaseCommand):
                             (
                                 antenne.short_desc,
                                 antenne.full_desc,
-                            ) = normalize_description(
+                            ) = utils.normalize_description(
                                 datum["description"],
                                 limit=Structure.short_desc.field.max_length,
                             )
 
                         if antenne_datum["coords"] != "":
-                            antenne.longitude, antenne.latitude = normalize_coords(
-                                antenne_datum["coords"]
-                            )
+                            (
+                                antenne.longitude,
+                                antenne.latitude,
+                            ) = utils.normalize_coords(antenne_datum["coords"])
 
                         antenne.save()
 
                         logger.debug(
-                            f"{antenne_datum['siret']} nouvellement référencé comme antenne de {siret}"
+                            f"{antenne_datum['siret']} nouvellement référencé comme "
+                            f"antenne de {siret}"
                         )
