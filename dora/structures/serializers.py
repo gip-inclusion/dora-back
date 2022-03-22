@@ -3,6 +3,8 @@ from django.utils import timezone
 from rest_framework import exceptions, serializers
 
 from dora.rest_auth.models import Token
+from dora.services.models import Service
+from dora.services.serializers import ServiceListSerializer
 from dora.structures.emails import send_invitation_email
 from dora.users.models import User
 
@@ -23,6 +25,8 @@ class StructureSerializer(serializers.ModelSerializer):
     can_write = serializers.SerializerMethodField()
     is_member = serializers.SerializerMethodField()
     is_admin = serializers.SerializerMethodField()
+
+    services = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
@@ -53,6 +57,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "is_admin",
             "is_member",
             "parent",
+            "services",
         ]
         lookup_field = "slug"
 
@@ -71,6 +76,34 @@ class StructureSerializer(serializers.ModelSerializer):
 
     def get_typology_display(self, obj):
         return obj.typology.label if obj.typology else ""
+
+    def get_services(self, obj):
+        class StructureServicesSerializer(ServiceListSerializer):
+            class Meta:
+                model = Service
+                fields = [
+                    "category",
+                    "category_display",
+                    "slug",
+                    "name",
+                    "postal_code",
+                    "city",
+                    "department",
+                    "is_draft",
+                    "is_suggestion",
+                    "modification_date",
+                    "categories_display",
+                    "short_desc",
+                    "diffusion_zone_type",
+                    "diffusion_zone_type_display",
+                    "diffusion_zone_details_display",
+                ]
+
+        user = self.context.get("request").user
+        qs = obj.services.filter(is_draft=False, is_suggestion=False)
+        if user.is_authenticated and user.is_staff or obj.is_member(user):
+            qs = obj.services.all()
+        return StructureServicesSerializer(qs, many=True).data
 
 
 class StructureListSerializer(StructureSerializer):
