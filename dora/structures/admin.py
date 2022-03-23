@@ -58,26 +58,48 @@ class StructureMemberAdmin(admin.ModelAdmin):
 
 class StructureMemberInline(admin.TabularInline):
     model = StructureMember
-    readonly_fields = ["user", "structure"]
     extra = 0
-
-    def has_add_permission(self, request, obj):
-        return False
 
 
 class StructurePutativeMemberInline(admin.TabularInline):
     model = StructurePutativeMember
-    readonly_fields = ["user", "structure"]
     extra = 0
 
+
+class BranchInline(admin.TabularInline):
+    model = Structure
+    fields = ["siret", "name", "branch_id"]
+    extra = 1
+    verbose_name = "Antenne"
+    verbose_name_plural = "Antennes"
+    show_change_link = True
+
     def has_add_permission(self, request, obj):
-        return False
+        return obj.parent is None if obj else True
+
+
+class IsBranchListFilter(admin.SimpleListFilter):
+    title = "antenne"
+    parameter_name = "is_branch"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("false", "Non"),
+            ("true", "Oui"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "false":
+            return queryset.filter(parent__isnull=True)
+        if self.value() == "true":
+            return queryset.filter(parent__isnull=False)
 
 
 class StructureAdmin(admin.ModelAdmin):
     list_display = [
         "name",
         "slug",
+        "parent",
         "department",
         "typology",
         "city_code",
@@ -85,14 +107,14 @@ class StructureAdmin(admin.ModelAdmin):
         "modification_date",
         "last_editor",
     ]
-    list_filter = [
-        "source",
-        "typology",
-        "department",
-    ]
+    list_filter = [IsBranchListFilter, "source", "typology", "department"]
     search_fields = ("name", "siret", "code_safir_pe", "city", "department", "slug")
     ordering = ["-modification_date", "department"]
-    inlines = [StructureMemberInline, StructurePutativeMemberInline]
+    inlines = [StructureMemberInline, StructurePutativeMemberInline, BranchInline]
+    readonly_fields = (
+        "creation_date",
+        "modification_date",
+    )
 
 
 admin.site.register(Structure, StructureAdmin)

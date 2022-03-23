@@ -1,6 +1,7 @@
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CharField, Q
 from django.db.models.functions import Length
@@ -59,6 +60,9 @@ class StructurePutativeMember(models.Model):
             )
         ]
 
+    def __str__(self):
+        return self.user.get_full_name()
+
     def notify_admin_access_requested(self):
         structure_admins = StructureMember.objects.filter(
             structure=self.structure, is_admin=True
@@ -91,6 +95,9 @@ class StructureMember(models.Model):
                 name="%(app_label)s_unique_user_by_structure",
             )
         ]
+
+    def __str__(self):
+        return self.user.get_full_name()
 
     def notify_admins_invitation_accepted(self):
         structure_admins = StructureMember.objects.filter(
@@ -140,6 +147,7 @@ class Structure(models.Model):
         verbose_name="Siret",
         max_length=14,
         validators=[validate_siret],
+        blank=True,
         null=True,
         unique=True,
     )
@@ -158,28 +166,28 @@ class Structure(models.Model):
         db_index=True,
     )
 
+    name = models.CharField(verbose_name="Nom", max_length=255)
     typology = models.ForeignKey(
         StructureTypology, null=True, blank=True, on_delete=models.PROTECT
     )
-
     slug = models.SlugField(blank=True, null=True, unique=True)
-    name = models.CharField(verbose_name="Nom", max_length=255)
-    short_desc = models.CharField(max_length=280)
     url = models.URLField(blank=True)
+    short_desc = models.CharField(max_length=280)
     full_desc = models.TextField(blank=True)
     phone = models.CharField(max_length=10, blank=True)
     email = models.EmailField(blank=True)
+    address1 = models.CharField(max_length=255)
+    address2 = models.CharField(max_length=255, blank=True)
     postal_code = models.CharField(
         max_length=5,
     )
-    city_code = models.CharField(max_length=5, blank=True)
     city = models.CharField(max_length=255)
+    city_code = models.CharField(max_length=5, blank=True)
     department = models.CharField(max_length=3, blank=True)
-    address1 = models.CharField(max_length=255)
-    address2 = models.CharField(max_length=255, blank=True)
-    ape = models.CharField(max_length=6, blank=True)
     longitude = models.FloatField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)
+
+    ape = models.CharField(max_length=6, blank=True)
 
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now=True)
@@ -216,9 +224,21 @@ class Structure(models.Model):
                 name="%(app_label)s_%(class)s_valid_or_null_siren",
                 check=Q(siret__length=14) | Q(siret__isnull=True),
             ),
+            models.CheckConstraint(
+                name="%(app_label)s_%(class)s_null_siret_only_in_branches",
+                check=Q(siret__isnull=False) | Q(parent__isnull=False),
+            ),
+            models.CheckConstraint(
+                name="%(app_label)s_%(class)s_branches_have_id",
+                check=Q(parent__isnull=True) | ~Q(branch_id=""),
+            ),
         ]
 
-    # TODO: opening_hours, edit history, moderation
+    def clean(self):
+        if not (self.siret is not None or self.parent is not None):
+            raise ValidationError("Seules les antennes peuvent avoir un siret vide")
+        if not (self.parent is None or self.branch_id != ""):
+            raise ValidationError("Les antennes doivent avoir un branch id")
 
     def __str__(self):
         return self.name

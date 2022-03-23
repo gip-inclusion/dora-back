@@ -1,13 +1,13 @@
 # import csv
 # import tempfile
 # from io import StringIO
-
 from django.core import mail
 
 # from django.core.management import call_command
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
+from dora.core.test_utils import make_structure
 from dora.rest_auth.models import Token
 from dora.structures.models import (
     Structure,
@@ -34,13 +34,13 @@ class StructureTestCase(APITestCase):
         self.me = baker.make("users.User", is_valid=True)
         self.superuser = baker.make("users.User", is_staff=True, is_valid=True)
         self.bizdev = baker.make("users.User", is_bizdev=True, is_valid=True)
-        self.my_struct = baker.make("Structure")
+        self.my_struct = make_structure()
         self.my_struct.members.add(self.me)
 
-        self.my_other_struct = baker.make("Structure", creator=None, last_editor=None)
+        self.my_other_struct = make_structure(creator=None, last_editor=None)
         self.my_other_struct.members.add(self.me)
 
-        self.other_struct = baker.make("Structure")
+        self.other_struct = make_structure()
         self.client.force_authenticate(user=self.me)
 
     # Visibility
@@ -200,7 +200,7 @@ class StructureMemberTestCase(APITestCase):
         self.bizdev = baker.make("users.User", is_bizdev=True, is_valid=True)
         self.superuser = baker.make("users.User", is_staff=True, is_valid=True)
 
-        self.my_struct = baker.make("Structure")
+        self.my_struct = make_structure()
         self.my_struct.members.add(
             self.me,
             through_defaults={
@@ -221,7 +221,7 @@ class StructureMemberTestCase(APITestCase):
             },
         )
 
-        self.my_other_struct = baker.make("Structure", creator=None, last_editor=None)
+        self.my_other_struct = make_structure(creator=None, last_editor=None)
         self.my_other_struct.members.add(
             self.me,
             through_defaults={
@@ -230,7 +230,7 @@ class StructureMemberTestCase(APITestCase):
         )
         self.my_other_struct.members.add(self.my_other_struct_user)
 
-        self.other_struct = baker.make("Structure")
+        self.other_struct = make_structure()
         self.other_struct.members.add(
             self.another_struct_user,
             through_defaults={
@@ -815,7 +815,7 @@ class StructureMemberTestCase(APITestCase):
     # Invitation acceptation
     def test_user_can_accept_invitation(self):
         admin = baker.make("users.User", is_valid=True)
-        structure = baker.make("Structure")
+        structure = make_structure()
         structure.members.add(
             admin,
             through_defaults={
@@ -935,9 +935,6 @@ class StructureMemberTestCase(APITestCase):
 #         )
 #         return writer
 
-#     def create_structure(self, **kwargs):
-#         return baker.make("Structure", **kwargs)
-
 #     def add_row(self, row):
 #         self.csv_writer.writerow(row)
 
@@ -973,7 +970,7 @@ class StructureMemberTestCase(APITestCase):
 #         self.assertEqual(len(mail.outbox), 0)
 
 #     def test_wrong_city_code_wont_create_anything(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         self.add_row(["foo", "buzz", "foo@buzz.com", structure.siret, "00000", "FALSE"])
 #         out, err = self.call_command()
 #         self.assertIn("Invalid insee code 00000", err)
@@ -981,7 +978,7 @@ class StructureMemberTestCase(APITestCase):
 #         self.assertEqual(len(mail.outbox), 0)
 
 #     def test_can_invite_new_user(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
 #         out, err = self.call_command()
 #         user = User.objects.filter(email="foo@buzz.com").first()
@@ -999,7 +996,7 @@ class StructureMemberTestCase(APITestCase):
 #         )
 
 #     def test_new_users_are_automatically_accepted(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
 #         out, err = self.call_command()
 #         self.assertTrue(
@@ -1009,7 +1006,7 @@ class StructureMemberTestCase(APITestCase):
 #         )
 
 #     def test_can_invite_new_user_with_safir(self):
-#         structure = self.create_structure(code_safir_pe="98765")
+#         structure = make_structure(code_safir_pe="98765")
 #         self.add_row(
 #             ["Foo", "Buzz", "foo@buzz.com", structure.code_safir_pe, "", "FALSE"]
 #         )
@@ -1029,7 +1026,7 @@ class StructureMemberTestCase(APITestCase):
 #         )
 
 #     def test_idempotent(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
 #         out1, err1 = self.call_command()
 #         out2, err2 = self.call_command()
@@ -1039,7 +1036,7 @@ class StructureMemberTestCase(APITestCase):
 #         self.assertEqual(len(mail.outbox), 1)
 
 #     def test_can_invite_as_non_admin(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
 #         out, err = self.call_command()
 #         members = StructurePutativeMember.objects.filter(
@@ -1049,7 +1046,7 @@ class StructureMemberTestCase(APITestCase):
 #         self.assertFalse(members[0].is_admin)
 
 #     def test_can_invite_as_admin(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "TRUE"])
 #         out, err = self.call_command()
 #         members = StructurePutativeMember.objects.filter(
@@ -1059,7 +1056,7 @@ class StructureMemberTestCase(APITestCase):
 #         self.assertTrue(members[0].is_admin)
 
 #     def test_admin_is_TRUE_or_FALSE(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "XXX"])
 #         out, err = self.call_command()
 #         self.assertIn("is_admin", err)
@@ -1068,7 +1065,7 @@ class StructureMemberTestCase(APITestCase):
 #         self.assertEqual(len(mail.outbox), 0)
 
 #     def test_email_is_valid(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         self.add_row(["Foo", "Buzz", "foo.buzz.com", structure.siret, "", "FALSE"])
 #         out, err = self.call_command()
 #         self.assertIn("email", err)
@@ -1077,7 +1074,7 @@ class StructureMemberTestCase(APITestCase):
 #         self.assertEqual(len(mail.outbox), 0)
 
 #     def test_firstname_is_valid(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         self.add_row(["Foo", "", "foo@buzz.com", structure.siret, "", "FALSE"])
 #         out, err = self.call_command()
 #         self.assertIn("first_name", err)
@@ -1086,7 +1083,7 @@ class StructureMemberTestCase(APITestCase):
 #         self.assertEqual(len(mail.outbox), 0)
 
 #     def test_lastname_is_valid(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         self.add_row(["", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
 #         out, err = self.call_command()
 #         self.assertIn("last_name", err)
@@ -1095,14 +1092,14 @@ class StructureMemberTestCase(APITestCase):
 #         self.assertEqual(len(mail.outbox), 0)
 
 #     def test_invitee_not_a_valid_user_yet(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
 #         out, err = self.call_command()
 #         user = User.objects.filter(email="foo@buzz.com").first()
 #         self.assertFalse(user.is_valid)
 
 #     def test_invitee_not_a_valid_member_yet(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         self.add_row(["Foo", "Buzz", "foo@buzz.com", structure.siret, "", "FALSE"])
 #         out, err = self.call_command()
 #         members = StructurePutativeMember.objects.filter(
@@ -1115,7 +1112,7 @@ class StructureMemberTestCase(APITestCase):
 #         self.assertFalse(real_members.exists())
 
 #     def test_can_invite_existing_user(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         user = baker.make(
 #             "users.User", first_name="foo", last_name="bar", is_valid=True
 #         )
@@ -1140,7 +1137,7 @@ class StructureMemberTestCase(APITestCase):
 #         )
 
 #     def test_wont_rename_existing_user(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         user = baker.make("users.User", is_valid=True)
 #         self.add_row(
 #             ["NEWNAME", "NEWFIRSTNAME", user.email, structure.siret, "", "FALSE"]
@@ -1150,7 +1147,7 @@ class StructureMemberTestCase(APITestCase):
 #         self.assertEqual(fresh_user.get_full_name(), user.get_full_name())
 
 #     def test_existing_user_stay_valid_user(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         user = baker.make(
 #             "users.User", first_name="foo", last_name="bar", is_valid=True
 #         )
@@ -1162,7 +1159,7 @@ class StructureMemberTestCase(APITestCase):
 #         self.assertTrue(fresh_user.is_valid)
 
 #     def test_existing_user_stay_valid_member(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         user = baker.make(
 #             "users.User", first_name="foo", last_name="bar", is_valid=True
 #         )
@@ -1178,7 +1175,7 @@ class StructureMemberTestCase(APITestCase):
 #         self.assertFalse(fresh_member.is_admin)
 
 #     def test_member_can_be_promoted_to_admin(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         user = baker.make(
 #             "users.User", first_name="foo", last_name="bar", is_valid=True
 #         )
@@ -1191,7 +1188,7 @@ class StructureMemberTestCase(APITestCase):
 #         self.assertTrue(fresh_member.is_admin)
 
 #     def test_member_cant_be_demoted_from_admin(self):
-#         structure = self.create_structure()
+#         structure = make_structure()
 #         user = baker.make(
 #             "users.User", first_name="foo", last_name="bar", is_valid=True
 #         )
@@ -1204,7 +1201,7 @@ class StructureMemberTestCase(APITestCase):
 #         self.assertTrue(fresh_member.is_admin)
 
 #     def test_create_new_antenna_on_the_fly(self):
-#         structure = self.create_structure(name="My Structure")
+#         structure = make_structure(name="My Structure")
 #         city = baker.make("City", code="93048", name="Montreuil")
 #         self.add_row(
 #             ["Foo", "Buzz", "foo@buzz.com", structure.siret, city.code, "FALSE"]
@@ -1232,7 +1229,7 @@ class StructureMemberTestCase(APITestCase):
 #         self.assertEqual(len(mail.outbox), 1)
 
 #     def test_user_belong_to_antenna(self):
-#         structure = self.create_structure(name="My Structure")
+#         structure = make_structure(name="My Structure")
 #         city = baker.make("City", code="93048", name="Montreuil")
 #         self.add_row(
 #             ["Foo", "Buzz", "foo@buzz.com", structure.siret, city.code, "FALSE"]
@@ -1251,7 +1248,7 @@ class StructureMemberTestCase(APITestCase):
 #         )
 
 #     def test_user_dont_belong_to_parent(self):
-#         structure = self.create_structure(name="My Structure")
+#         structure = make_structure(name="My Structure")
 #         city = baker.make("City", code="93048", name="Montreuil")
 #         self.add_row(
 #             ["Foo", "Buzz", "foo@buzz.com", structure.siret, city.code, "FALSE"]
@@ -1265,7 +1262,7 @@ class StructureMemberTestCase(APITestCase):
 #         )
 
 #     def test_find_existing_antenna(self):
-#         structure = self.create_structure(name="My Structure", siret="12345678901234")
+#         structure = make_structure(name="My Structure", siret="12345678901234")
 #         antenna = baker.make(
 #             "Structure", siret="12345678993048", is_antenna=True, parent=structure
 #         )
