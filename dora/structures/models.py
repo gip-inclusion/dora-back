@@ -144,7 +144,9 @@ class Structure(models.Model):
         unique=True,
     )
     branch_id = models.CharField(max_length=5, blank=True, default="")
-    parent = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True)
+    parent = models.ForeignKey(
+        "self", on_delete=models.CASCADE, blank=True, null=True, related_name="branches"
+    )
 
     code_safir_pe = models.CharField(
         verbose_name="Code Safir Pole Emploi",

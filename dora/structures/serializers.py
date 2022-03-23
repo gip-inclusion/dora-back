@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework import exceptions, serializers
 
@@ -27,6 +28,7 @@ class StructureSerializer(serializers.ModelSerializer):
     is_admin = serializers.SerializerMethodField()
 
     services = serializers.SerializerMethodField()
+    branches = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
@@ -58,6 +60,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "is_member",
             "parent",
             "services",
+            "branches",
         ]
         lookup_field = "slug"
 
@@ -101,14 +104,37 @@ class StructureSerializer(serializers.ModelSerializer):
 
         user = self.context.get("request").user
         qs = obj.services.filter(is_draft=False, is_suggestion=False)
-        if user.is_authenticated and user.is_staff or obj.is_member(user):
+        if user.is_authenticated and (user.is_staff or obj.is_member(user)):
             qs = obj.services.all()
         return StructureServicesSerializer(qs, many=True).data
 
+    def get_branches(self, obj):
+        class StructureListSerializerWithCount(StructureListSerializer):
+            num_services = serializers.IntegerField()
+
+            class Meta:
+                model = Structure
+                fields = [
+                    "slug",
+                    "name",
+                    "department",
+                    "typology_display",
+                    "modification_date",
+                    "num_services",
+                ]
+                lookup_field = "slug"
+
+        user = self.context.get("request").user
+        qs_filter = Q(services__is_draft=False, services__is_suggestion=False)
+        if user.is_authenticated and user.is_staff or obj.is_member(user):
+            qs_filter = Q()
+        branches = obj.branches.annotate(
+            num_services=Count("services", filter=qs_filter)
+        )
+        return StructureListSerializerWithCount(branches, many=True).data
+
 
 class StructureListSerializer(StructureSerializer):
-    # num_services = serializers.SerializerMethodField()
-
     class Meta:
         model = Structure
         fields = [
@@ -117,13 +143,9 @@ class StructureListSerializer(StructureSerializer):
             "department",
             "typology_display",
             "modification_date",
-            "parent"
-            # "num_services"
+            "parent",
         ]
         lookup_field = "slug"
-
-    # def get_num_services(self, obj):
-    #     return obj.services.count()
 
 
 class SiretClaimedSerializer(serializers.ModelSerializer):
