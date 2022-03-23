@@ -2,7 +2,9 @@ import csv
 import logging
 from itertools import groupby
 from pathlib import Path
+from typing import Tuple
 
+from django.contrib.gis.geos import GEOSGeometry
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from tqdm import tqdm
@@ -14,6 +16,11 @@ from dora.users.models import User
 
 logging.basicConfig()
 logger = logging.getLogger()
+
+
+def hexewkb_str_to_lonlat(geom: str) -> Tuple[float, float]:
+    pos = GEOSGeometry(geom)
+    return pos.x, pos.y
 
 
 class Command(BaseCommand):
@@ -58,9 +65,7 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             bot_user = User.objects.get_dora_bot()
-            structure_source, _ = StructureSource.objects.get_or_create(
-                value="ITOU", defaults={"label": "Import ITOU"}
-            )
+            structure_source = StructureSource.objects.get(value="ITOU")
 
             for siret, data in tqdm(
                 structures_by_siret.items(), disable=logger.level < logging.INFO
@@ -103,7 +108,7 @@ class Command(BaseCommand):
                     datum["description"], limit=Structure.short_desc.field.max_length
                 )
                 if datum["coords"] != "":
-                    structure.longitude, structure.latitude = utils.normalize_coords(
+                    structure.longitude, structure.latitude = hexewkb_str_to_lonlat(
                         datum["coords"]
                     )
                 else:
@@ -111,7 +116,6 @@ class Command(BaseCommand):
                         establishment.longitude,
                         establishment.latitude,
                     )
-                structure.creation_date = datum["created_at"]
                 structure.modification_date = datum["updated_at"]
                 structure.typology = StructureTypology.objects.get(value=datum["kind"])
                 structure.save()
@@ -135,24 +139,22 @@ class Command(BaseCommand):
                             phone=utils.normalize_phone_number(antenne_datum["phone"]),
                             url=antenne_datum["website"],
                             typology=StructureTypology.objects.get(value=datum["kind"]),
-                            creation_date=antenne_datum["created_at"],
                             modification_date=antenne_datum["updated_at"],
                         )
 
-                        if antenne_datum["description"] != "":
-                            (
-                                antenne.short_desc,
-                                antenne.full_desc,
-                            ) = utils.normalize_description(
-                                datum["description"],
-                                limit=Structure.short_desc.field.max_length,
-                            )
+                        (
+                            antenne.short_desc,
+                            antenne.full_desc,
+                        ) = utils.normalize_description(
+                            datum["description"],
+                            limit=Structure.short_desc.field.max_length,
+                        )
 
                         if antenne_datum["coords"] != "":
                             (
                                 antenne.longitude,
                                 antenne.latitude,
-                            ) = utils.normalize_coords(antenne_datum["coords"])
+                            ) = hexewkb_str_to_lonlat(antenne_datum["coords"])
 
                         antenne.save()
 

@@ -9,7 +9,7 @@ class UtilsTestCase(unittest.TestCase):
             (
                 "Lorem ipsum dolor sit amet",
                 10,
-                ("Lorem i...", "Lorem ipsum dolor sit amet"),
+                ("Lorem ips…", "Lorem ipsum dolor sit amet"),
             ),
             (
                 "Lorem ipsum dolor sit amet",

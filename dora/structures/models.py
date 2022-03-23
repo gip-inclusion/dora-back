@@ -132,9 +132,6 @@ class StructureManager(models.Manager):
         return structure
 
     def create_from_parent_structure(self, parent, **kwargs):
-        # TODO(vmttn): dans le cas où les infos (e.g. contact) seraient
-        # mieux renseignées dans la structure parente, déterminer si on
-        # duplique dans l'antenne ou si on laisse vide
         structure = self.model(
             siret=None,
             parent=parent,
