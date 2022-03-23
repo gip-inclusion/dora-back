@@ -71,7 +71,10 @@ class UserInfoSerializer(serializers.ModelSerializer):
         if not user or not user.is_authenticated:
             qs = Structure.objects.none()
         else:
-            qs = Structure.objects.filter(putative_membership__user=user)
+            qs = Structure.objects.filter(
+                putative_membership__user=user,
+                putative_membership__invited_by_admin=False,
+            )
         return StructureListSerializer(qs, many=True).data
 
 

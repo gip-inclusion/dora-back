@@ -25,6 +25,7 @@ class StructureSerializer(serializers.ModelSerializer):
     parent = serializers.SlugRelatedField(slug_field="slug", read_only=True)
     can_write = serializers.SerializerMethodField()
     is_member = serializers.SerializerMethodField()
+    is_pending_member = serializers.SerializerMethodField()
     is_admin = serializers.SerializerMethodField()
 
     services = serializers.SerializerMethodField()
@@ -58,6 +59,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "can_write",
             "is_admin",
             "is_member",
+            "is_pending_member",
             "parent",
             "services",
             "branches",
@@ -72,6 +74,10 @@ class StructureSerializer(serializers.ModelSerializer):
     def get_is_member(self, obj):
         user = self.context.get("request").user
         return obj.is_member(user)
+
+    def get_is_pending_member(self, obj):
+        user = self.context.get("request").user
+        return obj.is_pending_member(user)
 
     def get_is_admin(self, obj):
         user = self.context.get("request").user
