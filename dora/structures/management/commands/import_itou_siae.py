@@ -111,6 +111,11 @@ class Command(BaseCommand):
                     structure.longitude, structure.latitude = hexewkb_str_to_lonlat(
                         datum["coords"]
                     )
+                    if (
+                        datum["geocoding_score"] is not None
+                        and datum["geocoding_score"] != ""
+                    ):
+                        structure.geocoding_score = float(datum["geocoding_score"])
                 else:
                     structure.longitude, structure.latitude = (
                         establishment.longitude,
@@ -155,6 +160,19 @@ class Command(BaseCommand):
                                 antenne.longitude,
                                 antenne.latitude,
                             ) = hexewkb_str_to_lonlat(antenne_datum["coords"])
+
+                            if (
+                                datum["geocoding_score"] is not None
+                                and datum["geocoding_score"] != ""
+                            ):
+                                structure.geocoding_score = float(
+                                    datum["geocoding_score"]
+                                )
+                        else:
+                            structure.longitude, structure.latitude = (
+                                establishment.longitude,
+                                establishment.latitude,
+                            )
 
                         antenne.save()
 
