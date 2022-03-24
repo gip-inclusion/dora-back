@@ -10,7 +10,7 @@ from django.db.models.expressions import RawSQL
 from tqdm import tqdm
 
 from dora.sirene.models import Establishment
-from dora.structures import utils
+from dora.core import utils
 from dora.structures.models import Structure, StructureSource, StructureTypology
 from dora.users.models import User
 

@@ -1,6 +1,6 @@
 import unittest
 
-from dora.structures import utils
+from dora.core import utils
 
 
 class UtilsTestCase(unittest.TestCase):
@@ -25,7 +25,7 @@ class UtilsTestCase(unittest.TestCase):
         cases = [
             ("01-02-03 04.05", "0102030405"),
             ("0102030405 - 0203040506", "0102030405"),
-            ("01020304", ""),
+            ("3509", "3509"),
         ]
 
         for input, expected in cases:
