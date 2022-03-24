@@ -189,6 +189,10 @@ class Structure(models.Model):
     longitude = models.FloatField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)
 
+    # valeur indiquant la pertinence des valeurs lat/lon issues d'un géocodage
+    # valeur allant de 0 (pas pertinent) à 1 (pertinent)
+    geocoding_score = models.FloatField(blank=True, null=True)
+
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now=True)
     creator = models.ForeignKey(
