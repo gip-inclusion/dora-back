@@ -164,9 +164,15 @@ class Command(BaseCommand):
                         establishment.longitude,
                         establishment.latitude,
                     )
-                structure.modification_date = datum["updated_at"]
                 structure.typology = StructureTypology.objects.get(value=datum["kind"])
                 structure.save()
+
+                # écriture "manuelle" de la date de modif pour contourner la réécriture
+                # automatique par django (dû à `auto_now=``)
+                if datum["updated_at"] is not None and datum["updated_at"] != "":
+                    Structure.objects.filter(id=structure.id).update(
+                        modification_date=datum["updated_at"]
+                    )
 
                 logger.debug(f"{establishment.siret} nouvellement référencé")
                 new_structures.append(structure)

@@ -121,9 +121,15 @@ class Command(BaseCommand):
                         establishment.longitude,
                         establishment.latitude,
                     )
-                structure.modification_date = datum["updated_at"]
                 structure.typology = StructureTypology.objects.get(value=datum["kind"])
                 structure.save()
+
+                # écriture "manuelle" de la date de modif pour contourner la réécriture
+                # automatique par django (dû à `auto_now=``)
+                if datum["updated_at"] is not None and datum["updated_at"] != "":
+                    Structure.objects.filter(id=structure.id).update(
+                        modification_date=datum["updated_at"]
+                    )
 
                 logger.debug(f"{siret} nouvellement référencé")
 
@@ -144,7 +150,6 @@ class Command(BaseCommand):
                             phone=utils.normalize_phone_number(antenne_datum["phone"]),
                             url=antenne_datum["website"],
                             typology=StructureTypology.objects.get(value=datum["kind"]),
-                            modification_date=antenne_datum["updated_at"],
                         )
 
                         (
@@ -175,6 +180,16 @@ class Command(BaseCommand):
                             )
 
                         antenne.save()
+
+                        # écriture "manuelle" de la date de modif pour contourner la réécriture
+                        # automatique par django (dû à `auto_now=``)
+                        if (
+                            antenne_datum["updated_at"] is not None
+                            and antenne_datum["updated_at"] != ""
+                        ):
+                            Structure.objects.filter(id=antenne.id).update(
+                                modification_date=antenne_datum["updated_at"]
+                            )
 
                         logger.debug(
                             f"{antenne_datum['siret']} nouvellement référencé comme "
