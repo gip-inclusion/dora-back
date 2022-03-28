@@ -50,7 +50,7 @@ def send_access_requested_notification(member, admin_user):
         "new_member_full_name": member.user.get_full_name(),
         "new_member_email": member.user.email,
         "structure_name": member.structure.name,
-        "cta_link": f"{settings.FRONTEND_URL}/tableau-de-bord/structures/{member.structure.slug}",
+        "cta_link": f"{settings.FRONTEND_URL}/structures/{member.structure.slug}",
         "homepage_url": settings.FRONTEND_URL,
     }
 
@@ -67,7 +67,7 @@ def send_access_requested_notification(member, admin_user):
 def send_access_granted_notification(member):
     params = {
         "structure_name": member.structure.name,
-        "cta_link": f"{settings.FRONTEND_URL}/tableau-de-bord/structures/{member.structure.slug}",
+        "cta_link": f"{settings.FRONTEND_URL}/structures/{member.structure.slug}",
         "homepage_url": settings.FRONTEND_URL,
     }
 
