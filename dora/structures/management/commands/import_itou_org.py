@@ -9,8 +9,8 @@ from django.db import transaction
 from django.db.models.expressions import RawSQL
 from tqdm import tqdm
 
-from dora.sirene.models import Establishment
 from dora.core import utils
+from dora.sirene.models import Establishment
 from dora.structures.models import Structure, StructureSource, StructureTypology
 from dora.users.models import User
 
@@ -154,10 +154,7 @@ class Command(BaseCommand):
                     structure.longitude, structure.latitude = hexewkb_str_to_lonlat(
                         datum["coords"]
                     )
-                    if (
-                        datum["geocoding_score"] is not None
-                        and datum["geocoding_score"] != ""
-                    ):
+                    if datum["geocoding_score"] != "":
                         structure.geocoding_score = float(datum["geocoding_score"])
                 else:
                     structure.longitude, structure.latitude = (
@@ -169,7 +166,7 @@ class Command(BaseCommand):
 
                 # écriture "manuelle" de la date de modif pour contourner la réécriture
                 # automatique par django (dû à `auto_now=``)
-                if datum["updated_at"] is not None and datum["updated_at"] != "":
+                if datum["updated_at"] != "":
                     Structure.objects.filter(id=structure.id).update(
                         modification_date=datum["updated_at"]
                     )

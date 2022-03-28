@@ -133,7 +133,6 @@ class StructureManager(models.Manager):
 
     def create_from_parent_structure(self, parent, **kwargs):
         structure = self.model(
-            siret=None,
             parent=parent,
             branch_id=get_random_string(5, "abcdefghijklmnopqrstuvwxyz"),
             **kwargs,

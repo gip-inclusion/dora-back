@@ -1,5 +1,6 @@
 import csv
 import logging
+from collections import defaultdict
 from itertools import groupby
 from pathlib import Path
 from typing import Tuple
@@ -9,8 +10,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from tqdm import tqdm
 
-from dora.sirene.models import Establishment
 from dora.core import utils
+from dora.sirene.models import Establishment
 from dora.structures.models import Structure, StructureSource, StructureTypology
 from dora.users.models import User
 
@@ -60,6 +61,8 @@ class Command(BaseCommand):
             k: list(g) for k, g in groupby(antennes, lambda d: d["asp_id"])
         }
 
+        structures_by_import_result = defaultdict(list)
+
         logger.info(f"{len(structures)} structures mères en entrée")
         logger.info(f"{len(antennes)} antennes en entrée")
 
@@ -86,12 +89,14 @@ class Command(BaseCommand):
                 establishment = Establishment.objects.filter(siret=siret).first()
                 if establishment is None:
                     logger.debug(f"{siret} probablement fermé. Ignoré")
+                    structures_by_import_result["unknown_siret"].append(datum)
                     # structure probablement fermée
                     continue
 
                 structure = Structure.objects.filter(siret=establishment.siret).first()
                 if structure is not None:
                     logger.debug(f"{siret} déjà référencé. Ignoré")
+                    structures_by_import_result["known_structure"].append(datum)
                     # structure déjà référencée
                     continue
 
@@ -111,10 +116,7 @@ class Command(BaseCommand):
                     structure.longitude, structure.latitude = hexewkb_str_to_lonlat(
                         datum["coords"]
                     )
-                    if (
-                        datum["geocoding_score"] is not None
-                        and datum["geocoding_score"] != ""
-                    ):
+                    if datum["geocoding_score"] != "":
                         structure.geocoding_score = float(datum["geocoding_score"])
                 else:
                     structure.longitude, structure.latitude = (
@@ -126,12 +128,13 @@ class Command(BaseCommand):
 
                 # écriture "manuelle" de la date de modif pour contourner la réécriture
                 # automatique par django (dû à `auto_now=``)
-                if datum["updated_at"] is not None and datum["updated_at"] != "":
+                if datum["updated_at"] != "":
                     Structure.objects.filter(id=structure.id).update(
                         modification_date=datum["updated_at"]
                     )
 
                 logger.debug(f"{siret} nouvellement référencé")
+                structures_by_import_result["new_structure"].append(datum)
 
                 # antennes associées
                 if "asp_id" in datum and datum["asp_id"] in antennes_by_asp_id:
@@ -166,10 +169,7 @@ class Command(BaseCommand):
                                 antenne.latitude,
                             ) = hexewkb_str_to_lonlat(antenne_datum["coords"])
 
-                            if (
-                                datum["geocoding_score"] is not None
-                                and datum["geocoding_score"] != ""
-                            ):
+                            if datum["geocoding_score"] != "":
                                 structure.geocoding_score = float(
                                     datum["geocoding_score"]
                                 )
@@ -183,10 +183,7 @@ class Command(BaseCommand):
 
                         # écriture "manuelle" de la date de modif pour contourner la réécriture
                         # automatique par django (dû à `auto_now=``)
-                        if (
-                            antenne_datum["updated_at"] is not None
-                            and antenne_datum["updated_at"] != ""
-                        ):
+                        if antenne_datum["updated_at"] != "":
                             Structure.objects.filter(id=antenne.id).update(
                                 modification_date=antenne_datum["updated_at"]
                             )
@@ -195,3 +192,23 @@ class Command(BaseCommand):
                             f"{antenne_datum['siret']} nouvellement référencé comme "
                             f"antenne de {siret}"
                         )
+                        structures_by_import_result["new_structure"].append(
+                            antenne_datum
+                        )
+
+            logger.info(
+                f"{len(structures_by_import_result['new_structure'])} "
+                "nouvelles structures"
+            )
+            logger.info(
+                f"{len(structures_by_import_result['known_structure'])} "
+                "sirets déjà référencés"
+            )
+            logger.info(
+                f"{len(structures_by_import_result['unknown_siret'])} "
+                "entrées non identifiables :"
+            )
+            for d in structures_by_import_result["unknown_siret"]:
+                logger.info(
+                    f"https://annuaire-entreprises.data.gouv.fr/etablissement/{d['siret']}"
+                )
