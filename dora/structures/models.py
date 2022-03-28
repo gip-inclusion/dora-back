@@ -11,11 +11,13 @@ from django.utils.text import slugify
 from dora.core.models import EnumModel
 from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import validate_safir, validate_siret
+from dora.sirene.models import Establishment
 from dora.sirene.serializers import EstablishmentSerializer
 from dora.structures.emails import (
     send_access_granted_notification,
     send_access_rejected_notification,
     send_access_requested_notification,
+    send_branch_created_notification,
     send_invitation_accepted_notification,
 )
 from dora.users.models import User
@@ -237,15 +239,30 @@ class Structure(models.Model):
     def clean(self):
         if not (self.siret is not None or self.parent is not None):
             raise ValidationError("Seules les antennes peuvent avoir un siret vide")
-        if not (self.parent is None or self.branch_id != ""):
-            raise ValidationError("Les antennes doivent avoir un branch id")
+        if self.siret is not None:
+            try:
+                Establishment.objects.get(siret=self.siret)
+            except Establishment.DoesNotExist:
+                raise ValidationError("SIRET invalide")
+            if self.parent and self.siret[:9] != self.parent.siret[:9]:
+                raise ValidationError(
+                    f"Le SIREN {self.siret[:9]}  est different de celui de la structure mère {self.parent.siret[:9]}"
+                )
 
     def __str__(self):
         return self.name
 
+    def _make_unique_branch_id(self):
+        while True:
+            unique_id = get_random_string(5, "abcdefghijklmnopqrstuvwxyz")
+            if not self.__class__.objects.filter(branch_id=unique_id).exists():
+                return unique_id
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = make_unique_slug(self, self.name)
+        if self.parent and not self.branch_id:
+            self.branch_id = self._make_unique_branch_id()
         if not self.department and self.city_code:
             code = self.city_code
             self.department = code_insee_to_code_dept(code)
@@ -273,3 +290,11 @@ class Structure(models.Model):
         return StructurePutativeMember.objects.filter(
             structure_id=self.id, user_id=user.id, invited_by_admin=False
         ).exists()
+
+    def post_create_branch(self, branch):
+        structure_admins = StructureMember.objects.filter(structure=self, is_admin=True)
+        for admin in structure_admins:
+            StructureMember.objects.create(
+                structure=branch, is_admin=True, user=admin.user
+            )
+            send_branch_created_notification(self, branch, admin.user)

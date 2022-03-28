@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin.filters import RelatedOnlyFieldListFilter
+from django.forms.models import BaseInlineFormSet
 
 from dora.core.admin import EnumAdmin
 
@@ -66,9 +67,23 @@ class StructurePutativeMemberInline(admin.TabularInline):
     extra = 0
 
 
+class BranchFormSet(BaseInlineFormSet):
+    def save_new_objects(self, commit=True):
+        saved_instances = super().save_new_objects(commit)
+
+        if commit and saved_instances:
+            for instance in saved_instances:
+                instance.parent.post_create_branch(instance)
+        return saved_instances
+
+
 class BranchInline(admin.TabularInline):
     model = Structure
-    fields = ["siret", "name", "branch_id"]
+    formset = BranchFormSet
+    fields = [
+        "siret",
+        "name",
+    ]
     extra = 1
     verbose_name = "Antenne"
     verbose_name_plural = "Antennes"
