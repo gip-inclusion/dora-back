@@ -65,7 +65,7 @@ class StructureFilter(django_filters.FilterSet):
 @extend_schema(tags=["Structures"])
 class StructureViewSet(viewsets.ReadOnlyModelViewSet):
     versioning_class = NamespaceVersioning
-    queryset = Structure.objects.all()
+    queryset = Structure.objects.select_related("typology", "source").all()
     serializer_class = StructureSerializer
     permission_classes = [permissions.AllowAny]
     renderer_classes = [PrettyCamelCaseJSONRenderer]
@@ -124,7 +124,22 @@ class ServiceFilter(django_filters.FilterSet):
 @extend_schema(tags=["Services"])
 class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
     versioning_class = NamespaceVersioning
-    queryset = Service.objects.filter(is_draft=False, is_suggestion=False)
+    queryset = (
+        Service.objects.select_related("structure")
+        .prefetch_related(
+            "kinds",
+            "categories",
+            "subcategories",
+            "access_conditions",
+            "concerned_public",
+            "beneficiaries_access_modes",
+            "coach_orientation_modes",
+            "requirements",
+            "credentials",
+            "location_kinds",
+        )
+        .filter(is_draft=False, is_suggestion=False)
+    )
     serializer_class = ServiceSerializer
     permission_classes = [permissions.AllowAny]
     renderer_classes = [PrettyCamelCaseJSONRenderer]
