@@ -313,12 +313,14 @@ CSP_EXCLUDE_URL_PREFIXES = tuple(
 ###################
 SPECTACULAR_SETTINGS = {
     "TITLE": "API référentiel de l’offre d’insertion",
-    "DESCRIPTION": "Concevoir ensemble un commun de l'insertion, facilitant l'interopérabilité entre producteurs et consommateurs de données.",
+    "DESCRIPTION": "",
     "VERSION": None,
-    "CAMELIZE_NAMES": True,
+    "CAMELIZE_NAMES": False,
     "POSTPROCESSING_HOOKS": [
         "drf_spectacular.hooks.postprocess_schema_enums",
         "drf_spectacular.contrib.djangorestframework_camel_case.camelize_serializer_fields",
     ],
     "SORT_OPERATIONS": False,
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_NO_READ_ONLY_REQUIRED": True,
 }
