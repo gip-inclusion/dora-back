@@ -68,7 +68,7 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             bot_user = User.objects.get_dora_bot()
-            structure_source = StructureSource.objects.get(value="ITOU")
+            structure_source = StructureSource.objects.get(value="plateforme-inclusion")
 
             for siret, data in tqdm(
                 structures_by_siret.items(), disable=logger.level < logging.INFO

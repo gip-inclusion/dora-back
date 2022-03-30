@@ -47,7 +47,7 @@ class Command(BaseCommand):
         logger.info(f"{len(data)} lignes en entrée")
 
         bot_user = User.objects.get_dora_bot()
-        structure_source = StructureSource.objects.get(value="ITOU")
+        structure_source = StructureSource.objects.get(value="plateforme-inclusion")
 
         known_structures = []
         unidentifiables = []
