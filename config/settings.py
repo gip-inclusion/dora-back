@@ -334,3 +334,13 @@ if DEBUG:
     SILKY_PYTHON_PROFILER = True
     INSTALLED_APPS.append("silk")
     MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE
+
+###############
+# Query Count #
+###############
+if DEBUG:
+    MIDDLEWARE = ["querycount.middleware.QueryCountMiddleware"] + MIDDLEWARE
+    QUERYCOUNT = {
+        "IGNORE_SQL_PATTERNS": [r"^/admin/", r"silk_"],
+        "DISPLAY_DUPLICATES": None,
+    }
