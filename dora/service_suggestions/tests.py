@@ -4,6 +4,8 @@ from django.utils import timezone
 from model_bakery import baker
 from rest_framework.test import APITestCase, APITransactionTestCase
 
+from dora.core.test_utils import make_structure
+
 from .models import ServiceSuggestion
 
 DUMMY_SUGGESTION = {
@@ -158,7 +160,7 @@ class ServiceSuggestionsTestCase(APITestCase):
 
     # Validated services visibility
     def test_member_can_see_suggested_service(self):
-        structure = baker.make("Structure")
+        structure = make_structure()
         service = baker.make(
             "Service", structure=structure, is_draft=False, is_suggestion=True
         )
@@ -169,7 +171,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_su_can_see_suggested_service(self):
-        structure = baker.make("Structure")
+        structure = make_structure()
         service = baker.make(
             "Service", structure=structure, is_draft=False, is_suggestion=True
         )
@@ -179,7 +181,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_anon_cant_see_suggested_service(self):
-        structure = baker.make("Structure")
+        structure = make_structure()
         service = baker.make(
             "Service", structure=structure, is_draft=False, is_suggestion=True
         )
@@ -187,7 +189,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_user_cant_see_suggested_service(self):
-        structure = baker.make("Structure")
+        structure = make_structure()
         service = baker.make(
             "Service", structure=structure, is_draft=False, is_suggestion=True
         )
@@ -198,7 +200,7 @@ class ServiceSuggestionsTestCase(APITestCase):
 
     # STRUCTURE MODERATION
     def test_member_can_delete(self):
-        structure = baker.make("Structure")
+        structure = make_structure()
         service = baker.make(
             "Service", structure=structure, is_draft=True, is_suggestion=True
         )
@@ -209,7 +211,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         self.assertEqual(response.status_code, 204)
 
     def test_su_can_delete(self):
-        structure = baker.make("Structure")
+        structure = make_structure()
         service = baker.make(
             "Service", structure=structure, is_draft=True, is_suggestion=True
         )
@@ -219,7 +221,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         self.assertEqual(response.status_code, 204)
 
     def test_anon_cant_delete(self):
-        structure = baker.make("Structure")
+        structure = make_structure()
         service = baker.make(
             "Service", structure=structure, is_draft=True, is_suggestion=True
         )
@@ -227,7 +229,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_user_cant_delete(self):
-        structure = baker.make("Structure")
+        structure = make_structure()
         service = baker.make(
             "Service", structure=structure, is_draft=True, is_suggestion=True
         )
@@ -237,7 +239,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_member_can_convert_to_draft(self):
-        structure = baker.make("Structure")
+        structure = make_structure()
         service = baker.make(
             "Service", structure=structure, is_draft=True, is_suggestion=True
         )
@@ -248,7 +250,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_su_can_convert_to_draft(self):
-        structure = baker.make("Structure")
+        structure = make_structure()
         service = baker.make(
             "Service", structure=structure, is_draft=True, is_suggestion=True
         )
@@ -258,7 +260,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_anon_cant_convert_to_draft(self):
-        structure = baker.make("Structure")
+        structure = make_structure()
         service = baker.make(
             "Service", structure=structure, is_draft=True, is_suggestion=True
         )
@@ -266,7 +268,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_user_cant_convert_to_draft(self):
-        structure = baker.make("Structure")
+        structure = make_structure()
         service = baker.make(
             "Service", structure=structure, is_draft=True, is_suggestion=True
         )

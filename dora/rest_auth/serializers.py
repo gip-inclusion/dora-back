@@ -4,6 +4,8 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from dora.sirene.models import Establishment
+from dora.structures.models import Structure
+from dora.structures.serializers import StructureListSerializer
 from dora.users.models import User
 
 
@@ -39,6 +41,8 @@ class LoginSerializer(serializers.Serializer):
 class UserInfoSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="get_full_name", read_only=True)
     short_name = serializers.CharField(source="get_short_name", read_only=True)
+    structures = serializers.SerializerMethodField()
+    pending_structures = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -52,7 +56,26 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "newsletter",
             "is_staff",
             "is_bizdev",
+            "structures",
+            "pending_structures",
         ]
+
+    def get_structures(self, user):
+        if not user or not user.is_authenticated:
+            qs = Structure.objects.none()
+        else:
+            qs = Structure.objects.filter(membership__user=user)
+        return StructureListSerializer(qs, many=True).data
+
+    def get_pending_structures(self, user):
+        if not user or not user.is_authenticated:
+            qs = Structure.objects.none()
+        else:
+            qs = Structure.objects.filter(
+                putative_membership__user=user,
+                putative_membership__invited_by_admin=False,
+            )
+        return StructureListSerializer(qs, many=True).data
 
 
 class TokenSerializer(serializers.Serializer):

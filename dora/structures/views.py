@@ -57,7 +57,7 @@ class StructureViewSet(
 
     def get_queryset(self):
         user = self.request.user
-        only_mine = self.request.query_params.get("mine")
+        only_mine = self.request.query_params.get("mine")  # TODO: deprecate
         only_pending = self.request.query_params.get("pending")
 
         if only_mine:

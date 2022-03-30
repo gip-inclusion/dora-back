@@ -50,7 +50,7 @@ def send_access_requested_notification(member, admin_user):
         "new_member_full_name": member.user.get_full_name(),
         "new_member_email": member.user.email,
         "structure_name": member.structure.name,
-        "cta_link": f"{settings.FRONTEND_URL}/tableau-de-bord/structures/{member.structure.slug}",
+        "cta_link": f"{settings.FRONTEND_URL}/structures/{member.structure.slug}",
         "homepage_url": settings.FRONTEND_URL,
     }
 
@@ -67,7 +67,7 @@ def send_access_requested_notification(member, admin_user):
 def send_access_granted_notification(member):
     params = {
         "structure_name": member.structure.name,
-        "cta_link": f"{settings.FRONTEND_URL}/tableau-de-bord/structures/{member.structure.slug}",
+        "cta_link": f"{settings.FRONTEND_URL}/structures/{member.structure.slug}",
         "homepage_url": settings.FRONTEND_URL,
     }
 
@@ -94,4 +94,24 @@ def send_access_rejected_notification(member):
         member.user.email,
         body,
         tags=["access-rejected"],
+    )
+
+
+def send_branch_created_notification(structure, branch, admin_user):
+    params = {
+        "recipient_email": admin_user.email,
+        "recipient_name": admin_user.get_short_name(),
+        "structure_name": structure.name,
+        "cta_link": f"{settings.FRONTEND_URL}/structures/{branch.slug}",
+        "branch_name": branch.name,
+        "homepage_url": settings.FRONTEND_URL,
+    }
+
+    body = render_to_string("notification-branch-created.html", params)
+
+    send_mail(
+        "[DORA] Votre antenne a été créée",
+        admin_user.email,
+        body,
+        tags=["branch-created"],
     )
