@@ -1,6 +1,9 @@
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path, register_converter
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
 from rest_framework.routers import SimpleRouter
+from rest_framework.versioning import NamespaceVersioning
 
 import dora.admin_express.views
 import dora.core.views
@@ -37,8 +40,35 @@ register_converter(InseeCodeConverter, "insee_code")
 register_converter(SiretConverter, "siret")
 
 
-urlpatterns = [
-    path("api/", include("dora.api.urls")),
+public_api_patterns = [
+    path("api/v1/", include("dora.api.urls", namespace="v1")),
+]
+
+spectacular_patterns = [
+    *[
+        path(
+            f"api/v{version}/schema/",
+            SpectacularAPIView.as_view(
+                urlconf=public_api_patterns, api_version=f"v{version}"
+            ),
+            name=f"schema-v{version}",
+        )
+        for version in settings.PUBLIC_API_VERSIONS
+    ],
+    *[
+        path(
+            f"api/v{version}/schema/doc/",
+            SpectacularRedocView.as_view(
+                url_name=f"schema-v{version}",
+                versioning_class=NamespaceVersioning,
+            ),
+            name=f"api-doc-v{version}",
+        )
+        for version in settings.PUBLIC_API_VERSIONS
+    ],
+]
+
+private_api_patterns = [
     path("auth/", include("dora.rest_auth.urls")),
     path("search/", dora.services.views.search),
     path("profile/change/", dora.users.views.update_profile),
@@ -57,3 +87,6 @@ urlpatterns = [
     path("sentry-debug/", dora.core.views.trigger_error),
     path("", include(router.urls)),
 ]
+
+
+urlpatterns = [*private_api_patterns, *public_api_patterns, *spectacular_patterns]
