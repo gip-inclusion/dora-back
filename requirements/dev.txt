@@ -7,3 +7,4 @@ isort==5.9.3
 flake8==3.9.2
 ggshield==1.11.0
 click==8.0.4
+django-silk==4.3.0

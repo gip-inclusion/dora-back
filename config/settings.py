@@ -305,8 +305,9 @@ if not DEBUG:
 PUBLIC_API_VERSIONS = ["1"]
 
 CSP_EXCLUDE_URL_PREFIXES = tuple(
-    f"/api/v{version}/schema/doc/" for version in PUBLIC_API_VERSIONS
+    ["/silk/", *[f"/api/v{version}/schema/doc/" for version in PUBLIC_API_VERSIONS]]
 )
+
 
 ###################
 # DRF-SPECTACULAR #
@@ -324,3 +325,12 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_NO_READ_ONLY_REQUIRED": True,
 }
+
+
+########
+# SILK #
+########
+if DEBUG:
+    SILKY_PYTHON_PROFILER = True
+    INSTALLED_APPS.append("silk")
+    MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE

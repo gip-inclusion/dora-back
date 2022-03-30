@@ -90,3 +90,6 @@ private_api_patterns = [
 
 
 urlpatterns = [*private_api_patterns, *public_api_patterns, *spectacular_patterns]
+
+if settings.DEBUG:
+    urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
