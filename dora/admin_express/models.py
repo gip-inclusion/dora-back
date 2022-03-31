@@ -10,13 +10,33 @@ class AdminDivisionType(models.TextChoices):
     COUNTRY = ("country", "France entière")
 
 
-class GeoManager(models.Manager):
+sentinel = object()
+
+
+# Cache progressif pour les tables comportant de nombreuses géometries
+class ManyGeoManager(models.Manager):
     def get_from_code(self, insee_code):
-        # TODO: cache it
+        value = self.model._cache.get(insee_code, sentinel)
+        if value is not sentinel:
+            return value
+
         try:
-            return self.defer("geom").get(code=insee_code)
+            value = self.defer("geom").get(code=insee_code)
         except self.model.DoesNotExist:
-            return None
+            value = None
+        self.model._cache[insee_code] = value
+        return value
+
+
+# Cache instantané pour les tables comportant peu de géometries
+# on fait la requête une fois pour toute
+class FewGeoManager(models.Manager):
+    def get_from_code(self, insee_code):
+        if len(self.model._cache):
+            return self.model._cache.get(insee_code)
+
+        values = self.defer("geom").all()
+        self.model._cache = {value.code: value for value in values}
 
 
 class AdminDivision(models.Model):
@@ -24,8 +44,6 @@ class AdminDivision(models.Model):
     name = models.CharField(max_length=230)
     normalized_name = models.CharField(max_length=230)
     geom = models.MultiPolygonField(srid=4326, geography=True, spatial_index=True)
-
-    objects = GeoManager()
 
     class Meta:
         abstract = True
@@ -36,6 +54,8 @@ class City(AdminDivision):
     region = models.CharField(max_length=2, db_index=True)
     epci = models.CharField(max_length=20, db_index=True)
     population = models.IntegerField()
+    objects = ManyGeoManager()
+    _cache = {}
 
     class Meta:
         indexes = [
@@ -49,6 +69,8 @@ class City(AdminDivision):
 
 class EPCI(AdminDivision):
     nature = models.CharField(max_length=150, db_index=True)
+    objects = ManyGeoManager()
+    _cache = {}
 
     class Meta:
         indexes = [
@@ -62,6 +84,8 @@ class EPCI(AdminDivision):
 
 class Department(AdminDivision):
     region = models.CharField(max_length=2, db_index=True)
+    objects = FewGeoManager()
+    _cache = {}
 
     class Meta:
         indexes = [
@@ -74,6 +98,9 @@ class Department(AdminDivision):
 
 
 class Region(AdminDivision):
+    objects = FewGeoManager()
+    _cache = {}
+
     class Meta:
         indexes = [
             GinIndex(

@@ -43,35 +43,34 @@ class StructureViewSet(
     permission_classes = [StructurePermission]
     lookup_field = "slug"
 
-    def get_my_structures(self, user):
-        if not user or not user.is_authenticated:
-            return Structure.objects.none()
-        return Structure.objects.filter(membership__user=user)
-
-    def get_my_pending_structures(self, user):
-        if not user or not user.is_authenticated:
-            return Structure.objects.none()
-        return Structure.objects.filter(putative_membership__user=user).exclude(
-            putative_membership__invited_by_admin=True
-        )
-
     def get_queryset(self):
         user = self.request.user
         only_mine = self.request.query_params.get("mine")  # TODO: deprecate
         only_pending = self.request.query_params.get("pending")
 
+        all_structures = Structure.objects.select_related(
+            "typology", "source", "parent"
+        ).all()
         if only_mine:
+            if not user or not user.is_authenticated:
+                return Structure.objects.none()
             return (
-                self.get_my_structures(user).order_by("-modification_date").distinct()
-            )
-        elif only_pending:
-            return (
-                self.get_my_pending_structures(user)
+                all_structures.filter(membership__user=user)
                 .order_by("-modification_date")
                 .distinct()
             )
+        elif only_pending:
+            if not user or not user.is_authenticated:
+                return Structure.objects.none()
+            return (
+                all_structures.filter(putative_membership__user=user)
+                .exclude(putative_membership__invited_by_admin=True)
+                .order_by("-modification_date")
+                .distinct()
+            )
+
         else:
-            return Structure.objects.all().order_by("-modification_date")
+            return all_structures.order_by("-modification_date")
 
     def get_serializer_class(self):
         if self.action == "list":

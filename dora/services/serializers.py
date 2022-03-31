@@ -293,12 +293,16 @@ class ServiceSerializer(serializers.ModelSerializer):
         lookup_field = "slug"
 
     def get_category(self, obj):
-        cat = obj.categories.first()
-        return cat.value if cat else ""
+        # On n'utilise volontairement pas .first() ici pour éviter une requete supplémentaire
+        # (obj.categories est caché via un prefetch_related)
+        cats = obj.categories.all()
+        return cats[0].value if cats else ""
 
     def get_category_display(self, obj):
-        cat = obj.categories.first()
-        return cat.label if cat else ""
+        # On n'utilise volontairement pas .first() ici pour éviter une requete supplémentaire
+        # (obj.categories est caché via un prefetch_related)
+        cats = obj.categories.all()
+        return cats[0].label if cats else ""
 
     def get_is_available(self, obj):
         return True
@@ -403,7 +407,24 @@ class AnonymousServiceSerializer(ServiceSerializer):
         return True if obj.is_contact_info_public else None
 
 
+class StructureSerializerInList(StructureSerializer):
+    class Meta:
+        model = Structure
+        fields = [
+            "slug",
+            "name",
+            "short_desc",
+            "address1",
+            "address2",
+            "postal_code",
+            "city",
+            "url",
+            "siret",
+        ]
+
+
 class ServiceListSerializer(ServiceSerializer):
+    structure_info = StructureSerializerInList(source="structure", read_only=True)
 
     diffusion_zone_type_display = serializers.SerializerMethodField()
     diffusion_zone_details_display = serializers.SerializerMethodField()
