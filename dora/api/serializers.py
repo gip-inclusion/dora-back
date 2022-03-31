@@ -50,7 +50,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "siret",
             "code_safir_pe",
             "typology",
-            "slug",
+            "id",
             "name",
             "short_desc",
             "full_desc",
@@ -141,7 +141,9 @@ class ServiceSerializer(serializers.ModelSerializer):
     diffusion_zone_type = serializers.CharField(
         source="get_diffusion_zone_type_display", read_only=True
     )
-    structure = serializers.SlugRelatedField(slug_field="siret", read_only=True)
+    structure = serializers.HyperlinkedRelatedField(
+        view_name="structure-detail", read_only=True
+    )
     creation_date = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
     modification_date = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
     publication_date = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
@@ -151,7 +153,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Service
         fields = [
-            "slug",
+            "id",
             "name",
             "short_desc",
             "full_desc",
