@@ -97,6 +97,9 @@ class Command(BaseCommand):
                 if structure is not None:
                     logger.debug(f"{siret} déjà référencé. Ignoré")
                     structures_by_import_result["known_structure"].append(datum)
+                    structure.fill_contact(
+                        email=datum["email"], phone=datum["phone"], url=datum["website"]
+                    )
                     # structure déjà référencée
                     continue
 
@@ -139,7 +142,7 @@ class Command(BaseCommand):
                 # antennes associées
                 if "asp_id" in datum and datum["asp_id"] in antennes_by_asp_id:
                     for antenne_datum in antennes_by_asp_id[datum["asp_id"]]:
-                        antenne = Structure.objects.create_from_parent_structure(
+                        antenne = Structure.objects.create(
                             parent=structure,
                             name=antenne_datum["name"],
                             source=structure.source,

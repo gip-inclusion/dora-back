@@ -133,9 +133,12 @@ class Command(BaseCommand):
 
                 structure = Structure.objects.filter(siret=establishment.siret).first()
                 if structure is not None:
+                    # structure déjà référencée
                     known_structures.append(datum)
                     logger.debug(f"{establishment.siret} déjà référencé. Ignoré")
-                    # structure déjà référencée
+                    structure.fill_contact(
+                        email=datum["email"], phone=datum["phone"], url=datum["website"]
+                    )
                     continue
 
                 # nouvelle structure

@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -136,15 +137,6 @@ class StructureManager(models.Manager):
             ape=data["ape"],
             longitude=data["longitude"],
             latitude=data["latitude"],
-        )
-        structure.save()
-        return structure
-
-    def create_from_parent_structure(self, parent, **kwargs):
-        structure = self.model(
-            parent=parent,
-            branch_id=get_random_string(5, "abcdefghijklmnopqrstuvwxyz"),
-            **kwargs,
         )
         structure.save()
         return structure
@@ -310,3 +302,15 @@ class Structure(models.Model):
                 structure=branch, is_admin=True, user=admin.user
             )
             send_branch_created_notification(self, branch, admin.user)
+
+    def fill_contact(
+        self,
+        email: Optional[str] = None,
+        phone: Optional[str] = None,
+        url: Optional[str] = None,
+    ):
+        """Complète les informations de contact"""
+        self.email = self.email or email or ""
+        self.phone = self.phone or phone or ""
+        self.url = self.url or url or ""
+        self.save(update_fields=["email", "phone", "url"])
