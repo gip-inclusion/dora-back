@@ -20,28 +20,40 @@ class StructureTypologySerializer(serializers.ModelSerializer):
     class Meta:
         model = StructureTypology
         fields = ["value", "label"]
+        read_only_fields = ["value", "label"]
 
 
 class StructureSourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = StructureSource
         fields = ["value", "label"]
+        read_only_fields = ["value", "label"]
 
 
 class StructureSerializer(serializers.ModelSerializer):
     typology = StructureTypologySerializer(read_only=True)
     source = StructureSourceSerializer(read_only=True)
-    creation_date = serializers.DateTimeField(format="%Y-%m-%d")
-    modification_date = serializers.DateTimeField(format="%Y-%m-%d")
+    creation_date = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
+    modification_date = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
     link_on_source = serializers.SerializerMethodField()
+    services = serializers.HyperlinkedRelatedField(
+        many=True, read_only=True, view_name="service-detail"
+    )
 
     class Meta:
         model = Structure
+        read_only_fields = [
+            "name",
+            "short_desc",
+            "postal_code",
+            "city",
+            "address1",
+        ]
         fields = [
             "siret",
             "code_safir_pe",
             "typology",
-            "slug",
+            "id",
             "name",
             "short_desc",
             "full_desc",
@@ -61,9 +73,10 @@ class StructureSerializer(serializers.ModelSerializer):
             "modification_date",
             "source",
             "link_on_source",
+            "services",
         ]
 
-    def get_link_on_source(self, obj):
+    def get_link_on_source(self, obj) -> str:
         return f"{settings.FRONTEND_URL}/structures/{obj.slug}"
 
 
@@ -75,36 +88,42 @@ class ServiceCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceCategory
         fields = ["value", "label"]
+        read_only_fields = ["value", "label"]
 
 
 class ServiceSubCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceSubCategory
         fields = ["value", "label"]
+        read_only_fields = ["value", "label"]
 
 
 class ServiceKindSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceKind
         fields = ["value", "label"]
+        read_only_fields = ["value", "label"]
 
 
 class BeneficiaryAccessModeSerializer(serializers.ModelSerializer):
     class Meta:
         model = BeneficiaryAccessMode
         fields = ["value", "label"]
+        read_only_fields = ["value", "label"]
 
 
 class CoachOrientationModeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CoachOrientationMode
         fields = ["value", "label"]
+        read_only_fields = ["value", "label"]
 
 
 class LocationKindSerializer(serializers.ModelSerializer):
     class Meta:
         model = LocationKind
         fields = ["value", "label"]
+        read_only_fields = ["value", "label"]
 
 
 class ServiceSerializer(serializers.ModelSerializer):
@@ -124,19 +143,21 @@ class ServiceSerializer(serializers.ModelSerializer):
     longitude = serializers.SerializerMethodField()
     latitude = serializers.SerializerMethodField()
     diffusion_zone_type = serializers.CharField(
-        source="get_diffusion_zone_type_display"
+        source="get_diffusion_zone_type_display", read_only=True
     )
-    structure = serializers.SlugRelatedField(slug_field="siret", read_only=True)
-    creation_date = serializers.DateTimeField(format="%Y-%m-%d")
-    modification_date = serializers.DateTimeField(format="%Y-%m-%d")
-    publication_date = serializers.DateTimeField(format="%Y-%m-%d")
+    structure = serializers.HyperlinkedRelatedField(
+        view_name="structure-detail", read_only=True
+    )
+    creation_date = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
+    modification_date = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
+    publication_date = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
 
     link_on_source = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
         fields = [
-            "slug",
+            "id",
             "name",
             "short_desc",
             "full_desc",
@@ -181,8 +202,15 @@ class ServiceSerializer(serializers.ModelSerializer):
             "publication_date",
             "link_on_source",
         ]
+        read_only_fields = ["name"]
 
-    def get_link_on_source(self, obj):
+    @extend_schema_field(
+        StringListField(
+            label="Critères d’admission",
+            help_text="",
+        )
+    )
+    def get_link_on_source(self, obj) -> str:
         return f"{settings.FRONTEND_URL}/services/{obj.slug}"
 
     @extend_schema_field(
