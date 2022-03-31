@@ -36,6 +36,9 @@ class StructureSerializer(serializers.ModelSerializer):
     creation_date = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
     modification_date = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
     link_on_source = serializers.SerializerMethodField()
+    services = serializers.HyperlinkedRelatedField(
+        many=True, read_only=True, view_name="service-detail"
+    )
 
     class Meta:
         model = Structure
@@ -70,6 +73,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "modification_date",
             "source",
             "link_on_source",
+            "services",
         ]
 
     def get_link_on_source(self, obj) -> str:
