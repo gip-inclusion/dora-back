@@ -73,7 +73,7 @@ class BranchFormSet(BaseInlineFormSet):
 
         if commit and saved_instances:
             for instance in saved_instances:
-                instance.parent.post_create_branch(instance)
+                instance.parent.post_create_branch(instance, self.request.user)
         return saved_instances
 
 
@@ -89,8 +89,16 @@ class BranchInline(admin.TabularInline):
     verbose_name_plural = "Antennes"
     show_change_link = True
 
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        formset.request = request
+        return formset
+
     def has_add_permission(self, request, obj):
         return obj.parent is None if obj else True
+
+    def save_formset(self, request, form, formset, change):
+        formset.save()
 
 
 class IsBranchListFilter(admin.SimpleListFilter):
