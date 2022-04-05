@@ -137,7 +137,9 @@ class Command(BaseCommand):
                     known_structures.append(datum)
                     logger.debug(f"{establishment.siret} déjà référencé. Ignoré")
                     structure.fill_contact(
-                        email=datum["email"], phone=datum["phone"], url=datum["website"]
+                        email=datum["email"],
+                        phone=utils.normalize_phone_number(datum["phone"]),
+                        url=datum["website"],
                     )
                     continue
 
