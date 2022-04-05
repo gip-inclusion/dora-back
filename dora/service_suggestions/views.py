@@ -59,7 +59,7 @@ class ServiceSuggestionViewSet(
         structure_exists = Structure.objects.filter(siret=suggestion.siret).exists()
 
         send_mattermost_notification(
-            f":bulb: Nouvelle suggestion de service “{suggestion.name}” pour la {'**nouvelle** ' if structure_exists else ''}structure {'existante' if not structure_exists else ''}: **{establishment_data['name']} ({establishment_data['city_code']})**\n{settings.FRONTEND_URL}/tableau-de-bord/service-suggestions"
+            f":bulb: Nouvelle suggestion de service “{suggestion.name}” pour la {'**nouvelle** ' if structure_exists else ''}structure {'existante' if not structure_exists else ''}: **{establishment_data['name']} ({establishment_data['city_code']})**\n{settings.FRONTEND_URL}/services-suggestions"
         )
 
     @action(

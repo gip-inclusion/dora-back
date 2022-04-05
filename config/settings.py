@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.postgres",
+    "django_filters",
     "rest_framework",
     "rest_framework_gis",
     "corsheaders",
@@ -220,6 +221,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "dora.rest_auth.authentication.TokenAuthentication",
     ],
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     # Camel Case
     # https://github.com/vbabiy/djangorestframework-camel-case
     "DEFAULT_RENDERER_CLASSES": (
@@ -237,7 +239,6 @@ REST_FRAMEWORK = {
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
-
 
 # CORS
 # https://github.com/adamchainz/django-cors-headers/blob/main/README.rst
@@ -301,19 +302,45 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_SSL_REDIRECT = True
 
-CSP_EXCLUDE_URL_PREFIXES = "/api/schema/redoc/"
+PUBLIC_API_VERSIONS = ["1"]
+
+CSP_EXCLUDE_URL_PREFIXES = tuple(
+    ["/silk/", *[f"/api/v{version}/schema/doc/" for version in PUBLIC_API_VERSIONS]]
+)
+
 
 ###################
 # DRF-SPECTACULAR #
 ###################
 SPECTACULAR_SETTINGS = {
     "TITLE": "API référentiel de l’offre d’insertion",
-    "DESCRIPTION": "Concevoir ensemble un commun de l'insertion, facilitant l'interopérabilité entre producteurs et consommateurs de données.",
-    "VERSION": "0.0.1",
-    "CAMELIZE_NAMES": True,
-    "SERVE_AUTHENTICATION": None,
+    "DESCRIPTION": "",
+    "VERSION": None,
+    "CAMELIZE_NAMES": False,
     "POSTPROCESSING_HOOKS": [
         "drf_spectacular.hooks.postprocess_schema_enums",
         "drf_spectacular.contrib.djangorestframework_camel_case.camelize_serializer_fields",
     ],
+    "SORT_OPERATIONS": False,
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_NO_READ_ONLY_REQUIRED": True,
 }
+
+
+########
+# SILK #
+########
+if DEBUG:
+    SILKY_PYTHON_PROFILER = True
+    INSTALLED_APPS.append("silk")
+    MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE
+
+###############
+# Query Count #
+###############
+if DEBUG:
+    MIDDLEWARE = ["querycount.middleware.QueryCountMiddleware"] + MIDDLEWARE
+    QUERYCOUNT = {
+        "IGNORE_SQL_PATTERNS": [r"^/admin/", r"silk_"],
+        "DISPLAY_DUPLICATES": None,
+    }

@@ -5,6 +5,7 @@ from model_bakery import baker
 from rest_framework.test import APITestCase
 
 from dora.admin_express.models import AdminDivisionType
+from dora.core.test_utils import make_service, make_structure
 from dora.structures.models import Structure
 
 from .models import (
@@ -23,39 +24,39 @@ class ServiceTestCase(APITestCase):
         self.unaccepted_user = baker.make("users.User", is_valid=True)
         self.superuser = baker.make("users.User", is_staff=True, is_valid=True)
         self.bizdev = baker.make("users.User", is_bizdev=True, is_valid=True)
-        self.my_struct = baker.make("Structure")
+        self.my_struct = make_structure()
         self.my_struct.members.add(
             self.me,
         )
 
-        self.my_service = baker.make(
-            "Service", structure=self.my_struct, is_draft=False, creator=self.me
+        self.my_service = make_service(
+            structure=self.my_struct, is_draft=False, creator=self.me
         )
-        self.my_draft_service = baker.make(
-            "Service", structure=self.my_struct, is_draft=True, creator=self.me
+        self.my_draft_service = make_service(
+            structure=self.my_struct, is_draft=True, creator=self.me
         )
-        self.my_latest_draft_service = baker.make(
-            "Service", structure=self.my_struct, is_draft=True, creator=self.me
+        self.my_latest_draft_service = make_service(
+            structure=self.my_struct, is_draft=True, creator=self.me
         )
 
-        self.other_service = baker.make("Service", is_draft=False)
-        self.other_draft_service = baker.make("Service", is_draft=True)
+        self.other_service = make_service(is_draft=False)
+        self.other_draft_service = make_service(is_draft=True)
 
-        self.colleague_service = baker.make(
-            "Service", structure=self.my_struct, is_draft=False
-        )
-        self.colleague_draft_service = baker.make(
-            "Service", structure=self.my_struct, is_draft=True
+        self.colleague_service = make_service(structure=self.my_struct, is_draft=False)
+        self.colleague_draft_service = make_service(
+            structure=self.my_struct, is_draft=True
         )
         self.global_condition1 = baker.make("AccessCondition", structure=None)
         self.global_condition2 = baker.make("AccessCondition", structure=None)
         self.struct_condition1 = baker.make("AccessCondition", structure=self.my_struct)
         self.struct_condition2 = baker.make("AccessCondition", structure=self.my_struct)
         self.other_struct_condition1 = baker.make(
-            "AccessCondition", structure=baker.make("Structure")
+            "AccessCondition",
+            structure=make_structure(),
         )
         self.other_struct_condition2 = baker.make(
-            "AccessCondition", structure=baker.make("Structure")
+            "AccessCondition",
+            structure=make_structure(),
         )
         self.client.force_authenticate(user=self.me)
 
@@ -94,8 +95,7 @@ class ServiceTestCase(APITestCase):
 
     def test_anonymous_user_cant_see_drafts(self):
         self.client.force_authenticate(user=None)
-        service = baker.make(
-            "Service",
+        service = make_service(
             is_draft=True,
         )
         response = self.client.get(f"/services/{service.slug}/")
@@ -103,8 +103,7 @@ class ServiceTestCase(APITestCase):
 
     def test_cant_see_draft_if_not_accepted_by_admin(self):
         self.client.force_authenticate(user=self.unaccepted_user)
-        service = baker.make(
-            "Service",
+        service = make_service(
             structure=self.my_struct,
             is_draft=True,
         )
@@ -197,20 +196,20 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.data["slug"], self.my_latest_draft_service.slug)
 
     def test_get_last_draft_only_if_still_in_struct(self):
-        draft_service = baker.make(
-            "Service", structure=self.my_struct, is_draft=True, creator=self.me
+        draft_service = make_service(
+            structure=self.my_struct, is_draft=True, creator=self.me
         )
         response = self.client.get("/services/last-draft/")
         self.assertEqual(response.data["slug"], draft_service.slug)
         draft_service = Service.objects.get(pk=draft_service.pk)
-        draft_service.structure = baker.make("Structure")
+        draft_service.structure = make_structure()
         draft_service.save()
         response = self.client.get("/services/last-draft/")
         self.assertEqual(response.data["slug"], self.my_latest_draft_service.slug)
 
     def test_superuser_get_last_draft_any_struct(self):
         self.client.force_authenticate(user=self.superuser)
-        service = baker.make("Service", is_draft=True, creator=self.superuser)
+        service = make_service(is_draft=True, creator=self.superuser)
         response = self.client.get("/services/last-draft/")
         self.assertEqual(response.data["slug"], service.slug)
 
@@ -290,7 +289,9 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.data["structure"][0]["code"], "not_member_of_struct")
 
     def test_add_service_check_structure(self):
-        DUMMY_SERVICE["structure"] = baker.make("Structure").slug
+        DUMMY_SERVICE["structure"] = baker.make(
+            "Structure", _fill_optional=["siret"]
+        ).slug
         response = self.client.post(
             "/services/",
             DUMMY_SERVICE,
@@ -300,7 +301,7 @@ class ServiceTestCase(APITestCase):
 
     def test_super_user_can_add_to_any_structure(self):
         self.client.force_authenticate(user=self.superuser)
-        slug = baker.make("Structure").slug
+        slug = make_structure().slug
         Structure.objects.get(slug=slug)
         DUMMY_SERVICE["structure"] = slug
         response = self.client.post(
@@ -313,7 +314,7 @@ class ServiceTestCase(APITestCase):
 
     def test_bizdev_cant_add_to_any_structure(self):
         self.client.force_authenticate(user=self.bizdev)
-        slug = baker.make("Structure").slug
+        slug = make_structure().slug
         Structure.objects.get(slug=slug)
         DUMMY_SERVICE["structure"] = slug
         response = self.client.post(
@@ -450,7 +451,7 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_cant_add_other_structure_choice_even_if_mine(self):
-        struct = baker.make("Structure")
+        struct = make_structure()
         struct.members.add(self.me)
         struct_condition = baker.make("AccessCondition", structure=struct)
         response = self.client.patch(
@@ -515,8 +516,7 @@ class ServiceTestCase(APITestCase):
     # Confidentiality
     def test_anonymous_user_can_see_public_contact_info(self):
         self.client.force_authenticate(user=None)
-        service = baker.make(
-            "Service",
+        service = make_service(
             is_draft=False,
             contact_name="FOO",
             contact_phone="1234",
@@ -530,8 +530,7 @@ class ServiceTestCase(APITestCase):
 
     def test_anonymous_user_cant_see_private_contact_info(self):
         self.client.force_authenticate(user=None)
-        service = baker.make(
-            "Service",
+        service = make_service(
             is_draft=False,
             contact_name="FOO",
             contact_phone="1234",
@@ -544,8 +543,7 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.data["contact_email"], "")
 
     def test_logged_user_can_see_public_contact_info(self):
-        service = baker.make(
-            "Service",
+        service = make_service(
             is_draft=False,
             contact_name="FOO",
             contact_phone="1234",
@@ -559,8 +557,7 @@ class ServiceTestCase(APITestCase):
 
     def test_logged_user_can_see_public_contact_info_if_not_accepted_by_admin(self):
         self.client.force_authenticate(user=self.unaccepted_user)
-        service = baker.make(
-            "Service",
+        service = make_service(
             is_draft=False,
             contact_name="FOO",
             contact_phone="1234",
@@ -573,8 +570,7 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.data["contact_email"], "foo@bar.buz")
 
     def test_logged_user_can_see_private_contact_info(self):
-        service = baker.make(
-            "Service",
+        service = make_service(
             is_draft=False,
             contact_name="FOO",
             contact_phone="1234",
@@ -588,8 +584,7 @@ class ServiceTestCase(APITestCase):
 
     def test_nonvalidated_user_cant_see_private_contact_info(self):
         self.me.is_valid = False
-        service = baker.make(
-            "Service",
+        service = make_service(
             is_draft=False,
             contact_name="FOO",
             contact_phone="1234",
@@ -603,8 +598,7 @@ class ServiceTestCase(APITestCase):
 
     def test_logged_user_cant_see_public_contact_info_if_not_accepted_by_admin(self):
         self.client.force_authenticate(user=self.unaccepted_user)
-        service = baker.make(
-            "Service",
+        service = make_service(
             is_draft=False,
             contact_name="FOO",
             contact_phone="1234",
@@ -618,13 +612,11 @@ class ServiceTestCase(APITestCase):
 
     # Modifications
     def test_is_draft_by_default(self):
-        service = baker.make(
-            "Service",
-        )
+        service = make_service()
         self.assertTrue(service.is_draft)
 
     def test_publishing_updates_publication_date(self):
-        service = baker.make("Service", is_draft=True, structure=self.my_struct)
+        service = make_service(is_draft=True, structure=self.my_struct)
         self.assertIsNone(service.publication_date)
         response = self.client.patch(f"/services/{service.slug}/", {"is_draft": False})
         self.assertEqual(response.status_code, 200)
@@ -636,7 +628,7 @@ class ServiceTestCase(APITestCase):
         )
 
     def test_updating_without_publishing_doesnt_update_publication_date(self):
-        service = baker.make("Service", is_draft=True, structure=self.my_struct)
+        service = make_service(is_draft=True, structure=self.my_struct)
         self.assertIsNone(service.publication_date)
         response = self.client.patch(f"/services/{service.slug}/", {"name": "xxx"})
         self.assertEqual(response.status_code, 200)
@@ -711,15 +703,15 @@ class ServiceSearchTestCase(APITestCase):
         self.city2 = baker.make("City")
 
     def test_needs_city_code(self):
-        baker.make(
-            "Service", is_draft=False, diffusion_zone_type=AdminDivisionType.COUNTRY
-        )
+        make_service(is_draft=False, diffusion_zone_type=AdminDivisionType.COUNTRY)
         response = self.client.get("/search/")
         self.assertEqual(response.status_code, 404)
 
     def test_can_see_published_services(self):
-        service = baker.make(
-            "Service", is_draft=False, diffusion_zone_type=AdminDivisionType.COUNTRY
+
+        service = make_service(
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
         )
         response = self.client.get(f"/search/?city={self.city1.code}")
         self.assertEqual(response.status_code, 200)
@@ -727,9 +719,7 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(response.data[0]["slug"], service.slug)
 
     def test_cant_see_draft_services(self):
-        baker.make(
-            "Service", is_draft=True, diffusion_zone_type=AdminDivisionType.COUNTRY
-        )
+        make_service(is_draft=True, diffusion_zone_type=AdminDivisionType.COUNTRY)
         response = self.client.get(f"/search/?city={self.city1.code}")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
@@ -737,8 +727,7 @@ class ServiceSearchTestCase(APITestCase):
     def test_cant_see_suggested_services(self):
         # En théorie, on ne peut pas avoir un service avec is_draft False et is_suggestion True
         # mais vérifions quand même qu'ils sont exclus des resultats de recherche
-        baker.make(
-            "Service",
+        make_service(
             is_draft=False,
             is_suggestion=True,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
@@ -748,8 +737,7 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(len(response.data), 0)
 
     def test_can_see_service_with_future_suspension_date(self):
-        service = baker.make(
-            "Service",
+        service = make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             suspension_date=timezone.now() + timedelta(days=1),
@@ -760,8 +748,7 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(response.data[0]["slug"], service.slug)
 
     def test_cannot_see_service_with_past_suspension_date(self):
-        baker.make(
-            "Service",
+        make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             suspension_date=timezone.now() - timedelta(days=1),
@@ -771,8 +758,7 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(len(response.data), 0)
 
     def test_find_services_in_city(self):
-        service = baker.make(
-            "Service",
+        service = make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.CITY,
             diffusion_zone_details=self.city1.code,
@@ -783,8 +769,7 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(response.data[0]["slug"], service.slug)
 
     def test_find_services_in_epci(self):
-        service = baker.make(
-            "Service",
+        service = make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.EPCI,
             diffusion_zone_details=self.epci11.code,
@@ -795,8 +780,7 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(response.data[0]["slug"], service.slug)
 
     def test_find_services_in_dept(self):
-        service = baker.make(
-            "Service",
+        service = make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.DEPARTMENT,
             diffusion_zone_details=self.dept.code,
@@ -807,8 +791,7 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(response.data[0]["slug"], service.slug)
 
     def test_find_services_in_region(self):
-        service = baker.make(
-            "Service",
+        service = make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.REGION,
             diffusion_zone_details=self.region.code,
@@ -819,8 +802,7 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(response.data[0]["slug"], service.slug)
 
     def test_dont_find_services_in_other_city(self):
-        baker.make(
-            "Service",
+        make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.CITY,
             diffusion_zone_details=self.city1.code,
@@ -830,8 +812,7 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(len(response.data), 0)
 
     def test_dont_find_services_in_other_epci(self):
-        baker.make(
-            "Service",
+        make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.EPCI,
             diffusion_zone_details=self.epci11.code,
@@ -841,8 +822,7 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(len(response.data), 0)
 
     def test_dont_find_services_in_other_department(self):
-        baker.make(
-            "Service",
+        make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.DEPARTMENT,
             diffusion_zone_details=self.dept.code,
@@ -852,8 +832,7 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(len(response.data), 0)
 
     def test_dont_find_services_in_other_region(self):
-        baker.make(
-            "Service",
+        make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.REGION,
             diffusion_zone_details=self.region.code,
@@ -863,14 +842,12 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(len(response.data), 0)
 
     def test_filter_by_fee_true(self):
-        service1 = baker.make(
-            "Service",
+        service1 = make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             has_fee=True,
         )
-        baker.make(
-            "Service",
+        make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             has_fee=False,
@@ -881,14 +858,12 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(response.data[0]["slug"], service1.slug)
 
     def test_filter_by_fee_false(self):
-        baker.make(
-            "Service",
+        make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             has_fee=True,
         )
-        service2 = baker.make(
-            "Service",
+        service2 = make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             has_fee=False,
@@ -899,14 +874,12 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(response.data[0]["slug"], service2.slug)
 
     def test_filter_without_fee(self):
-        baker.make(
-            "Service",
+        make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             has_fee=True,
         )
-        baker.make(
-            "Service",
+        make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             has_fee=False,
@@ -917,14 +890,12 @@ class ServiceSearchTestCase(APITestCase):
 
     def test_filter_kinds_one(self):
         allowed_kinds = ServiceKind.objects.all()
-        service1 = baker.make(
-            "Service",
+        service1 = make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             kinds=[allowed_kinds[0], allowed_kinds[1]],
         )
-        baker.make(
-            "Service",
+        make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             kinds=[allowed_kinds[2]],
@@ -938,20 +909,17 @@ class ServiceSearchTestCase(APITestCase):
 
     def test_filter_kinds_several(self):
         allowed_kinds = ServiceKind.objects.all()
-        service1 = baker.make(
-            "Service",
+        service1 = make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             kinds=[allowed_kinds[0], allowed_kinds[1]],
         )
-        service2 = baker.make(
-            "Service",
+        service2 = make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             kinds=[allowed_kinds[1], allowed_kinds[2]],
         )
-        baker.make(
-            "Service",
+        make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             kinds=[allowed_kinds[3]],
@@ -967,14 +935,12 @@ class ServiceSearchTestCase(APITestCase):
 
     def test_filter_kinds_nomatch(self):
         allowed_kinds = ServiceKind.objects.all()
-        baker.make(
-            "Service",
+        make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             kinds=[allowed_kinds[0], allowed_kinds[1]],
         )
-        baker.make(
-            "Service",
+        make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             kinds=[allowed_kinds[1], allowed_kinds[2]],

@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin.filters import RelatedOnlyFieldListFilter
+from django.forms.models import BaseInlineFormSet
 
 from dora.core.admin import EnumAdmin
 
@@ -58,26 +59,70 @@ class StructureMemberAdmin(admin.ModelAdmin):
 
 class StructureMemberInline(admin.TabularInline):
     model = StructureMember
-    readonly_fields = ["user", "structure"]
     extra = 0
-
-    def has_add_permission(self, request, obj):
-        return False
 
 
 class StructurePutativeMemberInline(admin.TabularInline):
     model = StructurePutativeMember
-    readonly_fields = ["user", "structure"]
     extra = 0
 
+
+class BranchFormSet(BaseInlineFormSet):
+    def save_new_objects(self, commit=True):
+        saved_instances = super().save_new_objects(commit)
+
+        if commit and saved_instances:
+            for instance in saved_instances:
+                instance.parent.post_create_branch(instance, self.request.user)
+        return saved_instances
+
+
+class BranchInline(admin.TabularInline):
+    model = Structure
+    formset = BranchFormSet
+    fields = [
+        "siret",
+        "name",
+    ]
+    extra = 1
+    verbose_name = "Antenne"
+    verbose_name_plural = "Antennes"
+    show_change_link = True
+
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        formset.request = request
+        return formset
+
     def has_add_permission(self, request, obj):
-        return False
+        return obj.parent is None if obj else True
+
+    def save_formset(self, request, form, formset, change):
+        formset.save()
+
+
+class IsBranchListFilter(admin.SimpleListFilter):
+    title = "antenne"
+    parameter_name = "is_branch"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("false", "Non"),
+            ("true", "Oui"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "false":
+            return queryset.filter(parent__isnull=True)
+        if self.value() == "true":
+            return queryset.filter(parent__isnull=False)
 
 
 class StructureAdmin(admin.ModelAdmin):
     list_display = [
         "name",
         "slug",
+        "parent",
         "department",
         "typology",
         "city_code",
@@ -85,14 +130,14 @@ class StructureAdmin(admin.ModelAdmin):
         "modification_date",
         "last_editor",
     ]
-    list_filter = [
-        "source",
-        "typology",
-        "department",
-    ]
+    list_filter = [IsBranchListFilter, "source", "typology", "department"]
     search_fields = ("name", "siret", "code_safir_pe", "city", "department", "slug")
     ordering = ["-modification_date", "department"]
-    inlines = [StructureMemberInline, StructurePutativeMemberInline]
+    inlines = [StructureMemberInline, StructurePutativeMemberInline, BranchInline]
+    readonly_fields = (
+        "creation_date",
+        "modification_date",
+    )
 
 
 admin.site.register(Structure, StructureAdmin)

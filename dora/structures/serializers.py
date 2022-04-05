@@ -1,8 +1,11 @@
 from django.conf import settings
+from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework import exceptions, serializers
 
 from dora.rest_auth.models import Token
+from dora.services.models import Service
+from dora.services.serializers import ServiceListSerializer
 from dora.structures.emails import send_invitation_email
 from dora.users.models import User
 
@@ -19,7 +22,14 @@ class StructureSerializer(serializers.ModelSerializer):
         slug_field="value", queryset=StructureTypology.objects.all()
     )
     typology_display = serializers.SerializerMethodField()
+    parent = serializers.SlugRelatedField(slug_field="slug", read_only=True)
     can_write = serializers.SerializerMethodField()
+    is_member = serializers.SerializerMethodField()
+    is_pending_member = serializers.SerializerMethodField()
+    is_admin = serializers.SerializerMethodField()
+
+    services = serializers.SerializerMethodField()
+    branches = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
@@ -47,20 +57,106 @@ class StructureSerializer(serializers.ModelSerializer):
             "creation_date",
             "modification_date",
             "can_write",
+            "is_admin",
+            "is_member",
+            "is_pending_member",
+            "parent",
+            "services",
+            "branches",
         ]
         lookup_field = "slug"
 
     def get_can_write(self, obj):
+        # TODO: DEPRECATED
         user = self.context.get("request").user
         return obj.can_write(user)
+
+    def get_is_member(self, obj):
+        user = self.context.get("request").user
+        return obj.is_member(user)
+
+    def get_is_pending_member(self, obj):
+        user = self.context.get("request").user
+        return obj.is_pending_member(user)
+
+    def get_is_admin(self, obj):
+        user = self.context.get("request").user
+        return obj.is_admin(user)
 
     def get_typology_display(self, obj):
         return obj.typology.label if obj.typology else ""
 
+    def get_services(self, obj):
+        class StructureServicesSerializer(ServiceListSerializer):
+            class Meta:
+                model = Service
+                fields = [
+                    "category",
+                    "category_display",
+                    "slug",
+                    "name",
+                    "postal_code",
+                    "city",
+                    "department",
+                    "is_draft",
+                    "is_suggestion",
+                    "modification_date",
+                    "categories_display",
+                    "short_desc",
+                    "diffusion_zone_type",
+                    "diffusion_zone_type_display",
+                    "diffusion_zone_details_display",
+                ]
+
+        user = self.context.get("request").user
+        qs = obj.services.filter(is_draft=False, is_suggestion=False)
+        if user.is_authenticated and (user.is_staff or obj.is_member(user)):
+            qs = obj.services.all()
+        return StructureServicesSerializer(qs, many=True).data
+
+    def get_branches(self, obj):
+        class StructureListSerializerWithCount(StructureListSerializer):
+            num_services = serializers.IntegerField()
+
+            class Meta:
+                model = Structure
+                fields = [
+                    "slug",
+                    "name",
+                    "department",
+                    "typology_display",
+                    "modification_date",
+                    "num_services",
+                ]
+                lookup_field = "slug"
+
+        user = self.context.get("request").user
+        if user.is_authenticated and user.is_staff:
+            branches = obj.branches.annotate(num_services=Count("services"))
+        else:
+            branches_member_of = (
+                obj.branches.filter(membership__user=user)
+                if user.is_authenticated
+                else Structure.objects.none()
+            )
+            branches_other = obj.branches.exclude(pk__in=branches_member_of)
+            branches = [
+                *list(branches_member_of.annotate(num_services=Count("services"))),
+                *list(
+                    branches_other.annotate(
+                        num_services=Count(
+                            "services",
+                            filter=Q(
+                                services__is_draft=False, services__is_suggestion=False
+                            ),
+                        )
+                    )
+                ),
+            ]
+        return StructureListSerializerWithCount(branches, many=True).data
+
 
 class StructureListSerializer(StructureSerializer):
-    # num_services = serializers.SerializerMethodField()
-
     class Meta:
         model = Structure
         fields = [
@@ -69,12 +165,9 @@ class StructureListSerializer(StructureSerializer):
             "department",
             "typology_display",
             "modification_date",
-            # "num_services"
+            "parent",
         ]
         lookup_field = "slug"
-
-    # def get_num_services(self, obj):
-    #     return obj.services.count()
 
 
 class SiretClaimedSerializer(serializers.ModelSerializer):
