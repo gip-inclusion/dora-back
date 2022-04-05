@@ -98,7 +98,9 @@ class Command(BaseCommand):
                     logger.debug(f"{siret} déjà référencé. Ignoré")
                     structures_by_import_result["known_structure"].append(datum)
                     structure.fill_contact(
-                        email=datum["email"], phone=datum["phone"], url=datum["website"]
+                        email=datum["email"],
+                        phone=utils.normalize_phone_number(datum["phone"]),
+                        url=datum["website"],
                     )
                     # structure déjà référencée
                     continue
