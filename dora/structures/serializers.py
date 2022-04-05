@@ -136,12 +136,28 @@ class StructureSerializer(serializers.ModelSerializer):
                 lookup_field = "slug"
 
         user = self.context.get("request").user
-        qs_filter = Q(services__is_draft=False, services__is_suggestion=False)
-        if user.is_authenticated and user.is_staff or obj.is_member(user):
-            qs_filter = Q()
-        branches = obj.branches.annotate(
-            num_services=Count("services", filter=qs_filter)
-        )
+        if user.is_authenticated and user.is_staff:
+            branches = obj.branches.annotate(num_services=Count("services"))
+        else:
+            branches_member_of = (
+                obj.branches.filter(membership__user=user)
+                if user.is_authenticated
+                else Structure.objects.none()
+            )
+            branches_other = obj.branches.exclude(pk__in=branches_member_of)
+            branches = [
+                *list(branches_member_of.annotate(num_services=Count("services"))),
+                *list(
+                    branches_other.annotate(
+                        num_services=Count(
+                            "services",
+                            filter=Q(
+                                services__is_draft=False, services__is_suggestion=False
+                            ),
+                        )
+                    )
+                ),
+            ]
         return StructureListSerializerWithCount(branches, many=True).data
 
 

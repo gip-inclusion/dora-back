@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -188,6 +189,9 @@ class Structure(models.Model):
     department = models.CharField(max_length=3, blank=True)
     longitude = models.FloatField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)
+    # valeur indiquant la pertinence des valeurs lat/lon issues d'un géocodage
+    # valeur allant de 0 (pas pertinent) à 1 (pertinent)
+    geocoding_score = models.FloatField(blank=True, null=True)
 
     ape = models.CharField(max_length=6, blank=True)
 
@@ -291,10 +295,26 @@ class Structure(models.Model):
             structure_id=self.id, user_id=user.id, invited_by_admin=False
         ).exists()
 
-    def post_create_branch(self, branch):
+    def post_create_branch(self, branch, user):
+        branch.creator = user
+        branch.last_editor = user
+        branch.source = StructureSource.objects.get(value="porteur")
+        branch.save()
         structure_admins = StructureMember.objects.filter(structure=self, is_admin=True)
         for admin in structure_admins:
             StructureMember.objects.create(
                 structure=branch, is_admin=True, user=admin.user
             )
             send_branch_created_notification(self, branch, admin.user)
+
+    def fill_contact(
+        self,
+        email: Optional[str] = None,
+        phone: Optional[str] = None,
+        url: Optional[str] = None,
+    ):
+        """Complète les informations de contact"""
+        self.email = self.email or email or ""
+        self.phone = self.phone or phone or ""
+        self.url = self.url or url or ""
+        self.save(update_fields=["email", "phone", "url"])

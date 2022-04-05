@@ -69,7 +69,6 @@ class StructureViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = StructureSerializer
     permission_classes = [permissions.AllowAny]
     renderer_classes = [PrettyCamelCaseJSONRenderer]
-    lookup_field = "slug"
     filterset_class = StructureFilter
 
 
@@ -100,9 +99,7 @@ class ServiceFilter(django_filters.FilterSet):
     siret = django_filters.CharFilter(
         field_name="structure__siret",
     )
-    structure = django_filters.CharFilter(
-        field_name="structure__slug",
-    )
+    structure = django_filters.ModelChoiceFilter(queryset=Structure.objects.all())
     department = django_filters.CharFilter(
         field_name="structure__department",
     )
@@ -143,7 +140,6 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ServiceSerializer
     permission_classes = [permissions.AllowAny]
     renderer_classes = [PrettyCamelCaseJSONRenderer]
-    lookup_field = "slug"
     filterset_class = ServiceFilter
 
 
