@@ -1,15 +1,11 @@
 from django.db import migrations
-
-from dora.admin_express.utils import normalize_string_for_search
+from django.db.models.functions import RTrim
 
 
 def normalize_admin_division_name(apps, _):
-    Department = apps.get_model("admin_express", "Department")
-    for department in Department.objects.all():
-        department.normalized_name = normalize_string_for_search(
-            department.normalized_name
-        )
-        department.save(update_fields=["normalized_name"])
+    for model_name in ["City", "EPCI", "Department", "Region"]:
+        model = apps.get_model("admin_express", model_name)
+        model.objects.update(normalized_name=RTrim("normalized_name"))
 
 
 class Migration(migrations.Migration):
