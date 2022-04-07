@@ -4,12 +4,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
+from dora.admin_express.utils import main_insee_code_to_arrdts
+
 from .models import Establishment
 from .serializers import EstablishmentSerializer
-
-# prepare DB https://stackoverflow.com/questions/47230566/using-unaccent-with-searchvector-and-searchquery-in-django
-# or rather just unaccent the query string?
-# Add a search vector field for faster search
 
 
 @api_view()
@@ -19,8 +17,12 @@ def search_sirene(request, citycode):
     if not q:
         return Response("need q")
 
+    # La base SIRENE contient les code insee par arrondissement
+    # mais on veut faire une recherche sur la ville entière
+    citycodes = main_insee_code_to_arrdts(citycode)
+
     results = (
-        Establishment.objects.filter(city_code=citycode)
+        Establishment.objects.filter(city_code__in=citycodes)
         .annotate(similarity=TrigramSimilarity("full_search_text", q))
         .order_by("-similarity")
     )
