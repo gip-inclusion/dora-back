@@ -46,7 +46,7 @@ def search(request):
         .order_by(*sort_fields)[:10]
     )
 
-    return Response(AdminDivisionSerializer(qs.values(), many=True).data)
+    return Response(AdminDivisionSerializer(qs.all(), many=True).data)
 
 
 @api_view()
