@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
-from dora.admin_express.utils import main_insee_code_to_arrdt
+from dora.admin_express.utils import main_insee_code_to_arrdts
 
 from .models import Establishment
 from .serializers import EstablishmentSerializer
@@ -19,7 +19,7 @@ def search_sirene(request, citycode):
 
     # La base SIRENE contient les code insee par arrondissement
     # mais on veut faire une recherche sur la ville entière
-    citycodes = main_insee_code_to_arrdt(citycode)
+    citycodes = main_insee_code_to_arrdts(citycode)
 
     results = (
         Establishment.objects.filter(city_code__in=citycodes)

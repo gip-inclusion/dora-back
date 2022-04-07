@@ -1,7 +1,7 @@
 from unidecode import unidecode
 
 CODE_INSEE_PARIS = "75056"
-CODE_INSEE_PARIS_ARRDT = [
+CODE_INSEE_PARIS_ARRDTS = [
     "75101",
     "75102",
     "75103",
@@ -24,7 +24,7 @@ CODE_INSEE_PARIS_ARRDT = [
     "75120",
 ]
 CODE_INSEE_LYON = "69123"
-CODE_INSEE_LYON_ARRDT = [
+CODE_INSEE_LYON_ARRDTS = [
     "69381",
     "69382",
     "69383",
@@ -36,7 +36,7 @@ CODE_INSEE_LYON_ARRDT = [
     "69389",
 ]
 CODE_INSEE_MARSEILLE = "13055"
-CODE_INSEE_MARSEILLE_ARRDT = [
+CODE_INSEE_MARSEILLE_ARRDTS = [
     "13201",
     "13202",
     "13203",
@@ -57,22 +57,22 @@ CODE_INSEE_MARSEILLE_ARRDT = [
 
 
 def arrdt_to_main_insee_code(insee_code):
-    if insee_code in CODE_INSEE_PARIS_ARRDT:
+    if insee_code in CODE_INSEE_PARIS_ARRDTS:
         return CODE_INSEE_PARIS
-    if insee_code in CODE_INSEE_LYON_ARRDT:
+    if insee_code in CODE_INSEE_LYON_ARRDTS:
         return CODE_INSEE_LYON
-    if insee_code in CODE_INSEE_MARSEILLE_ARRDT:
+    if insee_code in CODE_INSEE_MARSEILLE_ARRDTS:
         return CODE_INSEE_MARSEILLE
     return insee_code
 
 
-def main_insee_code_to_arrdt(insee_code):
+def main_insee_code_to_arrdts(insee_code):
     if insee_code == CODE_INSEE_PARIS:
-        return CODE_INSEE_PARIS_ARRDT
+        return CODE_INSEE_PARIS_ARRDTS
     if insee_code == CODE_INSEE_LYON:
-        return CODE_INSEE_LYON_ARRDT
+        return CODE_INSEE_LYON_ARRDTS
     if insee_code == CODE_INSEE_MARSEILLE:
-        return CODE_INSEE_MARSEILLE_ARRDT
+        return CODE_INSEE_MARSEILLE_ARRDTS
     return [insee_code]
 
 
