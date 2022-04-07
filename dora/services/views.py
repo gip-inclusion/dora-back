@@ -8,6 +8,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from dora.admin_express.models import City
+from dora.admin_express.utils import arrdt_to_main_insee_code
 from dora.core.notify import send_mattermost_notification
 from dora.services.emails import send_service_feedback_email
 from dora.services.models import (
@@ -394,6 +395,9 @@ def search(request):
     if subcategory:
         services = services.filter(subcategories__value=subcategory)
 
+    # Si la requete entrante contient un code insee d'arrondissement
+    # on le converti pour récupérer le code de la commune entière
+    city_code = arrdt_to_main_insee_code(city_code)
     city = get_object_or_404(City, pk=city_code)
 
     geofiltered_services = services.filter(
