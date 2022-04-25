@@ -112,7 +112,12 @@ class StructureSerializer(serializers.ModelSerializer):
         qs = obj.services.filter(is_draft=False, is_suggestion=False)
         if user.is_authenticated and (user.is_staff or obj.is_member(user)):
             qs = obj.services.all()
-        return StructureServicesSerializer(qs, many=True).data
+        return StructureServicesSerializer(
+            qs.prefetch_related(
+                "categories",
+            ),
+            many=True,
+        ).data
 
     def get_branches(self, obj):
         class StructureListSerializerWithCount(StructureListSerializer):

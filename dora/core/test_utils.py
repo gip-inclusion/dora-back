@@ -1,8 +1,12 @@
+from django.utils.crypto import get_random_string
 from model_bakery import baker
 
 
 def make_structure(**kwargs):
-    return baker.make("Structure", _fill_optional=["siret"], **kwargs)
+    siret = kwargs.pop("siret", "")
+    if not siret:
+        siret = get_random_string(14, "0123456789")
+    return baker.make("Structure", siret=siret, **kwargs)
 
 
 def make_service(**kwargs):

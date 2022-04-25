@@ -74,6 +74,7 @@ private_api_patterns = [
     path("profile/change/", dora.users.views.update_profile),
     path("profile/password/change/", dora.users.views.password_change),
     path("admin-division-search/", dora.admin_express.views.search),
+    path("admin-division-reverse-search/", dora.admin_express.views.reverse_search),
     path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
     path("search-safir/", dora.structures.views.search_safir),
     path("search-siret/", dora.sirene.views.search_siret),

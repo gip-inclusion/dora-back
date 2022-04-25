@@ -8,6 +8,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from dora.admin_express.models import City
+from dora.admin_express.utils import arrdt_to_main_insee_code
 from dora.core.notify import send_mattermost_notification
 from dora.services.emails import send_service_feedback_email
 from dora.services.models import (
@@ -92,11 +93,6 @@ class ServiceViewSet(
 
     lookup_field = "slug"
 
-    def get_my_services(self, user):
-        if not user or not user.is_authenticated:
-            return Service.objects.none()
-        return Service.objects.filter(structure__membership__user=user)
-
     def get_queryset(self):
         qs = None
         user = self.request.user
@@ -104,18 +100,40 @@ class ServiceViewSet(
         structure_slug = self.request.query_params.get("structure")
         published_only = self.request.query_params.get("published")
 
+        all_services = (
+            Service.objects.all()
+            .select_related(
+                "structure",
+            )
+            .prefetch_related(
+                "kinds",
+                "categories",
+                "subcategories",
+                "access_conditions",
+                "concerned_public",
+                "beneficiaries_access_modes",
+                "coach_orientation_modes",
+                "requirements",
+                "credentials",
+                "location_kinds",
+            )
+        )
+        qs = None
         if only_mine:
-            qs = self.get_my_services(user)
+            if not user or not user.is_authenticated:
+                qs = Service.objects.none()
+            else:
+                qs = all_services.filter(structure__membership__user=user)
         # Everybody can see published services
         elif not user or not user.is_authenticated:
-            qs = Service.objects.filter(is_draft=False, is_suggestion=False)
+            qs = all_services.filter(is_draft=False, is_suggestion=False)
         # Staff can see everything
         elif user.is_staff:
-            qs = Service.objects.all()
+            qs = all_services
         else:
             # Authentified users can see everything in their structure
             # plus published services for other structures
-            qs = Service.objects.filter(
+            qs = all_services.filter(
                 Q(is_draft=False, is_suggestion=False)
                 | Q(structure__membership__user=user)
             )
@@ -291,22 +309,28 @@ def options(request):
             LocationKind.objects.all(), many=True
         ).data,
         "access_conditions": AccessConditionSerializer(
-            filter_custom_choices(AccessCondition.objects.all()),
+            filter_custom_choices(
+                AccessCondition.objects.select_related("structure").all()
+            ),
             many=True,
             context={"request": request},
         ).data,
         "concerned_public": ConcernedPublicSerializer(
-            filter_custom_choices(ConcernedPublic.objects.all()),
+            filter_custom_choices(
+                ConcernedPublic.objects.select_related("structure").all()
+            ),
             many=True,
             context={"request": request},
         ).data,
         "requirements": RequirementSerializer(
-            filter_custom_choices(Requirement.objects.all()),
+            filter_custom_choices(
+                Requirement.objects.select_related("structure").all()
+            ),
             many=True,
             context={"request": request},
         ).data,
         "credentials": CredentialSerializer(
-            filter_custom_choices(Credential.objects.all()),
+            filter_custom_choices(Credential.objects.select_related("structure").all()),
             many=True,
             context={"request": request},
         ).data,
@@ -317,7 +341,7 @@ def options(request):
     return Response(result)
 
 
-class SearchResultSerializer(ServiceSerializer):
+class SearchResultSerializer(ServiceListSerializer):
     class Meta:
         model = Service
         fields = [
@@ -348,7 +372,17 @@ def search(request):
     elif has_fee_param in ("0", 0, "False", "false", "f", "F"):
         has_fee = False
 
-    services = Service.objects.filter(is_draft=False, is_suggestion=False)
+    services = (
+        Service.objects.select_related(
+            "structure",
+        )
+        .prefetch_related(
+            "kinds",
+            "categories",
+            "subcategories",
+        )
+        .filter(is_draft=False, is_suggestion=False)
+    )
     if category:
         services = services.filter(categories__value=category)
     if has_fee is True:
@@ -361,6 +395,9 @@ def search(request):
     if subcategory:
         services = services.filter(subcategories__value=subcategory)
 
+    # Si la requete entrante contient un code insee d'arrondissement
+    # on le converti pour récupérer le code de la commune entière
+    city_code = arrdt_to_main_insee_code(city_code)
     city = get_object_or_404(City, pk=city_code)
 
     geofiltered_services = services.filter(

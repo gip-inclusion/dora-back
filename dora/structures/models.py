@@ -295,10 +295,10 @@ class Structure(models.Model):
             structure_id=self.id, user_id=user.id, invited_by_admin=False
         ).exists()
 
-    def post_create_branch(self, branch, user):
+    def post_create_branch(self, branch, user, source):
         branch.creator = user
         branch.last_editor = user
-        branch.source = StructureSource.objects.get(value="porteur")
+        branch.source = source
         branch.save()
         structure_admins = StructureMember.objects.filter(structure=self, is_admin=True)
         for admin in structure_admins:
