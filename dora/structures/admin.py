@@ -35,6 +35,8 @@ class StructurePutativeMemberAdmin(admin.ModelAdmin):
         ("structure", RelatedOnlyFieldListFilter),
     ]
 
+    ordering = ["-creation_date"]
+
 
 class StructureMemberAdmin(admin.ModelAdmin):
     search_fields = (
@@ -56,6 +58,8 @@ class StructureMemberAdmin(admin.ModelAdmin):
         ("structure", RelatedOnlyFieldListFilter),
     ]
 
+    ordering = ["-creation_date"]
+
 
 class StructureMemberInline(admin.TabularInline):
     model = StructureMember
@@ -73,7 +77,11 @@ class BranchFormSet(BaseInlineFormSet):
 
         if commit and saved_instances:
             for instance in saved_instances:
-                instance.parent.post_create_branch(instance, self.request.user)
+                instance.parent.post_create_branch(
+                    instance,
+                    self.request.user,
+                    StructureSource.objects.get(value="porteur"),
+                )
         return saved_instances
 
 

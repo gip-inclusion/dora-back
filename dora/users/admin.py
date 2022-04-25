@@ -114,7 +114,7 @@ class UserAdmin(BaseUserAdmin):
     )
     search_fields = ("email", "last_name", "first_name")
     readonly_fields = ["newsletter"]
-    ordering = ("email",)
+    ordering = ("-date_joined",)
     filter_horizontal = ()
     inlines = [StructureMemberInline]
 
