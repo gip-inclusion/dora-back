@@ -119,7 +119,7 @@ class MassInviteTestCase(APITestCase):
         self.add_row([structure.name, structure.siret, "", "foo@buzz.com", "XXX"])
         out, err = self.call_command()
         self.assertIn("is_admin", err)
-        self.assertIn("«\\xa0XXX\\xa0» n'est pas un choix valide.", err)
+        self.assertIn("Must be a valid boolean", err)
         self.assertEquals(User.objects.filter(email="foo@buzz.com").count(), 0)
         self.assertEqual(len(mail.outbox), 0)
 

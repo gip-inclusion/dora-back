@@ -62,17 +62,10 @@ class InviteSerializer(serializers.Serializer):
     siret = serializers.CharField(allow_blank=True)
     parent = serializers.CharField(allow_blank=True)
     email = serializers.EmailField()
-    is_admin = serializers.ChoiceField(choices=("TRUE", "FALSE"))
-
-    def validate_is_admin(self, value):
-        if value not in ["TRUE", "FALSE"]:
-            raise serializers.ValidationError(
-                f"is_admin should be TRUE or FALSE, not {value}"
-            )
-        return True if value == "TRUE" else False
+    is_admin = serializers.BooleanField()
 
     def validate(self, data):
-        user = self.context["user"]
+        user = User.objects.get_dora_bot()
         name = data["name"]
         siret = clean_siret(data["siret"])
         parent = clean_siret(data["parent"])
@@ -114,7 +107,6 @@ class Command(BaseCommand):
                         "email": row[3],
                         "is_admin": row[4],
                     },
-                    context={"user": bot_user},
                 )
                 try:
                     f.is_valid(raise_exception=True)
