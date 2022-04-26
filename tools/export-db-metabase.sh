@@ -76,6 +76,8 @@ CREATE TABLE mb_service AS
     services_service.diffusion_zone_details,
     services_service.diffusion_zone_type,
     services_service.qpv_or_zrr,
+    services_service.is_model,
+    services_service.model_id,
     ( SELECT st_y((services_service.geom)::geometry) AS st_y) AS latitude,
     ( SELECT st_x((services_service.geom)::geometry) AS st_x) AS longitude
    FROM services_service"
