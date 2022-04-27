@@ -3,13 +3,14 @@ from django.db.models import Q
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import mixins, pagination, permissions, serializers, viewsets
+from rest_framework import mixins, permissions, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from dora.admin_express.models import City
 from dora.admin_express.utils import arrdt_to_main_insee_code
 from dora.core.notify import send_mattermost_notification
+from dora.core.pagination import OptionalPageNumberPagination
 from dora.services.emails import send_service_feedback_email
 from dora.services.models import (
     AccessCondition,
@@ -34,13 +35,6 @@ from .serializers import (
     ServiceListSerializer,
     ServiceSerializer,
 )
-
-
-class FlatPagination(pagination.PageNumberPagination):
-    page_size_query_param = "count"
-
-    def get_paginated_response(self, data):
-        return Response(data)
 
 
 class ServicePermission(permissions.BasePermission):
@@ -89,7 +83,7 @@ class ServiceViewSet(
     viewsets.GenericViewSet,
 ):
     permission_classes = [ServicePermission]
-    pagination_class = FlatPagination
+    pagination_class = OptionalPageNumberPagination
 
     lookup_field = "slug"
 
@@ -421,12 +415,23 @@ def search(request):
     )
 
     # Exclude suspended services
-    results = geofiltered_services.filter(
-        Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
+    results = (
+        geofiltered_services.filter(
+            Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
+        )
+        .distinct()
+        .order_by("pk")
     )
 
-    return Response(
-        SearchResultSerializer(
-            results.distinct(), many=True, context={"request": request}
-        ).data
+    paginator = OptionalPageNumberPagination()
+    page = paginator.paginate_queryset(results, request)
+    if page is not None:
+        serializer = SearchResultSerializer(
+            page, many=True, context={"request": request}
+        )
+        return paginator.get_paginated_response(serializer.data)
+
+    serializer = SearchResultSerializer(
+        results, many=True, context={"request": request}
     )
+    return Response(serializer.data)
