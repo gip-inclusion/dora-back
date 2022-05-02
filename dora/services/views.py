@@ -118,7 +118,9 @@ class ServiceViewSet(
                 qs = all_services.filter(structure__membership__user=user)
         # Everybody can see published services
         elif not user or not user.is_authenticated:
-            qs = all_services.filter(is_draft=False, is_suggestion=False)
+            qs = all_services.filter(
+                Q(Q(is_draft=False) | Q(is_model=True)), is_suggestion=False
+            )
         # Staff can see everything
         elif user.is_staff:
             qs = all_services
@@ -126,7 +128,7 @@ class ServiceViewSet(
             # Authentified users can see everything in their structure
             # plus published services for other structures
             qs = all_services.filter(
-                Q(is_draft=False, is_suggestion=False)
+                Q(Q(Q(is_draft=False) | Q(is_model=True)), is_suggestion=False)
                 | Q(structure__membership__user=user)
             )
         if structure_slug:
