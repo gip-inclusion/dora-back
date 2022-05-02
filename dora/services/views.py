@@ -1,14 +1,11 @@
 from django.conf import settings
 from django.db.models import Q
 from django.http.response import Http404
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import mixins, permissions, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
-from dora.admin_express.models import City
-from dora.admin_express.utils import arrdt_to_main_insee_code
 from dora.core.notify import send_mattermost_notification
 from dora.core.pagination import OptionalPageNumberPagination
 from dora.services.emails import send_service_feedback_email
@@ -27,6 +24,7 @@ from dora.services.models import (
     ServiceModificationHistoryItem,
     ServiceSubCategory,
 )
+from dora.services.utils import filter_services_by_city_code
 from dora.structures.models import Structure, StructureMember
 
 from .serializers import (
@@ -389,30 +387,7 @@ def search(request):
     if subcategory:
         services = services.filter(subcategories__value=subcategory)
 
-    # Si la requete entrante contient un code insee d'arrondissement
-    # on le converti pour récupérer le code de la commune entière
-    city_code = arrdt_to_main_insee_code(city_code)
-    city = get_object_or_404(City, pk=city_code)
-
-    geofiltered_services = services.filter(
-        Q(diffusion_zone_type=AdminDivisionType.COUNTRY)
-        | (
-            Q(diffusion_zone_type=AdminDivisionType.CITY)
-            & Q(diffusion_zone_details=city.code)
-        )
-        | (
-            Q(diffusion_zone_type=AdminDivisionType.EPCI)
-            & Q(diffusion_zone_details__in=city.epci.split("/"))
-        )
-        | (
-            Q(diffusion_zone_type=AdminDivisionType.DEPARTMENT)
-            & Q(diffusion_zone_details=city.department)
-        )
-        | (
-            Q(diffusion_zone_type=AdminDivisionType.REGION)
-            & Q(diffusion_zone_details=city.region)
-        )
-    )
+    geofiltered_services = filter_services_by_city_code(services, city_code)
 
     # Exclude suspended services
     results = (
