@@ -2,6 +2,7 @@ from django.contrib.gis.geos import Point
 from django.contrib.postgres.search import TrigramSimilarity
 from rest_framework import exceptions, permissions, serializers
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
 from dora.admin_express.utils import normalize_string_for_search
@@ -80,4 +81,4 @@ def reverse_search(request):
     result = Model.objects.filter(geom__covers=point).first()
     if result is not None:
         return Response(AdminDivisionSerializer(result).data)
-    return None
+    raise NotFound
