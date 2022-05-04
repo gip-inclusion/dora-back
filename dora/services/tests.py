@@ -6,10 +6,12 @@ from rest_framework.test import APITestCase
 
 from dora.admin_express.models import AdminDivisionType
 from dora.core.test_utils import make_service, make_structure
+from dora.services.utils import SYNC_CUSTOM_M2M_FIELDS, SYNC_FIELDS, SYNC_M2M_FIELDS
 from dora.structures.models import Structure
 
 from .models import (
     AccessCondition,
+    LocationKind,
     Service,
     ServiceKind,
     ServiceModificationHistoryItem,
@@ -951,7 +953,7 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(len(response.data), 0)
 
 
-class ServiceDuplicationTestCase(APITestCase):
+class ServiceModelTestCase(APITestCase):
     def test_everybody_can_see_draft_models(self):
         service = make_service(is_draft=True, is_model=True)
         response = self.client.get("/services/")
@@ -1024,3 +1026,176 @@ class ServiceDuplicationTestCase(APITestCase):
         service = make_service(is_model=True, is_draft=False)
         response = self.client.patch(f"/services/{service.slug}/", {"is_model": False})
         self.assertEqual(response.status_code, 401)
+
+
+class ServiceDuplicationTestCase(APITestCase):
+    def test_field_change_updates_checksum(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure()
+        struct.members.add(user)
+        service = make_service(structure=struct)
+        self.client.force_authenticate(user=user)
+
+        for field in SYNC_FIELDS:
+            initial_checksum = service.common_fields_checksum
+            if isinstance(getattr(service, field), bool):
+                new_val = not getattr(service, field)
+            elif field in ("online_form", "remote_url"):
+                new_val = "https://example.com"
+            elif field == "forms":
+                new_val = ["https://example.com"]
+            else:
+                new_val = "xxx"
+            response = self.client.patch(f"/services/{service.slug}/", {field: new_val})
+            self.assertEqual(response.status_code, 200)
+            service.refresh_from_db()
+            self.assertNotEqual(service.common_fields_checksum, initial_checksum)
+
+    def test_other_field_change_doesnt_updates_checksum(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure()
+        struct.members.add(user)
+        service = make_service(structure=struct)
+        self.client.force_authenticate(user=user)
+
+        initial_checksum = service.common_fields_checksum
+        response = self.client.patch(f"/services/{service.slug}/", {"name": "xxx"})
+        self.assertEqual(response.status_code, 200)
+        service.refresh_from_db()
+        self.assertEqual(service.common_fields_checksum, initial_checksum)
+
+    def test_m2m_field_change_updates_checksum(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure()
+        struct.members.add(user)
+        service = make_service(structure=struct)
+        self.client.force_authenticate(user=user)
+
+        for field in SYNC_M2M_FIELDS:
+            initial_checksum = service.common_fields_checksum
+            rel_model = getattr(service, field).target_field.related_model
+            new_value = baker.make(rel_model)
+            response = self.client.patch(
+                f"/services/{service.slug}/", {field: [new_value.value]}
+            )
+            self.assertEqual(response.status_code, 200)
+            service.refresh_from_db()
+            self.assertNotEqual(service.common_fields_checksum, initial_checksum)
+
+        for field in SYNC_CUSTOM_M2M_FIELDS:
+            initial_checksum = service.common_fields_checksum
+            rel_model = getattr(service, field).target_field.related_model
+            new_value = baker.make(rel_model)
+            response = self.client.patch(
+                f"/services/{service.slug}/", {field: [new_value.id]}
+            )
+            self.assertEqual(response.status_code, 200)
+            service.refresh_from_db()
+            self.assertNotEqual(service.common_fields_checksum, initial_checksum)
+
+    def test_copy_preserve_expected_fields(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure()
+        struct.members.add(user)
+        service = make_service(structure=struct)
+
+        for field in SYNC_M2M_FIELDS:
+            rel_model = getattr(service, field).target_field.related_model
+            new_value = baker.make(rel_model)
+            getattr(service, field).set([new_value])
+
+        for field in SYNC_CUSTOM_M2M_FIELDS:
+            rel_model = getattr(service, field).target_field.related_model
+            new_value = baker.make(rel_model)
+            getattr(service, field).set([new_value])
+
+        dest_struct = make_structure()
+        dest_struct.members.add(user)
+
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
+        )
+        self.assertEqual(response.status_code, 200)
+        copy = Service.objects.get(slug=response.data["slug"])
+        for field in SYNC_FIELDS:
+            self.assertEqual(getattr(service, field), getattr(copy, field), field)
+        for field in [*SYNC_M2M_FIELDS, *SYNC_CUSTOM_M2M_FIELDS]:
+            self.assertQuerysetEqual(
+                getattr(service, field).all(), getattr(copy, field).all()
+            )
+
+    def test_copy_change_variable_fields(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure()
+        struct.members.add(user)
+        service = make_service(structure=struct)
+        location = baker.make("LocationKind")
+        service.location_kinds.set([location.id])
+        dest_struct = make_structure()
+        dest_struct.members.add(user)
+
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
+        )
+        self.assertEqual(response.status_code, 200)
+        copy = Service.objects.get(slug=response.data["slug"])
+
+        self.assertEqual(copy.address1, dest_struct.address1)
+        self.assertEqual(copy.address2, dest_struct.address2)
+        self.assertEqual(copy.postal_code, dest_struct.postal_code)
+        self.assertEqual(copy.city_code, dest_struct.city_code)
+        self.assertEqual(copy.city, dest_struct.city)
+        self.assertEqual(copy.geom.x, dest_struct.longitude)
+        self.assertEqual(copy.geom.y, dest_struct.latitude)
+        self.assertFalse(copy.qpv_or_zrr)
+        self.assertEqual(copy.diffusion_zone_type, "")
+        self.assertEqual(copy.diffusion_zone_details, "")
+        self.assertIsNone(copy.suspension_date)
+        self.assertEqual(copy.contact_name, "")
+        self.assertEqual(copy.contact_phone, "")
+        self.assertEqual(copy.contact_email, "")
+        self.assertFalse(copy.is_contact_info_public)
+
+        self.assertQuerysetEqual(copy.location_kinds.all(), LocationKind.objects.none())
+
+    def test_copy_same_default_fields(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure()
+        struct.members.add(user)
+        service = make_service(structure=struct)
+        dest_struct = make_structure()
+        dest_struct.members.add(user)
+
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
+        )
+        self.assertEqual(response.status_code, 200)
+        copy = Service.objects.get(slug=response.data["slug"])
+        self.assertEqual(copy.name, service.name)
+        self.assertEqual(copy.recurrence, service.recurrence)
+
+    def test_copy_check_metadata(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure()
+        struct.members.add(user)
+        service = make_service(structure=struct)
+        dest_struct = make_structure()
+        dest_struct.members.add(user)
+
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
+        )
+        self.assertEqual(response.status_code, 200)
+        copy = Service.objects.get(slug=response.data["slug"])
+        self.assertTrue(copy.is_draft)
+        self.assertFalse(copy.is_model)
+        self.assertEqual(copy.creator, service.creator)
+        self.assertEqual(copy.last_editor, user)
+        self.assertEqual(copy.model, service)
+        self.assertNotEqual(copy.creation_date, service.creation_date)
+        self.assertNotEqual(copy.modification_date, service.modification_date)
+        self.assertIsNone(copy.publication_date)

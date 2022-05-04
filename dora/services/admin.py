@@ -74,10 +74,7 @@ class ServiceAdmin(admin.OSMGeoAdmin):
     inlines = [ServiceModificationHistoryItemInline]
     ordering = ["-modification_date"]
     save_as = True
-    readonly_fields = (
-        "creation_date",
-        "modification_date",
-    )
+    readonly_fields = ("creation_date", "modification_date", "common_fields_checksum")
 
 
 class CustomizableChoiceAdmin(admin.ModelAdmin):

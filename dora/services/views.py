@@ -184,6 +184,25 @@ class ServiceViewSet(
         send_service_feedback_email(service, d["full_name"], d["email"], d["message"])
         return Response(status=201)
 
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="copy",
+        permission_classes=[permissions.AllowAny],
+    )
+    def copy(self, request, slug):
+        service = self.get_object()
+        structure_slug = self.request.data.get("structure")
+        try:
+            structure = Structure.objects.get(slug=structure_slug)
+        except Structure.DoesNotExist:
+            raise Http404
+
+        new_service = service.copy_to(structure, request.user)
+        return Response(
+            ServiceSerializer(new_service, context={"request": request}).data
+        )
+
     def perform_create(self, serializer):
         service = serializer.save(
             creator=self.request.user, last_editor=self.request.user
@@ -193,6 +212,7 @@ class ServiceViewSet(
         send_mattermost_notification(
             f":tada: Nouveau service {draft} “{service.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/services/{service.slug}"
         )
+        service.update_checksum()
 
     def perform_update(self, serializer):
         if not serializer.instance.is_draft:
@@ -212,7 +232,8 @@ class ServiceViewSet(
                     user=self.request.user,
                     fields=changed_fields,
                 )
-        serializer.save(last_editor=self.request.user)
+        service = serializer.save(last_editor=self.request.user)
+        service.update_checksum()
 
 
 @api_view()

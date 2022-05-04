@@ -223,6 +223,8 @@ class ServiceSerializer(serializers.ModelSerializer):
     department = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
 
+    model_changed = serializers.SerializerMethodField()
+
     class Meta:
         model = Service
 
@@ -290,6 +292,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "department",
             "can_write",
             "is_model",
+            "model_changed",
         ]
         lookup_field = "slug"
 
@@ -387,6 +390,11 @@ class ServiceSerializer(serializers.ModelSerializer):
                 )
 
         return values
+
+    def get_model_changed(self, object):
+        if object.model:
+            return object.model.common_fields_checksum != object.common_fields_checksum
+        return None
 
 
 class AnonymousServiceSerializer(ServiceSerializer):

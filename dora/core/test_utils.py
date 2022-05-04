@@ -1,12 +1,23 @@
+import random
+
 from django.utils.crypto import get_random_string
 from model_bakery import baker
 
 
 def make_structure(**kwargs):
-    siret = kwargs.pop("siret", "")
+    siret = kwargs.pop("siret", None)
     if not siret:
         siret = get_random_string(14, "0123456789")
-    return baker.make("Structure", siret=siret, **kwargs)
+    latitude = kwargs.pop("latitude", None)
+    if not latitude:
+        latitude = random.random() * 90.0
+
+    longitude = kwargs.pop("longitude", None)
+    if not longitude:
+        longitude = random.random() * 90.0
+    return baker.make(
+        "Structure", siret=siret, longitude=longitude, latitude=latitude, **kwargs
+    )
 
 
 def make_service(**kwargs):

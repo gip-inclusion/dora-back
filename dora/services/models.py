@@ -12,7 +12,7 @@ from dora.admin_express.models import AdminDivisionType
 from dora.core.models import EnumModel
 from dora.structures.models import Structure, StructureMember
 
-from .utils import copy_service
+from .utils import copy_service, update_common_fields_checksum
 
 
 def make_unique_slug(instance, parent_slug, value, length=20):
@@ -229,7 +229,7 @@ class Service(models.Model):
     )
     postal_code = models.CharField(verbose_name="Code postal", max_length=5, blank=True)
     city_code = models.CharField(verbose_name="Code INSEE", max_length=5, blank=True)
-    city = models.CharField(verbose_name="Ville", max_length=200, blank=True)
+    city = models.CharField(verbose_name="Ville", max_length=255, blank=True)
     geom = models.PointField(
         srid=4326, geography=True, spatial_index=True, null=True, blank=True
     )
@@ -283,6 +283,7 @@ class Service(models.Model):
     model = models.ForeignKey(
         "self", on_delete=models.SET_NULL, blank=True, null=True, related_name="copies"
     )
+    common_fields_checksum = models.CharField(max_length=32, blank=True)
 
     def __str__(self):
         return self.name
@@ -293,14 +294,20 @@ class Service(models.Model):
         instance._original = dict(zip(field_names, values))
         return instance
 
+    def update_checksum(self):
+        old_checksum = self.common_fields_checksum
+        self.common_fields_checksum = update_common_fields_checksum(self)
+        if old_checksum != self.common_fields_checksum:
+            super().save(update_fields=["common_fields_checksum"])
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = make_unique_slug(self, self.structure.slug, self.name)
-        if not self._state.adding:
+        if hasattr(self, "_original") and not self._state.adding:
             original_is_draft = self._original["is_draft"]
             if original_is_draft is True and self.is_draft is False:
                 self.publication_date = timezone.now()
-
+        self.common_fields_checksum = update_common_fields_checksum(self)
         return super().save(*args, **kwargs)
 
     def can_write(self, user):
