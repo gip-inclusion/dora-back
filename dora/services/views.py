@@ -4,6 +4,7 @@ from django.http.response import Http404
 from django.utils import timezone
 from rest_framework import mixins, permissions, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from dora.core.notify import send_mattermost_notification
@@ -24,7 +25,7 @@ from dora.services.models import (
     ServiceModificationHistoryItem,
     ServiceSubCategory,
 )
-from dora.services.utils import filter_services_by_city_code
+from dora.services.utils import copy_service, filter_services_by_city_code
 from dora.structures.models import Structure, StructureMember
 
 from .serializers import (
@@ -188,17 +189,26 @@ class ServiceViewSet(
         detail=True,
         methods=["post"],
         url_path="copy",
-        permission_classes=[permissions.AllowAny],
+        permission_classes=[permissions.IsAuthenticated],
     )
     def copy(self, request, slug):
+        user = request.user
         service = self.get_object()
         structure_slug = self.request.data.get("structure")
         try:
             structure = Structure.objects.get(slug=structure_slug)
         except Structure.DoesNotExist:
             raise Http404
+        # On peut uniquement copier vers une structure dont on fait partie
+        user_structures = Structure.objects.filter(membership__user=user)
+        if structure not in user_structures:
+            raise PermissionDenied
+        # On peut uniquement copier un service d'une de nos structures
+        # ou un service marqué comme modèle
+        if service.structure not in user_structures and not service.is_model:
+            raise PermissionDenied
 
-        new_service = service.copy_to(structure, request.user)
+        new_service = copy_service(service, structure, request.user)
         return Response(
             ServiceSerializer(new_service, context={"request": request}).data
         )

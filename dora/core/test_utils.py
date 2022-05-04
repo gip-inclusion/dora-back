@@ -4,7 +4,7 @@ from django.utils.crypto import get_random_string
 from model_bakery import baker
 
 
-def make_structure(**kwargs):
+def make_structure(user=None, **kwargs):
     siret = kwargs.pop("siret", None)
     if not siret:
         siret = get_random_string(14, "0123456789")
@@ -15,9 +15,12 @@ def make_structure(**kwargs):
     longitude = kwargs.pop("longitude", None)
     if not longitude:
         longitude = random.random() * 90.0
-    return baker.make(
+    structure = baker.make(
         "Structure", siret=siret, longitude=longitude, latitude=latitude, **kwargs
     )
+    if user:
+        structure.members.add(user)
+    return structure
 
 
 def make_service(**kwargs):

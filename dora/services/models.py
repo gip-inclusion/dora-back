@@ -12,7 +12,7 @@ from dora.admin_express.models import AdminDivisionType
 from dora.core.models import EnumModel
 from dora.structures.models import Structure, StructureMember
 
-from .utils import copy_service, update_common_fields_checksum
+from .utils import update_common_fields_checksum
 
 
 def make_unique_slug(instance, parent_slug, value, length=20):
@@ -317,9 +317,6 @@ class Service(models.Model):
                 structure_id=self.structure_id, user_id=user.id
             ).exists()
         )
-
-    def copy_to(self, structure, user):
-        return copy_service(self, structure, user)
 
     def get_frontend_url(self):
         return f"{settings.FRONTEND_URL}/services/{self.slug}"
