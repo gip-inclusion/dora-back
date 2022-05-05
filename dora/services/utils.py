@@ -49,7 +49,7 @@ def _duplicate_customizable_choices(field, choices, structure):
             field.add(choice)
 
 
-def update_common_fields_checksum(service):
+def update_sync_checksum(service):
     md5 = hashlib.md5(usedforsecurity=False)
     for field in SYNC_FIELDS:
         md5.update(repr(getattr(service, field)).encode())

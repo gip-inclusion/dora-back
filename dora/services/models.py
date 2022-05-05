@@ -12,7 +12,7 @@ from dora.admin_express.models import AdminDivisionType
 from dora.core.models import EnumModel
 from dora.structures.models import Structure, StructureMember
 
-from .utils import update_common_fields_checksum
+from .utils import update_sync_checksum
 
 
 def make_unique_slug(instance, parent_slug, value, length=20):
@@ -297,7 +297,7 @@ class Service(models.Model):
 
     def update_checksum(self):
         old_checksum = self.sync_checksum
-        self.sync_checksum = update_common_fields_checksum(self)
+        self.sync_checksum = update_sync_checksum(self)
         if old_checksum != self.sync_checksum:
             super().save(update_fields=["sync_checksum"])
 
@@ -308,7 +308,7 @@ class Service(models.Model):
             original_is_draft = self._original["is_draft"]
             if original_is_draft is True and self.is_draft is False:
                 self.publication_date = timezone.now()
-        self.sync_checksum = update_common_fields_checksum(self)
+        self.sync_checksum = update_sync_checksum(self)
         return super().save(*args, **kwargs)
 
     def can_write(self, user):
