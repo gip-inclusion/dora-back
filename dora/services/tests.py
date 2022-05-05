@@ -16,8 +16,8 @@ from dora.structures.models import Structure
 
 from .models import (
     AccessCondition,
-    LocationKind,
     Service,
+    ServiceCategory,
     ServiceKind,
     ServiceModificationHistoryItem,
 )
@@ -1042,10 +1042,19 @@ class ServiceDuplicationTestCase(APITestCase):
                 new_val = "https://example.com"
             elif field == "forms":
                 new_val = ["https://example.com"]
+            elif field == "contact_email":
+                new_val = "test@example.com"
+            elif field == "diffusion_zone_type":
+                new_val = AdminDivisionType.REGION
+            elif field == "suspension_date":
+                new_val = "2022-10-10"
+            elif field == "geom":
+                continue
             else:
                 new_val = "xxx"
             response = self.client.patch(f"/services/{service.slug}/", {field: new_val})
-            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.status_code, 200, response.data)
+
             service.refresh_from_db()
             self.assertNotEqual(service.sync_checksum, initial_checksum)
 
@@ -1056,7 +1065,9 @@ class ServiceDuplicationTestCase(APITestCase):
         self.client.force_authenticate(user=user)
 
         initial_checksum = service.sync_checksum
-        response = self.client.patch(f"/services/{service.slug}/", {"name": "xxx"})
+        response = self.client.patch(
+            f"/services/{service.slug}/", {"is_draft": not service.is_draft}
+        )
         self.assertEqual(response.status_code, 200)
         service.refresh_from_db()
         self.assertEqual(service.sync_checksum, initial_checksum)
@@ -1113,7 +1124,17 @@ class ServiceDuplicationTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         copy = Service.objects.get(slug=response.data["slug"])
         for field in SYNC_FIELDS:
-            self.assertEqual(getattr(service, field), getattr(copy, field), field)
+            if field not in [
+                "address1",
+                "address2",
+                "postal_code",
+                "city_code",
+                "city",
+                "longitude",
+                "latitude",
+                "geom",
+            ]:
+                self.assertEqual(getattr(service, field), getattr(copy, field), field)
         for field in [*SYNC_M2M_FIELDS, *SYNC_CUSTOM_M2M_FIELDS]:
             self.assertQuerysetEqual(
                 getattr(service, field).all(), getattr(copy, field).all()
@@ -1141,31 +1162,6 @@ class ServiceDuplicationTestCase(APITestCase):
         self.assertEqual(copy.city, dest_struct.city)
         self.assertEqual(copy.geom.x, dest_struct.longitude)
         self.assertEqual(copy.geom.y, dest_struct.latitude)
-        self.assertFalse(copy.qpv_or_zrr)
-        self.assertEqual(copy.diffusion_zone_type, "")
-        self.assertEqual(copy.diffusion_zone_details, "")
-        self.assertIsNone(copy.suspension_date)
-        self.assertEqual(copy.contact_name, "")
-        self.assertEqual(copy.contact_phone, "")
-        self.assertEqual(copy.contact_email, "")
-        self.assertFalse(copy.is_contact_info_public)
-
-        self.assertQuerysetEqual(copy.location_kinds.all(), LocationKind.objects.none())
-
-    def test_copy_same_default_fields(self):
-        user = baker.make("users.User", is_valid=True)
-        struct = make_structure(user)
-        service = make_service(structure=struct)
-        dest_struct = make_structure(user)
-
-        self.client.force_authenticate(user=user)
-        response = self.client.post(
-            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
-        )
-        self.assertEqual(response.status_code, 200)
-        copy = Service.objects.get(slug=response.data["slug"])
-        self.assertEqual(copy.name, service.name)
-        self.assertEqual(copy.recurrence, service.recurrence)
 
     def test_copy_check_metadata(self):
         user = baker.make("users.User", is_valid=True)
@@ -1242,6 +1238,18 @@ class ServiceDuplicationPermissionTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 200)
 
+    def test_cant_duplicate_models_in_other_structures(self):
+        service = make_service(is_model=True, is_draft=False)
+        dest_struct = make_structure()
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
+        )
+        self.assertEqual(response.status_code, 403)
+
+
+class ServiceSyncTestCase(APITestCase):
     def test_can_unsync_my_services(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
@@ -1297,23 +1305,56 @@ class ServiceDuplicationPermissionTestCase(APITestCase):
         self.assertNotEqual(service.sync_checksum, source.sync_checksum)
         self.client.force_authenticate(user=user)
         response = self.client.post(
-            f"/services/{service.slug}/sync/",
+            f"/services/{service.slug}/sync/", {"fields": ["short_desc"]}
         )
         self.assertEqual(response.status_code, 200)
         source.refresh_from_db()
         service.refresh_from_db()
-        self.assertEqual(service.sync_checksum, source.sync_checksum)
         self.assertEqual(service.short_desc, source.short_desc)
+
+    def test_sync_updates_metadata(self):
+        user = baker.make("users.User", is_valid=True)
+        user2 = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        source = make_service(is_model=True, short_desc="yyy")
+        service = make_service(
+            model=source, structure=structure, short_desc="xxx", last_editor=user2
+        )
+        self.assertNotEqual(service.sync_checksum, source.sync_checksum)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            f"/services/{service.slug}/sync/", {"fields": ["short_desc"]}
+        )
+        self.assertEqual(response.status_code, 200)
+        service.refresh_from_db()
+        self.assertEqual(service.last_editor, user)
+        self.assertEqual(service.last_sync_checksum, source.sync_checksum)
+
+    def test_sync_only_sync_requested_fields(self):
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        source = make_service(is_model=True, short_desc="yyy", full_desc="abc")
+        service = make_service(
+            model=source, structure=structure, short_desc="xxx", full_desc="def"
+        )
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            f"/services/{service.slug}/sync/", {"fields": ["short_desc"]}
+        )
+        self.assertEqual(response.status_code, 200)
+        source.refresh_from_db()
+        service.refresh_from_db()
+        self.assertEqual(service.short_desc, source.short_desc)
+        self.assertNotEqual(service.full_desc, source.full_desc)
 
     def test_cant_sync_uptodate_service(self):
         user = baker.make("users.User", is_valid=True)
         structure = make_structure(user)
         source = make_service(is_model=True, short_desc="yyy")
         service = copy_service(source, structure, user)
-        self.assertEqual(service.sync_checksum, source.sync_checksum)
         self.client.force_authenticate(user=user)
         response = self.client.post(
-            f"/services/{service.slug}/sync/",
+            f"/services/{service.slug}/sync/", {"fields": ["short_desc"]}
         )
         self.assertEqual(response.status_code, 400)
         self.assertIn("Ce service est à jour", repr(response.data))
@@ -1324,17 +1365,58 @@ class ServiceDuplicationPermissionTestCase(APITestCase):
         service = make_service(model=source, is_draft=False)
         self.client.force_authenticate(user=user)
         response = self.client.post(
-            f"/services/{service.slug}/sync/",
+            f"/services/{service.slug}/sync/", {"fields": ["short_desc"]}
         )
         self.assertEqual(response.status_code, 403)
 
-    def test_cant_sync_services_not_model_anymore(self):
+    def test_diffs_std_fields(self):
         user = baker.make("users.User", is_valid=True)
         structure = make_structure(user)
-        source = make_service(is_model=False)
-        service = make_service(model=source, structure=structure)
+        source = make_service(is_model=True)
+        service = copy_service(source, structure, user)
+        source.short_desc = "xxx"
+        source.save()
         self.client.force_authenticate(user=user)
-        response = self.client.post(
-            f"/services/{service.slug}/sync/",
+        response = self.client.get(
+            f"/services/{service.slug}/diff/",
         )
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["short_desc"]["parent"], source.short_desc)
+
+    def test_diffs_M2M_fields(self):
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        source = make_service(is_model=True)
+        service = copy_service(source, structure, user)
+        new_cat = baker.make(ServiceCategory)
+        source.categories.set([new_cat])
+        source.save()
+        self.client.force_authenticate(user=user)
+        response = self.client.get(
+            f"/services/{service.slug}/diff/",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data["categories"]["parent"][0]["value"],
+            new_cat.value,
+            response.data["categories"],
+        )
+
+    def test_diffs_M2M_custom_fields(self):
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        source = make_service(is_model=True)
+        service = copy_service(source, structure, user)
+        new_ac = baker.make(AccessCondition)
+        source.access_conditions.set([new_ac])
+        source.save()
+        self.client.force_authenticate(user=user)
+        response = self.client.get(
+            f"/services/{service.slug}/diff/",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data["access_conditions"]["parent"][0]["value"],
+            new_ac.pk,
+            response.data["access_conditions"],
+        )

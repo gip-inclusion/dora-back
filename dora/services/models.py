@@ -295,12 +295,6 @@ class Service(models.Model):
         instance._original = dict(zip(field_names, values))
         return instance
 
-    def update_checksum(self):
-        old_checksum = self.sync_checksum
-        self.sync_checksum = update_sync_checksum(self)
-        if old_checksum != self.sync_checksum:
-            super().save(update_fields=["sync_checksum"])
-
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = make_unique_slug(self, self.structure.slug, self.name)

@@ -8,6 +8,7 @@ from dora.admin_express.models import AdminDivisionType, City  # , Department, R
 from dora.admin_express.utils import arrdt_to_main_insee_code
 
 SYNC_FIELDS = [
+    "name",
     "short_desc",
     "full_desc",
     "is_cumulative",
@@ -15,10 +16,24 @@ SYNC_FIELDS = [
     "fee_details",
     "beneficiaries_access_modes_other",
     "coach_orientation_modes_other",
-    "online_form",
     "forms",
+    "online_form",
+    "contact_name",
+    "contact_phone",
+    "contact_email",
+    "is_contact_info_public",
     "remote_url",
+    "address1",
+    "address2",
+    "postal_code",
+    "city_code",
+    "city",
+    "geom",
+    "diffusion_zone_type",
+    "diffusion_zone_details",
+    "qpv_or_zrr",
     "recurrence",
+    "suspension_date",
 ]
 
 SYNC_M2M_FIELDS = [
@@ -27,6 +42,7 @@ SYNC_M2M_FIELDS = [
     "subcategories",
     "beneficiaries_access_modes",
     "coach_orientation_modes",
+    "location_kinds",
 ]
 
 SYNC_CUSTOM_M2M_FIELDS = [
@@ -72,7 +88,10 @@ def update_sync_checksum(service):
 def copy_service(original, structure, user):
     service = original.__class__.objects.create(structure=structure)
 
-    # Prefill address
+    for field in SYNC_FIELDS:
+        setattr(service, field, getattr(original, field))
+
+    # Overwrite address, to default to the new structure one
     service.address1 = structure.address1
     service.address2 = structure.address2
     service.postal_code = structure.postal_code
@@ -83,31 +102,13 @@ def copy_service(original, structure, user):
     else:
         service.geom = None
 
-    # Initialise some fields with the same values
-    # without them being sync'd
-    service.name = original.name
-    service.recurrence = original.recurrence
-
     # Metadata
     service.is_draft = True
     service.is_model = False
     service.creator = original.creator
-    service.model = original
-
-    service.save()
-    sync_service(service, user)
-    return service
-
-
-def sync_service(service, user):
-    original = service.model
     service.last_editor = user
-
-    # Sync'd Simple fields
-    for field in SYNC_FIELDS:
-        setattr(service, field, getattr(original, field))
-
-    service.save()
+    service.model = original
+    service.last_sync_checksum = original.sync_checksum
 
     # Restaure les champs M2M
     for field in SYNC_M2M_FIELDS:
@@ -118,10 +119,29 @@ def sync_service(service, user):
             getattr(service, field), getattr(original, field).all(), service.structure
         )
 
-    service.update_checksum()
-    service.last_sync_checksum = original.sync_checksum
-    service.save(update_fields=["last_sync_checksum"])
+    service.save()
     return service
+
+
+def sync_service(service, user, fields):
+    original = service.model
+
+    # Sync'd Simple fields
+    for field in set(SYNC_FIELDS) & set(fields):
+        setattr(service, field, getattr(original, field))
+
+    # Restaure les champs M2M
+    for field in set(SYNC_M2M_FIELDS) & set(fields):
+        getattr(service, field).set(getattr(original, field).all())
+
+    for field in set(SYNC_CUSTOM_M2M_FIELDS) & set(fields):
+        _duplicate_customizable_choices(
+            getattr(service, field), getattr(original, field).all(), service.structure
+        )
+
+    service.last_editor = user
+    service.last_sync_checksum = original.sync_checksum
+    service.save()
 
 
 def get_service_diffs(service):
@@ -131,18 +151,25 @@ def get_service_diffs(service):
         current = getattr(service, field)
         source = getattr(original, field)
         if current != source:
-            result[field] = source
+            result[field] = {"parent": source, "current": current}
 
     for field in SYNC_M2M_FIELDS:
-        current = getattr(service, field)
-        source = getattr(original, field)
+        current = set(getattr(service, field).all())
+        source = set(getattr(original, field).all())
         if current != source:
-            result[field] = source
+            result[field] = {
+                "parent": [{"value": v.value, "label": v.label} for v in source],
+                "current": [{"value": v.value, "label": v.label} for v in current],
+            }
 
     for field in SYNC_CUSTOM_M2M_FIELDS:
-        _duplicate_customizable_choices(
-            getattr(service, field), getattr(original, field).all(), service.structure
-        )
+        current = set(getattr(service, field).all())
+        source = set(getattr(original, field).all())
+        if current != source:
+            result[field] = {
+                "parent": [{"value": v.pk, "label": v.name} for v in source],
+                "current": [{"value": v.pk, "label": v.name} for v in current],
+            }
 
     return result
 

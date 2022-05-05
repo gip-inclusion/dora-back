@@ -230,21 +230,20 @@ class ServiceViewSet(
     def sync(self, request, slug):
         user = request.user
         service = self.get_object()
+        fields = request.data["fields"]
 
         if not service.model:
             raise serializers.ValidationError("Ce service n'est pas synchronisé")
 
-        if service.model.sync_checksum == service.sync_checksum:
+        if service.model.sync_checksum == service.last_sync_checksum:
             raise serializers.ValidationError("Ce service est à jour")
-
-        # TODO: check that the original is still a model or that I can still read it?
 
         # On peut uniquement synchroniser un service d'une de nos structures
         user_structures = Structure.objects.filter(membership__user=user)
         if service.structure not in user_structures:
             raise PermissionDenied
 
-        updated_service = sync_service(service, request.user)
+        updated_service = sync_service(service, request.user, fields)
         return Response(
             ServiceSerializer(updated_service, context={"request": request}).data
         )
@@ -285,7 +284,8 @@ class ServiceViewSet(
         send_mattermost_notification(
             f":tada: Nouveau service {draft} “{service.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/services/{service.slug}"
         )
-        service.update_checksum()
+        # Force a save to update the sync_checksum
+        service.save()
 
     def perform_update(self, serializer):
         if not serializer.instance.is_draft:
@@ -306,7 +306,8 @@ class ServiceViewSet(
                     fields=changed_fields,
                 )
         service = serializer.save(last_editor=self.request.user)
-        service.update_checksum()
+        # Force a save to update the sync_checksum
+        service.save()
 
 
 @api_view()
