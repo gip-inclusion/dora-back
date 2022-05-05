@@ -119,8 +119,32 @@ def sync_service(service, user):
         )
 
     service.update_checksum()
-
+    service.last_sync_checksum = original.sync_checksum
+    service.save(update_fields=["last_sync_checksum"])
     return service
+
+
+def get_service_diffs(service):
+    original = service.model
+    result = {}
+    for field in SYNC_FIELDS:
+        current = getattr(service, field)
+        source = getattr(original, field)
+        if current != source:
+            result[field] = source
+
+    for field in SYNC_M2M_FIELDS:
+        current = getattr(service, field)
+        source = getattr(original, field)
+        if current != source:
+            result[field] = source
+
+    for field in SYNC_CUSTOM_M2M_FIELDS:
+        _duplicate_customizable_choices(
+            getattr(service, field), getattr(original, field).all(), service.structure
+        )
+
+    return result
 
 
 def filter_services_by_city_code(services, city_code):

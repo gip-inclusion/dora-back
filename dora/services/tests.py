@@ -1035,7 +1035,7 @@ class ServiceDuplicationTestCase(APITestCase):
         self.client.force_authenticate(user=user)
 
         for field in SYNC_FIELDS:
-            initial_checksum = service.common_fields_checksum
+            initial_checksum = service.sync_checksum
             if isinstance(getattr(service, field), bool):
                 new_val = not getattr(service, field)
             elif field in ("online_form", "remote_url"):
@@ -1047,7 +1047,7 @@ class ServiceDuplicationTestCase(APITestCase):
             response = self.client.patch(f"/services/{service.slug}/", {field: new_val})
             self.assertEqual(response.status_code, 200)
             service.refresh_from_db()
-            self.assertNotEqual(service.common_fields_checksum, initial_checksum)
+            self.assertNotEqual(service.sync_checksum, initial_checksum)
 
     def test_other_field_change_doesnt_updates_checksum(self):
         user = baker.make("users.User", is_valid=True)
@@ -1055,11 +1055,11 @@ class ServiceDuplicationTestCase(APITestCase):
         service = make_service(structure=struct)
         self.client.force_authenticate(user=user)
 
-        initial_checksum = service.common_fields_checksum
+        initial_checksum = service.sync_checksum
         response = self.client.patch(f"/services/{service.slug}/", {"name": "xxx"})
         self.assertEqual(response.status_code, 200)
         service.refresh_from_db()
-        self.assertEqual(service.common_fields_checksum, initial_checksum)
+        self.assertEqual(service.sync_checksum, initial_checksum)
 
     def test_m2m_field_change_updates_checksum(self):
         user = baker.make("users.User", is_valid=True)
@@ -1068,7 +1068,7 @@ class ServiceDuplicationTestCase(APITestCase):
         self.client.force_authenticate(user=user)
 
         for field in SYNC_M2M_FIELDS:
-            initial_checksum = service.common_fields_checksum
+            initial_checksum = service.sync_checksum
             rel_model = getattr(service, field).target_field.related_model
             new_value = baker.make(rel_model)
             response = self.client.patch(
@@ -1076,10 +1076,10 @@ class ServiceDuplicationTestCase(APITestCase):
             )
             self.assertEqual(response.status_code, 200)
             service.refresh_from_db()
-            self.assertNotEqual(service.common_fields_checksum, initial_checksum)
+            self.assertNotEqual(service.sync_checksum, initial_checksum)
 
         for field in SYNC_CUSTOM_M2M_FIELDS:
-            initial_checksum = service.common_fields_checksum
+            initial_checksum = service.sync_checksum
             rel_model = getattr(service, field).target_field.related_model
             new_value = baker.make(rel_model)
             response = self.client.patch(
@@ -1087,7 +1087,7 @@ class ServiceDuplicationTestCase(APITestCase):
             )
             self.assertEqual(response.status_code, 200)
             service.refresh_from_db()
-            self.assertNotEqual(service.common_fields_checksum, initial_checksum)
+            self.assertNotEqual(service.sync_checksum, initial_checksum)
 
     def test_copy_preserve_expected_fields(self):
         user = baker.make("users.User", is_valid=True)
@@ -1294,9 +1294,7 @@ class ServiceDuplicationPermissionTestCase(APITestCase):
         structure = make_structure(user)
         source = make_service(is_model=True, short_desc="yyy")
         service = make_service(model=source, structure=structure, short_desc="xxx")
-        self.assertNotEqual(
-            service.common_fields_checksum, source.common_fields_checksum
-        )
+        self.assertNotEqual(service.sync_checksum, source.sync_checksum)
         self.client.force_authenticate(user=user)
         response = self.client.post(
             f"/services/{service.slug}/sync/",
@@ -1304,7 +1302,7 @@ class ServiceDuplicationPermissionTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         source.refresh_from_db()
         service.refresh_from_db()
-        self.assertEqual(service.common_fields_checksum, source.common_fields_checksum)
+        self.assertEqual(service.sync_checksum, source.sync_checksum)
         self.assertEqual(service.short_desc, source.short_desc)
 
     def test_cant_sync_uptodate_service(self):
@@ -1312,7 +1310,7 @@ class ServiceDuplicationPermissionTestCase(APITestCase):
         structure = make_structure(user)
         source = make_service(is_model=True, short_desc="yyy")
         service = copy_service(source, structure, user)
-        self.assertEqual(service.common_fields_checksum, source.common_fields_checksum)
+        self.assertEqual(service.sync_checksum, source.sync_checksum)
         self.client.force_authenticate(user=user)
         response = self.client.post(
             f"/services/{service.slug}/sync/",

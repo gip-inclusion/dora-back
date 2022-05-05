@@ -25,7 +25,12 @@ from dora.services.models import (
     ServiceModificationHistoryItem,
     ServiceSubCategory,
 )
-from dora.services.utils import copy_service, filter_services_by_city_code, sync_service
+from dora.services.utils import (
+    copy_service,
+    filter_services_by_city_code,
+    get_service_diffs,
+    sync_service,
+)
 from dora.structures.models import Structure, StructureMember
 
 from .serializers import (
@@ -229,7 +234,7 @@ class ServiceViewSet(
         if not service.model:
             raise serializers.ValidationError("Ce service n'est pas synchronisé")
 
-        if service.model.common_fields_checksum == service.common_fields_checksum:
+        if service.model.sync_checksum == service.sync_checksum:
             raise serializers.ValidationError("Ce service est à jour")
 
         # TODO: check that the original is still a model or that I can still read it?
@@ -257,6 +262,19 @@ class ServiceViewSet(
         service.model = None
         service.save()
         return Response(status=201)
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="diff",
+    )
+    def diff(self, request, slug):
+        # user = request.user
+        service = self.get_object()
+        if not service.model:
+            raise serializers.ValidationError("Ce service n'est pas synchronisé")
+        differences = get_service_diffs(service)
+        return Response(differences)
 
     def perform_create(self, serializer):
         service = serializer.save(

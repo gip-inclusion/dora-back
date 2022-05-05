@@ -283,7 +283,8 @@ class Service(models.Model):
     model = models.ForeignKey(
         "self", on_delete=models.SET_NULL, blank=True, null=True, related_name="copies"
     )
-    common_fields_checksum = models.CharField(max_length=32, blank=True)
+    sync_checksum = models.CharField(max_length=32, blank=True)
+    last_sync_checksum = models.CharField(max_length=32, blank=True)
 
     def __str__(self):
         return self.name
@@ -295,10 +296,10 @@ class Service(models.Model):
         return instance
 
     def update_checksum(self):
-        old_checksum = self.common_fields_checksum
-        self.common_fields_checksum = update_common_fields_checksum(self)
-        if old_checksum != self.common_fields_checksum:
-            super().save(update_fields=["common_fields_checksum"])
+        old_checksum = self.sync_checksum
+        self.sync_checksum = update_common_fields_checksum(self)
+        if old_checksum != self.sync_checksum:
+            super().save(update_fields=["sync_checksum"])
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -307,7 +308,7 @@ class Service(models.Model):
             original_is_draft = self._original["is_draft"]
             if original_is_draft is True and self.is_draft is False:
                 self.publication_date = timezone.now()
-        self.common_fields_checksum = update_common_fields_checksum(self)
+        self.sync_checksum = update_common_fields_checksum(self)
         return super().save(*args, **kwargs)
 
     def can_write(self, user):

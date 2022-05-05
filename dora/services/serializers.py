@@ -393,7 +393,7 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     def get_model_changed(self, object):
         if object.model:
-            return object.model.common_fields_checksum != object.common_fields_checksum
+            return object.model.sync_checksum != object.sync_checksum
         return None
 
 
