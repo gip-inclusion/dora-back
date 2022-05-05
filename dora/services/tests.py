@@ -1208,6 +1208,16 @@ class ServiceDuplicationPermissionTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 403)
 
+    def test_cant_duplicate_other_draft_services_in_my_structures(self):
+        user = baker.make("users.User", is_valid=True)
+        service = make_service(is_model=False, is_draft=True)
+        dest_struct = make_structure(user)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
+        )
+        self.assertEqual(response.status_code, 404)
+
     def test_cant_duplicate_other_services_in_my_structures(self):
         user = baker.make("users.User", is_valid=True)
         service = make_service(is_model=False, is_draft=False)
@@ -1366,6 +1376,24 @@ class ServiceSyncTestCase(APITestCase):
         self.client.force_authenticate(user=user)
         response = self.client.post(
             f"/services/{service.slug}/sync/", {"fields": ["short_desc"]}
+        )
+        self.assertEqual(response.status_code, 403)
+
+
+class ServiceDiffTestCase(APITestCase):
+    def test_cant_diff_others_services(self):
+        user = baker.make("users.User", is_valid=True)
+        user2 = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        source = make_service(is_model=True)
+        service = copy_service(source, structure, user)
+        source.short_desc = "xxx"
+        source.save()
+        service.is_draft = False
+        service.save()
+        self.client.force_authenticate(user=user2)
+        response = self.client.get(
+            f"/services/{service.slug}/diff/",
         )
         self.assertEqual(response.status_code, 403)
 

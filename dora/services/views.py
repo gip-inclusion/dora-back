@@ -228,7 +228,6 @@ class ServiceViewSet(
         url_path="sync",
     )
     def sync(self, request, slug):
-        user = request.user
         service = self.get_object()
         fields = request.data["fields"]
 
@@ -237,11 +236,6 @@ class ServiceViewSet(
 
         if service.model.sync_checksum == service.last_sync_checksum:
             raise serializers.ValidationError("Ce service est à jour")
-
-        # On peut uniquement synchroniser un service d'une de nos structures
-        user_structures = Structure.objects.filter(membership__user=user)
-        if service.structure not in user_structures:
-            raise PermissionDenied
 
         updated_service = sync_service(service, request.user, fields)
         return Response(
@@ -268,8 +262,13 @@ class ServiceViewSet(
         url_path="diff",
     )
     def diff(self, request, slug):
-        # user = request.user
         service = self.get_object()
+
+        # On peut uniquement synchroniser un service d'une de nos structures
+        user_structures = Structure.objects.filter(membership__user=request.user)
+        if service.structure not in user_structures:
+            raise PermissionDenied
+
         if not service.model:
             raise serializers.ValidationError("Ce service n'est pas synchronisé")
         differences = get_service_diffs(service)
