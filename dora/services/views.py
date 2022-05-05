@@ -25,7 +25,7 @@ from dora.services.models import (
     ServiceModificationHistoryItem,
     ServiceSubCategory,
 )
-from dora.services.utils import copy_service, filter_services_by_city_code
+from dora.services.utils import copy_service, filter_services_by_city_code, sync_service
 from dora.structures.models import Structure, StructureMember
 
 from .serializers import (
@@ -194,6 +194,10 @@ class ServiceViewSet(
     def copy(self, request, slug):
         user = request.user
         service = self.get_object()
+        if service.model:
+            raise serializers.ValidationError(
+                "Impossible de copier un service synchronisé"
+            )
         structure_slug = self.request.data.get("structure")
         try:
             structure = Structure.objects.get(slug=structure_slug)
@@ -212,6 +216,47 @@ class ServiceViewSet(
         return Response(
             ServiceSerializer(new_service, context={"request": request}).data
         )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="sync",
+    )
+    def sync(self, request, slug):
+        user = request.user
+        service = self.get_object()
+
+        if not service.model:
+            raise serializers.ValidationError("Ce service n'est pas synchronisé")
+
+        if service.model.common_fields_checksum == service.common_fields_checksum:
+            raise serializers.ValidationError("Ce service est à jour")
+
+        # TODO: check that the original is still a model or that I can still read it?
+
+        # On peut uniquement synchroniser un service d'une de nos structures
+        user_structures = Structure.objects.filter(membership__user=user)
+        if service.structure not in user_structures:
+            raise PermissionDenied
+
+        updated_service = sync_service(service, request.user)
+        return Response(
+            ServiceSerializer(updated_service, context={"request": request}).data
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="unsync",
+    )
+    def unsync(self, request, slug):
+        # user = request.user
+        service = self.get_object()
+        if not service.model:
+            raise serializers.ValidationError("Ce service n'est pas synchronisé")
+        service.model = None
+        service.save()
+        return Response(status=201)
 
     def perform_create(self, serializer):
         service = serializer.save(

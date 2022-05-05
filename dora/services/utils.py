@@ -38,6 +38,7 @@ SYNC_CUSTOM_M2M_FIELDS = [
 
 
 def _duplicate_customizable_choices(field, choices, structure):
+    # TODO add tests
     for choice in choices:
         if choice.structure:
             new_choice, _created = choice._meta.model.objects.get_or_create(
@@ -69,7 +70,6 @@ def update_common_fields_checksum(service):
 
 
 def copy_service(original, structure, user):
-    # TODO: add tests
     service = original.__class__.objects.create(structure=structure)
 
     # Prefill address
@@ -92,8 +92,16 @@ def copy_service(original, structure, user):
     service.is_draft = True
     service.is_model = False
     service.creator = original.creator
-    service.last_editor = user
     service.model = original
+
+    service.save()
+    sync_service(service, user)
+    return service
+
+
+def sync_service(service, user):
+    original = service.model
+    service.last_editor = user
 
     # Sync'd Simple fields
     for field in SYNC_FIELDS:
@@ -107,10 +115,11 @@ def copy_service(original, structure, user):
 
     for field in SYNC_CUSTOM_M2M_FIELDS:
         _duplicate_customizable_choices(
-            getattr(service, field), getattr(original, field).all(), structure
+            getattr(service, field), getattr(original, field).all(), service.structure
         )
 
     service.update_checksum()
+
     return service
 
 

@@ -6,7 +6,12 @@ from rest_framework.test import APITestCase
 
 from dora.admin_express.models import AdminDivisionType
 from dora.core.test_utils import make_service, make_structure
-from dora.services.utils import SYNC_CUSTOM_M2M_FIELDS, SYNC_FIELDS, SYNC_M2M_FIELDS
+from dora.services.utils import (
+    SYNC_CUSTOM_M2M_FIELDS,
+    SYNC_FIELDS,
+    SYNC_M2M_FIELDS,
+    copy_service,
+)
 from dora.structures.models import Structure
 
 from .models import (
@@ -1236,3 +1241,102 @@ class ServiceDuplicationPermissionTestCase(APITestCase):
             f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
         )
         self.assertEqual(response.status_code, 200)
+
+    def test_can_unsync_my_services(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        source_service = make_service(structure=struct)
+        dest_service = make_service(model=source_service, structure=struct)
+        self.assertIsNotNone(dest_service.model)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(f"/services/{dest_service.slug}/unsync/")
+        self.assertEqual(response.status_code, 201)
+        dest_service.refresh_from_db()
+        self.assertIsNone(dest_service.model)
+
+    def test_cant_unsync_a_service_not_synced(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        dest_service = make_service(model=None, structure=struct)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(f"/services/{dest_service.slug}/unsync/")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Ce service n'est pas synchronisé", repr(response.data))
+
+    def test_cant_unsync_others_services(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        source_service = make_service(
+            structure=struct,
+        )
+        dest_service = make_service(model=source_service, is_draft=False)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(f"/services/{dest_service.slug}/unsync/")
+        self.assertEqual(response.status_code, 403)
+
+    def test_cant_duplicate_a_duplicated_service(self):
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        source = make_service(is_model=True)
+        service = make_service(model=source, structure=structure)
+        dest_struct = make_structure(user)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(
+            "Impossible de copier un service synchronisé", repr(response.data)
+        )
+
+    def test_can_sync_my_services(self):
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        source = make_service(is_model=True, short_desc="yyy")
+        service = make_service(model=source, structure=structure, short_desc="xxx")
+        self.assertNotEqual(
+            service.common_fields_checksum, source.common_fields_checksum
+        )
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            f"/services/{service.slug}/sync/",
+        )
+        self.assertEqual(response.status_code, 200)
+        source.refresh_from_db()
+        service.refresh_from_db()
+        self.assertEqual(service.common_fields_checksum, source.common_fields_checksum)
+        self.assertEqual(service.short_desc, source.short_desc)
+
+    def test_cant_sync_uptodate_service(self):
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        source = make_service(is_model=True, short_desc="yyy")
+        service = copy_service(source, structure, user)
+        self.assertEqual(service.common_fields_checksum, source.common_fields_checksum)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            f"/services/{service.slug}/sync/",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Ce service est à jour", repr(response.data))
+
+    def test_cant_sync_others_services(self):
+        user = baker.make("users.User", is_valid=True)
+        source = make_service(is_model=True)
+        service = make_service(model=source, is_draft=False)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            f"/services/{service.slug}/sync/",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_cant_sync_services_not_model_anymore(self):
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        source = make_service(is_model=False)
+        service = make_service(model=source, structure=structure)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            f"/services/{service.slug}/sync/",
+        )
+        self.assertEqual(response.status_code, 400)
