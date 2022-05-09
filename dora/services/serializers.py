@@ -2,6 +2,7 @@ import logging
 
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
+from django.db.models import Count, Q
 from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 
@@ -73,6 +74,7 @@ class CreatablePrimaryKeyRelatedField(PrimaryKeyRelatedField):
 
 class StructureSerializer(serializers.ModelSerializer):
     has_admin = serializers.SerializerMethodField()
+    num_services = serializers.IntegerField()
 
     class Meta:
         model = Structure
@@ -87,6 +89,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "url",
             "siret",
             "has_admin",
+            "num_services",
         ]
 
     def get_has_admin(self, structure):
@@ -132,7 +135,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     structure = serializers.SlugRelatedField(
         queryset=Structure.objects.all(), slug_field="slug"
     )
-    structure_info = StructureSerializer(source="structure", read_only=True)
+    structure_info = serializers.SerializerMethodField()
     kinds = serializers.SlugRelatedField(
         slug_field="value",
         queryset=ServiceKind.objects.all(),
@@ -295,6 +298,22 @@ class ServiceSerializer(serializers.ModelSerializer):
             "model_changed",
         ]
         lookup_field = "slug"
+
+    def get_structure_info(self, obj):
+        user = self.context.get("request").user
+        structure = obj.structure
+        structure_qs = Structure.objects.filter(pk=structure.pk)
+
+        if user.is_authenticated and (user.is_staff or structure.is_member(user)):
+            structure_qs = structure_qs.annotate(num_services=Count("services"))
+        else:
+            structure_qs = structure_qs.annotate(
+                num_services=Count(
+                    "services",
+                    filter=Q(services__is_draft=False, services__is_suggestion=False),
+                )
+            )
+        return StructureSerializer(structure_qs.first()).data
 
     def get_category(self, obj):
         # On n'utilise volontairement pas .first() ici pour éviter une requete supplémentaire

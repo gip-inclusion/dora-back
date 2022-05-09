@@ -688,6 +688,51 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(ServiceModificationHistoryItem.objects.exists())
 
+    def test_members_see_all_services_count(self):
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        service = make_service(is_draft=False, structure=structure)
+        make_service(is_draft=False, structure=structure)
+        make_service(is_draft=True, structure=structure)
+        self.client.force_authenticate(user=user)
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["structure_info"]["num_services"], 3)
+
+    def test_su_see_all_services_count(self):
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        service = make_service(is_draft=False, structure=structure)
+        make_service(is_draft=False, structure=structure)
+        make_service(is_draft=True, structure=structure)
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["structure_info"]["num_services"], 3)
+
+    def test_others_see_public_services_count(self):
+        user = baker.make("users.User", is_valid=True)
+        user2 = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        service = make_service(is_draft=False, structure=structure)
+        make_service(is_draft=False, structure=structure)
+        make_service(is_draft=True, structure=structure)
+        self.client.force_authenticate(user=user2)
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["structure_info"]["num_services"], 2)
+
+    def test_anon_see_public_services_count(self):
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        service = make_service(is_draft=False, structure=structure)
+        make_service(is_draft=False, structure=structure)
+        make_service(is_draft=True, structure=structure)
+        self.client.force_authenticate(None)
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["structure_info"]["num_services"], 2)
+
 
 class ServiceSearchTestCase(APITestCase):
     def setUp(self):
