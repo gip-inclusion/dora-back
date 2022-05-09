@@ -1,4 +1,9 @@
 from django.contrib.gis.geos import Point
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
+
+from dora.admin_express.models import AdminDivisionType, City  # , Department, Region
+from dora.admin_express.utils import arrdt_to_main_insee_code
 
 
 def _duplicate_customizable_choices(field, choices, structure):
@@ -71,3 +76,58 @@ def copy_service(service, structure, user):
     )
 
     return clone
+
+
+def filter_services_by_city_code(services, city_code):
+    # Si la requete entrante contient un code insee d'arrondissement
+    # on le converti pour récupérer le code de la commune entière
+    city_code = arrdt_to_main_insee_code(city_code)
+    city = get_object_or_404(City, pk=city_code)
+
+    return services.filter(
+        Q(diffusion_zone_type=AdminDivisionType.COUNTRY)
+        | (
+            Q(diffusion_zone_type=AdminDivisionType.CITY)
+            & Q(diffusion_zone_details=city.code)
+        )
+        | (
+            Q(diffusion_zone_type=AdminDivisionType.EPCI)
+            & Q(diffusion_zone_details__in=city.epci.split("/"))
+        )
+        | (
+            Q(diffusion_zone_type=AdminDivisionType.DEPARTMENT)
+            & Q(diffusion_zone_details=city.department)
+        )
+        | (
+            Q(diffusion_zone_type=AdminDivisionType.REGION)
+            & Q(diffusion_zone_details=city.region)
+        )
+    )
+
+
+# def filter_services_by_department(services, dept_code):
+#     department = get_object_or_404(Department, pk=dept_code)
+
+#     return services.filter(
+#         Q(diffusion_zone_type=AdminDivisionType.COUNTRY)
+#         | (
+#             Q(diffusion_zone_type=AdminDivisionType.DEPARTMENT)
+#             & Q(diffusion_zone_details=department.code)
+#         )
+#         | (
+#             Q(diffusion_zone_type=AdminDivisionType.REGION)
+#             & Q(diffusion_zone_details=department.region)
+#         )
+#     )
+
+
+# def filter_services_by_region(services, region_code):
+#     region = get_object_or_404(Region, pk=region_code)
+
+#     return services.filter(
+#         Q(diffusion_zone_type=AdminDivisionType.COUNTRY)
+#         | (
+#             Q(diffusion_zone_type=AdminDivisionType.REGION)
+#             & Q(diffusion_zone_details=region.code)
+#         )
+#     )

@@ -8,6 +8,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from dora.core.notify import send_mattermost_notification
+from dora.core.pagination import OptionalPageNumberPagination
 from dora.rest_auth.models import Token
 from dora.structures.emails import send_invitation_email
 from dora.structures.models import (
@@ -41,6 +42,8 @@ class StructureViewSet(
 ):
     serializer_class = StructureSerializer
     permission_classes = [StructurePermission]
+    pagination_class = OptionalPageNumberPagination
+
     lookup_field = "slug"
 
     def get_queryset(self):

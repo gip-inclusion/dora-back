@@ -289,6 +289,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "coach_orientation_modes_display",
             "department",
             "can_write",
+            "is_model",
         ]
         lookup_field = "slug"
 
@@ -449,6 +450,7 @@ class ServiceListSerializer(ServiceSerializer):
             "diffusion_zone_type",
             "diffusion_zone_type_display",
             "diffusion_zone_details_display",
+            "is_model",
         ]
         lookup_field = "slug"
 

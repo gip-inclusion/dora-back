@@ -1,15 +1,13 @@
 from django.conf import settings
 from django.db.models import Q
 from django.http.response import Http404
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import mixins, pagination, permissions, serializers, viewsets
+from rest_framework import mixins, permissions, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
-from dora.admin_express.models import City
-from dora.admin_express.utils import arrdt_to_main_insee_code
 from dora.core.notify import send_mattermost_notification
+from dora.core.pagination import OptionalPageNumberPagination
 from dora.services.emails import send_service_feedback_email
 from dora.services.models import (
     AccessCondition,
@@ -26,6 +24,7 @@ from dora.services.models import (
     ServiceModificationHistoryItem,
     ServiceSubCategory,
 )
+from dora.services.utils import filter_services_by_city_code
 from dora.structures.models import Structure, StructureMember
 
 from .serializers import (
@@ -34,13 +33,6 @@ from .serializers import (
     ServiceListSerializer,
     ServiceSerializer,
 )
-
-
-class FlatPagination(pagination.PageNumberPagination):
-    page_size_query_param = "count"
-
-    def get_paginated_response(self, data):
-        return Response(data)
 
 
 class ServicePermission(permissions.BasePermission):
@@ -89,7 +81,7 @@ class ServiceViewSet(
     viewsets.GenericViewSet,
 ):
     permission_classes = [ServicePermission]
-    pagination_class = FlatPagination
+    pagination_class = OptionalPageNumberPagination
 
     lookup_field = "slug"
 
@@ -126,7 +118,9 @@ class ServiceViewSet(
                 qs = all_services.filter(structure__membership__user=user)
         # Everybody can see published services
         elif not user or not user.is_authenticated:
-            qs = all_services.filter(is_draft=False, is_suggestion=False)
+            qs = all_services.filter(
+                Q(Q(is_draft=False) | Q(is_model=True)), is_suggestion=False
+            )
         # Staff can see everything
         elif user.is_staff:
             qs = all_services
@@ -134,7 +128,7 @@ class ServiceViewSet(
             # Authentified users can see everything in their structure
             # plus published services for other structures
             qs = all_services.filter(
-                Q(is_draft=False, is_suggestion=False)
+                Q(Q(Q(is_draft=False) | Q(is_model=True)), is_suggestion=False)
                 | Q(structure__membership__user=user)
             )
         if structure_slug:
@@ -395,38 +389,26 @@ def search(request):
     if subcategory:
         services = services.filter(subcategories__value=subcategory)
 
-    # Si la requete entrante contient un code insee d'arrondissement
-    # on le converti pour récupérer le code de la commune entière
-    city_code = arrdt_to_main_insee_code(city_code)
-    city = get_object_or_404(City, pk=city_code)
-
-    geofiltered_services = services.filter(
-        Q(diffusion_zone_type=AdminDivisionType.COUNTRY)
-        | (
-            Q(diffusion_zone_type=AdminDivisionType.CITY)
-            & Q(diffusion_zone_details=city.code)
-        )
-        | (
-            Q(diffusion_zone_type=AdminDivisionType.EPCI)
-            & Q(diffusion_zone_details__in=city.epci.split("/"))
-        )
-        | (
-            Q(diffusion_zone_type=AdminDivisionType.DEPARTMENT)
-            & Q(diffusion_zone_details=city.department)
-        )
-        | (
-            Q(diffusion_zone_type=AdminDivisionType.REGION)
-            & Q(diffusion_zone_details=city.region)
-        )
-    )
+    geofiltered_services = filter_services_by_city_code(services, city_code)
 
     # Exclude suspended services
-    results = geofiltered_services.filter(
-        Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
+    results = (
+        geofiltered_services.filter(
+            Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
+        )
+        .distinct()
+        .order_by("pk")
     )
 
-    return Response(
-        SearchResultSerializer(
-            results.distinct(), many=True, context={"request": request}
-        ).data
+    paginator = OptionalPageNumberPagination()
+    page = paginator.paginate_queryset(results, request)
+    if page is not None:
+        serializer = SearchResultSerializer(
+            page, many=True, context={"request": request}
+        )
+        return paginator.get_paginated_response(serializer.data)
+
+    serializer = SearchResultSerializer(
+        results, many=True, context={"request": request}
     )
+    return Response(serializer.data)

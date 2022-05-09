@@ -13,6 +13,9 @@ from dora.services.models import (
     ServiceKind,
     ServiceSubCategory,
 )
+from dora.services.utils import (  # filter_services_by_department,; filter_services_by_region,
+    filter_services_by_city_code,
+)
 from dora.structures.models import Structure, StructureSource, StructureTypology
 
 from .serializers import (
@@ -100,9 +103,6 @@ class ServiceFilter(django_filters.FilterSet):
         field_name="structure__siret",
     )
     structure = django_filters.ModelChoiceFilter(queryset=Structure.objects.all())
-    department = django_filters.CharFilter(
-        field_name="structure__department",
-    )
     creation_date = django_filters.DateFromToRangeFilter()
     modification_date = django_filters.DateFromToRangeFilter()
     categories = django_filters.ModelMultipleChoiceFilter(
@@ -110,12 +110,37 @@ class ServiceFilter(django_filters.FilterSet):
         queryset=ServiceCategory.objects.all(),
         to_field_name="value",
     )
+    subcategories = django_filters.ModelMultipleChoiceFilter(
+        field_name="subcategories__value",
+        queryset=ServiceSubCategory.objects.all(),
+        to_field_name="value",
+    )
+    city = django_filters.CharFilter(
+        method="filter_by_city_code", help_text="Code INSEE de la commune"
+    )
+    # department = django_filters.CharFilter(
+    #     method="filter_by_department_code", help_text="Code INSEE du département"
+    # )
+    # region = django_filters.CharFilter(
+    #     method="filter_by_region_code", help_text="Code INSEE de la région"
+    # )
 
-    o = django_filters.OrderingFilter(fields=("creation_date", "modification_date"))
+    o = django_filters.OrderingFilter(
+        fields=("creation_date", "modification_date", "name")
+    )
 
     class Meta:
         model = Service
         fields = []
+
+    def filter_by_city_code(self, queryset, _name, city_code):
+        return filter_services_by_city_code(queryset, city_code)
+
+    # def filter_by_department_code(self, queryset, _name, dept_code):
+    #     return filter_services_by_department(queryset, dept_code)
+
+    # def filter_by_region_code(self, queryset, _name, region_code):
+    #     return filter_services_by_region(queryset, region_code)
 
 
 @extend_schema(tags=["Services"])

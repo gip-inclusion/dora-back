@@ -949,3 +949,78 @@ class ServiceSearchTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
+
+
+class ServiceDuplicationTestCase(APITestCase):
+    def test_everybody_can_see_draft_models(self):
+        service = make_service(is_draft=True, is_model=True)
+        response = self.client.get("/services/")
+        self.assertEqual(response.status_code, 200)
+        services_ids = [s["slug"] for s in response.data]
+        self.assertIn(service.slug, services_ids)
+
+    def test_everybody_can_see_is_model_param(self):
+        service = make_service(is_draft=True, is_model=True)
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["is_model"])
+
+    def test_can_set_is_model_param(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure()
+        struct.members.add(user)
+        service = make_service(is_model=False, structure=struct)
+        self.client.force_authenticate(user=user)
+        response = self.client.patch(f"/services/{service.slug}/", {"is_model": True})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["is_model"])
+
+    def test_can_unset_is_model_param(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure()
+        struct.members.add(user)
+        service = make_service(is_model=True, structure=struct)
+        self.client.force_authenticate(user=user)
+        response = self.client.patch(f"/services/{service.slug}/", {"is_model": False})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.data["is_model"])
+
+    def test_superuser_can_set_is_model_param(self):
+        superuser = baker.make("users.User", is_staff=True, is_valid=True)
+        service = make_service(is_model=False)
+        self.client.force_authenticate(user=superuser)
+        response = self.client.patch(f"/services/{service.slug}/", {"is_model": True})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["is_model"])
+
+    def test_superuser_can_unset_is_model_param(self):
+        superuser = baker.make("users.User", is_staff=True, is_valid=True)
+        service = make_service(is_model=True)
+        self.client.force_authenticate(user=superuser)
+        response = self.client.patch(f"/services/{service.slug}/", {"is_model": False})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.data["is_model"])
+
+    def test_other_cant_set_is_model_param(self):
+        user = baker.make("users.User", is_valid=True)
+        service = make_service(is_model=False, is_draft=False)
+        self.client.force_authenticate(user=user)
+        response = self.client.patch(f"/services/{service.slug}/", {"is_model": True})
+        self.assertEqual(response.status_code, 403)
+
+    def test_other_cant_unset_is_model_param(self):
+        user = baker.make("users.User", is_valid=True)
+        service = make_service(is_model=True, is_draft=False)
+        self.client.force_authenticate(user=user)
+        response = self.client.patch(f"/services/{service.slug}/", {"is_model": False})
+        self.assertEqual(response.status_code, 403)
+
+    def test_anonymous_cant_set_is_model_param(self):
+        service = make_service(is_model=False, is_draft=False)
+        response = self.client.patch(f"/services/{service.slug}/", {"is_model": True})
+        self.assertEqual(response.status_code, 401)
+
+    def test_anonymous_cant_unset_is_model_param(self):
+        service = make_service(is_model=True, is_draft=False)
+        response = self.client.patch(f"/services/{service.slug}/", {"is_model": False})
+        self.assertEqual(response.status_code, 401)
