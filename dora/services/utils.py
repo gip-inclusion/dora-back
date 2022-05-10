@@ -23,17 +23,9 @@ SYNC_FIELDS = [
     "contact_email",
     "is_contact_info_public",
     "remote_url",
-    "address1",
-    "address2",
-    "postal_code",
-    "city_code",
-    "city",
-    "geom",
-    "diffusion_zone_type",
     "diffusion_zone_details",
     "qpv_or_zrr",
     "recurrence",
-    "suspension_date",
 ]
 
 SYNC_M2M_FIELDS = [
@@ -42,7 +34,6 @@ SYNC_M2M_FIELDS = [
     "subcategories",
     "beneficiaries_access_modes",
     "coach_orientation_modes",
-    "location_kinds",
 ]
 
 SYNC_CUSTOM_M2M_FIELDS = [
