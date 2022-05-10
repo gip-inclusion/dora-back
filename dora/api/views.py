@@ -13,8 +13,10 @@ from dora.services.models import (
     ServiceKind,
     ServiceSubCategory,
 )
-from dora.services.utils import (  # filter_services_by_department,; filter_services_by_region,
+from dora.services.utils import (
     filter_services_by_city_code,
+    filter_services_by_department,
+    filter_services_by_region,
 )
 from dora.structures.models import Structure, StructureSource, StructureTypology
 
@@ -118,12 +120,12 @@ class ServiceFilter(django_filters.FilterSet):
     city = django_filters.CharFilter(
         method="filter_by_city_code", help_text="Code INSEE de la commune"
     )
-    # department = django_filters.CharFilter(
-    #     method="filter_by_department_code", help_text="Code INSEE du département"
-    # )
-    # region = django_filters.CharFilter(
-    #     method="filter_by_region_code", help_text="Code INSEE de la région"
-    # )
+    department = django_filters.CharFilter(
+        method="filter_by_department_code", help_text="Code INSEE du département"
+    )
+    region = django_filters.CharFilter(
+        method="filter_by_region_code", help_text="Code INSEE de la région"
+    )
 
     o = django_filters.OrderingFilter(
         fields=("creation_date", "modification_date", "name")
@@ -136,11 +138,11 @@ class ServiceFilter(django_filters.FilterSet):
     def filter_by_city_code(self, queryset, _name, city_code):
         return filter_services_by_city_code(queryset, city_code)
 
-    # def filter_by_department_code(self, queryset, _name, dept_code):
-    #     return filter_services_by_department(queryset, dept_code)
+    def filter_by_department_code(self, queryset, _name, dept_code):
+        return filter_services_by_department(queryset, dept_code)
 
-    # def filter_by_region_code(self, queryset, _name, region_code):
-    #     return filter_services_by_region(queryset, region_code)
+    def filter_by_region_code(self, queryset, _name, region_code):
+        return filter_services_by_region(queryset, region_code)
 
 
 @extend_schema(tags=["Services"])
