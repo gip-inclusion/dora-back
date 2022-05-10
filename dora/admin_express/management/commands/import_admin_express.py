@@ -7,6 +7,7 @@ from django.conf import settings
 from django.contrib.gis.utils import LayerMapping
 from django.core.management.base import BaseCommand
 from django.db import connection
+from django.db.models import F, Func, Value
 
 from dora.admin_express.models import EPCI, City, Department, Region
 from dora.admin_express.utils import normalize_string_for_search
@@ -96,6 +97,18 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("Import successful"))
             self.stdout.write(self.style.SUCCESS("Normalizing…"))
             normalize_model(EPCI)
+
+            self.stdout.write(self.style.SUCCESS("Linking to Cities"))
+            City.objects.update(
+                epcis=Func(F("epci"), Value("/"), function="string_to_array")
+            )
+            self.stdout.write(self.style.SUCCESS("Linking depts and regions"))
+            for epci in EPCI.objects.all():
+                cities = City.objects.filter(epcis__contains=[epci.code])
+                epci.departments = list(set(c.department for c in cities))
+                epci.regions = list(set(c.region for c in cities))
+                epci.save()
+
             self.stdout.write(self.style.SUCCESS("Done"))
 
             # Departements

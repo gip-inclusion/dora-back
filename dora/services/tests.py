@@ -695,7 +695,7 @@ class ServiceSearchTestCase(APITestCase):
         self.city1 = baker.make(
             "City",
             code="12345",
-            epci=f"{self.epci11.code}/{self.epci12.code}",
+            epcis=[self.epci11.code, self.epci12.code],
             department=self.dept.code,
             region=self.region.code,
         )

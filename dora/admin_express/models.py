@@ -1,4 +1,5 @@
 from django.contrib.gis.db import models
+from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.indexes import GinIndex
 
 
@@ -64,6 +65,11 @@ class City(AdminDivision):
     department = models.CharField(max_length=3, db_index=True)
     region = models.CharField(max_length=2, db_index=True)
     epci = models.CharField(max_length=20, db_index=True)
+    epcis = ArrayField(
+        models.CharField(max_length=9, primary_key=True),
+        blank=True,
+        default=list,
+    )
     population = models.IntegerField()
     objects = CityManager()
 
@@ -83,6 +89,16 @@ class EPCIManager(ManyGeoManager):
 
 class EPCI(AdminDivision):
     nature = models.CharField(max_length=150, db_index=True)
+    departments = ArrayField(
+        models.CharField(max_length=9, primary_key=True),
+        blank=True,
+        default=list,
+    )
+    regions = ArrayField(
+        models.CharField(max_length=9, primary_key=True),
+        blank=True,
+        default=list,
+    )
     objects = EPCIManager()
 
     class Meta:

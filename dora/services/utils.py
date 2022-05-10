@@ -92,7 +92,7 @@ def filter_services_by_city_code(services, city_code):
         )
         | (
             Q(diffusion_zone_type=AdminDivisionType.EPCI)
-            & Q(diffusion_zone_details__in=city.epci.split("/"))
+            & Q(diffusion_zone_details__in=city.epcis)
         )
         | (
             Q(diffusion_zone_type=AdminDivisionType.DEPARTMENT)
