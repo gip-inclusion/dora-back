@@ -73,6 +73,7 @@ class CreatablePrimaryKeyRelatedField(PrimaryKeyRelatedField):
 
 class StructureSerializer(serializers.ModelSerializer):
     has_admin = serializers.SerializerMethodField()
+    num_services = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
@@ -87,10 +88,14 @@ class StructureSerializer(serializers.ModelSerializer):
             "url",
             "siret",
             "has_admin",
+            "num_services",
         ]
 
     def get_has_admin(self, structure):
         return structure.membership.filter(is_admin=True, user__is_staff=False).exists()
+
+    def get_num_services(self, structure):
+        return structure.get_num_visible_services(self.context["request"].user)
 
 
 def _get_diffusion_zone_type_display(obj):
@@ -223,6 +228,8 @@ class ServiceSerializer(serializers.ModelSerializer):
     department = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
 
+    model_changed = serializers.SerializerMethodField()
+
     class Meta:
         model = Service
 
@@ -290,6 +297,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "department",
             "can_write",
             "is_model",
+            "model_changed",
         ]
         lookup_field = "slug"
 
@@ -387,6 +395,11 @@ class ServiceSerializer(serializers.ModelSerializer):
                 )
 
         return values
+
+    def get_model_changed(self, object):
+        if object.model:
+            return object.model.sync_checksum != object.sync_checksum
+        return None
 
 
 class AnonymousServiceSerializer(ServiceSerializer):

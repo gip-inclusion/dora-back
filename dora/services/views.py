@@ -4,6 +4,7 @@ from django.http.response import Http404
 from django.utils import timezone
 from rest_framework import mixins, permissions, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from dora.core.notify import send_mattermost_notification
@@ -24,7 +25,12 @@ from dora.services.models import (
     ServiceModificationHistoryItem,
     ServiceSubCategory,
 )
-from dora.services.utils import filter_services_by_city_code
+from dora.services.utils import (
+    copy_service,
+    filter_services_by_city_code,
+    get_service_diffs,
+    sync_service,
+)
 from dora.structures.models import Structure, StructureMember
 
 from .serializers import (
@@ -184,6 +190,90 @@ class ServiceViewSet(
         send_service_feedback_email(service, d["full_name"], d["email"], d["message"])
         return Response(status=201)
 
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="copy",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def copy(self, request, slug):
+        user = request.user
+        service = self.get_object()
+        if service.model:
+            raise serializers.ValidationError(
+                "Impossible de copier un service synchronisé"
+            )
+        structure_slug = self.request.data.get("structure")
+        try:
+            structure = Structure.objects.get(slug=structure_slug)
+        except Structure.DoesNotExist:
+            raise Http404
+        # On peut uniquement copier vers une structure dont on fait partie
+        user_structures = Structure.objects.filter(membership__user=user)
+        if structure not in user_structures:
+            raise PermissionDenied
+        # On peut uniquement copier un service d'une de nos structures
+        # ou un service marqué comme modèle
+        if service.structure not in user_structures and not service.is_model:
+            raise PermissionDenied
+
+        new_service = copy_service(service, structure, request.user)
+        return Response(
+            ServiceSerializer(new_service, context={"request": request}).data
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="sync",
+    )
+    def sync(self, request, slug):
+        service = self.get_object()
+        fields = request.data["fields"]
+
+        if not service.model:
+            raise serializers.ValidationError("Ce service n'est pas synchronisé")
+
+        if service.model.sync_checksum == service.last_sync_checksum:
+            raise serializers.ValidationError("Ce service est à jour")
+
+        updated_service = sync_service(service, request.user, fields)
+        return Response(
+            ServiceSerializer(updated_service, context={"request": request}).data
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="unsync",
+    )
+    def unsync(self, request, slug):
+        # user = request.user
+        service = self.get_object()
+        if not service.model:
+            raise serializers.ValidationError("Ce service n'est pas synchronisé")
+        service.model = None
+        service.save()
+        return Response(status=201)
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="diff",
+    )
+    def diff(self, request, slug):
+        service = self.get_object()
+
+        # On peut uniquement synchroniser un service d'une de nos structures
+        user_structures = Structure.objects.filter(membership__user=request.user)
+        if service.structure not in user_structures:
+            raise PermissionDenied
+
+        if not service.model:
+            raise serializers.ValidationError("Ce service n'est pas synchronisé")
+        differences = get_service_diffs(service)
+        return Response(differences)
+
     def perform_create(self, serializer):
         service = serializer.save(
             creator=self.request.user, last_editor=self.request.user
@@ -193,6 +283,8 @@ class ServiceViewSet(
         send_mattermost_notification(
             f":tada: Nouveau service {draft} “{service.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/services/{service.slug}"
         )
+        # Force a save to update the sync_checksum
+        service.save()
 
     def perform_update(self, serializer):
         if not serializer.instance.is_draft:
@@ -212,7 +304,9 @@ class ServiceViewSet(
                     user=self.request.user,
                     fields=changed_fields,
                 )
-        serializer.save(last_editor=self.request.user)
+        service = serializer.save(last_editor=self.request.user)
+        # Force a save to update the sync_checksum
+        service.save()
 
 
 @api_view()
