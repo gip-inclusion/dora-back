@@ -165,6 +165,7 @@ def validate_email(request):
     if not user.is_valid:
         user.is_valid = True
         user.save()
+        user.start_onboarding()
 
     # Once the email is valid, we can inform the admins that
     # an access request was sent

@@ -5,6 +5,8 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
 
+from dora.core.utils import add_to_sib
+
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -105,3 +107,6 @@ class User(AbstractBaseUser):
 
     def get_short_name(self):
         return self.first_name or self.last_name or self.email
+
+    def start_onboarding(self):
+        add_to_sib(self)

@@ -344,3 +344,17 @@ if DEBUG:
         "IGNORE_SQL_PATTERNS": [r"silk_"],
         "IGNORE_REQUEST_PATTERNS": [r"^/admin/", r"/silk/"],
     }
+
+#########
+# Tests #
+#########
+
+TEST_RUNNER = "dora.core.test_runner.MyTestRunner"
+
+
+################
+# SEND_IN_BLUE #
+################
+
+SIB_API_KEY = os.environ["SIB_API_KEY"]
+SIB_ONBOARDING_LIST = os.environ["SIB_ONBOARDING_LIST"]
