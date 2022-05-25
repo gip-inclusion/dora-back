@@ -11,7 +11,7 @@ from dora.users.models import User
 
 
 class Command(BaseCommand):
-    help = "Import Pole Emploi agencies in the Structure table, using the Référentiel des agences API"
+    help = "Import les directions régionales et territoriales Pole"
 
     def handle(self, *args, **options):
 
