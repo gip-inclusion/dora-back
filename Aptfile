@@ -1,7 +1,3 @@
 p7zip
-binutils
-libproj-dev
-libgdal-dev
-libblas-dev
-libblas3
 gdal-bin
+libgdal-dev
