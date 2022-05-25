@@ -2,6 +2,6 @@ p7zip
 binutils
 libproj-dev
 libgdal-dev
-liblas-dev
-liblas
+libblas-dev
+libblas
 gdal-bin
