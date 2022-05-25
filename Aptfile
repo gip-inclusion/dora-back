@@ -3,5 +3,4 @@ binutils
 libproj-dev
 libgdal-dev
 libblas-dev
-libblas
 gdal-bin
