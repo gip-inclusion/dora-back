@@ -452,7 +452,7 @@ class SearchResultSerializer(ServiceListSerializer):
         ]
 
     def get_distance(self, obj):
-        return obj.distance.km if obj.distance is not None else None
+        return int(obj.distance.km) if obj.distance is not None else None
 
 
 def sort_search_results(services, location):
