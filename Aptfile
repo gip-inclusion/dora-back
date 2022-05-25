@@ -1,4 +1,5 @@
 p7zip
 binutils
 libproj-dev
+libgdal-dev
 gdal-bin
