@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.contrib.gis.geos import MultiPolygon, Point
 from django.utils import timezone
 from model_bakery import baker
 from rest_framework.test import APITestCase
@@ -16,6 +17,7 @@ from dora.structures.models import Structure
 
 from .models import (
     AccessCondition,
+    LocationKind,
     Service,
     ServiceCategory,
     ServiceKind,
@@ -463,7 +465,6 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_can_add_new_choice_on_update(self):
-
         num_access_conditions = AccessCondition.objects.all().count()
 
         response = self.client.patch(
@@ -755,7 +756,6 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_can_see_published_services(self):
-
         service = make_service(
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
@@ -997,6 +997,171 @@ class ServiceSearchTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
+
+
+class ServiceSearchOrderingTestCase(APITestCase):
+    def setUp(self):
+        self.toulouse_center = Point(1.4436700, 43.6042600, srid=4326)
+        self.blagnac_center = Point(1.3939900, 43.6327600, srid=4326)
+        self.point_in_toulouse = Point(
+            1.4187594455116272, 43.601528176416416, srid=4326
+        )
+
+        region = baker.make("Region", code="76")
+        dept = baker.make("Department", region=region.code, code="31")
+        toulouse = baker.make(
+            "City",
+            code="31555",
+            department=dept.code,
+            region=region.code,
+            # la valeur du buffer est complètement approximative
+            # elle permet juste de valider les assertions suivantes
+            geom=MultiPolygon(self.toulouse_center.buffer(0.05)),
+        )
+        self.assertTrue(toulouse.geom.contains(self.toulouse_center))
+        self.assertTrue(toulouse.geom.contains(self.point_in_toulouse))
+        self.assertFalse(toulouse.geom.contains(self.blagnac_center))
+
+    def test_on_site_first(self):
+        self.assertEqual(Service.objects.all().count(), 0)
+        service1 = make_service(
+            slug="s1",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.CITY,
+            diffusion_zone_details="31555",
+        )
+        service1.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
+        service2 = make_service(
+            slug="s2",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.CITY,
+            diffusion_zone_details="31555",
+        )
+        service2.location_kinds.set([LocationKind.objects.get(value="a-distance")])
+        service2.save()
+
+        service3 = make_service(
+            slug="s3",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.CITY,
+            diffusion_zone_details="31555",
+        )
+        service3.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
+        service3.save()
+
+        response = self.client.get("/search/?city=31555")
+        self.assertEqual(response.data[0]["slug"], service3.slug)
+        self.assertEqual(response.data[1]["slug"], service1.slug)
+        self.assertEqual(response.data[2]["slug"], service2.slug)
+
+    def test_on_site_nearest_first(self):
+        self.assertEqual(Service.objects.all().count(), 0)
+        service1 = make_service(
+            slug="s1",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.DEPARTMENT,
+            diffusion_zone_details="31",
+            geom=self.point_in_toulouse,
+        )
+        service1.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
+
+        service2 = make_service(
+            slug="s2",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.DEPARTMENT,
+            diffusion_zone_details="31",
+            geom=self.blagnac_center,
+        )
+        service2.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
+        service2.save()
+
+        service3 = make_service(
+            slug="s3",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.DEPARTMENT,
+            diffusion_zone_details="31",
+            geom=self.toulouse_center,
+        )
+        service3.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
+        service3.save()
+
+        response = self.client.get("/search/?city=31555")
+
+        self.assertEqual(response.data[0]["slug"], service3.slug)
+        self.assertEqual(response.data[1]["slug"], service1.slug)
+        self.assertEqual(response.data[2]["slug"], service2.slug)
+
+    def test_on_site_same_dist_smallest_diffusion_first(self):
+        self.assertEqual(Service.objects.all().count(), 0)
+        service1 = make_service(
+            slug="s1",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.DEPARTMENT,
+            diffusion_zone_details="31",
+            geom=self.toulouse_center,
+        )
+        service1.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
+
+        service2 = make_service(
+            slug="s2",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.REGION,
+            diffusion_zone_details="76",
+            geom=self.toulouse_center,
+        )
+        service2.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
+        service2.save()
+
+        service3 = make_service(
+            slug="s3",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.CITY,
+            diffusion_zone_details="31555",
+            geom=self.toulouse_center,
+        )
+        service3.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
+        service3.save()
+
+        response = self.client.get("/search/?city=31555")
+        self.assertEqual(response.data[0]["slug"], service3.slug)
+        self.assertEqual(response.data[1]["slug"], service1.slug)
+        self.assertEqual(response.data[2]["slug"], service2.slug)
+
+    def test_remote_smallest_diffusion_first(self):
+        self.assertEqual(Service.objects.all().count(), 0)
+        service1 = make_service(
+            slug="s1",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.DEPARTMENT,
+            diffusion_zone_details="31",
+            geom=self.toulouse_center,
+        )
+        service1.location_kinds.set([LocationKind.objects.get(value="a-distance")])
+
+        service2 = make_service(
+            slug="s2",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.REGION,
+            diffusion_zone_details="76",
+            geom=self.toulouse_center,
+        )
+        service2.location_kinds.set([LocationKind.objects.get(value="a-distance")])
+        service2.save()
+
+        service3 = make_service(
+            slug="s3",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.CITY,
+            diffusion_zone_details="31555",
+            geom=self.toulouse_center,
+        )
+        service3.location_kinds.set([LocationKind.objects.get(value="a-distance")])
+        service3.save()
+
+        response = self.client.get("/search/?city=31555")
+        self.assertEqual(response.data[0]["slug"], service3.slug)
+        self.assertEqual(response.data[1]["slug"], service1.slug)
+        self.assertEqual(response.data[2]["slug"], service2.slug)
 
 
 class ServiceModelTestCase(APITestCase):

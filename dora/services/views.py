@@ -1,12 +1,16 @@
 from django.conf import settings
-from django.db.models import Q
+from django.contrib.gis.db.models.functions import Distance
+from django.db.models import Case, IntegerField, Q, Value, When
 from django.http.response import Http404
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import mixins, permissions, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
+from dora.admin_express.models import City
+from dora.admin_express.utils import arrdt_to_main_insee_code
 from dora.core.notify import send_mattermost_notification
 from dora.core.pagination import OptionalPageNumberPagination
 from dora.services.emails import send_service_feedback_email
@@ -430,6 +434,8 @@ def options(request):
 
 
 class SearchResultSerializer(ServiceListSerializer):
+    distance = serializers.SerializerMethodField()
+
     class Meta:
         model = Service
         fields = [
@@ -442,7 +448,37 @@ class SearchResultSerializer(ServiceListSerializer):
             "slug",
             "structure_info",
             "structure",
+            "distance",
         ]
+
+    def get_distance(self, obj):
+        return obj.distance.km if obj.distance is not None else None
+
+
+def sort_search_results(services, location):
+    services = services.order_by().annotate(
+        diffusion_sort=Case(
+            When(diffusion_zone_type=AdminDivisionType.CITY, then=1),
+            When(diffusion_zone_type=AdminDivisionType.EPCI, then=2),
+            When(diffusion_zone_type=AdminDivisionType.DEPARTMENT, then=3),
+            When(diffusion_zone_type=AdminDivisionType.REGION, then=4),
+            default=5,
+        )
+    )
+    # 1) services ayant un lieu de déroulement
+    services_on_site = (
+        services.filter(location_kinds__value="en-presentiel")
+        .annotate(distance=Distance("geom", location))
+        .order_by("distance", "diffusion_sort", "-modification_date")
+    )
+    # 2) services sans lieu de déroulement
+    services_remote = (
+        services.exclude(location_kinds__value="en-presentiel")
+        .annotate(distance=Value(None, output_field=IntegerField()))
+        .order_by("diffusion_sort", "-modification_date")
+    )
+
+    return list(services_on_site) + list(services_remote)
 
 
 @api_view()
@@ -485,22 +521,16 @@ def search(request):
 
     geofiltered_services = filter_services_by_city_code(services, city_code)
 
+    city_code = arrdt_to_main_insee_code(city_code)
+    city = get_object_or_404(City, pk=city_code)
+
     # Exclude suspended services
-    results = (
+    results = sort_search_results(
         geofiltered_services.filter(
             Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
-        )
-        .distinct()
-        .order_by("pk")
+        ).distinct(),
+        city.geom,
     )
-
-    paginator = OptionalPageNumberPagination()
-    page = paginator.paginate_queryset(results, request)
-    if page is not None:
-        serializer = SearchResultSerializer(
-            page, many=True, context={"request": request}
-        )
-        return paginator.get_paginated_response(serializer.data)
 
     serializer = SearchResultSerializer(
         results, many=True, context={"request": request}
