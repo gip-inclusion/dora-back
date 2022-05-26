@@ -1,0 +1,5 @@
+#!/bin/sh
+
+ls -lR /build/
+env
+python manage.py collectstatic --noinput
