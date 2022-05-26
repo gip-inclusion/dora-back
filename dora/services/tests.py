@@ -11,7 +11,7 @@ from dora.services.utils import (
     SYNC_CUSTOM_M2M_FIELDS,
     SYNC_FIELDS,
     SYNC_M2M_FIELDS,
-    copy_service,
+    instantiate_model,
 )
 from dora.structures.models import Structure
 
@@ -1165,76 +1165,81 @@ class ServiceSearchOrderingTestCase(APITestCase):
 
 
 class ServiceModelTestCase(APITestCase):
-    def test_everybody_can_see_draft_models(self):
-        service = make_service(is_draft=True, is_model=True)
-        response = self.client.get("/services/")
+    def test_everybody_can_see_models(self):
+        service = make_service(is_model=True)
+        response = self.client.get("/models/")
         self.assertEqual(response.status_code, 200)
         services_ids = [s["slug"] for s in response.data]
         self.assertIn(service.slug, services_ids)
 
-    def test_everybody_can_see_is_model_param(self):
-        service = make_service(is_draft=True, is_model=True)
+    def test_models_not_visible_in_service_lists(self):
+        service = make_service(is_model=True, is_draft=False)
+        response = self.client.get("/services/")
+        self.assertEqual(response.status_code, 200)
+        services_ids = [s["slug"] for s in response.data]
+        self.assertNotIn(service.slug, services_ids)
+
+    def test_is_model_param_not_visible_in_services(self):
+        service = make_service(is_draft=False)
         response = self.client.get(f"/services/{service.slug}/")
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.data["is_model"])
+        self.assertNotIn("is_model", response.data)
 
-    def test_can_set_is_model_param(self):
+    def test_cant_set_is_model_param_on_service(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
         service = make_service(is_model=False, structure=struct)
         self.client.force_authenticate(user=user)
         response = self.client.patch(f"/services/{service.slug}/", {"is_model": True})
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.data["is_model"])
+        service.refresh_from_db()
+        self.assertFalse(service.is_model)
 
-    def test_can_unset_is_model_param(self):
+    def test_cant_unset_is_model_param_on_model(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
-        service = make_service(is_model=True, structure=struct)
+        model = make_service(is_model=True, structure=struct)
         self.client.force_authenticate(user=user)
-        response = self.client.patch(f"/services/{service.slug}/", {"is_model": False})
+        response = self.client.patch(f"/models/{model.slug}/", {"is_model": False})
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(response.data["is_model"])
+        model.refresh_from_db()
+        self.assertTrue(model.is_model)
 
-    def test_superuser_can_set_is_model_param(self):
-        superuser = baker.make("users.User", is_staff=True, is_valid=True)
-        service = make_service(is_model=False)
-        self.client.force_authenticate(user=superuser)
-        response = self.client.patch(f"/services/{service.slug}/", {"is_model": True})
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.data["is_model"])
-
-    def test_superuser_can_unset_is_model_param(self):
-        superuser = baker.make("users.User", is_staff=True, is_valid=True)
-        service = make_service(is_model=True)
-        self.client.force_authenticate(user=superuser)
-        response = self.client.patch(f"/services/{service.slug}/", {"is_model": False})
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(response.data["is_model"])
-
-    def test_other_cant_set_is_model_param(self):
+    def test_can_create_model_from_scratch(self):
         user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        DUMMY_SERVICE["structure"] = struct.slug
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/models/",
+            DUMMY_SERVICE,
+        )
+        self.assertEqual(response.status_code, 201)
+        slug = response.data["slug"]
+        Service.objects.get(slug=slug, is_model=True, is_draft=False)
+
+    def test_can_create_model_from_my_service(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        service = make_service(is_model=False, is_draft=False, structure=struct)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            f"/services/{service.slug}/create-model/", {"structure": struct.slug}
+        )
+        self.assertEqual(response.status_code, 201)
+        slug = response.data["slug"]
+        service = Service.objects.get(slug=slug, is_model=True, is_draft=False)
+        self.assertEqual(service.structure.pk, struct.pk)
+
+    def test_cant_create_model_from_others_service(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure()
         service = make_service(is_model=False, is_draft=False)
         self.client.force_authenticate(user=user)
-        response = self.client.patch(f"/services/{service.slug}/", {"is_model": True})
+        response = self.client.post(
+            f"/services/{service.slug}/create-model/", {"structure": struct.slug}
+        )
         self.assertEqual(response.status_code, 403)
-
-    def test_other_cant_unset_is_model_param(self):
-        user = baker.make("users.User", is_valid=True)
-        service = make_service(is_model=True, is_draft=False)
-        self.client.force_authenticate(user=user)
-        response = self.client.patch(f"/services/{service.slug}/", {"is_model": False})
-        self.assertEqual(response.status_code, 403)
-
-    def test_anonymous_cant_set_is_model_param(self):
-        service = make_service(is_model=False, is_draft=False)
-        response = self.client.patch(f"/services/{service.slug}/", {"is_model": True})
-        self.assertEqual(response.status_code, 401)
-
-    def test_anonymous_cant_unset_is_model_param(self):
-        service = make_service(is_model=True, is_draft=False)
-        response = self.client.patch(f"/services/{service.slug}/", {"is_model": False})
-        self.assertEqual(response.status_code, 401)
 
 
 class ServiceDuplicationTestCase(APITestCase):
@@ -1313,7 +1318,7 @@ class ServiceDuplicationTestCase(APITestCase):
     def test_copy_preserve_expected_fields(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
-        service = make_service(structure=struct)
+        service = make_service(structure=struct, is_model=True)
 
         for field in SYNC_M2M_FIELDS:
             rel_model = getattr(service, field).target_field.related_model
@@ -1329,7 +1334,7 @@ class ServiceDuplicationTestCase(APITestCase):
 
         self.client.force_authenticate(user=user)
         response = self.client.post(
-            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
+            f"/models/{service.slug}/instantiate/", {"structure": dest_struct.slug}
         )
         self.assertEqual(response.status_code, 200)
         copy = Service.objects.get(slug=response.data["slug"])
@@ -1353,14 +1358,14 @@ class ServiceDuplicationTestCase(APITestCase):
     def test_copy_change_variable_fields(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
-        service = make_service(structure=struct)
+        service = make_service(structure=struct, is_model=True)
         location = baker.make("LocationKind")
         service.location_kinds.set([location.id])
         dest_struct = make_structure(user)
 
         self.client.force_authenticate(user=user)
         response = self.client.post(
-            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
+            f"/models/{service.slug}/instantiate/", {"structure": dest_struct.slug}
         )
         self.assertEqual(response.status_code, 200)
         copy = Service.objects.get(slug=response.data["slug"])
@@ -1376,12 +1381,12 @@ class ServiceDuplicationTestCase(APITestCase):
     def test_copy_check_metadata(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
-        service = make_service(structure=struct)
+        service = make_service(structure=struct, is_model=True)
         dest_struct = make_structure(user)
 
         self.client.force_authenticate(user=user)
         response = self.client.post(
-            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
+            f"/models/{service.slug}/instantiate/", {"structure": dest_struct.slug}
         )
         self.assertEqual(response.status_code, 200)
         copy = Service.objects.get(slug=response.data["slug"])
@@ -1396,75 +1401,34 @@ class ServiceDuplicationTestCase(APITestCase):
 
 
 class ServiceDuplicationPermissionTestCase(APITestCase):
-    def test_can_duplicate_my_services_in_my_structures(self):
+    def test_cant_instantiate_a_service(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
         service = make_service(structure=struct, is_model=False)
         dest_struct = make_structure(user)
         self.client.force_authenticate(user=user)
         response = self.client.post(
-            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
-        )
-        self.assertEqual(response.status_code, 200)
-
-    def test_cant_duplicate_my_services_in_other_structures(self):
-        user = baker.make("users.User", is_valid=True)
-        struct = make_structure(user)
-        service = make_service(structure=struct, is_model=False)
-        dest_struct = make_structure()
-        self.client.force_authenticate(user=user)
-        response = self.client.post(
-            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
-        )
-        self.assertEqual(response.status_code, 403)
-
-    def test_cant_duplicate_other_draft_services_in_my_structures(self):
-        user = baker.make("users.User", is_valid=True)
-        service = make_service(is_model=False, is_draft=True)
-        dest_struct = make_structure(user)
-        self.client.force_authenticate(user=user)
-        response = self.client.post(
-            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
+            f"/models/{service.slug}/instantiate/", {"structure": dest_struct.slug}
         )
         self.assertEqual(response.status_code, 404)
 
-    def test_cant_duplicate_other_services_in_my_structures(self):
-        user = baker.make("users.User", is_valid=True)
-        service = make_service(is_model=False, is_draft=False)
-        dest_struct = make_structure(user)
-        self.client.force_authenticate(user=user)
-        response = self.client.post(
-            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
-        )
-        self.assertEqual(response.status_code, 403)
-
-    def test_can_duplicate_models_in_my_structures(self):
+    def test_can_instantiate_models_in_my_structures(self):
         user = baker.make("users.User", is_valid=True)
         service = make_service(is_model=True, is_draft=False)
         dest_struct = make_structure(user)
         self.client.force_authenticate(user=user)
         response = self.client.post(
-            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
+            f"/models/{service.slug}/instantiate/", {"structure": dest_struct.slug}
         )
         self.assertEqual(response.status_code, 200)
 
-    def test_can_duplicate_draft_models_in_my_structures(self):
-        user = baker.make("users.User", is_valid=True)
-        service = make_service(is_model=True, is_draft=True)
-        dest_struct = make_structure(user)
-        self.client.force_authenticate(user=user)
-        response = self.client.post(
-            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
-        )
-        self.assertEqual(response.status_code, 200)
-
-    def test_cant_duplicate_models_in_other_structures(self):
+    def test_cant_instantiate_models_in_other_structures(self):
         service = make_service(is_model=True, is_draft=False)
         dest_struct = make_structure()
         user = baker.make("users.User", is_valid=True)
         self.client.force_authenticate(user=user)
         response = self.client.post(
-            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
+            f"/models/{service.slug}/instantiate/", {"structure": dest_struct.slug}
         )
         self.assertEqual(response.status_code, 403)
 
@@ -1502,93 +1466,6 @@ class ServiceSyncTestCase(APITestCase):
         response = self.client.post(f"/services/{dest_service.slug}/unsync/")
         self.assertEqual(response.status_code, 403)
 
-    def test_cant_duplicate_a_duplicated_service(self):
-        user = baker.make("users.User", is_valid=True)
-        structure = make_structure(user)
-        source = make_service(is_model=True)
-        service = make_service(model=source, structure=structure)
-        dest_struct = make_structure(user)
-        self.client.force_authenticate(user=user)
-        response = self.client.post(
-            f"/services/{service.slug}/copy/", {"structure": dest_struct.slug}
-        )
-        self.assertEqual(response.status_code, 400)
-        self.assertIn(
-            "Impossible de copier un service synchronisé", repr(response.data)
-        )
-
-    def test_can_sync_my_services(self):
-        user = baker.make("users.User", is_valid=True)
-        structure = make_structure(user)
-        source = make_service(is_model=True, short_desc="yyy")
-        service = make_service(model=source, structure=structure, short_desc="xxx")
-        self.assertNotEqual(service.sync_checksum, source.sync_checksum)
-        self.client.force_authenticate(user=user)
-        response = self.client.post(
-            f"/services/{service.slug}/sync/", {"fields": ["short_desc"]}
-        )
-        self.assertEqual(response.status_code, 200)
-        source.refresh_from_db()
-        service.refresh_from_db()
-        self.assertEqual(service.short_desc, source.short_desc)
-
-    def test_sync_updates_metadata(self):
-        user = baker.make("users.User", is_valid=True)
-        user2 = baker.make("users.User", is_valid=True)
-        structure = make_structure(user)
-        source = make_service(is_model=True, short_desc="yyy")
-        service = make_service(
-            model=source, structure=structure, short_desc="xxx", last_editor=user2
-        )
-        self.assertNotEqual(service.sync_checksum, source.sync_checksum)
-        self.client.force_authenticate(user=user)
-        response = self.client.post(
-            f"/services/{service.slug}/sync/", {"fields": ["short_desc"]}
-        )
-        self.assertEqual(response.status_code, 200)
-        service.refresh_from_db()
-        self.assertEqual(service.last_editor, user)
-        self.assertEqual(service.last_sync_checksum, source.sync_checksum)
-
-    def test_sync_only_sync_requested_fields(self):
-        user = baker.make("users.User", is_valid=True)
-        structure = make_structure(user)
-        source = make_service(is_model=True, short_desc="yyy", full_desc="abc")
-        service = make_service(
-            model=source, structure=structure, short_desc="xxx", full_desc="def"
-        )
-        self.client.force_authenticate(user=user)
-        response = self.client.post(
-            f"/services/{service.slug}/sync/", {"fields": ["short_desc"]}
-        )
-        self.assertEqual(response.status_code, 200)
-        source.refresh_from_db()
-        service.refresh_from_db()
-        self.assertEqual(service.short_desc, source.short_desc)
-        self.assertNotEqual(service.full_desc, source.full_desc)
-
-    def test_cant_sync_uptodate_service(self):
-        user = baker.make("users.User", is_valid=True)
-        structure = make_structure(user)
-        source = make_service(is_model=True, short_desc="yyy")
-        service = copy_service(source, structure, user)
-        self.client.force_authenticate(user=user)
-        response = self.client.post(
-            f"/services/{service.slug}/sync/", {"fields": ["short_desc"]}
-        )
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("Ce service est à jour", repr(response.data))
-
-    def test_cant_sync_others_services(self):
-        user = baker.make("users.User", is_valid=True)
-        source = make_service(is_model=True)
-        service = make_service(model=source, is_draft=False)
-        self.client.force_authenticate(user=user)
-        response = self.client.post(
-            f"/services/{service.slug}/sync/", {"fields": ["short_desc"]}
-        )
-        self.assertEqual(response.status_code, 403)
-
 
 class ServiceDiffTestCase(APITestCase):
     def test_cant_diff_others_services(self):
@@ -1596,7 +1473,7 @@ class ServiceDiffTestCase(APITestCase):
         user2 = baker.make("users.User", is_valid=True)
         structure = make_structure(user)
         source = make_service(is_model=True)
-        service = copy_service(source, structure, user)
+        service = instantiate_model(source, structure, user)
         source.short_desc = "xxx"
         source.save()
         service.is_draft = False
@@ -1611,7 +1488,7 @@ class ServiceDiffTestCase(APITestCase):
         user = baker.make("users.User", is_valid=True)
         structure = make_structure(user)
         source = make_service(is_model=True)
-        service = copy_service(source, structure, user)
+        service = instantiate_model(source, structure, user)
         source.short_desc = "xxx"
         source.save()
         self.client.force_authenticate(user=user)
@@ -1625,7 +1502,7 @@ class ServiceDiffTestCase(APITestCase):
         user = baker.make("users.User", is_valid=True)
         structure = make_structure(user)
         source = make_service(is_model=True)
-        service = copy_service(source, structure, user)
+        service = instantiate_model(source, structure, user)
         new_cat = baker.make(ServiceCategory)
         source.categories.set([new_cat])
         source.save()
@@ -1644,7 +1521,7 @@ class ServiceDiffTestCase(APITestCase):
         user = baker.make("users.User", is_valid=True)
         structure = make_structure(user)
         source = make_service(is_model=True)
-        service = copy_service(source, structure, user)
+        service = instantiate_model(source, structure, user)
         new_ac = baker.make(AccessCondition)
         source.access_conditions.set([new_ac])
         source.save()

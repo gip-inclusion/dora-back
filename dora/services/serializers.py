@@ -296,7 +296,6 @@ class ServiceSerializer(serializers.ModelSerializer):
             "coach_orientation_modes_display",
             "department",
             "can_write",
-            "is_model",
             "model_changed",
         ]
         lookup_field = "slug"
@@ -402,6 +401,61 @@ class ServiceSerializer(serializers.ModelSerializer):
         return None
 
 
+class ServiceModelSerializer(ServiceSerializer):
+    class Meta:
+        model = Service
+
+        fields = [
+            "slug",
+            "name",
+            "short_desc",
+            "full_desc",
+            "kinds",
+            "categories",
+            "subcategories",
+            "access_conditions",
+            "concerned_public",
+            "is_cumulative",
+            "has_fee",
+            "fee_details",
+            "beneficiaries_access_modes",
+            "beneficiaries_access_modes_other",
+            "coach_orientation_modes",
+            "coach_orientation_modes_other",
+            "requirements",
+            "credentials",
+            "forms",
+            "online_form",
+            "contact_name",
+            "contact_phone",
+            "contact_email",
+            "is_contact_info_public",
+            "diffusion_zone_type",
+            "diffusion_zone_details",
+            "qpv_or_zrr",
+            "remote_url",
+            "recurrence",
+            "structure",
+            "creation_date",
+            "modification_date",
+            "forms_info",
+            "structure",
+            "structure_info",
+            "kinds_display",
+            "categories_display",
+            "subcategories_display",
+            "access_conditions_display",
+            "concerned_public_display",
+            "requirements_display",
+            "credentials_display",
+            "beneficiaries_access_modes_display",
+            "coach_orientation_modes_display",
+            "department",
+            "can_write",
+        ]
+        lookup_field = "slug"
+
+
 class AnonymousServiceSerializer(ServiceSerializer):
     contact_name = serializers.SerializerMethodField()
     contact_phone = serializers.SerializerMethodField()
@@ -463,7 +517,6 @@ class ServiceListSerializer(ServiceSerializer):
             "diffusion_zone_type",
             "diffusion_zone_type_display",
             "diffusion_zone_details_display",
-            "is_model",
         ]
         lookup_field = "slug"
 
