@@ -435,24 +435,31 @@ def options(request):
 
 class SearchResultSerializer(ServiceListSerializer):
     distance = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
         fields = [
-            "category_display",
             "categories_display",
-            "city",
             "name",
-            "postal_code",
             "short_desc",
             "slug",
             "structure_info",
             "structure",
             "distance",
+            "location",
         ]
 
     def get_distance(self, obj):
         return int(obj.distance.km) if obj.distance is not None else None
+
+    def get_location(self, obj):
+        if obj.location_kinds.filter(value="en-presentiel").exists():
+            return f"{obj.postal_code}, {obj.city}"
+        elif obj.location_kinds.filter(value="a-distance").exists():
+            return "À distance"
+        else:
+            return ""
 
 
 def sort_search_results(services, location):
