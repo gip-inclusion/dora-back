@@ -1,8 +1,13 @@
 #!/bin/sh
 
-ls -alR /build/
-env
+ls -alR /build/${REQUEST_ID}/.apt/usr/lib/
+
 export PYTHONPATH=/build/${REQUEST_ID}/.apt/usr/lib/python3/dist-packages/
 export LD_LIBRARY_PATH=/build/${REQUEST_ID}/.apt/usr/lib/x86_64-linux-gnu/blas/:/build/${REQUEST_ID}/.apt/usr/lib/x86_64-linux-gnu/lapack/
 export PROJ_LIB=/build/${REQUEST_ID}/.apt/usr/share/proj
+
+echo $PYTHONPATH
+echo $LD_LIBRARY_PATH
+echo $PROJ_LIB
+
 python manage.py collectstatic --noinput
