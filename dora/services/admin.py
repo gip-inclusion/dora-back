@@ -49,7 +49,7 @@ class ServiceModificationHistoryItemAdmin(admin.ModelAdmin):
         return False
 
 
-class ServiceAdmin(admin.OSMGeoAdmin):
+class ServiceAdmin(admin.GISModelAdmin):
     search_fields = (
         "name",
         "structure__name",
