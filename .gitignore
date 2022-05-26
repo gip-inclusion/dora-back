@@ -4,3 +4,4 @@ __pycache__
 /envs/dev.env
 /envs/secrets.env
 .cache_ggshield
+.idea
