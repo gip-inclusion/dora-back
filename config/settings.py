@@ -305,7 +305,11 @@ if not DEBUG:
 PUBLIC_API_VERSIONS = ["1"]
 
 CSP_EXCLUDE_URL_PREFIXES = tuple(
-    ["/silk/", *[f"/api/v{version}/schema/doc/" for version in PUBLIC_API_VERSIONS]]
+    [
+        "/admin/",
+        "/silk/",
+        *[f"/api/v{version}/schema/doc/" for version in PUBLIC_API_VERSIONS],
+    ]
 )
 
 

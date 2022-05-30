@@ -1006,6 +1006,7 @@ class ServiceSearchOrderingTestCase(APITestCase):
         self.point_in_toulouse = Point(
             1.4187594455116272, 43.601528176416416, srid=4326
         )
+        self.paris_center = Point(2.349014, 48.864716, srid=4326)
 
         region = baker.make("Region", code="76")
         dept = baker.make("Department", region=region.code, code="31")
@@ -1038,7 +1039,6 @@ class ServiceSearchOrderingTestCase(APITestCase):
             diffusion_zone_details="31555",
         )
         service2.location_kinds.set([LocationKind.objects.get(value="a-distance")])
-        service2.save()
 
         service3 = make_service(
             slug="s3",
@@ -1047,7 +1047,6 @@ class ServiceSearchOrderingTestCase(APITestCase):
             diffusion_zone_details="31555",
         )
         service3.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
-        service3.save()
 
         response = self.client.get("/search/?city=31555")
         self.assertEqual(response.data[0]["slug"], service3.slug)
@@ -1073,7 +1072,6 @@ class ServiceSearchOrderingTestCase(APITestCase):
             geom=self.blagnac_center,
         )
         service2.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
-        service2.save()
 
         service3 = make_service(
             slug="s3",
@@ -1083,7 +1081,6 @@ class ServiceSearchOrderingTestCase(APITestCase):
             geom=self.toulouse_center,
         )
         service3.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
-        service3.save()
 
         response = self.client.get("/search/?city=31555")
 
@@ -1110,7 +1107,6 @@ class ServiceSearchOrderingTestCase(APITestCase):
             geom=self.toulouse_center,
         )
         service2.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
-        service2.save()
 
         service3 = make_service(
             slug="s3",
@@ -1120,7 +1116,6 @@ class ServiceSearchOrderingTestCase(APITestCase):
             geom=self.toulouse_center,
         )
         service3.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
-        service3.save()
 
         response = self.client.get("/search/?city=31555")
         self.assertEqual(response.data[0]["slug"], service3.slug)
@@ -1146,7 +1141,6 @@ class ServiceSearchOrderingTestCase(APITestCase):
             geom=self.toulouse_center,
         )
         service2.location_kinds.set([LocationKind.objects.get(value="a-distance")])
-        service2.save()
 
         service3 = make_service(
             slug="s3",
@@ -1156,12 +1150,32 @@ class ServiceSearchOrderingTestCase(APITestCase):
             geom=self.toulouse_center,
         )
         service3.location_kinds.set([LocationKind.objects.get(value="a-distance")])
-        service3.save()
 
         response = self.client.get("/search/?city=31555")
         self.assertEqual(response.data[0]["slug"], service3.slug)
         self.assertEqual(response.data[1]["slug"], service1.slug)
         self.assertEqual(response.data[2]["slug"], service2.slug)
+
+    def test_distance_is_correct(self):
+        self.assertEqual(Service.objects.all().count(), 0)
+        service1 = make_service(
+            slug="s1",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            geom=self.point_in_toulouse,
+        )
+        service1.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
+
+        service2 = make_service(
+            slug="s2",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            geom=self.paris_center,
+        )
+        service2.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
+
+        response = self.client.get("/search/?city=31555")
+        self.assertTrue(580 < response.data[1]["distance"] < 590)
 
 
 class ServiceModelTestCase(APITestCase):
