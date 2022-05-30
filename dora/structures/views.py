@@ -200,6 +200,7 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
         if not user.is_valid:
             user.is_valid = True
             user.save()
+            user.start_onboarding()
 
         must_set_password = not user.has_usable_password()
         if must_set_password:

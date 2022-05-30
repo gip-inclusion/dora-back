@@ -31,6 +31,10 @@ class StructureSerializer(serializers.ModelSerializer):
     services = serializers.SerializerMethodField()
     branches = serializers.SerializerMethodField()
 
+    has_admin = serializers.SerializerMethodField()
+
+    num_services = serializers.SerializerMethodField()
+
     class Meta:
         model = Structure
         fields = [
@@ -63,8 +67,16 @@ class StructureSerializer(serializers.ModelSerializer):
             "parent",
             "services",
             "branches",
+            "has_admin",
+            "num_services",
         ]
         lookup_field = "slug"
+
+    def get_num_services(self, structure):
+        return structure.get_num_visible_services(self.context["request"].user)
+
+    def get_has_admin(self, obj):
+        return obj.membership.filter(is_admin=True, user__is_staff=False).exists()
 
     def get_can_write(self, obj):
         # TODO: DEPRECATED

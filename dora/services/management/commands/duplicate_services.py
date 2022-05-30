@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from dora.services.models import Service
+from dora.services.utils import copy_service
 from dora.structures.models import Structure
 from dora.users.models import User
 
@@ -34,7 +35,7 @@ class Command(BaseCommand):
         bot_user = User.objects.get_dora_bot()
         with transaction.atomic(durable=True):
             for structure in structures:
-                clone = source.copy_to(structure, bot_user)
+                clone = copy_service(source, structure, bot_user)
                 self.stdout.write(
                     self.style.NOTICE(
                         f"Copied to structure {structure.name}: {clone.get_frontend_url()}"

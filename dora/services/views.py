@@ -1,11 +1,16 @@
 from django.conf import settings
-from django.db.models import Q
+from django.contrib.gis.db.models.functions import Distance
+from django.db.models import Case, IntegerField, Q, Value, When
 from django.http.response import Http404
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import mixins, permissions, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
+from dora.admin_express.models import City
+from dora.admin_express.utils import arrdt_to_main_insee_code
 from dora.core.notify import send_mattermost_notification
 from dora.core.pagination import OptionalPageNumberPagination
 from dora.services.emails import send_service_feedback_email
@@ -24,7 +29,12 @@ from dora.services.models import (
     ServiceModificationHistoryItem,
     ServiceSubCategory,
 )
-from dora.services.utils import filter_services_by_city_code
+from dora.services.utils import (
+    copy_service,
+    filter_services_by_city_code,
+    get_service_diffs,
+    sync_service,
+)
 from dora.structures.models import Structure, StructureMember
 
 from .serializers import (
@@ -184,6 +194,90 @@ class ServiceViewSet(
         send_service_feedback_email(service, d["full_name"], d["email"], d["message"])
         return Response(status=201)
 
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="copy",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def copy(self, request, slug):
+        user = request.user
+        service = self.get_object()
+        if service.model:
+            raise serializers.ValidationError(
+                "Impossible de copier un service synchronisé"
+            )
+        structure_slug = self.request.data.get("structure")
+        try:
+            structure = Structure.objects.get(slug=structure_slug)
+        except Structure.DoesNotExist:
+            raise Http404
+        # On peut uniquement copier vers une structure dont on fait partie
+        user_structures = Structure.objects.filter(membership__user=user)
+        if structure not in user_structures:
+            raise PermissionDenied
+        # On peut uniquement copier un service d'une de nos structures
+        # ou un service marqué comme modèle
+        if service.structure not in user_structures and not service.is_model:
+            raise PermissionDenied
+
+        new_service = copy_service(service, structure, request.user)
+        return Response(
+            ServiceSerializer(new_service, context={"request": request}).data
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="sync",
+    )
+    def sync(self, request, slug):
+        service = self.get_object()
+        fields = request.data["fields"]
+
+        if not service.model:
+            raise serializers.ValidationError("Ce service n'est pas synchronisé")
+
+        if service.model.sync_checksum == service.last_sync_checksum:
+            raise serializers.ValidationError("Ce service est à jour")
+
+        updated_service = sync_service(service, request.user, fields)
+        return Response(
+            ServiceSerializer(updated_service, context={"request": request}).data
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="unsync",
+    )
+    def unsync(self, request, slug):
+        # user = request.user
+        service = self.get_object()
+        if not service.model:
+            raise serializers.ValidationError("Ce service n'est pas synchronisé")
+        service.model = None
+        service.save()
+        return Response(status=201)
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="diff",
+    )
+    def diff(self, request, slug):
+        service = self.get_object()
+
+        # On peut uniquement synchroniser un service d'une de nos structures
+        user_structures = Structure.objects.filter(membership__user=request.user)
+        if service.structure not in user_structures:
+            raise PermissionDenied
+
+        if not service.model:
+            raise serializers.ValidationError("Ce service n'est pas synchronisé")
+        differences = get_service_diffs(service)
+        return Response(differences)
+
     def perform_create(self, serializer):
         service = serializer.save(
             creator=self.request.user, last_editor=self.request.user
@@ -193,6 +287,8 @@ class ServiceViewSet(
         send_mattermost_notification(
             f":tada: Nouveau service {draft} “{service.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/services/{service.slug}"
         )
+        # Force a save to update the sync_checksum
+        service.save()
 
     def perform_update(self, serializer):
         if not serializer.instance.is_draft:
@@ -212,7 +308,9 @@ class ServiceViewSet(
                     user=self.request.user,
                     fields=changed_fields,
                 )
-        serializer.save(last_editor=self.request.user)
+        service = serializer.save(last_editor=self.request.user)
+        # Force a save to update the sync_checksum
+        service.save()
 
 
 @api_view()
@@ -336,19 +434,58 @@ def options(request):
 
 
 class SearchResultSerializer(ServiceListSerializer):
+    distance = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
+
     class Meta:
         model = Service
         fields = [
-            "category_display",
             "categories_display",
-            "city",
             "name",
-            "postal_code",
             "short_desc",
             "slug",
             "structure_info",
             "structure",
+            "distance",
+            "location",
         ]
+
+    def get_distance(self, obj):
+        return int(obj.distance.km) if obj.distance is not None else None
+
+    def get_location(self, obj):
+        if obj.location_kinds.filter(value="en-presentiel").exists():
+            return f"{obj.postal_code}, {obj.city}"
+        elif obj.location_kinds.filter(value="a-distance").exists():
+            return "À distance"
+        else:
+            return ""
+
+
+def sort_search_results(services, location):
+    services = services.order_by().annotate(
+        diffusion_sort=Case(
+            When(diffusion_zone_type=AdminDivisionType.CITY, then=1),
+            When(diffusion_zone_type=AdminDivisionType.EPCI, then=2),
+            When(diffusion_zone_type=AdminDivisionType.DEPARTMENT, then=3),
+            When(diffusion_zone_type=AdminDivisionType.REGION, then=4),
+            default=5,
+        )
+    )
+    # 1) services ayant un lieu de déroulement
+    services_on_site = (
+        services.filter(location_kinds__value="en-presentiel")
+        .annotate(distance=Distance("geom", location))
+        .order_by("distance", "diffusion_sort", "-modification_date")
+    )
+    # 2) services sans lieu de déroulement
+    services_remote = (
+        services.exclude(location_kinds__value="en-presentiel")
+        .annotate(distance=Value(None, output_field=IntegerField()))
+        .order_by("diffusion_sort", "-modification_date")
+    )
+
+    return list(services_on_site) + list(services_remote)
 
 
 @api_view()
@@ -391,22 +528,16 @@ def search(request):
 
     geofiltered_services = filter_services_by_city_code(services, city_code)
 
+    city_code = arrdt_to_main_insee_code(city_code)
+    city = get_object_or_404(City, pk=city_code)
+
     # Exclude suspended services
-    results = (
+    results = sort_search_results(
         geofiltered_services.filter(
             Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
-        )
-        .distinct()
-        .order_by("pk")
+        ).distinct(),
+        city.geom,
     )
-
-    paginator = OptionalPageNumberPagination()
-    page = paginator.paginate_queryset(results, request)
-    if page is not None:
-        serializer = SearchResultSerializer(
-            page, many=True, context={"request": request}
-        )
-        return paginator.get_paginated_response(serializer.data)
 
     serializer = SearchResultSerializer(
         results, many=True, context={"request": request}

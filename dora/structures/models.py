@@ -318,3 +318,9 @@ class Structure(models.Model):
         self.phone = self.phone or phone or ""
         self.url = self.url or url or ""
         self.save(update_fields=["email", "phone", "url"])
+
+    def get_num_visible_services(self, user):
+        if user.is_authenticated and (user.is_staff or self.is_member(user)):
+            return self.services.count()
+        else:
+            return self.services.filter(is_draft=False, is_suggestion=False).count()

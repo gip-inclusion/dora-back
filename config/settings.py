@@ -305,7 +305,11 @@ if not DEBUG:
 PUBLIC_API_VERSIONS = ["1"]
 
 CSP_EXCLUDE_URL_PREFIXES = tuple(
-    ["/silk/", *[f"/api/v{version}/schema/doc/" for version in PUBLIC_API_VERSIONS]]
+    [
+        "/admin/",
+        "/silk/",
+        *[f"/api/v{version}/schema/doc/" for version in PUBLIC_API_VERSIONS],
+    ]
 )
 
 
@@ -344,3 +348,17 @@ if DEBUG:
         "IGNORE_SQL_PATTERNS": [r"silk_"],
         "IGNORE_REQUEST_PATTERNS": [r"^/admin/", r"/silk/"],
     }
+
+#########
+# Tests #
+#########
+
+TEST_RUNNER = "dora.core.test_runner.MyTestRunner"
+
+
+################
+# SEND_IN_BLUE #
+################
+
+SIB_API_KEY = os.environ["SIB_API_KEY"]
+SIB_ONBOARDING_LIST = os.environ["SIB_ONBOARDING_LIST"]
