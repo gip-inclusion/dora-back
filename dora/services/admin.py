@@ -30,9 +30,6 @@ class ServiceModificationHistoryItemInline(admin.TabularInline):
     def has_change_permission(self, request, obj):
         return False
 
-    def has_delete_permission(self, request, obj):
-        return False
-
 
 class ServiceModificationHistoryItemAdmin(admin.ModelAdmin):
     list_display = ("service", "date", "user")
@@ -43,9 +40,6 @@ class ServiceModificationHistoryItemAdmin(admin.ModelAdmin):
         return False
 
     def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
         return False
 
 
