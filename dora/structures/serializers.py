@@ -121,9 +121,9 @@ class StructureSerializer(serializers.ModelSerializer):
                 ]
 
         user = self.context.get("request").user
-        qs = obj.services.filter(is_draft=False, is_suggestion=False)
-        if user.is_authenticated and (user.is_staff or obj.is_member(user)):
-            qs = obj.services.all()
+        qs = obj.services.filter(is_model=False)
+        if not (user.is_authenticated and (user.is_staff or obj.is_member(user))):
+            qs = qs.filter(is_draft=False, is_suggestion=False)
         return StructureServicesSerializer(
             qs.prefetch_related(
                 "categories",
