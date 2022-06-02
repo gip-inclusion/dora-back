@@ -326,3 +326,6 @@ class Structure(models.Model):
             return self.services.filter(
                 is_draft=False, is_suggestion=False, is_model=False
             ).count()
+
+    def get_num_visible_models(self, user):
+        return self.services.filter(is_model=True).count()
