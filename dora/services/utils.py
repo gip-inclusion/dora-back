@@ -134,6 +134,8 @@ def create_model(original, structure, user):
         )
 
     model.save()
+    original.model = model
+    original.save()
     return model
 
 
