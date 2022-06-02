@@ -317,7 +317,7 @@ class Service(models.Model):
         return f"{settings.FRONTEND_URL}/services/{self.slug}"
 
     def get_admin_url(self):
-        return f"{settings.ALLOWED_HOSTS[0]}/services/service/{self.id}/change"
+        return f"https://{settings.ALLOWED_HOSTS[0]}/services/service/{self.id}/change"
 
 
 class ServiceModificationHistoryItem(models.Model):
