@@ -297,6 +297,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "department",
             "can_write",
             "model_changed",
+            "model",
         ]
         lookup_field = "slug"
 
@@ -517,6 +518,8 @@ class ServiceListSerializer(ServiceSerializer):
             "diffusion_zone_type",
             "diffusion_zone_type_display",
             "diffusion_zone_details_display",
+            "model_changed",
+            "model",
         ]
         lookup_field = "slug"
 
