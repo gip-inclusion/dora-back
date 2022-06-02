@@ -229,6 +229,9 @@ class ServiceSerializer(serializers.ModelSerializer):
     can_write = serializers.SerializerMethodField()
 
     model_changed = serializers.SerializerMethodField()
+    model = serializers.SlugRelatedField(
+        queryset=Service.objects.all(), slug_field="slug"
+    )
 
     class Meta:
         model = Service

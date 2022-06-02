@@ -123,6 +123,8 @@ class StructureSerializer(serializers.ModelSerializer):
                     "diffusion_zone_type",
                     "diffusion_zone_type_display",
                     "diffusion_zone_details_display",
+                    "model_changed",
+                    "model",
                 ]
 
         user = self.context.get("request").user
