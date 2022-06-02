@@ -140,7 +140,7 @@ class ServiceViewSet(
             # Authentified users can see everything in their structure
             # plus published services for other structures
             qs = all_services.filter(
-                Q(Q(Q(is_draft=False) | Q(is_model=True)), is_suggestion=False)
+                Q(is_draft=False, is_suggestion=False)
                 | Q(structure__membership__user=user)
             )
         if structure_slug:
