@@ -230,7 +230,9 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     model_changed = serializers.SerializerMethodField()
     model = serializers.SlugRelatedField(
-        queryset=Service.objects.all(), slug_field="slug"
+        queryset=Service.objects.all(),
+        slug_field="slug",
+        required=False,
     )
 
     class Meta:
