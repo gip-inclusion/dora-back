@@ -32,6 +32,7 @@ if os.path.isdir(BASE_DIR / "envs"):
 
 
 ENVIRONMENT = os.environ["ENVIRONMENT"]
+IS_TESTING = False
 
 
 if os.environ["ENVIRONMENT"] != "local":

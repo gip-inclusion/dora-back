@@ -6,7 +6,8 @@ from django.conf import settings
 
 def send_mattermost_notification(msg):
     if settings.ENVIRONMENT == "local":
-        print("Mattermost notification: ", msg)
+        if not settings.IS_TESTING:
+            print("Mattermost notification: ", msg)
     else:
         try:
             if settings.MATTERMOST_HOOK_KEY:

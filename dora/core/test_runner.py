@@ -17,6 +17,7 @@ class MyTestRunner(DiscoverRunner):
         _TestState.saved_data = saved_data
         saved_data.sib_key = settings.SIB_API_KEY
         settings.SIB_API_KEY = None
+        settings.IS_TESTING = True
         unittest.installHandler()
 
     def teardown_test_environment(self, **kwargs):
@@ -24,4 +25,5 @@ class MyTestRunner(DiscoverRunner):
         teardown_test_environment()
         saved_data = _TestState.saved_data
         settings.SIB_API_KEY = saved_data.sib_key
+        settings.IS_TESTING = False
         del _TestState.saved_data
