@@ -1,3 +1,4 @@
+import humanize
 from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
@@ -283,33 +284,60 @@ class ServiceViewSet(
         service = serializer.save(
             creator=self.request.user, last_editor=self.request.user
         )
-        structure = service.structure
-        draft = "(brouillon) " if service.is_draft else ""
-        send_mattermost_notification(
-            f":tada: Nouveau service {draft} “{service.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/services/{service.slug}"
-        )
+        if service.is_draft:
+            self._send_draft_service_created_notification(service)
+        else:
+            self._send_service_published_notification(service)
+
         # Force a save to update the sync_checksum
         service.save()
 
+    def _send_draft_service_created_notification(self, service):
+        structure = service.structure
+        user = self.request.user
+        send_mattermost_notification(
+            f":tada: Nouveau brouillon “{service.name}” créé dans la structure : **{structure.name} ({structure.department})** par {user.get_full_name()}\n{settings.FRONTEND_URL}/services/{service.slug}"
+        )
+
+    def _send_service_published_notification(self, service):
+        structure = service.structure
+        time_elapsed = service.publication_date - service.creation_date
+        humanize.i18n.activate("fr_FR")
+        time_elapsed_h = humanize.naturaldelta(time_elapsed, months=True)
+        user = self.request.user
+        send_mattermost_notification(
+            f":100: Service “{service.name}” publié dans la structure : **{structure.name} ({structure.department})** par {user.get_full_name()}, {time_elapsed_h} après sa création\n{settings.FRONTEND_URL}/services/{service.slug}"
+        )
+
+    def _log_history(self, serializer):
+        changed_fields = []
+        for key, value in serializer.validated_data.items():
+            original_value = getattr(serializer.instance, key)
+            if type(original_value).__name__ == "ManyRelatedManager":
+                original_value = set(original_value.all())
+                has_changed = set(value) != original_value
+            else:
+                has_changed = value != original_value
+            if has_changed:
+                changed_fields.append(key)
+        if changed_fields:
+            ServiceModificationHistoryItem.objects.create(
+                service=serializer.instance,
+                user=self.request.user,
+                fields=changed_fields,
+            )
+
     def perform_update(self, serializer):
-        if not serializer.instance.is_draft:
-            changed_fields = []
-            for key, value in serializer.validated_data.items():
-                original_value = getattr(serializer.instance, key)
-                if type(original_value).__name__ == "ManyRelatedManager":
-                    original_value = set(original_value.all())
-                    has_changed = set(value) != original_value
-                else:
-                    has_changed = value != original_value
-                if has_changed:
-                    changed_fields.append(key)
-            if changed_fields:
-                ServiceModificationHistoryItem.objects.create(
-                    service=serializer.instance,
-                    user=self.request.user,
-                    fields=changed_fields,
-                )
+        was_draft = serializer.instance.is_draft
+        if not was_draft:
+            self._log_history(serializer)
         service = serializer.save(last_editor=self.request.user)
+        if (
+            was_draft
+            and not service.is_draft
+            and not service.history_item.all().exists()
+        ):
+            self._send_service_published_notification(service)
         # Force a save to update the sync_checksum
         service.save()
 
