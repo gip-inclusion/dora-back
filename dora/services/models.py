@@ -289,6 +289,9 @@ class Service(models.Model):
     def __str__(self):
         return self.name
 
+    def get_absolute_url(self):
+        return f"{settings.FRONTEND_URL}/services/{self.slug}"
+
     @classmethod
     def from_db(cls, db, field_names, values):
         instance = super().from_db(db, field_names, values)
@@ -316,9 +319,14 @@ class Service(models.Model):
     def get_frontend_url(self):
         return f"{settings.FRONTEND_URL}/services/{self.slug}"
 
+    def get_admin_url(self):
+        return f"https://{settings.ALLOWED_HOSTS[0]}/services/service/{self.id}/change"
+
 
 class ServiceModificationHistoryItem(models.Model):
-    service = models.ForeignKey(Service, on_delete=models.CASCADE)
+    service = models.ForeignKey(
+        Service, on_delete=models.CASCADE, related_name="history_item"
+    )
     date = models.DateTimeField(auto_now=True, db_index=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

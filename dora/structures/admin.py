@@ -3,6 +3,7 @@ from django.contrib.admin.filters import RelatedOnlyFieldListFilter
 from django.forms.models import BaseInlineFormSet
 
 from dora.core.admin import EnumAdmin
+from dora.services.models import Service
 
 from .models import (
     Structure,
@@ -63,11 +64,13 @@ class StructureMemberAdmin(admin.ModelAdmin):
 
 class StructureMemberInline(admin.TabularInline):
     model = StructureMember
+    show_change_link = True
     extra = 0
 
 
 class StructurePutativeMemberInline(admin.TabularInline):
     model = StructurePutativeMember
+    show_change_link = True
     extra = 0
 
 
@@ -87,6 +90,7 @@ class BranchFormSet(BaseInlineFormSet):
 
 class BranchInline(admin.TabularInline):
     model = Structure
+    show_change_link = True
     formset = BranchFormSet
     fields = [
         "siret",
@@ -126,6 +130,13 @@ class IsBranchListFilter(admin.SimpleListFilter):
             return queryset.filter(parent__isnull=False)
 
 
+class ServiceInline(admin.TabularInline):
+    model = Service
+    show_change_link = True
+    fields = ["slug", "name", "is_draft"]
+    extra = 0
+
+
 class StructureAdmin(admin.ModelAdmin):
     list_display = [
         "name",
@@ -141,7 +152,12 @@ class StructureAdmin(admin.ModelAdmin):
     list_filter = [IsBranchListFilter, "source", "typology", "department"]
     search_fields = ("name", "siret", "code_safir_pe", "city", "department", "slug")
     ordering = ["-modification_date", "department"]
-    inlines = [StructureMemberInline, StructurePutativeMemberInline, BranchInline]
+    inlines = [
+        StructureMemberInline,
+        StructurePutativeMemberInline,
+        BranchInline,
+        ServiceInline,
+    ]
     readonly_fields = (
         "creation_date",
         "modification_date",
