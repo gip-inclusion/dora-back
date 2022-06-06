@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.measure import D
 from django.db.models import Case, IntegerField, Q, Value, When
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
@@ -472,10 +473,11 @@ def sort_search_results(services, location):
             default=5,
         )
     )
-    # 1) services ayant un lieu de déroulement
+    # 1) services ayant un lieu de déroulement, à moins de 100km
     services_on_site = (
         services.filter(location_kinds__value="en-presentiel")
         .annotate(distance=Distance("geom", location))
+        .filter(distance__lte=D(km=100))
         .order_by("distance", "diffusion_sort", "-modification_date")
     )
     # 2) services sans lieu de déroulement
