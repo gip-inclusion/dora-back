@@ -1539,7 +1539,7 @@ class ServiceDiffTestCase(APITestCase):
             f"/services/{service.slug}/diff/",
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["short_desc"]["parent"], source.short_desc)
+        self.assertEqual(response.data["short_desc"], source.short_desc)
 
     def test_diffs_M2M_fields(self):
         user = baker.make("users.User", is_valid=True)
@@ -1555,7 +1555,7 @@ class ServiceDiffTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.data["categories"]["parent"][0]["value"],
+            response.data["categories"][0]["value"],
             new_cat.value,
             response.data["categories"],
         )
@@ -1574,7 +1574,7 @@ class ServiceDiffTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.data["access_conditions"]["parent"][0]["value"],
+            response.data["access_conditions"][0]["value"],
             new_ac.pk,
             response.data["access_conditions"],
         )
