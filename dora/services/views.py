@@ -16,6 +16,7 @@ from dora.admin_express.utils import arrdt_to_main_insee_code
 from dora.core.notify import send_mattermost_notification
 from dora.core.pagination import OptionalPageNumberPagination
 from dora.services.emails import send_service_feedback_email
+from dora.services.enums import ServiceStatus
 from dora.services.models import (
     AccessCondition,
     AdminDivisionType,
@@ -29,7 +30,6 @@ from dora.services.models import (
     ServiceCategory,
     ServiceKind,
     ServiceModificationHistoryItem,
-    ServiceStatus,
     ServiceSubCategory,
 )
 from dora.services.utils import (
@@ -277,9 +277,9 @@ class ServiceViewSet(
         service = serializer.save(
             creator=self.request.user, last_editor=self.request.user
         )
-        if service.is_draft:
+        if service.status == ServiceStatus.DRAFT:
             self._send_draft_service_created_notification(service)
-        else:
+        elif service.status == ServiceStatus.PUBLISHED:
             self._send_service_published_notification(service)
 
         # Force a save to update the sync_checksum
@@ -621,7 +621,8 @@ def search(request):
         has_fee = False
 
     services = (
-        Service.objects.select_related(
+        Service.objects.published()
+        .select_related(
             "structure",
         )
         .prefetch_related(
@@ -629,7 +630,6 @@ def search(request):
             "categories",
             "subcategories",
         )
-        .published()
         .filter(is_model=False)
     )
     if category:

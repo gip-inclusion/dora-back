@@ -7,12 +7,12 @@ from rest_framework import serializers
 
 from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import validate_siret
+from dora.services.enums import ServiceStatus
 from dora.services.models import (
     LocationKind,
     Service,
     ServiceCategory,
     ServiceKind,
-    ServiceStatus,
     ServiceSubCategory,
 )
 from dora.sirene.models import Establishment

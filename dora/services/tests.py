@@ -7,6 +7,7 @@ from rest_framework.test import APITestCase
 
 from dora.admin_express.models import AdminDivisionType
 from dora.core.test_utils import make_service, make_structure
+from dora.services.enums import ServiceStatus
 from dora.services.utils import (
     SYNC_CUSTOM_M2M_FIELDS,
     SYNC_FIELDS,
@@ -22,7 +23,6 @@ from .models import (
     ServiceCategory,
     ServiceKind,
     ServiceModificationHistoryItem,
-    ServiceStatus,
 )
 
 DUMMY_SERVICE = {"name": "Mon service"}
@@ -1227,14 +1227,14 @@ class ServiceModelTestCase(APITestCase):
         self.assertIn(service.slug, services_ids)
 
     def test_models_not_visible_in_service_lists(self):
-        service = make_service(is_model=True, is_draft=False)
+        service = make_service(is_model=True, status=ServiceStatus.PUBLISHED)
         response = self.client.get("/services/")
         self.assertEqual(response.status_code, 200)
         services_ids = [s["slug"] for s in response.data]
         self.assertNotIn(service.slug, services_ids)
 
     def test_is_model_param_not_visible_in_services(self):
-        service = make_service(is_draft=False)
+        service = make_service(status=ServiceStatus.PUBLISHED)
         response = self.client.get(f"/services/{service.slug}/")
         self.assertEqual(response.status_code, 200)
         self.assertNotIn("is_model", response.data)
@@ -1270,25 +1270,29 @@ class ServiceModelTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 201)
         slug = response.data["slug"]
-        Service.objects.get(slug=slug, is_model=True, is_draft=False)
+        Service.objects.get(slug=slug, is_model=True, status=ServiceStatus.PUBLISHED)
 
     def test_can_create_model_from_my_service(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
-        service = make_service(is_model=False, is_draft=False, structure=struct)
+        service = make_service(
+            is_model=False, status=ServiceStatus.PUBLISHED, structure=struct
+        )
         self.client.force_authenticate(user=user)
         response = self.client.post(
             f"/services/{service.slug}/create-model/", {"structure": struct.slug}
         )
         self.assertEqual(response.status_code, 201)
         slug = response.data["slug"]
-        service = Service.objects.get(slug=slug, is_model=True, is_draft=False)
+        service = Service.objects.get(
+            slug=slug, is_model=True, status=ServiceStatus.PUBLISHED
+        )
         self.assertEqual(service.structure.pk, struct.pk)
 
     def test_cant_create_model_from_others_service(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure()
-        service = make_service(is_model=False, is_draft=False)
+        service = make_service(is_model=False, status=ServiceStatus.PUBLISHED)
         self.client.force_authenticate(user=user)
         response = self.client.post(
             f"/services/{service.slug}/create-model/", {"structure": struct.slug}
@@ -1444,8 +1448,7 @@ class ServiceDuplicationTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 200)
         copy = Service.objects.get(slug=response.data["slug"])
-        # TODO: obsolete in latest branch
-        self.assertTrue(copy.is_draft)
+        self.assertEqual(copy.status, ServiceStatus.DRAFT)
         self.assertFalse(copy.is_model)
         self.assertEqual(copy.creator, service.creator)
         self.assertEqual(copy.last_editor, user)
@@ -1469,7 +1472,7 @@ class ServiceDuplicationPermissionTestCase(APITestCase):
 
     def test_can_instantiate_models_in_my_structures(self):
         user = baker.make("users.User", is_valid=True)
-        service = make_service(is_model=True, is_draft=False)
+        service = make_service(is_model=True, status=ServiceStatus.PUBLISHED)
         dest_struct = make_structure(user)
         self.client.force_authenticate(user=user)
         response = self.client.post(
@@ -1478,7 +1481,7 @@ class ServiceDuplicationPermissionTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_cant_instantiate_models_in_other_structures(self):
-        service = make_service(is_model=True, is_draft=False)
+        service = make_service(is_model=True, status=ServiceStatus.PUBLISHED)
         dest_struct = make_structure()
         user = baker.make("users.User", is_valid=True)
         self.client.force_authenticate(user=user)

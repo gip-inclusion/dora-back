@@ -5,7 +5,7 @@ from model_bakery import baker
 from rest_framework.test import APITestCase, APITransactionTestCase
 
 from dora.core.test_utils import make_structure
-from dora.services.models import ServiceStatus
+from dora.services.enums import ServiceStatus
 
 from .models import ServiceSuggestion
 

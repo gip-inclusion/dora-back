@@ -12,6 +12,7 @@ from dora.admin_express.models import AdminDivisionType
 from dora.core.models import EnumModel
 from dora.structures.models import Structure, StructureMember
 
+from .enums import ServiceStatus
 from .utils import update_sync_checksum
 
 
@@ -106,14 +107,6 @@ class LocationKind(EnumModel):
     class Meta:
         verbose_name = "Lieu de déroulement"
         verbose_name_plural = "Lieux de déroulement"
-
-
-class ServiceStatus(models.TextChoices):
-    SUGGESTION = "SUGGESTION", "Suggestion"
-    DRAFT = "DRAFT", "Draft"
-    PUBLISHED = "PUBLISHED", "Published"
-    UNPUBLISHED = "UNPUBLISHED", "Unpublished"
-    ARCHIVED = "ARCHIVED", "Archived"
 
 
 class ServiceManager(models.Manager):

@@ -6,7 +6,8 @@ from django.shortcuts import get_object_or_404
 
 from dora.admin_express.models import EPCI, AdminDivisionType, City, Department, Region
 from dora.admin_express.utils import arrdt_to_main_insee_code
-from dora.services.models import ServiceStatus
+
+from .enums import ServiceStatus
 
 SYNC_FIELDS = [
     "name",
@@ -120,7 +121,7 @@ def create_model(original, structure, user):
     for field in SYNC_FIELDS:
         setattr(model, field, getattr(original, field))
 
-    model.is_draft = False
+    model.status = ServiceStatus.PUBLISHED
     model.is_model = True
     model.creator = original.creator
     model.last_editor = user
