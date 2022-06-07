@@ -256,6 +256,9 @@ class Structure(models.Model):
     def __str__(self):
         return self.name
 
+    def get_absolute_url(self):
+        return f"{settings.FRONTEND_URL}/structures/{self.slug}"
+
     def _make_unique_branch_id(self):
         while True:
             unique_id = get_random_string(5, "abcdefghijklmnopqrstuvwxyz")

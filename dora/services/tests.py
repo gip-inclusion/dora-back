@@ -1002,10 +1002,15 @@ class ServiceSearchTestCase(APITestCase):
 class ServiceSearchOrderingTestCase(APITestCase):
     def setUp(self):
         self.toulouse_center = Point(1.4436700, 43.6042600, srid=4326)
-        self.blagnac_center = Point(1.3939900, 43.6327600, srid=4326)
+        # Points à moins de 100km de Toulouse
         self.point_in_toulouse = Point(
             1.4187594455116272, 43.601528176416416, srid=4326
         )
+        self.blagnac_center = Point(1.3939900, 43.6327600, srid=4326)
+        self.montauban_center = Point(1.3573408017582829, 44.022187843162136, srid=4326)
+
+        # Points à plus de 100km de Toulouse
+        self.rocamadour_center = Point(1.6197328621667728, 44.79914551756315, srid=4326)
         self.paris_center = Point(2.349014, 48.864716, srid=4326)
 
         region = baker.make("Region", code="76")
@@ -1030,6 +1035,7 @@ class ServiceSearchOrderingTestCase(APITestCase):
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.CITY,
             diffusion_zone_details="31555",
+            geom=self.point_in_toulouse,
         )
         service1.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
         service2 = make_service(
@@ -1037,6 +1043,7 @@ class ServiceSearchOrderingTestCase(APITestCase):
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.CITY,
             diffusion_zone_details="31555",
+            geom=self.point_in_toulouse,
         )
         service2.location_kinds.set([LocationKind.objects.get(value="a-distance")])
 
@@ -1045,6 +1052,7 @@ class ServiceSearchOrderingTestCase(APITestCase):
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.CITY,
             diffusion_zone_details="31555",
+            geom=self.point_in_toulouse,
         )
         service3.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
 
@@ -1170,12 +1178,33 @@ class ServiceSearchOrderingTestCase(APITestCase):
             slug="s2",
             is_draft=False,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
-            geom=self.paris_center,
+            geom=self.montauban_center,
         )
         service2.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
 
         response = self.client.get("/search/?city=31555")
-        self.assertTrue(580 < response.data[1]["distance"] < 590)
+        self.assertTrue(40 < response.data[1]["distance"] < 50)
+
+    def test_distance_no_more_than_100km(self):
+        self.assertEqual(Service.objects.all().count(), 0)
+        service1 = make_service(
+            slug="s1",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            geom=self.point_in_toulouse,
+        )
+        service1.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
+
+        service2 = make_service(
+            slug="s2",
+            is_draft=False,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            geom=self.rocamadour_center,
+        )
+        service2.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
+
+        response = self.client.get("/search/?city=31555")
+        self.assertEqual(len(response.data), 1)
 
 
 class ServiceModelTestCase(APITestCase):
