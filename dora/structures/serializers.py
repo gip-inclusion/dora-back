@@ -115,8 +115,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     "postal_code",
                     "city",
                     "department",
-                    "is_draft",
-                    "is_suggestion",
+                    "status",
                     "modification_date",
                     "categories_display",
                     "short_desc",
@@ -128,9 +127,10 @@ class StructureSerializer(serializers.ModelSerializer):
                 ]
 
         user = self.context.get("request").user
-        qs = obj.services.filter(is_model=False)
-        if not (user.is_authenticated and (user.is_staff or obj.is_member(user))):
-            qs = qs.filter(is_draft=False, is_suggestion=False)
+        qs = obj.services.published()
+        if user.is_authenticated and (user.is_staff or obj.is_member(user)):
+            qs = obj.services.active()
+        qs = qs.filter(is_model=False)
         return StructureServicesSerializer(
             qs.prefetch_related(
                 "categories",

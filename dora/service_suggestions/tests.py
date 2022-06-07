@@ -5,6 +5,7 @@ from model_bakery import baker
 from rest_framework.test import APITestCase, APITransactionTestCase
 
 from dora.core.test_utils import make_structure
+from dora.services.models import ServiceStatus
 
 from .models import ServiceSuggestion
 
@@ -162,7 +163,7 @@ class ServiceSuggestionsTestCase(APITestCase):
     def test_member_can_see_suggested_service(self):
         structure = make_structure()
         service = baker.make(
-            "Service", structure=structure, is_draft=False, is_suggestion=True
+            "Service", structure=structure, status=ServiceStatus.SUGGESTION
         )
         user = baker.make("users.User", is_valid=True)
         structure.members.add(user)
@@ -173,7 +174,7 @@ class ServiceSuggestionsTestCase(APITestCase):
     def test_su_can_see_suggested_service(self):
         structure = make_structure()
         service = baker.make(
-            "Service", structure=structure, is_draft=False, is_suggestion=True
+            "Service", structure=structure, status=ServiceStatus.SUGGESTION
         )
         user = baker.make("users.User", is_valid=True, is_staff=True)
         self.client.force_authenticate(user=user)
@@ -183,7 +184,7 @@ class ServiceSuggestionsTestCase(APITestCase):
     def test_anon_cant_see_suggested_service(self):
         structure = make_structure()
         service = baker.make(
-            "Service", structure=structure, is_draft=False, is_suggestion=True
+            "Service", structure=structure, status=ServiceStatus.SUGGESTION
         )
         response = self.client.get(f"/services/{service.slug}/")
         self.assertEqual(response.status_code, 404)
@@ -191,7 +192,7 @@ class ServiceSuggestionsTestCase(APITestCase):
     def test_user_cant_see_suggested_service(self):
         structure = make_structure()
         service = baker.make(
-            "Service", structure=structure, is_draft=False, is_suggestion=True
+            "Service", structure=structure, status=ServiceStatus.SUGGESTION
         )
         user = baker.make("users.User", is_valid=True)
         self.client.force_authenticate(user=user)
@@ -202,7 +203,7 @@ class ServiceSuggestionsTestCase(APITestCase):
     def test_member_can_delete(self):
         structure = make_structure()
         service = baker.make(
-            "Service", structure=structure, is_draft=True, is_suggestion=True
+            "Service", structure=structure, status=ServiceStatus.SUGGESTION
         )
         user = baker.make("users.User", is_valid=True)
         structure.members.add(user)
@@ -213,7 +214,7 @@ class ServiceSuggestionsTestCase(APITestCase):
     def test_su_can_delete(self):
         structure = make_structure()
         service = baker.make(
-            "Service", structure=structure, is_draft=True, is_suggestion=True
+            "Service", structure=structure, status=ServiceStatus.SUGGESTION
         )
         user = baker.make("users.User", is_valid=True, is_staff=True)
         self.client.force_authenticate(user=user)
@@ -223,7 +224,7 @@ class ServiceSuggestionsTestCase(APITestCase):
     def test_anon_cant_delete(self):
         structure = make_structure()
         service = baker.make(
-            "Service", structure=structure, is_draft=True, is_suggestion=True
+            "Service", structure=structure, status=ServiceStatus.SUGGESTION
         )
         response = self.client.delete(f"/services/{service.slug}/")
         self.assertEqual(response.status_code, 401)
@@ -231,7 +232,7 @@ class ServiceSuggestionsTestCase(APITestCase):
     def test_user_cant_delete(self):
         structure = make_structure()
         service = baker.make(
-            "Service", structure=structure, is_draft=True, is_suggestion=True
+            "Service", structure=structure, status=ServiceStatus.SUGGESTION
         )
         user = baker.make("users.User", is_valid=True)
         self.client.force_authenticate(user=user)
@@ -241,38 +242,46 @@ class ServiceSuggestionsTestCase(APITestCase):
     def test_member_can_convert_to_draft(self):
         structure = make_structure()
         service = baker.make(
-            "Service", structure=structure, is_draft=True, is_suggestion=True
+            "Service", structure=structure, status=ServiceStatus.SUGGESTION
         )
         user = baker.make("users.User", is_valid=True)
         structure.members.add(user)
         self.client.force_authenticate(user=user)
-        response = self.client.patch(f"/services/{service.slug}/", is_suggestion=False)
+        response = self.client.patch(
+            f"/services/{service.slug}/", status=ServiceStatus.DRAFT
+        )
         self.assertEqual(response.status_code, 200)
 
     def test_su_can_convert_to_draft(self):
         structure = make_structure()
         service = baker.make(
-            "Service", structure=structure, is_draft=True, is_suggestion=True
+            "Service", structure=structure, status=ServiceStatus.SUGGESTION
         )
         user = baker.make("users.User", is_valid=True, is_staff=True)
         self.client.force_authenticate(user=user)
-        response = self.client.patch(f"/services/{service.slug}/", is_suggestion=False)
+        response = self.client.patch(
+            f"/services/{service.slug}/", status=ServiceStatus.DRAFT
+        )
         self.assertEqual(response.status_code, 200)
 
     def test_anon_cant_convert_to_draft(self):
         structure = make_structure()
         service = baker.make(
-            "Service", structure=structure, is_draft=True, is_suggestion=True
+            "Service", structure=structure, status=ServiceStatus.SUGGESTION
         )
-        response = self.client.patch(f"/services/{service.slug}/", is_suggestion=False)
+        response = self.client.patch(
+            f"/services/{service.slug}/", status=ServiceStatus.DRAFT
+        )
         self.assertEqual(response.status_code, 401)
 
     def test_user_cant_convert_to_draft(self):
         structure = make_structure()
         service = baker.make(
-            "Service", structure=structure, is_draft=True, is_suggestion=True
+            "Service", structure=structure, status=ServiceStatus.SUGGESTION
         )
         user = baker.make("users.User", is_valid=True)
         self.client.force_authenticate(user=user)
-        response = self.client.patch(f"/services/{service.slug}/", is_suggestion=False)
+        response = self.client.patch(
+            f"/services/{service.slug}/", status=ServiceStatus.DRAFT
+        )
         self.assertEqual(response.status_code, 404)

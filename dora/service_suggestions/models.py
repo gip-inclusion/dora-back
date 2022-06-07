@@ -12,6 +12,7 @@ from dora.services.models import (
     Service,
     ServiceCategory,
     ServiceKind,
+    ServiceStatus,
     ServiceSubCategory,
 )
 from dora.sirene.models import Establishment
@@ -107,8 +108,7 @@ class ServiceSuggestion(models.Model):
                 geom=geom,
                 creator=self.creator,
                 last_editor=self.creator,
-                is_draft=True,
-                is_suggestion=True,
+                status=ServiceStatus.SUGGESTION,
                 contact_phone=contact_phone,
                 **self.contents,
             )

@@ -29,6 +29,7 @@ from dora.services.models import (
     ServiceCategory,
     ServiceKind,
     ServiceModificationHistoryItem,
+    ServiceStatus,
     ServiceSubCategory,
 )
 from dora.services.utils import (
@@ -69,7 +70,7 @@ class ServicePermission(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         user = request.user
         # Only suggestions can be deleted
-        if request.method == "DELETE" and not obj.is_suggestion:
+        if request.method == "DELETE" and not obj.status == ServiceStatus.SUGGESTION:
             return False
 
         # Anybody can read
@@ -132,6 +133,7 @@ class ServiceViewSet(
                 qs = all_services.filter(structure__membership__user=user)
         # Everybody can see published services
         elif not user or not user.is_authenticated:
+            # TODO
             qs = all_services.filter(
                 Q(Q(is_draft=False) | Q(is_model=True)), is_suggestion=False
             )
@@ -141,6 +143,7 @@ class ServiceViewSet(
         else:
             # Authentified users can see everything in their structure
             # plus published services for other structures
+            # TODO
             qs = all_services.filter(
                 Q(is_draft=False, is_suggestion=False)
                 | Q(structure__membership__user=user)
@@ -149,8 +152,7 @@ class ServiceViewSet(
             qs = qs.filter(structure__slug=structure_slug)
 
         if published_only:
-            qs = qs.filter(is_draft=False, is_suggestion=False)
-
+            qs = qs.filter(status=ServiceStatus.PUBLISHED)
         qs = qs.filter(is_model=False)
 
         return qs.order_by("-modification_date").distinct()
@@ -173,12 +175,14 @@ class ServiceViewSet(
     @action(detail=False, methods=["get"], url_path="last-draft")
     def get_last_draft(self, request):
         user = request.user
-        last_drafts = Service.objects.filter(
-            is_draft=True,
-            is_suggestion=False,
-            is_model=False,
-            creator=user,
-        ).order_by("-modification_date")
+        last_drafts = (
+            Service.objects.draft()
+            .filter(
+                is_model=False,
+                creator=user,
+            )
+            .order_by("-modification_date")
+        )
         if not user.is_staff:
             last_drafts = last_drafts.filter(
                 structure__membership__user__id=user.id,
@@ -317,13 +321,13 @@ class ServiceViewSet(
             )
 
     def perform_update(self, serializer):
-        was_draft = serializer.instance.is_draft
+        was_draft = serializer.instance.status == ServiceStatus.DRAFT
         if not was_draft:
             self._log_history(serializer)
         service = serializer.save(last_editor=self.request.user)
         if (
             was_draft
-            and not service.is_draft
+            and service.status == ServiceStatus.PUBLISHED
             and not service.history_item.all().exists()
         ):
             self._send_service_published_notification(service)
@@ -625,7 +629,8 @@ def search(request):
             "categories",
             "subcategories",
         )
-        .filter(is_draft=False, is_suggestion=False, is_model=False)
+        .published()
+        .filter(is_model=False)
     )
     if category:
         services = services.filter(categories__value=category)

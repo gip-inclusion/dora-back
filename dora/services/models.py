@@ -108,6 +108,25 @@ class LocationKind(EnumModel):
         verbose_name_plural = "Lieux de déroulement"
 
 
+class ServiceStatus(models.TextChoices):
+    SUGGESTION = "SUGGESTION", "Suggestion"
+    DRAFT = "DRAFT", "Draft"
+    PUBLISHED = "PUBLISHED", "Published"
+    UNPUBLISHED = "UNPUBLISHED", "Unpublished"
+    ARCHIVED = "ARCHIVED", "Archived"
+
+
+class ServiceManager(models.Manager):
+    def published(self):
+        return self.filter(status=ServiceStatus.PUBLISHED)
+
+    def draft(self):
+        return self.filter(status=ServiceStatus.DRAFT)
+
+    def active(self):
+        return self.exclude(status=ServiceStatus.ARCHIVED)
+
+
 class Service(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     slug = models.SlugField(max_length=100, blank=True, null=True, unique=True)
@@ -261,7 +280,17 @@ class Service(models.Model):
         db_index=True,
         related_name="services",
     )
+
+    status = models.CharField(
+        max_length=20,
+        choices=ServiceStatus.choices,
+        verbose_name="Statut",
+        db_index=True,
+        default=ServiceStatus.DRAFT,
+    )
+    # TODO: to clean
     is_draft = models.BooleanField(default=True)
+    # TODO: to clean
     is_suggestion = models.BooleanField(default=False)
 
     creation_date = models.DateTimeField(auto_now_add=True)
@@ -286,6 +315,8 @@ class Service(models.Model):
     sync_checksum = models.CharField(max_length=32, blank=True)
     last_sync_checksum = models.CharField(max_length=32, blank=True)
 
+    objects = ServiceManager()
+
     def __str__(self):
         return self.name
 
@@ -302,6 +333,7 @@ class Service(models.Model):
         if not self.slug:
             self.slug = make_unique_slug(self, self.structure.slug, self.name)
         if hasattr(self, "_original") and not self._state.adding:
+            # TODO: fix and simplify
             original_is_draft = self._original["is_draft"]
             if original_is_draft is True and self.is_draft is False:
                 self.publication_date = timezone.now()

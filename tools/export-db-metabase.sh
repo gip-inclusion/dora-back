@@ -73,9 +73,12 @@ CREATE TABLE mb_service AS
     services_service.structure_id,
     services_service.slug,
     services_service.online_form,
+    -- TODO: clean
     services_service.is_draft,
-    services_service.publication_date,
+    -- TODO: clean
     services_service.is_suggestion,
+    services_service.status,
+    services_service.publication_date,
     services_service.diffusion_zone_details,
     services_service.diffusion_zone_type,
     services_service.qpv_or_zrr,

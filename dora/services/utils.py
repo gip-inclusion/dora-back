@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 
 from dora.admin_express.models import EPCI, AdminDivisionType, City, Department, Region
 from dora.admin_express.utils import arrdt_to_main_insee_code
+from dora.services.models import ServiceStatus
 
 SYNC_FIELDS = [
     "name",
@@ -93,7 +94,7 @@ def instantiate_model(model, structure, user):
         service.geom = None
 
     # Metadata
-    service.is_draft = True
+    service.status = ServiceStatus.DRAFT
     service.is_model = False
     service.creator = model.creator
     service.last_editor = user
