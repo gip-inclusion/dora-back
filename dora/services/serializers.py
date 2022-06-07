@@ -233,6 +233,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         queryset=Service.objects.all(),
         slug_field="slug",
         required=False,
+        allow_null=True,
     )
 
     class Meta:

@@ -332,6 +332,9 @@ class ServiceViewSet(
 
 
 class ModelViewSet(ServiceViewSet):
+
+    serializer_class = ServiceModelSerializer
+
     def get_queryset(self):
         qs = None
         user = self.request.user
