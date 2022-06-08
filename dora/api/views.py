@@ -162,7 +162,7 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
             "credentials",
             "location_kinds",
         )
-        .filter(is_draft=False, is_suggestion=False)
+        .filter(is_draft=False, is_suggestion=False, is_model=False)
     )
     serializer_class = ServiceSerializer
     permission_classes = [permissions.AllowAny]

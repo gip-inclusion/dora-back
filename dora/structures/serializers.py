@@ -28,12 +28,15 @@ class StructureSerializer(serializers.ModelSerializer):
     is_pending_member = serializers.SerializerMethodField()
     is_admin = serializers.SerializerMethodField()
 
-    services = serializers.SerializerMethodField()
     branches = serializers.SerializerMethodField()
 
     has_admin = serializers.SerializerMethodField()
 
     num_services = serializers.SerializerMethodField()
+    services = serializers.SerializerMethodField()
+
+    num_models = serializers.SerializerMethodField()
+    models = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
@@ -65,15 +68,14 @@ class StructureSerializer(serializers.ModelSerializer):
             "is_member",
             "is_pending_member",
             "parent",
-            "services",
             "branches",
             "has_admin",
             "num_services",
+            "services",
+            "num_models",
+            "models",
         ]
         lookup_field = "slug"
-
-    def get_num_services(self, structure):
-        return structure.get_num_visible_services(self.context["request"].user)
 
     def get_has_admin(self, obj):
         return obj.membership.filter(is_admin=True, user__is_staff=False).exists()
@@ -98,8 +100,17 @@ class StructureSerializer(serializers.ModelSerializer):
     def get_typology_display(self, obj):
         return obj.typology.label if obj.typology else ""
 
+    def get_num_services(self, structure):
+        return structure.get_num_visible_services(self.context["request"].user)
+
     def get_services(self, obj):
         class StructureServicesSerializer(ServiceListSerializer):
+            structure = serializers.SlugRelatedField(
+                queryset=Structure.objects.all(),
+                slug_field="slug",
+                required=False,
+            )
+
             class Meta:
                 model = Service
                 fields = [
@@ -118,13 +129,49 @@ class StructureSerializer(serializers.ModelSerializer):
                     "diffusion_zone_type",
                     "diffusion_zone_type_display",
                     "diffusion_zone_details_display",
+                    "model_changed",
+                    "model",
+                    "structure",
                 ]
 
         user = self.context.get("request").user
-        qs = obj.services.filter(is_draft=False, is_suggestion=False)
-        if user.is_authenticated and (user.is_staff or obj.is_member(user)):
-            qs = obj.services.all()
+        qs = obj.services.filter(is_model=False)
+        if not (user.is_authenticated and (user.is_staff or obj.is_member(user))):
+            qs = qs.filter(is_draft=False, is_suggestion=False)
         return StructureServicesSerializer(
+            qs.prefetch_related(
+                "categories",
+            ),
+            many=True,
+        ).data
+
+    def get_num_models(self, structure):
+        return structure.get_num_visible_models(self.context["request"].user)
+
+    def get_models(self, obj):
+        class StructureModelsSerializer(ServiceListSerializer):
+            structure = serializers.SlugRelatedField(
+                queryset=Structure.objects.all(),
+                slug_field="slug",
+                required=False,
+            )
+
+            class Meta:
+                model = Service
+                fields = [
+                    "category",
+                    "category_display",
+                    "slug",
+                    "name",
+                    "department",
+                    "modification_date",
+                    "categories_display",
+                    "short_desc",
+                    "structure",
+                ]
+
+        qs = obj.services.filter(is_model=True)
+        return StructureModelsSerializer(
             qs.prefetch_related(
                 "categories",
             ),

@@ -18,12 +18,7 @@ SYNC_FIELDS = [
     "coach_orientation_modes_other",
     "forms",
     "online_form",
-    "contact_name",
-    "contact_phone",
-    "contact_email",
-    "is_contact_info_public",
     "remote_url",
-    "diffusion_zone_details",
     "qpv_or_zrr",
     "recurrence",
 ]
@@ -76,11 +71,11 @@ def update_sync_checksum(service):
     return result
 
 
-def copy_service(original, structure, user):
-    service = original.__class__.objects.create(structure=structure)
+def instantiate_model(model, structure, user):
+    service = model.__class__.objects.create(structure=structure)
 
     for field in SYNC_FIELDS:
-        setattr(service, field, getattr(original, field))
+        setattr(service, field, getattr(model, field))
 
     # Overwrite address, to default to the new structure one
     service.address1 = structure.address1
@@ -96,43 +91,49 @@ def copy_service(original, structure, user):
     # Metadata
     service.is_draft = True
     service.is_model = False
-    service.creator = original.creator
+    service.creator = model.creator
     service.last_editor = user
-    service.model = original
-    service.last_sync_checksum = original.sync_checksum
+    service.model = model
+    service.last_sync_checksum = model.sync_checksum
 
     # Restaure les champs M2M
     for field in SYNC_M2M_FIELDS:
-        getattr(service, field).set(getattr(original, field).all())
+        getattr(service, field).set(getattr(model, field).all())
 
     for field in SYNC_CUSTOM_M2M_FIELDS:
         _duplicate_customizable_choices(
-            getattr(service, field), getattr(original, field).all(), service.structure
+            getattr(service, field), getattr(model, field).all(), service.structure
         )
 
     service.save()
     return service
 
 
-def sync_service(service, user, fields):
-    original = service.model
+def create_model(original, structure, user):
+    model = original.__class__.objects.create(structure=structure)
 
-    # Sync'd Simple fields
-    for field in set(SYNC_FIELDS) & set(fields):
-        setattr(service, field, getattr(original, field))
+    for field in SYNC_FIELDS:
+        setattr(model, field, getattr(original, field))
+
+    model.is_draft = False
+    model.is_model = True
+    model.creator = original.creator
+    model.last_editor = user
 
     # Restaure les champs M2M
-    for field in set(SYNC_M2M_FIELDS) & set(fields):
-        getattr(service, field).set(getattr(original, field).all())
+    for field in SYNC_M2M_FIELDS:
+        getattr(model, field).set(getattr(original, field).all())
 
-    for field in set(SYNC_CUSTOM_M2M_FIELDS) & set(fields):
+    for field in SYNC_CUSTOM_M2M_FIELDS:
         _duplicate_customizable_choices(
-            getattr(service, field), getattr(original, field).all(), service.structure
+            getattr(model, field), getattr(original, field).all(), model.structure
         )
 
-    service.last_editor = user
-    service.last_sync_checksum = original.sync_checksum
-    service.save()
+    model.save()
+    original.model = model
+    original.last_sync_checksum = model.sync_checksum
+    original.save()
+    return model
 
 
 def get_service_diffs(service):
@@ -142,25 +143,19 @@ def get_service_diffs(service):
         current = getattr(service, field)
         source = getattr(original, field)
         if current != source:
-            result[field] = {"parent": source, "current": current}
+            result[field] = source
 
     for field in SYNC_M2M_FIELDS:
         current = set(getattr(service, field).all())
         source = set(getattr(original, field).all())
         if current != source:
-            result[field] = {
-                "parent": [{"value": v.value, "label": v.label} for v in source],
-                "current": [{"value": v.value, "label": v.label} for v in current],
-            }
+            result[field] = [v.value for v in source]
 
     for field in SYNC_CUSTOM_M2M_FIELDS:
         current = set(getattr(service, field).all())
         source = set(getattr(original, field).all())
         if current != source:
-            result[field] = {
-                "parent": [{"value": v.pk, "label": v.name} for v in source],
-                "current": [{"value": v.pk, "label": v.name} for v in current],
-            }
+            result[field] = [v.id if not v.structure else v.name for v in source]
 
     return result
 

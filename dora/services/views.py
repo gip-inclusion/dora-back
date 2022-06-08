@@ -15,6 +15,7 @@ from dora.admin_express.models import City
 from dora.admin_express.utils import arrdt_to_main_insee_code
 from dora.core.notify import send_mattermost_notification
 from dora.core.pagination import OptionalPageNumberPagination
+from dora.core.utils import FALSY_VALUES, TRUTHY_VALUES
 from dora.services.emails import send_service_feedback_email
 from dora.services.models import (
     AccessCondition,
@@ -32,10 +33,10 @@ from dora.services.models import (
     ServiceSubCategory,
 )
 from dora.services.utils import (
-    copy_service,
+    create_model,
     filter_services_by_city_code,
     get_service_diffs,
-    sync_service,
+    instantiate_model,
 )
 from dora.structures.models import Structure, StructureMember
 
@@ -43,6 +44,7 @@ from .serializers import (
     AnonymousServiceSerializer,
     FeedbackSerializer,
     ServiceListSerializer,
+    ServiceModelSerializer,
     ServiceSerializer,
 )
 
@@ -101,6 +103,7 @@ class ServiceViewSet(
         qs = None
         user = self.request.user
         only_mine = self.request.query_params.get("mine")
+
         structure_slug = self.request.query_params.get("structure")
         published_only = self.request.query_params.get("published")
 
@@ -140,13 +143,17 @@ class ServiceViewSet(
             # Authentified users can see everything in their structure
             # plus published services for other structures
             qs = all_services.filter(
-                Q(Q(Q(is_draft=False) | Q(is_model=True)), is_suggestion=False)
+                Q(is_draft=False, is_suggestion=False)
                 | Q(structure__membership__user=user)
             )
         if structure_slug:
             qs = qs.filter(structure__slug=structure_slug)
+
         if published_only:
             qs = qs.filter(is_draft=False, is_suggestion=False)
+
+        qs = qs.filter(is_model=False)
+
         return qs.order_by("-modification_date").distinct()
 
     def get_serializer_class(self):
@@ -169,6 +176,8 @@ class ServiceViewSet(
         user = request.user
         last_drafts = Service.objects.filter(
             is_draft=True,
+            is_suggestion=False,
+            is_model=False,
             creator=user,
         ).order_by("-modification_date")
         if not user.is_staff:
@@ -199,10 +208,10 @@ class ServiceViewSet(
     @action(
         detail=True,
         methods=["post"],
-        url_path="copy",
+        url_path="create-model",
         permission_classes=[permissions.IsAuthenticated],
     )
-    def copy(self, request, slug):
+    def create_model(self, request, slug):
         user = request.user
         service = self.get_object()
         if service.model:
@@ -223,44 +232,11 @@ class ServiceViewSet(
         if service.structure not in user_structures and not service.is_model:
             raise PermissionDenied
 
-        new_service = copy_service(service, structure, request.user)
+        new_service = create_model(service, structure, request.user)
         return Response(
-            ServiceSerializer(new_service, context={"request": request}).data
+            ServiceModelSerializer(new_service, context={"request": request}).data,
+            status=201,
         )
-
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="sync",
-    )
-    def sync(self, request, slug):
-        service = self.get_object()
-        fields = request.data["fields"]
-
-        if not service.model:
-            raise serializers.ValidationError("Ce service n'est pas synchronisé")
-
-        if service.model.sync_checksum == service.last_sync_checksum:
-            raise serializers.ValidationError("Ce service est à jour")
-
-        updated_service = sync_service(service, request.user, fields)
-        return Response(
-            ServiceSerializer(updated_service, context={"request": request}).data
-        )
-
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="unsync",
-    )
-    def unsync(self, request, slug):
-        # user = request.user
-        service = self.get_object()
-        if not service.model:
-            raise serializers.ValidationError("Ce service n'est pas synchronisé")
-        service.model = None
-        service.save()
-        return Response(status=201)
 
     @action(
         detail=True,
@@ -332,6 +308,7 @@ class ServiceViewSet(
             )
 
     def perform_update(self, serializer):
+        mark_synced = self.request.data.get("mark_synced", "") in TRUTHY_VALUES
         was_draft = serializer.instance.is_draft
         if not was_draft:
             self._log_history(serializer)
@@ -342,8 +319,105 @@ class ServiceViewSet(
             and not service.history_item.all().exists()
         ):
             self._send_service_published_notification(service)
+
+        if mark_synced and service.model:
+            service.last_sync_checksum = service.model.sync_checksum
         # Force a save to update the sync_checksum
         service.save()
+
+
+class ModelViewSet(ServiceViewSet):
+
+    serializer_class = ServiceModelSerializer
+
+    def get_queryset(self):
+        qs = None
+        user = self.request.user
+        only_mine = self.request.query_params.get("mine")
+
+        structure_slug = self.request.query_params.get("structure")
+
+        all_services = (
+            Service.objects.all()
+            .select_related(
+                "structure",
+            )
+            .prefetch_related(
+                "kinds",
+                "categories",
+                "subcategories",
+                "access_conditions",
+                "concerned_public",
+                "beneficiaries_access_modes",
+                "coach_orientation_modes",
+                "requirements",
+                "credentials",
+                "location_kinds",
+            )
+        )
+        qs = None
+        if only_mine:
+            if not user or not user.is_authenticated:
+                qs = Service.objects.none()
+            else:
+                qs = all_services.filter(structure__membership__user=user)
+        # Everybody can see published services
+        elif not user or not user.is_authenticated:
+            qs = all_services.filter(is_model=True)
+        # Staff can see everything
+        elif user.is_staff:
+            qs = all_services
+        else:
+            # Authentified users can see everything in their structure
+            # plus models from other structures
+            qs = all_services.filter(
+                Q(is_model=True) | Q(structure__membership__user=user)
+            )
+        if structure_slug:
+            qs = qs.filter(structure__slug=structure_slug)
+
+        qs = qs.filter(is_model=True)
+
+        return qs.order_by("-modification_date").distinct()
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="instantiate",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def instantiate(self, request, slug):
+        user = request.user
+        model = self.get_object()
+
+        structure_slug = self.request.data.get("structure")
+        try:
+            structure = Structure.objects.get(slug=structure_slug)
+        except Structure.DoesNotExist:
+            raise Http404
+        # On peut uniquement copier vers une structure dont on fait partie
+        user_structures = Structure.objects.filter(membership__user=user)
+        if structure not in user_structures:
+            raise PermissionDenied
+
+        new_service = instantiate_model(model, structure, request.user)
+        return Response(
+            ServiceSerializer(new_service, context={"request": request}).data
+        )
+
+    def perform_create(self, serializer):
+        model = serializer.save(
+            creator=self.request.user,
+            last_editor=self.request.user,
+            is_model=True,
+            is_draft=False,
+        )
+        structure = model.structure
+        send_mattermost_notification(
+            f":clipboard: Nouveau modèle “{model.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/modeles/{model.slug}"
+        )
+        # Force a save to update the sync_checksum
+        model.save()
 
 
 @api_view()
@@ -532,9 +606,9 @@ def search(request):
     has_fee_param = request.GET.get("has_fee", "")
 
     has_fee = None
-    if has_fee_param in ("1", 1, "True", "true", "t", "T"):
+    if has_fee_param in TRUTHY_VALUES:
         has_fee = True
-    elif has_fee_param in ("0", 0, "False", "false", "f", "F"):
+    elif has_fee_param in FALSY_VALUES:
         has_fee = False
 
     services = (
@@ -546,7 +620,7 @@ def search(request):
             "categories",
             "subcategories",
         )
-        .filter(is_draft=False, is_suggestion=False)
+        .filter(is_draft=False, is_suggestion=False, is_model=False)
     )
     if category:
         services = services.filter(categories__value=category)
