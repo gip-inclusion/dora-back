@@ -15,6 +15,7 @@ from dora.admin_express.models import City
 from dora.admin_express.utils import arrdt_to_main_insee_code
 from dora.core.notify import send_mattermost_notification
 from dora.core.pagination import OptionalPageNumberPagination
+from dora.core.utils import FALSY_VALUES, TRUTHY_VALUES
 from dora.services.emails import send_service_feedback_email
 from dora.services.enums import ServiceStatus
 from dora.services.models import (
@@ -294,7 +295,11 @@ class ServiceViewSet(
 
     def _send_service_published_notification(self, service):
         structure = service.structure
-        time_elapsed = service.publication_date - service.creation_date
+        time_elapsed = (
+            service.publication_date - service.creation_date
+            if service.publication_date > service.creation_date
+            else 0
+        )
         humanize.i18n.activate("fr_FR")
         time_elapsed_h = humanize.naturaldelta(time_elapsed, months=True)
         user = self.request.user
@@ -321,6 +326,7 @@ class ServiceViewSet(
             )
 
     def perform_update(self, serializer):
+        mark_synced = self.request.data.get("mark_synced", "") in TRUTHY_VALUES
         was_draft = serializer.instance.status == ServiceStatus.DRAFT
         if not was_draft:
             self._log_history(serializer)
@@ -331,6 +337,9 @@ class ServiceViewSet(
             and not service.history_item.all().exists()
         ):
             self._send_service_published_notification(service)
+
+        if mark_synced and service.model:
+            service.last_sync_checksum = service.model.sync_checksum
         # Force a save to update the sync_checksum
         service.save()
 
@@ -615,9 +624,9 @@ def search(request):
     has_fee_param = request.GET.get("has_fee", "")
 
     has_fee = None
-    if has_fee_param in ("1", 1, "True", "true", "t", "T"):
+    if has_fee_param in TRUTHY_VALUES:
         has_fee = True
-    elif has_fee_param in ("0", 0, "False", "false", "f", "F"):
+    elif has_fee_param in FALSY_VALUES:
         has_fee = False
 
     services = (

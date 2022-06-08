@@ -137,6 +137,7 @@ def create_model(original, structure, user):
 
     model.save()
     original.model = model
+    original.last_sync_checksum = model.sync_checksum
     original.save()
     return model
 
@@ -154,13 +155,13 @@ def get_service_diffs(service):
         current = set(getattr(service, field).all())
         source = set(getattr(original, field).all())
         if current != source:
-            result[field] = [{"value": v.value, "label": v.label} for v in source]
+            result[field] = [v.value for v in source]
 
     for field in SYNC_CUSTOM_M2M_FIELDS:
         current = set(getattr(service, field).all())
         source = set(getattr(original, field).all())
         if current != source:
-            result[field] = [{"value": v.pk, "label": v.name} for v in source]
+            result[field] = [v.id if not v.structure else v.name for v in source]
 
     return result
 

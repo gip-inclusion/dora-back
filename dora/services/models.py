@@ -325,7 +325,9 @@ class Service(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = make_unique_slug(self, self.structure.slug, self.name)
-        if hasattr(self, "_original") and not self._state.adding:
+            if self.is_draft is False:
+                self.publication_date = timezone.now()
+        elif hasattr(self, "_original") and not self._state.adding:
             # TODO: fix and simplify
             original_is_draft = self._original["is_draft"]
             if original_is_draft is True and self.is_draft is False:
