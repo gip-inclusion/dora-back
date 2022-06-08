@@ -1484,19 +1484,10 @@ class ServiceSyncTestCase(APITestCase):
         dest_service = make_service(model=source_service, structure=struct)
         self.assertIsNotNone(dest_service.model)
         self.client.force_authenticate(user=user)
-        response = self.client.post(f"/services/{dest_service.slug}/unsync/")
-        self.assertEqual(response.status_code, 201)
+        response = self.client.patch(f"/services/{dest_service.slug}/", {"model": None})
+        self.assertEqual(response.status_code, 200)
         dest_service.refresh_from_db()
         self.assertIsNone(dest_service.model)
-
-    def test_cant_unsync_a_service_not_synced(self):
-        user = baker.make("users.User", is_valid=True)
-        struct = make_structure(user)
-        dest_service = make_service(model=None, structure=struct)
-        self.client.force_authenticate(user=user)
-        response = self.client.post(f"/services/{dest_service.slug}/unsync/")
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("Ce service n'est pas synchronisé", repr(response.data))
 
     def test_cant_unsync_others_services(self):
         user = baker.make("users.User", is_valid=True)
@@ -1506,7 +1497,7 @@ class ServiceSyncTestCase(APITestCase):
         )
         dest_service = make_service(model=source_service, is_draft=False)
         self.client.force_authenticate(user=user)
-        response = self.client.post(f"/services/{dest_service.slug}/unsync/")
+        response = self.client.patch(f"/services/{dest_service.slug}/", {"model": None})
         self.assertEqual(response.status_code, 403)
 
 

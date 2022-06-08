@@ -105,6 +105,12 @@ class StructureSerializer(serializers.ModelSerializer):
 
     def get_services(self, obj):
         class StructureServicesSerializer(ServiceListSerializer):
+            structure = serializers.SlugRelatedField(
+                queryset=Structure.objects.all(),
+                slug_field="slug",
+                required=False,
+            )
+
             class Meta:
                 model = Service
                 fields = [
@@ -125,6 +131,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     "diffusion_zone_details_display",
                     "model_changed",
                     "model",
+                    "structure",
                 ]
 
         user = self.context.get("request").user
@@ -143,6 +150,12 @@ class StructureSerializer(serializers.ModelSerializer):
 
     def get_models(self, obj):
         class StructureModelsSerializer(ServiceListSerializer):
+            structure = serializers.SlugRelatedField(
+                queryset=Structure.objects.all(),
+                slug_field="slug",
+                required=False,
+            )
+
             class Meta:
                 model = Service
                 fields = [
@@ -154,6 +167,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     "modification_date",
                     "categories_display",
                     "short_desc",
+                    "structure",
                 ]
 
         qs = obj.services.filter(is_model=True)

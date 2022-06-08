@@ -240,20 +240,6 @@ class ServiceViewSet(
 
     @action(
         detail=True,
-        methods=["post"],
-        url_path="unsync",
-    )
-    def unsync(self, request, slug):
-        # user = request.user
-        service = self.get_object()
-        if not service.model:
-            raise serializers.ValidationError("Ce service n'est pas synchronisé")
-        service.model = None
-        service.save()
-        return Response(status=201)
-
-    @action(
-        detail=True,
         methods=["get"],
         url_path="diff",
     )
