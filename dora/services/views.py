@@ -301,7 +301,11 @@ class ServiceViewSet(
 
     def _send_service_published_notification(self, service):
         structure = service.structure
-        time_elapsed = service.publication_date - service.creation_date
+        time_elapsed = (
+            service.publication_date - service.creation_date
+            if service.publication_date > service.creation_date
+            else 0
+        )
         humanize.i18n.activate("fr_FR")
         time_elapsed_h = humanize.naturaldelta(time_elapsed, months=True)
         user = self.request.user
