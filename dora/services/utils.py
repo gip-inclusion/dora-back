@@ -135,6 +135,7 @@ def create_model(original, structure, user):
 
     model.save()
     original.model = model
+    original.last_sync_checksum = model.sync_checksum
     original.save()
     return model
 

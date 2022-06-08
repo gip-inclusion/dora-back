@@ -1555,7 +1555,7 @@ class ServiceDiffTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.data["categories"][0]["value"],
+            response.data["categories"][0],
             new_cat.value,
             response.data["categories"],
         )
@@ -1565,7 +1565,7 @@ class ServiceDiffTestCase(APITestCase):
         structure = make_structure(user)
         source = make_service(is_model=True)
         service = instantiate_model(source, structure, user)
-        new_ac = baker.make(AccessCondition)
+        new_ac = baker.make(AccessCondition, structure=None)
         source.access_conditions.set([new_ac])
         source.save()
         self.client.force_authenticate(user=user)
@@ -1574,7 +1574,7 @@ class ServiceDiffTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.data["access_conditions"][0]["value"],
+            response.data["access_conditions"][0],
             new_ac.pk,
             response.data["access_conditions"],
         )

@@ -8,6 +8,9 @@ from sib_api_v3_sdk.rest import ApiException as SibApiException
 
 logger = logging.getLogger(__name__)
 
+TRUTHY_VALUES = ("1", 1, "True", "true", "t", "T")
+FALSY_VALUES = ("0", 0, "False", "false", "f", "F")
+
 
 def normalize_description(desc: str, limit: int) -> Tuple[str, str]:
     if len(desc) < limit:
