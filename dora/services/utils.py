@@ -152,13 +152,13 @@ def get_service_diffs(service):
         current = set(getattr(service, field).all())
         source = set(getattr(original, field).all())
         if current != source:
-            result[field] = [{"value": v.value, "label": v.label} for v in source]
+            result[field] = [v.value for v in source]
 
     for field in SYNC_CUSTOM_M2M_FIELDS:
         current = set(getattr(service, field).all())
         source = set(getattr(original, field).all())
         if current != source:
-            result[field] = [{"value": v.pk, "label": v.name} for v in source]
+            result[field] = [v.value for v in source]
 
     return result
 
