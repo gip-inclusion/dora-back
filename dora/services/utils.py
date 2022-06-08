@@ -158,7 +158,7 @@ def get_service_diffs(service):
         current = set(getattr(service, field).all())
         source = set(getattr(original, field).all())
         if current != source:
-            result[field] = [v.id for v in source]
+            result[field] = [v.id if not v.structure else v.name for v in source]
 
     return result
 
