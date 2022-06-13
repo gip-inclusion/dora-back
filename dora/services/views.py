@@ -406,6 +406,20 @@ class ModelViewSet(ServiceViewSet):
         )
 
     def perform_create(self, serializer):
+        service_slug = self.request.data.get("service")
+        service = None
+        if service_slug:
+            # TODO: check permission to access service
+            try:
+                service = Service.objects.get(slug=service_slug)
+            except Service.DoesNotExist:
+                raise Http404
+
+            if service.model:
+                raise serializers.ValidationError(
+                    "Impossible de copier un service synchronisé"
+                )
+
         model = serializer.save(
             creator=self.request.user,
             last_editor=self.request.user,
@@ -418,6 +432,10 @@ class ModelViewSet(ServiceViewSet):
         )
         # Force a save to update the sync_checksum
         model.save()
+        if service:
+            service.model = model
+            service.last_sync_checksum = model.sync_checksum
+            service.save()
 
 
 @api_view()
