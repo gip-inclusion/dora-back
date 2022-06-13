@@ -330,8 +330,8 @@ class ServiceViewSet(
 
 
 class ModelViewSet(ServiceViewSet):
-
-    serializer_class = ServiceModelSerializer
+    def get_serializer_class(self):
+        return ServiceModelSerializer
 
     def get_queryset(self):
         qs = None

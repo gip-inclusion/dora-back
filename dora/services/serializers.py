@@ -409,6 +409,8 @@ class ServiceSerializer(serializers.ModelSerializer):
 
 
 class ServiceModelSerializer(ServiceSerializer):
+    num_services = serializers.SerializerMethodField()
+
     class Meta:
         model = Service
 
@@ -437,6 +439,7 @@ class ServiceModelSerializer(ServiceSerializer):
             "contact_phone",
             "contact_email",
             "is_contact_info_public",
+            "location_kinds",
             "diffusion_zone_type",
             "diffusion_zone_details",
             "qpv_or_zrr",
@@ -459,8 +462,12 @@ class ServiceModelSerializer(ServiceSerializer):
             "coach_orientation_modes_display",
             "department",
             "can_write",
+            "num_services",
         ]
         lookup_field = "slug"
+
+    def get_num_services(self, obj):
+        return obj.copies.count()
 
 
 class AnonymousServiceSerializer(ServiceSerializer):
