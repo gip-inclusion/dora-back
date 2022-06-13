@@ -71,6 +71,7 @@ def update_sync_checksum(service):
     return result
 
 
+# TODO: delete this method
 def instantiate_model(model, structure, user):
     service = model.__class__.objects.create(structure=structure)
 
@@ -109,6 +110,7 @@ def instantiate_model(model, structure, user):
     return service
 
 
+# TODO: delete this method
 def create_model(original, structure, user):
     model = original.__class__.objects.create(structure=structure)
 

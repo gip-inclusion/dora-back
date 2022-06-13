@@ -205,6 +205,7 @@ class ServiceViewSet(
         send_service_feedback_email(service, d["full_name"], d["email"], d["message"])
         return Response(status=201)
 
+    # TODO: delete this method
     @action(
         detail=True,
         methods=["post"],
@@ -260,11 +261,13 @@ class ServiceViewSet(
         service = serializer.save(
             creator=self.request.user, last_editor=self.request.user
         )
+        # TODO: log the model eventually used
         if service.is_draft:
             self._send_draft_service_created_notification(service)
         else:
             self._send_service_published_notification(service)
-
+        if service.model:
+            service.last_sync_checksum = service.model.sync_checksum
         # Force a save to update the sync_checksum
         service.save()
 
@@ -380,6 +383,7 @@ class ModelViewSet(ServiceViewSet):
 
         return qs.order_by("-modification_date").distinct()
 
+    # TODO: delete this method
     @action(
         detail=True,
         methods=["post"],
@@ -430,6 +434,7 @@ class ModelViewSet(ServiceViewSet):
         send_mattermost_notification(
             f":clipboard: Nouveau modèle “{model.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/modeles/{model.slug}"
         )
+        # TODO "à partir du service………"
         # Force a save to update the sync_checksum
         model.save()
         if service:
