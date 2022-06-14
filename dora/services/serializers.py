@@ -71,6 +71,16 @@ class CreatablePrimaryKeyRelatedField(PrimaryKeyRelatedField):
         return obj
 
 
+# On veut sérialiser le nom du champ pour les valeurs spécifiques à une
+# structure, puisque l'utilisateur ne pourra pas la retrouver sur le frontend
+# TODO: a simplifier: ça devrait devenir le mécanisme général, même pour
+# sérialiser les services. Peut-être qu'on pourrait même toujours sérialiser directement
+# les chaines au lieu des ids.
+class ModelCreatablePrimaryKeyRelatedField(CreatablePrimaryKeyRelatedField):
+    def to_representation(self, value):
+        return value.name if value.structure else value.id
+
+
 class StructureSerializer(serializers.ModelSerializer):
     has_admin = serializers.SerializerMethodField()
     num_services = serializers.SerializerMethodField()
@@ -410,6 +420,31 @@ class ServiceSerializer(serializers.ModelSerializer):
 
 class ServiceModelSerializer(ServiceSerializer):
     num_services = serializers.SerializerMethodField()
+    access_conditions = ModelCreatablePrimaryKeyRelatedField(
+        many=True,
+        queryset=AccessCondition.objects.all(),
+        max_length=140,
+        required=False,
+    )
+
+    concerned_public = ModelCreatablePrimaryKeyRelatedField(
+        many=True,
+        queryset=ConcernedPublic.objects.all(),
+        max_length=140,
+        required=False,
+    )
+    requirements = ModelCreatablePrimaryKeyRelatedField(
+        many=True,
+        queryset=Requirement.objects.all(),
+        max_length=140,
+        required=False,
+    )
+    credentials = ModelCreatablePrimaryKeyRelatedField(
+        many=True,
+        queryset=Credential.objects.all(),
+        max_length=140,
+        required=False,
+    )
 
     class Meta:
         model = Service
