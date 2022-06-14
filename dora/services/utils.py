@@ -1,6 +1,5 @@
 import hashlib
 
-from django.contrib.gis.geos import Point
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
@@ -18,7 +17,6 @@ SYNC_FIELDS = [
     "coach_orientation_modes_other",
     "forms",
     "online_form",
-    "remote_url",
     "qpv_or_zrr",
     "recurrence",
 ]
@@ -68,97 +66,6 @@ def update_sync_checksum(service):
         )
 
     result = md5.hexdigest()
-    return result
-
-
-# TODO: delete this method
-def instantiate_model(model, structure, user):
-    service = model.__class__.objects.create(structure=structure)
-
-    for field in SYNC_FIELDS:
-        setattr(service, field, getattr(model, field))
-
-    # Overwrite address, to default to the new structure one
-    service.address1 = structure.address1
-    service.address2 = structure.address2
-    service.postal_code = structure.postal_code
-    service.city_code = structure.city_code
-    service.city = structure.city
-    if structure.longitude and structure.latitude:
-        service.geom = Point(structure.longitude, structure.latitude, srid=4326)
-    else:
-        service.geom = None
-
-    # Metadata
-    service.is_draft = True
-    service.is_model = False
-    service.creator = model.creator
-    service.last_editor = user
-    service.model = model
-    service.last_sync_checksum = model.sync_checksum
-
-    # Restaure les champs M2M
-    for field in SYNC_M2M_FIELDS:
-        getattr(service, field).set(getattr(model, field).all())
-
-    for field in SYNC_CUSTOM_M2M_FIELDS:
-        _duplicate_customizable_choices(
-            getattr(service, field), getattr(model, field).all(), service.structure
-        )
-
-    service.save()
-    return service
-
-
-# TODO: delete this method
-def create_model(original, structure, user):
-    model = original.__class__.objects.create(structure=structure)
-
-    for field in SYNC_FIELDS:
-        setattr(model, field, getattr(original, field))
-
-    model.is_draft = False
-    model.is_model = True
-    model.creator = original.creator
-    model.last_editor = user
-
-    # Restaure les champs M2M
-    for field in SYNC_M2M_FIELDS:
-        getattr(model, field).set(getattr(original, field).all())
-
-    for field in SYNC_CUSTOM_M2M_FIELDS:
-        _duplicate_customizable_choices(
-            getattr(model, field), getattr(original, field).all(), model.structure
-        )
-
-    model.save()
-    original.model = model
-    original.last_sync_checksum = model.sync_checksum
-    original.save()
-    return model
-
-
-def get_service_diffs(service):
-    original = service.model
-    result = {}
-    for field in SYNC_FIELDS:
-        current = getattr(service, field)
-        source = getattr(original, field)
-        if current != source:
-            result[field] = source
-
-    for field in SYNC_M2M_FIELDS:
-        current = set(getattr(service, field).all())
-        source = set(getattr(original, field).all())
-        if current != source:
-            result[field] = [v.value for v in source]
-
-    for field in SYNC_CUSTOM_M2M_FIELDS:
-        current = set(getattr(service, field).all())
-        source = set(getattr(original, field).all())
-        if current != source:
-            result[field] = [v.id if not v.structure else v.name for v in source]
-
     return result
 
 
