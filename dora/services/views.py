@@ -205,6 +205,7 @@ class ServiceViewSet(
         send_service_feedback_email(service, d["full_name"], d["email"], d["message"])
         return Response(status=201)
 
+    # TODO: delete this method
     @action(
         detail=True,
         methods=["post"],
@@ -260,11 +261,13 @@ class ServiceViewSet(
         service = serializer.save(
             creator=self.request.user, last_editor=self.request.user
         )
+        # TODO: log the model eventually used
         if service.is_draft:
             self._send_draft_service_created_notification(service)
         else:
             self._send_service_published_notification(service)
-
+        if service.model:
+            service.last_sync_checksum = service.model.sync_checksum
         # Force a save to update the sync_checksum
         service.save()
 
@@ -327,8 +330,8 @@ class ServiceViewSet(
 
 
 class ModelViewSet(ServiceViewSet):
-
-    serializer_class = ServiceModelSerializer
+    def get_serializer_class(self):
+        return ServiceModelSerializer
 
     def get_queryset(self):
         qs = None
@@ -380,6 +383,7 @@ class ModelViewSet(ServiceViewSet):
 
         return qs.order_by("-modification_date").distinct()
 
+    # TODO: delete this method
     @action(
         detail=True,
         methods=["post"],
@@ -406,6 +410,20 @@ class ModelViewSet(ServiceViewSet):
         )
 
     def perform_create(self, serializer):
+        service_slug = self.request.data.get("service")
+        service = None
+        if service_slug:
+            # TODO: check permission to access service
+            try:
+                service = Service.objects.get(slug=service_slug)
+            except Service.DoesNotExist:
+                raise Http404
+
+            if service.model:
+                raise serializers.ValidationError(
+                    "Impossible de copier un service synchronisé"
+                )
+
         model = serializer.save(
             creator=self.request.user,
             last_editor=self.request.user,
@@ -416,8 +434,13 @@ class ModelViewSet(ServiceViewSet):
         send_mattermost_notification(
             f":clipboard: Nouveau modèle “{model.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/modeles/{model.slug}"
         )
+        # TODO "à partir du service………"
         # Force a save to update the sync_checksum
         model.save()
+        if service:
+            service.model = model
+            service.last_sync_checksum = model.sync_checksum
+            service.save()
 
 
 @api_view()

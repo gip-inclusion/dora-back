@@ -156,11 +156,11 @@ class StructureSerializer(serializers.ModelSerializer):
                 required=False,
             )
 
+            num_services = serializers.SerializerMethodField()
+
             class Meta:
                 model = Service
                 fields = [
-                    "category",
-                    "category_display",
                     "slug",
                     "name",
                     "department",
@@ -168,7 +168,11 @@ class StructureSerializer(serializers.ModelSerializer):
                     "categories_display",
                     "short_desc",
                     "structure",
+                    "num_services",
                 ]
+
+            def get_num_services(self, obj):
+                return obj.copies.count()
 
         qs = obj.services.filter(is_model=True)
         return StructureModelsSerializer(
