@@ -334,38 +334,12 @@ class ModelViewSet(ServiceViewSet):
 
         return qs.order_by("-modification_date").distinct()
 
-    # # TODO: delete this method
-    # @action(
-    #     detail=True,
-    #     methods=["post"],
-    #     url_path="instantiate",
-    #     permission_classes=[permissions.IsAuthenticated],
-    # )
-    # def instantiate(self, request, slug):
-    #     user = request.user
-    #     model = self.get_object()
-
-    #     structure_slug = self.request.data.get("structure")
-    #     try:
-    #         structure = Structure.objects.get(slug=structure_slug)
-    #     except Structure.DoesNotExist:
-    #         raise Http404
-    #     # On peut uniquement copier vers une structure dont on fait partie
-    #     user_structures = Structure.objects.filter(membership__user=user)
-    #     if structure not in user_structures:
-    #         raise PermissionDenied
-
-    #     new_service = instantiate_model(model, structure, request.user)
-    #     return Response(
-    #         ServiceSerializer(new_service, context={"request": request}).data
-    #     )
-
     def perform_create(self, serializer):
         user = self.request.user
+        user_structures = Structure.objects.filter(membership__user=user)
         service_slug = self.request.data.get("service")
         service = None
         if service_slug:
-            # TODO: check permission to access service
             try:
                 service = Service.objects.get(slug=service_slug, is_model=False)
             except Service.DoesNotExist:
@@ -376,6 +350,10 @@ class ModelViewSet(ServiceViewSet):
                     "Impossible de copier un service synchronisé"
                 )
 
+            # On peut uniquement transformer un service d'une de nos structures
+            if not user.is_staff and service.structure not in user_structures:
+                raise PermissionDenied
+
         structure_slug = self.request.data.get("structure")
         try:
             structure = Structure.objects.get(slug=structure_slug)
@@ -383,7 +361,7 @@ class ModelViewSet(ServiceViewSet):
             raise Http404
         # On peut uniquement copier vers une structure dont on fait partie
         user_structures = Structure.objects.filter(membership__user=user)
-        if structure not in user_structures:
+        if not user.is_staff and structure not in user_structures:
             raise PermissionDenied
 
         # # On peut uniquement copier un service d'une de nos structures
@@ -399,14 +377,7 @@ class ModelViewSet(ServiceViewSet):
         structure = model.structure
 
         # On peut uniquement copier vers une structure dont on fait partie
-        user_structures = Structure.objects.filter(membership__user=user)
         if structure not in user_structures:
-            raise PermissionDenied
-        # On peut uniquement copier un service d'une de nos structures
-        # ou un service marqué comme modèle
-        if service and (
-            service.structure not in user_structures and not service.is_model
-        ):
             raise PermissionDenied
 
         send_mattermost_notification(

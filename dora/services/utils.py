@@ -17,7 +17,6 @@ SYNC_FIELDS = [
     "coach_orientation_modes_other",
     "forms",
     "online_form",
-    "remote_url",
     "qpv_or_zrr",
     "recurrence",
 ]

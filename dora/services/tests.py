@@ -1278,8 +1278,80 @@ class ServiceModelTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 403)
 
+    def test_superuser_can_create_model_from_others_service(self):
+        user = baker.make("users.User", is_valid=True, is_staff=True)
+        struct = make_structure(user)
+        service = make_service(is_model=False, is_draft=False, model=None)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/models/",
+            {"structure": struct.slug, "service": service.slug, **DUMMY_SERVICE},
+        )
+        self.assertEqual(response.status_code, 201)
 
-class ServiceDuplicationTestCase(APITestCase):
+
+class ServiceInstantiationTestCase(APITestCase):
+    def test_cant_instantiate_a_service(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        service = make_service(structure=struct, is_model=False)
+        dest_struct = make_structure(user)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/services/",
+            {"structure": dest_struct.slug, "model": service.slug, **DUMMY_SERVICE},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual("not_a_model", response.data["model"]["code"])
+
+    def test_can_instantiate_models_in_my_structures(self):
+        user = baker.make("users.User", is_valid=True)
+        model = make_service(is_model=True, is_draft=False)
+        dest_struct = make_structure(user)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/services/",
+            {"structure": dest_struct.slug, "model": model.slug, **DUMMY_SERVICE},
+        )
+        self.assertEqual(response.status_code, 201)
+
+    def test_cant_instantiate_models_in_other_structures(self):
+        model = make_service(is_model=True, is_draft=False)
+        dest_struct = make_structure()
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/services/",
+            {"structure": dest_struct.slug, "model": model.slug, **DUMMY_SERVICE},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual("not_member_of_struct", response.data["structure"][0]["code"])
+
+
+class ServiceSyncTestCase(APITestCase):
+    def test_can_unsync_my_services(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        source_service = make_service(structure=struct)
+        dest_service = make_service(model=source_service, structure=struct)
+        self.assertIsNotNone(dest_service.model)
+        self.client.force_authenticate(user=user)
+        response = self.client.patch(f"/services/{dest_service.slug}/", {"model": None})
+        self.assertEqual(response.status_code, 200)
+        dest_service.refresh_from_db()
+        self.assertIsNone(dest_service.model)
+
+    def test_cant_unsync_others_services(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        source_service = make_service(
+            structure=struct,
+        )
+        dest_service = make_service(model=source_service, is_draft=False)
+        self.client.force_authenticate(user=user)
+        response = self.client.patch(f"/services/{dest_service.slug}/", {"model": None})
+        self.assertEqual(response.status_code, 403)
+
     def test_field_change_updates_checksum(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
@@ -1351,66 +1423,3 @@ class ServiceDuplicationTestCase(APITestCase):
             self.assertEqual(response.status_code, 200)
             service.refresh_from_db()
             self.assertNotEqual(service.sync_checksum, initial_checksum)
-
-
-class ServiceDuplicationPermissionTestCase(APITestCase):
-    def test_cant_instantiate_a_service(self):
-        user = baker.make("users.User", is_valid=True)
-        struct = make_structure(user)
-        service = make_service(structure=struct, is_model=False)
-        dest_struct = make_structure(user)
-        self.client.force_authenticate(user=user)
-        response = self.client.post(
-            "/services/",
-            {"structure": dest_struct.slug, "model": service.slug, **DUMMY_SERVICE},
-        )
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual("not_a_model", response.data["model"]["code"])
-
-    def test_can_instantiate_models_in_my_structures(self):
-        user = baker.make("users.User", is_valid=True)
-        model = make_service(is_model=True, is_draft=False)
-        dest_struct = make_structure(user)
-        self.client.force_authenticate(user=user)
-        response = self.client.post(
-            "/services/",
-            {"structure": dest_struct.slug, "model": model.slug, **DUMMY_SERVICE},
-        )
-        self.assertEqual(response.status_code, 201)
-
-    def test_cant_instantiate_models_in_other_structures(self):
-        model = make_service(is_model=True, is_draft=False)
-        dest_struct = make_structure()
-        user = baker.make("users.User", is_valid=True)
-        self.client.force_authenticate(user=user)
-        response = self.client.post(
-            "/services/",
-            {"structure": dest_struct.slug, "model": model.slug, **DUMMY_SERVICE},
-        )
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual("not_member_of_struct", response.data["structure"][0]["code"])
-
-
-class ServiceSyncTestCase(APITestCase):
-    def test_can_unsync_my_services(self):
-        user = baker.make("users.User", is_valid=True)
-        struct = make_structure(user)
-        source_service = make_service(structure=struct)
-        dest_service = make_service(model=source_service, structure=struct)
-        self.assertIsNotNone(dest_service.model)
-        self.client.force_authenticate(user=user)
-        response = self.client.patch(f"/services/{dest_service.slug}/", {"model": None})
-        self.assertEqual(response.status_code, 200)
-        dest_service.refresh_from_db()
-        self.assertIsNone(dest_service.model)
-
-    def test_cant_unsync_others_services(self):
-        user = baker.make("users.User", is_valid=True)
-        struct = make_structure(user)
-        source_service = make_service(
-            structure=struct,
-        )
-        dest_service = make_service(model=source_service, is_draft=False)
-        self.client.force_authenticate(user=user)
-        response = self.client.patch(f"/services/{dest_service.slug}/", {"model": None})
-        self.assertEqual(response.status_code, 403)
