@@ -361,7 +361,7 @@ class ModelViewSet(ServiceViewSet):
             raise Http404
         # On peut uniquement copier vers une structure dont on fait partie
         user_structures = Structure.objects.filter(membership__user=user)
-        if not user.is_staff and structure not in user_structures:
+        if not (user.is_staff or structure in user_structures):
             raise PermissionDenied
 
         # # On peut uniquement copier un service d'une de nos structures
@@ -375,10 +375,6 @@ class ModelViewSet(ServiceViewSet):
             is_draft=False,
         )
         structure = model.structure
-
-        # On peut uniquement copier vers une structure dont on fait partie
-        if structure not in user_structures:
-            raise PermissionDenied
 
         send_mattermost_notification(
             f":clipboard: Nouveau modèle “{model.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/modeles/{model.slug}"
