@@ -19,6 +19,7 @@ SYNC_FIELDS = [
     "online_form",
     "qpv_or_zrr",
     "recurrence",
+    "suspension_date",
 ]
 
 SYNC_M2M_FIELDS = [

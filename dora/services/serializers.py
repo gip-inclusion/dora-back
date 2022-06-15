@@ -475,6 +475,7 @@ class ServiceModelSerializer(ServiceSerializer):
             "structure",
             "creation_date",
             "modification_date",
+            "suspension_date",
             "forms_info",
             "structure_info",
             "kinds_display",
