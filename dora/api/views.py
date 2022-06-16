@@ -150,7 +150,6 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
     versioning_class = NamespaceVersioning
     queryset = (
         Service.objects.published()
-        .filter(is_model=False)
         .select_related("structure")
         .prefetch_related(
             "kinds",

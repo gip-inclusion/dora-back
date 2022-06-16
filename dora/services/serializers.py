@@ -71,6 +71,16 @@ class CreatablePrimaryKeyRelatedField(PrimaryKeyRelatedField):
         return obj
 
 
+# On veut sérialiser le nom du champ pour les valeurs spécifiques à une
+# structure, puisque l'utilisateur ne pourra pas la retrouver sur le frontend
+# TODO: a simplifier: ça devrait devenir le mécanisme général, même pour
+# sérialiser les services. Peut-être qu'on pourrait même toujours sérialiser directement
+# les chaines au lieu des ids.
+class ModelCreatablePrimaryKeyRelatedField(CreatablePrimaryKeyRelatedField):
+    def to_representation(self, value):
+        return value.name if value.structure else value.id
+
+
 class StructureSerializer(serializers.ModelSerializer):
     has_admin = serializers.SerializerMethodField()
     num_services = serializers.SerializerMethodField()
@@ -230,7 +240,7 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     model_changed = serializers.SerializerMethodField()
     model = serializers.SlugRelatedField(
-        queryset=Service.objects.all(),
+        queryset=Service.models.all(),
         slug_field="slug",
         required=False,
         allow_null=True,
@@ -408,6 +418,33 @@ class ServiceSerializer(serializers.ModelSerializer):
 
 
 class ServiceModelSerializer(ServiceSerializer):
+    num_services = serializers.SerializerMethodField()
+    access_conditions = ModelCreatablePrimaryKeyRelatedField(
+        many=True,
+        queryset=AccessCondition.objects.all(),
+        max_length=140,
+        required=False,
+    )
+
+    concerned_public = ModelCreatablePrimaryKeyRelatedField(
+        many=True,
+        queryset=ConcernedPublic.objects.all(),
+        max_length=140,
+        required=False,
+    )
+    requirements = ModelCreatablePrimaryKeyRelatedField(
+        many=True,
+        queryset=Requirement.objects.all(),
+        max_length=140,
+        required=False,
+    )
+    credentials = ModelCreatablePrimaryKeyRelatedField(
+        many=True,
+        queryset=Credential.objects.all(),
+        max_length=140,
+        required=False,
+    )
+
     class Meta:
         model = Service
 
@@ -432,20 +469,13 @@ class ServiceModelSerializer(ServiceSerializer):
             "credentials",
             "forms",
             "online_form",
-            "contact_name",
-            "contact_phone",
-            "contact_email",
-            "is_contact_info_public",
-            "diffusion_zone_type",
-            "diffusion_zone_details",
             "qpv_or_zrr",
-            "remote_url",
             "recurrence",
             "structure",
             "creation_date",
             "modification_date",
+            "suspension_date",
             "forms_info",
-            "structure",
             "structure_info",
             "kinds_display",
             "categories_display",
@@ -458,8 +488,12 @@ class ServiceModelSerializer(ServiceSerializer):
             "coach_orientation_modes_display",
             "department",
             "can_write",
+            "num_services",
         ]
         lookup_field = "slug"
+
+    def get_num_services(self, obj):
+        return obj.copies.count()
 
 
 class AnonymousServiceSerializer(ServiceSerializer):

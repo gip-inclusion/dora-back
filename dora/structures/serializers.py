@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework import exceptions, serializers
 
 from dora.rest_auth.models import Token
+from dora.services.enums import ServiceStatus
 from dora.services.models import Service
 from dora.services.serializers import ServiceListSerializer
 from dora.structures.emails import send_invitation_email
@@ -105,6 +106,12 @@ class StructureSerializer(serializers.ModelSerializer):
 
     def get_services(self, obj):
         class StructureServicesSerializer(ServiceListSerializer):
+            structure = serializers.SlugRelatedField(
+                queryset=Structure.objects.all(),
+                slug_field="slug",
+                required=False,
+            )
+
             class Meta:
                 model = Service
                 fields = [
@@ -124,6 +131,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     "diffusion_zone_details_display",
                     "model_changed",
                     "model",
+                    "structure",
                 ]
 
         user = self.context.get("request").user
@@ -143,18 +151,29 @@ class StructureSerializer(serializers.ModelSerializer):
 
     def get_models(self, obj):
         class StructureModelsSerializer(ServiceListSerializer):
+            structure = serializers.SlugRelatedField(
+                queryset=Structure.objects.all(),
+                slug_field="slug",
+                required=False,
+            )
+
+            num_services = serializers.SerializerMethodField()
+
             class Meta:
                 model = Service
                 fields = [
-                    "category",
-                    "category_display",
                     "slug",
                     "name",
                     "department",
                     "modification_date",
                     "categories_display",
                     "short_desc",
+                    "structure",
+                    "num_services",
                 ]
+
+            def get_num_services(self, obj):
+                return obj.copies.count()
 
         qs = obj.services.filter(is_model=True)
         return StructureModelsSerializer(
@@ -196,9 +215,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     branches_other.annotate(
                         num_services=Count(
                             "services",
-                            filter=Q(
-                                services__is_draft=False, services__is_suggestion=False
-                            ),
+                            filter=Q(services__status=ServiceStatus.PUBLISHED),
                         )
                     )
                 ),

@@ -73,10 +73,10 @@ CREATE TABLE mb_service AS
     services_service.structure_id,
     services_service.slug,
     services_service.online_form,
-    -- TODO: clean
-    services_service.is_draft,
-    -- TODO: clean
-    services_service.is_suggestion,
+    -- TODO: deprecated
+    (select services_service.status!='PUBLISHED') AS is_draft,
+    (select services_service.status='SUGGESTION') AS is_suggestion,
+    --
     services_service.status,
     services_service.publication_date,
     services_service.diffusion_zone_details,

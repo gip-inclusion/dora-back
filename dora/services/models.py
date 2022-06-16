@@ -110,6 +110,9 @@ class LocationKind(EnumModel):
 
 
 class ServiceManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_model=False)
+
     def published(self):
         return self.filter(status=ServiceStatus.PUBLISHED)
 
@@ -118,6 +121,11 @@ class ServiceManager(models.Manager):
 
     def active(self):
         return self.exclude(status=ServiceStatus.ARCHIVED)
+
+
+class ModelManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_model=True)
 
 
 class Service(models.Model):
@@ -309,6 +317,7 @@ class Service(models.Model):
     last_sync_checksum = models.CharField(max_length=32, blank=True)
 
     objects = ServiceManager()
+    models = ModelManager()
 
     def __str__(self):
         return self.name
@@ -325,12 +334,14 @@ class Service(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = make_unique_slug(self, self.structure.slug, self.name)
-            if self.is_draft is False:
+            if self.status == ServiceStatus.PUBLISHED:
                 self.publication_date = timezone.now()
         elif hasattr(self, "_original") and not self._state.adding:
-            # TODO: fix and simplify
-            original_is_draft = self._original["is_draft"]
-            if original_is_draft is True and self.is_draft is False:
+            original_status = self._original["status"]
+            if (
+                original_status == ServiceStatus.DRAFT
+                and self.status == ServiceStatus.PUBLISHED
+            ):
                 self.publication_date = timezone.now()
         self.sync_checksum = update_sync_checksum(self)
         return super().save(*args, **kwargs)

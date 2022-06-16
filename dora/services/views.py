@@ -33,12 +33,7 @@ from dora.services.models import (
     ServiceModificationHistoryItem,
     ServiceSubCategory,
 )
-from dora.services.utils import (
-    create_model,
-    filter_services_by_city_code,
-    get_service_diffs,
-    instantiate_model,
-)
+from dora.services.utils import filter_services_by_city_code
 from dora.structures.models import Structure, StructureMember
 
 from .serializers import (
@@ -135,9 +130,7 @@ class ServiceViewSet(
         # Everybody can see published services
         elif not user or not user.is_authenticated:
             # TODO
-            qs = all_services.filter(
-                Q(Q(is_draft=False) | Q(is_model=True)), is_suggestion=False
-            )
+            qs = all_services.filter(status=ServiceStatus.PUBLISHED)
         # Staff can see everything
         elif user.is_staff:
             qs = all_services
@@ -146,15 +139,13 @@ class ServiceViewSet(
             # plus published services for other structures
             # TODO
             qs = all_services.filter(
-                Q(is_draft=False, is_suggestion=False)
-                | Q(structure__membership__user=user)
+                Q(status=ServiceStatus.PUBLISHED) | Q(structure__membership__user=user)
             )
         if structure_slug:
             qs = qs.filter(structure__slug=structure_slug)
 
         if published_only:
             qs = qs.filter(status=ServiceStatus.PUBLISHED)
-        qs = qs.filter(is_model=False)
 
         return qs.order_by("-modification_date").distinct()
 
@@ -179,7 +170,6 @@ class ServiceViewSet(
         last_drafts = (
             Service.objects.draft()
             .filter(
-                is_model=False,
                 creator=user,
             )
             .order_by("-modification_date")
@@ -209,71 +199,6 @@ class ServiceViewSet(
         send_service_feedback_email(service, d["full_name"], d["email"], d["message"])
         return Response(status=201)
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="create-model",
-        permission_classes=[permissions.IsAuthenticated],
-    )
-    def create_model(self, request, slug):
-        user = request.user
-        service = self.get_object()
-        if service.model:
-            raise serializers.ValidationError(
-                "Impossible de copier un service synchronisé"
-            )
-        structure_slug = self.request.data.get("structure")
-        try:
-            structure = Structure.objects.get(slug=structure_slug)
-        except Structure.DoesNotExist:
-            raise Http404
-        # On peut uniquement copier vers une structure dont on fait partie
-        user_structures = Structure.objects.filter(membership__user=user)
-        if structure not in user_structures:
-            raise PermissionDenied
-        # On peut uniquement copier un service d'une de nos structures
-        # ou un service marqué comme modèle
-        if service.structure not in user_structures and not service.is_model:
-            raise PermissionDenied
-
-        new_service = create_model(service, structure, request.user)
-        return Response(
-            ServiceModelSerializer(new_service, context={"request": request}).data,
-            status=201,
-        )
-
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="unsync",
-    )
-    def unsync(self, request, slug):
-        # user = request.user
-        service = self.get_object()
-        if not service.model:
-            raise serializers.ValidationError("Ce service n'est pas synchronisé")
-        service.model = None
-        service.save()
-        return Response(status=201)
-
-    @action(
-        detail=True,
-        methods=["get"],
-        url_path="diff",
-    )
-    def diff(self, request, slug):
-        service = self.get_object()
-
-        # On peut uniquement synchroniser un service d'une de nos structures
-        user_structures = Structure.objects.filter(membership__user=request.user)
-        if service.structure not in user_structures:
-            raise PermissionDenied
-
-        if not service.model:
-            raise serializers.ValidationError("Ce service n'est pas synchronisé")
-        differences = get_service_diffs(service)
-        return Response(differences)
-
     def perform_create(self, serializer):
         service = serializer.save(
             creator=self.request.user, last_editor=self.request.user
@@ -282,7 +207,8 @@ class ServiceViewSet(
             self._send_draft_service_created_notification(service)
         elif service.status == ServiceStatus.PUBLISHED:
             self._send_service_published_notification(service)
-
+        if service.model:
+            service.last_sync_checksum = service.model.sync_checksum
         # Force a save to update the sync_checksum
         service.save()
 
@@ -345,8 +271,8 @@ class ServiceViewSet(
 
 
 class ModelViewSet(ServiceViewSet):
-
-    serializer_class = ServiceModelSerializer
+    def get_serializer_class(self):
+        return ServiceModelSerializer
 
     def get_queryset(self):
         qs = None
@@ -355,8 +281,8 @@ class ModelViewSet(ServiceViewSet):
 
         structure_slug = self.request.query_params.get("structure")
 
-        all_services = (
-            Service.objects.all()
+        all_models = (
+            Service.models.all()
             .select_related(
                 "structure",
             )
@@ -376,37 +302,37 @@ class ModelViewSet(ServiceViewSet):
         qs = None
         if only_mine:
             if not user or not user.is_authenticated:
-                qs = Service.objects.none()
+                qs = Service.models.none()
             else:
-                qs = all_services.filter(structure__membership__user=user)
+                qs = all_models.filter(structure__membership__user=user)
         # Everybody can see published services
-        elif not user or not user.is_authenticated:
-            qs = all_services.filter(is_model=True)
-        # Staff can see everything
-        elif user.is_staff:
-            qs = all_services
         else:
-            # Authentified users can see everything in their structure
-            # plus models from other structures
-            qs = all_services.filter(
-                Q(is_model=True) | Q(structure__membership__user=user)
-            )
+            qs = all_models
+
         if structure_slug:
             qs = qs.filter(structure__slug=structure_slug)
 
-        qs = qs.filter(is_model=True)
-
         return qs.order_by("-modification_date").distinct()
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="instantiate",
-        permission_classes=[permissions.IsAuthenticated],
-    )
-    def instantiate(self, request, slug):
-        user = request.user
-        model = self.get_object()
+    def perform_create(self, serializer):
+        user = self.request.user
+        user_structures = Structure.objects.filter(membership__user=user)
+        service_slug = self.request.data.get("service")
+        service = None
+        if service_slug:
+            try:
+                service = Service.objects.get(slug=service_slug)
+            except Service.DoesNotExist:
+                raise Http404
+
+            if service.model:
+                raise serializers.ValidationError(
+                    "Impossible de copier un service synchronisé"
+                )
+
+            # On peut uniquement transformer un service d'une de nos structures
+            if not user.is_staff and service.structure not in user_structures:
+                raise PermissionDenied
 
         structure_slug = self.request.data.get("structure")
         try:
@@ -415,27 +341,30 @@ class ModelViewSet(ServiceViewSet):
             raise Http404
         # On peut uniquement copier vers une structure dont on fait partie
         user_structures = Structure.objects.filter(membership__user=user)
-        if structure not in user_structures:
+        if not (user.is_staff or structure in user_structures):
             raise PermissionDenied
 
-        new_service = instantiate_model(model, structure, request.user)
-        return Response(
-            ServiceSerializer(new_service, context={"request": request}).data
-        )
+        # # On peut uniquement copier un service d'une de nos structures
+        # if service.structure not in user_structures:
+        #     raise PermissionDenied
 
-    def perform_create(self, serializer):
         model = serializer.save(
             creator=self.request.user,
             last_editor=self.request.user,
             is_model=True,
-            is_draft=False,
         )
         structure = model.structure
+
         send_mattermost_notification(
             f":clipboard: Nouveau modèle “{model.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/modeles/{model.slug}"
         )
+        # TODO "à partir du service………"
         # Force a save to update the sync_checksum
         model.save()
+        if service:
+            service.model = model
+            service.last_sync_checksum = model.sync_checksum
+            service.save()
 
 
 @api_view()
@@ -587,7 +516,7 @@ class SearchResultSerializer(ServiceListSerializer):
             return ""
 
 
-def sort_search_results(services, location):
+def _sort_search_results(services, location):
     services = services.order_by().annotate(
         diffusion_sort=Case(
             When(diffusion_zone_type=AdminDivisionType.CITY, then=1),
@@ -639,7 +568,6 @@ def search(request):
             "categories",
             "subcategories",
         )
-        .filter(is_model=False)
     )
     if category:
         services = services.filter(categories__value=category)
@@ -659,7 +587,7 @@ def search(request):
     city = get_object_or_404(City, pk=city_code)
 
     # Exclude suspended services
-    results = sort_search_results(
+    results = _sort_search_results(
         geofiltered_services.filter(
             Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
         ).distinct(),
