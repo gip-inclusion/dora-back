@@ -3,7 +3,7 @@ import uuid
 from django.conf import settings
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
-from django.db.models.fields import CharField
+from django.db.models import CharField, Q
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
@@ -287,7 +287,8 @@ class Service(models.Model):
         choices=ServiceStatus.choices,
         verbose_name="Statut",
         db_index=True,
-        default=ServiceStatus.DRAFT,
+        null=True,
+        blank=True,
     )
     # TODO: to clean
     is_draft = models.BooleanField(default=True)
@@ -318,6 +319,14 @@ class Service(models.Model):
 
     objects = ServiceManager()
     models = ModelManager()
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name="%(app_label)s_%(class)s_status_not_empty_except_models",
+                check=Q(is_model=False) | Q(status__isnull=True),
+            )
+        ]
 
     def __str__(self):
         return self.name

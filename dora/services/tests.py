@@ -617,10 +617,10 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.data["contact_phone"], "")
         self.assertEqual(response.data["contact_email"], "")
 
-    # Modifications
-    def test_is_draft_by_default(self):
-        service = make_service()
-        self.assertEqual(service.status, ServiceStatus.DRAFT)
+    # # Modifications
+    # def test_is_draft_by_default(self):
+    #     service = make_service()
+    #     self.assertEqual(service.status, ServiceStatus.DRAFT)
 
     def test_publishing_updates_publication_date(self):
         service = make_service(status=ServiceStatus.DRAFT, structure=self.my_struct)
@@ -1284,7 +1284,7 @@ class ServiceModelTestCase(APITestCase):
     def test_cant_create_model_from_others_service(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
-        service = make_service(status=ServiceStatus.PUBLISHED, model=None)
+        service = make_service(status=ServiceStatus.PUBLISHED)
 
         self.client.force_authenticate(user=user)
         response = self.client.post(
@@ -1296,7 +1296,7 @@ class ServiceModelTestCase(APITestCase):
     def test_superuser_can_create_model_from_others_service(self):
         user = baker.make("users.User", is_valid=True, is_staff=True)
         struct = make_structure(user)
-        service = make_service(status=ServiceStatus.PUBLISHED, model=None)
+        service = make_service(status=ServiceStatus.PUBLISHED)
         self.client.force_authenticate(user=user)
         response = self.client.post(
             "/models/",
@@ -1347,8 +1347,10 @@ class ServiceSyncTestCase(APITestCase):
     def test_can_unsync_my_services(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
-        source_service = make_service(structure=struct)
-        dest_service = make_service(model=source_service, structure=struct)
+        model = make_model(structure=struct)
+        dest_service = make_service(
+            model=model, structure=struct, status=ServiceStatus.PUBLISHED
+        )
         self.assertIsNotNone(dest_service.model)
         self.client.force_authenticate(user=user)
         response = self.client.patch(f"/services/{dest_service.slug}/", {"model": None})
@@ -1359,12 +1361,9 @@ class ServiceSyncTestCase(APITestCase):
     def test_cant_unsync_others_services(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
-        source_service = make_service(
-            structure=struct,
-        )
-        dest_service = make_service(
-            model=source_service, status=ServiceStatus.PUBLISHED
-        )
+
+        model = make_model(structure=struct)
+        dest_service = make_service(model=model, status=ServiceStatus.PUBLISHED)
         self.client.force_authenticate(user=user)
         response = self.client.patch(f"/services/{dest_service.slug}/", {"model": None})
         self.assertEqual(response.status_code, 403)
@@ -1372,7 +1371,8 @@ class ServiceSyncTestCase(APITestCase):
     def test_field_change_updates_checksum(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
-        service = make_service(structure=struct)
+
+        service = make_service(structure=struct, status=ServiceStatus.PUBLISHED)
         self.client.force_authenticate(user=user)
 
         for field in SYNC_FIELDS:
@@ -1416,7 +1416,7 @@ class ServiceSyncTestCase(APITestCase):
     def test_m2m_field_change_updates_checksum(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
-        service = make_service(structure=struct)
+        service = make_service(structure=struct, status=ServiceStatus.PUBLISHED)
         self.client.force_authenticate(user=user)
 
         for field in SYNC_M2M_FIELDS:
