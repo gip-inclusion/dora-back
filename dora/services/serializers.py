@@ -413,7 +413,7 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     def get_model_changed(self, object):
         if object.model:
-            return object.model.sync_checksum != object.sync_checksum
+            return object.model.sync_checksum != object.last_sync_checksum
         return None
 
 
