@@ -332,7 +332,7 @@ class Service(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return f"{settings.FRONTEND_URL}/services/{self.slug}"
+        return self.get_frontend_url()
 
     @classmethod
     def from_db(cls, db, field_names, values):
