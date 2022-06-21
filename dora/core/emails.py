@@ -2,6 +2,7 @@ import json
 
 from django.conf import settings
 from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
 
 
 def send_mail(
@@ -29,3 +30,21 @@ def send_mail(
     )
     msg.content_subtype = "html"
     msg.send()
+
+
+def send_draft_reminder_email(recipient_email, recipient_name, structure, drafts):
+    params = {
+        "recipient_email": recipient_email,
+        "recipient_name": recipient_name,
+        "drafts": drafts,
+        "structure": structure,
+        "homepage_url": settings.FRONTEND_URL,
+    }
+    body = render_to_string("email_drafts.html", params)
+
+    send_mail(
+        "[DORA] Besoin d'aide ?",
+        recipient_email,
+        body,
+        tags=["draft_notif"],
+    )
