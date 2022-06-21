@@ -324,6 +324,11 @@ class Structure(models.Model):
 
     def get_num_visible_services(self, user):
         if user.is_authenticated and (user.is_staff or self.is_member(user)):
-            return self.services.count()
+            return self.services.filter(is_model=False).count()
         else:
-            return self.services.filter(is_draft=False, is_suggestion=False).count()
+            return self.services.filter(
+                is_draft=False, is_suggestion=False, is_model=False
+            ).count()
+
+    def get_num_visible_models(self, user):
+        return self.services.filter(is_model=True).count()

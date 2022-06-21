@@ -31,6 +31,7 @@ router.register(
     basename="structure-putative-member",
 )
 router.register(r"services", dora.services.views.ServiceViewSet, basename="service")
+router.register(r"models", dora.services.views.ModelViewSet, basename="model")
 router.register(
     r"services-suggestions",
     dora.service_suggestions.views.ServiceSuggestionViewSet,
