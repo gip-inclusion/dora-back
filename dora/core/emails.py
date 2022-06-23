@@ -41,10 +41,15 @@ def send_draft_reminder_email(recipient_email, recipient_name, structure, drafts
         "homepage_url": settings.FRONTEND_URL,
     }
     body = render_to_string("email_drafts.html", params)
-
-    send_mail(
-        "[DORA] Besoin d'aide ?",
-        recipient_email,
-        body,
-        tags=["draft_notif"],
-    )
+    if settings.DEBUG:
+        print(
+            f"Would send draft reminder mail to {recipient_email} for {structure.name}"
+        )
+    else:
+        return
+        send_mail(
+            "[DORA] Besoin d'aide ?",
+            recipient_email,
+            body,
+            tags=["draft_notif"],
+        )
