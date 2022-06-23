@@ -98,9 +98,12 @@ class ServiceViewSet(
     def get_queryset(self):
         qs = None
         user = self.request.user
-        only_mine = self.request.query_params.get("mine")
-
+        only_mine = self.request.query_params.get("mine") in TRUTHY_VALUES
+        only_archived = self.request.query_params.get("archived-only") in TRUTHY_VALUES
         structure_slug = self.request.query_params.get("structure")
+        print(only_archived, structure_slug, only_archived and not structure_slug)
+        if only_archived and not structure_slug:
+            raise serializers.ValidationError("Il faut préciser la structure")
         published_only = self.request.query_params.get("published")
 
         all_services = (
@@ -127,6 +130,16 @@ class ServiceViewSet(
                 qs = Service.objects.none()
             else:
                 qs = all_services.filter(structure__membership__user=user)
+        elif only_archived:
+            if not user or not user.is_authenticated:
+                qs = Service.objects.none()
+            else:
+                if user.is_staff:
+                    qs = all_services.filter(status=ServiceStatus.ARCHIVED)
+                else:
+                    qs = all_services.filter(
+                        structure__membership__user=user, status=ServiceStatus.ARCHIVED
+                    )
         # Everybody can see published services
         elif not user or not user.is_authenticated:
             # TODO
