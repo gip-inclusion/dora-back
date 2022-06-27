@@ -61,6 +61,9 @@ class ServiceAdmin(admin.GISModelAdmin):
     ]
     list_filter = [
         "status",
+        "is_draft",
+        "is_suggestion",
+        "is_model",
         ("structure", RelatedOnlyFieldListFilter),
     ]
     inlines = [ServiceModificationHistoryItemInline]
