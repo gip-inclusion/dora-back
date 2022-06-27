@@ -83,12 +83,22 @@ CREATE TABLE mb_service AS
     services_service.model_id,
     ( SELECT st_y((services_service.geom)::geometry) AS st_y) AS latitude,
     ( SELECT st_x((services_service.geom)::geometry) AS st_x) AS longitude
-   FROM services_service"
+   FROM services_service where is_model is false"
 psql $SRC_DB_URL -c "ALTER TABLE mb_service ADD PRIMARY KEY (id)"
 
 pg_dump $DATABASE_URL -O -t mb_service -c | psql $DEST_DB_URL
 
-# mb_service
+# mb_model. Les modèles sont des services, mais les self joins sont mal gérés sur metabase…
+
+psql $SRC_DB_URL -c "DROP VIEW IF EXISTS mb_model"
+psql $SRC_DB_URL -c "
+CREATE VIEW mb_models AS
+ SELECT *
+   FROM services_service where is_model is true"
+
+pg_dump $DATABASE_URL -O -t mb_model -c | psql $DEST_DB_URL
+
+# mb_service_suggestion
 psql $SRC_DB_URL -c "DROP TABLE IF EXISTS mb_service_suggestion"
 psql $SRC_DB_URL -c "
 CREATE TABLE mb_service_suggestion AS
