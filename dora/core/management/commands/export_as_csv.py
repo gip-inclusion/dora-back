@@ -160,7 +160,7 @@ CREATE VIEW services_export AS (
             GROUP BY
                 slk.service_id
         ) AS lk ON lk.service_id = s.id
-        WHERE s.is_draft is FALSE AND s.is_suggestion is FALSE
+        WHERE s.status='PUBLISHED'
 );
 """
 

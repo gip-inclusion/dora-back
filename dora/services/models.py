@@ -3,7 +3,7 @@ import uuid
 from django.conf import settings
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
-from django.db.models.fields import CharField
+from django.db.models import CharField, Q
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
@@ -12,6 +12,7 @@ from dora.admin_express.models import AdminDivisionType
 from dora.core.models import EnumModel
 from dora.structures.models import Structure, StructureMember
 
+from .enums import ServiceStatus
 from .utils import update_sync_checksum
 
 
@@ -106,6 +107,25 @@ class LocationKind(EnumModel):
     class Meta:
         verbose_name = "Lieu de déroulement"
         verbose_name_plural = "Lieux de déroulement"
+
+
+class ServiceManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_model=False)
+
+    def published(self):
+        return self.filter(status=ServiceStatus.PUBLISHED)
+
+    def draft(self):
+        return self.filter(status=ServiceStatus.DRAFT)
+
+    def active(self):
+        return self.exclude(status=ServiceStatus.ARCHIVED)
+
+
+class ModelManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_model=True)
 
 
 class Service(models.Model):
@@ -261,7 +281,18 @@ class Service(models.Model):
         db_index=True,
         related_name="services",
     )
+
+    status = models.CharField(
+        max_length=20,
+        choices=ServiceStatus.choices,
+        verbose_name="Statut",
+        db_index=True,
+        null=True,
+        blank=True,
+    )
+    # TODO: to clean
     is_draft = models.BooleanField(default=True)
+    # TODO: to clean
     is_suggestion = models.BooleanField(default=False)
 
     creation_date = models.DateTimeField(auto_now_add=True)
@@ -286,6 +317,17 @@ class Service(models.Model):
     sync_checksum = models.CharField(max_length=32, blank=True)
     last_sync_checksum = models.CharField(max_length=32, blank=True)
 
+    objects = ServiceManager()
+    models = ModelManager()
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name="%(app_label)s_%(class)s_status_not_empty_except_models",
+                check=Q(is_model=False) | Q(status__isnull=True),
+            )
+        ]
+
     def __str__(self):
         return self.name
 
@@ -301,11 +343,14 @@ class Service(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = make_unique_slug(self, self.structure.slug, self.name)
-            if self.is_draft is False:
+            if self.status == ServiceStatus.PUBLISHED:
                 self.publication_date = timezone.now()
         elif hasattr(self, "_original") and not self._state.adding:
-            original_is_draft = self._original["is_draft"]
-            if original_is_draft is True and self.is_draft is False:
+            original_status = self._original["status"]
+            if (
+                original_status == ServiceStatus.DRAFT
+                and self.status == ServiceStatus.PUBLISHED
+            ):
                 self.publication_date = timezone.now()
         self.sync_checksum = update_sync_checksum(self)
         return super().save(*args, **kwargs)

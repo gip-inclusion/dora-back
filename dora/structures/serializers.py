@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework import exceptions, serializers
 
 from dora.rest_auth.models import Token
+from dora.services.enums import ServiceStatus
 from dora.services.models import Service
 from dora.services.serializers import ServiceListSerializer
 from dora.structures.emails import send_invitation_email
@@ -121,8 +122,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     "postal_code",
                     "city",
                     "department",
-                    "is_draft",
-                    "is_suggestion",
+                    "status",
                     "modification_date",
                     "categories_display",
                     "short_desc",
@@ -135,9 +135,10 @@ class StructureSerializer(serializers.ModelSerializer):
                 ]
 
         user = self.context.get("request").user
-        qs = obj.services.filter(is_model=False)
-        if not (user.is_authenticated and (user.is_staff or obj.is_member(user))):
-            qs = qs.filter(is_draft=False, is_suggestion=False)
+        qs = obj.services.published()
+        if user.is_authenticated and (user.is_staff or obj.is_member(user)):
+            qs = obj.services.active()
+        qs = qs.filter(is_model=False)
         return StructureServicesSerializer(
             qs.prefetch_related(
                 "categories",
@@ -214,9 +215,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     branches_other.annotate(
                         num_services=Count(
                             "services",
-                            filter=Q(
-                                services__is_draft=False, services__is_suggestion=False
-                            ),
+                            filter=Q(services__status=ServiceStatus.PUBLISHED),
                         )
                     )
                 ),

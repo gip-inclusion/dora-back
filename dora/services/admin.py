@@ -57,12 +57,10 @@ class ServiceAdmin(admin.GISModelAdmin):
         "modification_date",
         "publication_date",
         "last_editor",
-        "is_draft",
-        "is_suggestion",
+        "status",
     ]
     list_filter = [
-        "is_draft",
-        "is_suggestion",
+        "status",
         ("structure", RelatedOnlyFieldListFilter),
     ]
     inlines = [ServiceModificationHistoryItemInline]

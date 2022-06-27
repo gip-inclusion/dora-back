@@ -7,6 +7,7 @@ from rest_framework import serializers
 
 from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import validate_siret
+from dora.services.enums import ServiceStatus
 from dora.services.models import (
     LocationKind,
     Service,
@@ -107,8 +108,7 @@ class ServiceSuggestion(models.Model):
                 geom=geom,
                 creator=self.creator,
                 last_editor=self.creator,
-                is_draft=True,
-                is_suggestion=True,
+                status=ServiceStatus.SUGGESTION,
                 contact_phone=contact_phone,
                 **self.contents,
             )

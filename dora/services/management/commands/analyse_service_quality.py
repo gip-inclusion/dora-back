@@ -38,9 +38,7 @@ class Command(BaseCommand):
             self.csv_writer.writerow(
                 ["Catégorie", "Lien front", "Lien back", "Message"]
             )
-            published_services = Service.objects.filter(
-                is_draft=False, is_suggestion=False
-            )
+            published_services = Service.objects.published()
             for s in published_services.filter(location_kinds__value="a-distance"):
                 self.check_remote(s)
             for s in published_services.filter(location_kinds__value="en-presentiel"):
