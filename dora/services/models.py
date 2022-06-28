@@ -17,10 +17,11 @@ from .utils import update_sync_checksum
 
 
 def make_unique_slug(instance, parent_slug, value, length=20):
-    model = instance.__class__
     base_slug = parent_slug + "-" + slugify(value)[:length]
     unique_slug = base_slug
-    while model.objects.filter(slug=unique_slug).exists():
+    while Service.objects.filter(
+        slug=unique_slug
+    ).exists() or ServiceModel.objects.filter(slug=unique_slug):
         unique_slug = (
             base_slug + "-" + get_random_string(4, "abcdefghijklmnopqrstuvwxyz")
         )
