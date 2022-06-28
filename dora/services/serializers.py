@@ -21,6 +21,7 @@ from .models import (
     Service,
     ServiceCategory,
     ServiceKind,
+    ServiceModel,
     ServiceSubCategory,
 )
 
@@ -240,7 +241,7 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     model_changed = serializers.SerializerMethodField()
     model = serializers.SlugRelatedField(
-        queryset=Service.models.all(),
+        queryset=ServiceModel.objects.all(),
         slug_field="slug",
         required=False,
         allow_null=True,
@@ -446,7 +447,7 @@ class ServiceModelSerializer(ServiceSerializer):
     )
 
     class Meta:
-        model = Service
+        model = ServiceModel
 
         fields = [
             "slug",
