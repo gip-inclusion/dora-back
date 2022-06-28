@@ -329,4 +329,7 @@ class Structure(models.Model):
             return self.services.published().filter(is_model=False).count()
 
     def get_num_visible_models(self, user):
-        return self.services.filter(is_model=True).count()
+        # On ne peut pas utiliser le manager lié (self.services) étant donné qu'il filtre les modèles
+        from dora.services.models import ServiceModel
+
+        return ServiceModel.objects.filter(structure=self).count()

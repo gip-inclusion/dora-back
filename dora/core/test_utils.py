@@ -24,10 +24,10 @@ def make_structure(user=None, **kwargs):
 
 
 def make_service(**kwargs):
-    is_model = kwargs.pop("is_model", False)
     structure = kwargs.pop("structure") if "structure" in kwargs else make_structure()
-    return baker.make("Service", is_model=is_model, structure=structure, **kwargs)
+    return baker.make("Service", structure=structure, is_model=False, **kwargs)
 
 
 def make_model(**kwargs):
-    return make_service(is_model=True, **kwargs)
+    structure = kwargs.pop("structure") if "structure" in kwargs else make_structure()
+    return baker.make("ServiceModel", structure=structure, is_model=True, **kwargs)
