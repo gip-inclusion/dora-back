@@ -5,7 +5,7 @@ from rest_framework import exceptions, serializers
 
 from dora.rest_auth.models import Token
 from dora.services.enums import ServiceStatus
-from dora.services.models import Service
+from dora.services.models import Service, ServiceModel
 from dora.services.serializers import ServiceListSerializer
 from dora.structures.emails import send_invitation_email
 from dora.users.models import User
@@ -138,6 +138,7 @@ class StructureSerializer(serializers.ModelSerializer):
         qs = obj.services.published()
         if user.is_authenticated and (user.is_staff or obj.is_member(user)):
             qs = obj.services.active()
+
         qs = qs.filter(is_model=False)
         return StructureServicesSerializer(
             qs.prefetch_related(
@@ -149,7 +150,7 @@ class StructureSerializer(serializers.ModelSerializer):
     def get_num_models(self, structure):
         return structure.get_num_visible_models(self.context["request"].user)
 
-    def get_models(self, obj):
+    def get_models(self, structure):
         class StructureModelsSerializer(ServiceListSerializer):
             structure = serializers.SlugRelatedField(
                 queryset=Structure.objects.all(),
@@ -160,7 +161,7 @@ class StructureSerializer(serializers.ModelSerializer):
             num_services = serializers.SerializerMethodField()
 
             class Meta:
-                model = Service
+                model = ServiceModel
                 fields = [
                     "slug",
                     "name",
@@ -175,7 +176,7 @@ class StructureSerializer(serializers.ModelSerializer):
             def get_num_services(self, obj):
                 return obj.copies.count()
 
-        qs = obj.services.filter(is_model=True)
+        qs = ServiceModel.objects.filter(structure=structure)
         return StructureModelsSerializer(
             qs.prefetch_related(
                 "categories",

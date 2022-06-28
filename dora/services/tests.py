@@ -16,6 +16,7 @@ from .models import (
     LocationKind,
     Service,
     ServiceKind,
+    ServiceModel,
     ServiceModificationHistoryItem,
 )
 
@@ -1265,7 +1266,7 @@ class ServiceModelTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 201)
         slug = response.data["slug"]
-        Service.models.get(slug=slug)
+        ServiceModel.objects.get(slug=slug)
 
     def test_can_create_model_from_my_service(self):
         user = baker.make("users.User", is_valid=True)
@@ -1278,7 +1279,7 @@ class ServiceModelTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 201)
         slug = response.data["slug"]
-        service = Service.models.get(slug=slug)
+        service = ServiceModel.objects.get(slug=slug)
         self.assertEqual(service.structure.pk, struct.pk)
 
     def test_cant_create_model_from_others_service(self):
@@ -1328,6 +1329,7 @@ class ServiceInstantiationTestCase(APITestCase):
             "/services/",
             {"structure": dest_struct.slug, "model": model.slug, **DUMMY_SERVICE},
         )
+
         self.assertEqual(response.status_code, 201)
 
     def test_cant_instantiate_models_in_other_structures(self):

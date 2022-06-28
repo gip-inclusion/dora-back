@@ -30,6 +30,7 @@ from dora.services.models import (
     Service,
     ServiceCategory,
     ServiceKind,
+    ServiceModel,
     ServiceModificationHistoryItem,
     ServiceSubCategory,
 )
@@ -293,7 +294,7 @@ class ModelViewSet(ServiceViewSet):
         structure_slug = self.request.query_params.get("structure")
 
         all_models = (
-            Service.models.all()
+            ServiceModel.objects.all()
             .select_related(
                 "structure",
             )
@@ -313,7 +314,7 @@ class ModelViewSet(ServiceViewSet):
         qs = None
         if only_mine:
             if not user or not user.is_authenticated:
-                qs = Service.models.none()
+                qs = ServiceModel.objects.none()
             else:
                 qs = all_models.filter(structure__membership__user=user)
         # Everybody can see models

@@ -123,11 +123,6 @@ class ServiceManager(models.Manager):
         return self.exclude(status=ServiceStatus.ARCHIVED)
 
 
-class ModelManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(is_model=True)
-
-
 class Service(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     slug = models.SlugField(max_length=100, blank=True, null=True, unique=True)
@@ -312,13 +307,16 @@ class Service(models.Model):
 
     is_model = models.BooleanField(default=False)
     model = models.ForeignKey(
-        "self", on_delete=models.SET_NULL, blank=True, null=True, related_name="copies"
+        "ServiceModel",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="copies",
     )
     sync_checksum = models.CharField(max_length=32, blank=True)
     last_sync_checksum = models.CharField(max_length=32, blank=True)
 
     objects = ServiceManager()
-    models = ModelManager()
 
     class Meta:
         constraints = [
@@ -368,6 +366,19 @@ class Service(models.Model):
 
     def get_admin_url(self):
         return f"https://{settings.ALLOWED_HOSTS[0]}/services/service/{self.id}/change"
+
+
+class ServiceModelManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_model=True)
+
+
+class ServiceModel(Service):
+    objects = ServiceModelManager()
+
+    class Meta:
+        verbose_name = "Modèle"
+        proxy = True
 
 
 class ServiceModificationHistoryItem(models.Model):
