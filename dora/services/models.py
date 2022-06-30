@@ -123,6 +123,9 @@ class ServiceManager(models.Manager):
     def active(self):
         return self.exclude(status=ServiceStatus.ARCHIVED)
 
+    def archived(self):
+        return self.filter(status=ServiceStatus.ARCHIVED)
+
 
 class Service(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
