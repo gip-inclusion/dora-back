@@ -24,9 +24,9 @@ pip install -r requirements/dev.txt
 ./manage.py migrate
 ```
 
-### Troobleshooting on Mac M1
+### Erreur on Mac M1
 
-If you got this error on your Mac M1 Silicon :
+Sur un Mac M1 Silicon, vous pouvez rencontrer l'erreur suivante :
 
 ```
 ld: library not found for -lssl
@@ -37,7 +37,7 @@ error: command 'clang' failed with exit status 1
 ╰─> psycopg2-binary
 ```
 
-You can fix it by adding in your `~/.zshrc`:
+Vous pouvez corriger ce souci en ajoutant les variables d'environnement suivante à votre shell :
 
 ```
 export PATH="/opt/homebrew/opt/openssl@3/bin:$PATH"
