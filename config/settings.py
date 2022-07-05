@@ -32,6 +32,8 @@ if os.path.isdir(BASE_DIR / "envs"):
 
 
 ENVIRONMENT = os.environ["ENVIRONMENT"]
+GDAL_LIBRARY_PATH = os.environ["GDAL_LIBRARY_PATH"]
+GEOS_LIBRARY_PATH = os.environ["GEOS_LIBRARY_PATH"]
 IS_TESTING = False
 
 
