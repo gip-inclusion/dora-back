@@ -35,6 +35,7 @@ class StructureSerializer(serializers.ModelSerializer):
 
     num_services = serializers.SerializerMethodField()
     services = serializers.SerializerMethodField()
+    archived_services = serializers.SerializerMethodField()
 
     num_models = serializers.SerializerMethodField()
     models = serializers.SerializerMethodField()
@@ -73,6 +74,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "has_admin",
             "num_services",
             "services",
+            "archived_services",
             "num_models",
             "models",
         ]
@@ -138,6 +140,49 @@ class StructureSerializer(serializers.ModelSerializer):
         qs = obj.services.published()
         if user.is_authenticated and (user.is_staff or obj.is_member(user)):
             qs = obj.services.active()
+
+        qs = qs.filter(is_model=False)
+        return StructureServicesSerializer(
+            qs.prefetch_related(
+                "categories",
+            ),
+            many=True,
+        ).data
+
+    def get_archived_services(self, obj):
+        class StructureServicesSerializer(ServiceListSerializer):
+            structure = serializers.SlugRelatedField(
+                queryset=Structure.objects.all(),
+                slug_field="slug",
+                required=False,
+            )
+
+            class Meta:
+                model = Service
+                fields = [
+                    "category",
+                    "category_display",
+                    "slug",
+                    "name",
+                    "postal_code",
+                    "city",
+                    "department",
+                    "status",
+                    "modification_date",
+                    "categories_display",
+                    "short_desc",
+                    "diffusion_zone_type",
+                    "diffusion_zone_type_display",
+                    "diffusion_zone_details_display",
+                    "model_changed",
+                    "model",
+                    "structure",
+                ]
+
+        user = self.context.get("request").user
+        qs = obj.services.none()
+        if user.is_authenticated and (user.is_staff or obj.is_member(user)):
+            qs = obj.services.archived()
 
         qs = qs.filter(is_model=False)
         return StructureServicesSerializer(

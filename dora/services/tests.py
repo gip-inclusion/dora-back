@@ -1442,3 +1442,159 @@ class ServiceSyncTestCase(APITestCase):
             self.assertEqual(response.status_code, 200)
             service.refresh_from_db()
             self.assertNotEqual(service.sync_checksum, initial_checksum)
+
+
+class ServiceArchiveTestCase(APITestCase):
+    def setUp(self):
+        self.me = baker.make("users.User", is_valid=True)
+        self.superuser = baker.make("users.User", is_staff=True, is_valid=True)
+        self.my_struct = make_structure(self.me)
+
+    def test_can_archive_a_service(self):
+        service = make_service(structure=self.my_struct, status=ServiceStatus.PUBLISHED)
+        self.client.force_authenticate(user=self.me)
+
+        response = self.client.patch(
+            f"/services/{service.slug}/", {"status": "ARCHIVED"}
+        )
+        self.assertEqual(response.status_code, 200)
+        service.refresh_from_db()
+        self.assertEqual(service.status, ServiceStatus.ARCHIVED)
+
+    def test_superuser_can_archive_others_services(self):
+        service = make_service(status=ServiceStatus.PUBLISHED)
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.patch(
+            f"/services/{service.slug}/", {"status": "ARCHIVED"}
+        )
+        self.assertEqual(response.status_code, 200)
+        service.refresh_from_db()
+        self.assertEqual(service.status, ServiceStatus.ARCHIVED)
+
+    def test_cant_archive_others_services(self):
+        service = make_service(status=ServiceStatus.PUBLISHED)
+        self.client.force_authenticate(user=self.me)
+
+        response = self.client.patch(
+            f"/services/{service.slug}/", {"status": "ARCHIVED"}
+        )
+        self.assertEqual(response.status_code, 403)
+        service.refresh_from_db()
+        self.assertEqual(service.status, ServiceStatus.PUBLISHED)
+
+    def test_anonymous_cant_archive_others_services(self):
+        service = make_service(status=ServiceStatus.PUBLISHED)
+        response = self.client.patch(
+            f"/services/{service.slug}/", {"status": "ARCHIVED"}
+        )
+        self.assertEqual(response.status_code, 401)
+        service.refresh_from_db()
+        self.assertEqual(service.status, ServiceStatus.PUBLISHED)
+
+    def test_can_unarchive_a_service(self):
+        service = make_service(structure=self.my_struct, status=ServiceStatus.ARCHIVED)
+        self.client.force_authenticate(user=self.me)
+
+        response = self.client.patch(f"/services/{service.slug}/", {"status": "DRAFT"})
+        self.assertEqual(response.status_code, 200)
+        service.refresh_from_db()
+        self.assertEqual(service.status, ServiceStatus.DRAFT)
+
+    def test_cant_unarchive_others_services(self):
+        service = make_service(status=ServiceStatus.ARCHIVED)
+        self.client.force_authenticate(user=self.me)
+
+        response = self.client.patch(f"/services/{service.slug}/", {"status": "DRAFT"})
+        self.assertEqual(response.status_code, 404)
+        service.refresh_from_db()
+        self.assertEqual(service.status, ServiceStatus.ARCHIVED)
+
+    def test_anonymous_cant_unarchive_others_services(self):
+        service = make_service(status=ServiceStatus.ARCHIVED)
+        response = self.client.patch(f"/services/{service.slug}/", {"status": "DRAFT"})
+        self.assertEqual(response.status_code, 401)
+        service.refresh_from_db()
+        self.assertEqual(service.status, ServiceStatus.ARCHIVED)
+
+    def test_superuser_can_unarchive_others_services(self):
+        service = make_service(status=ServiceStatus.ARCHIVED)
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.patch(f"/services/{service.slug}/", {"status": "DRAFT"})
+        self.assertEqual(response.status_code, 200)
+        service.refresh_from_db()
+        self.assertEqual(service.status, ServiceStatus.DRAFT)
+
+    def test_can_see_my_archives(self):
+        service = make_service(structure=self.my_struct, status=ServiceStatus.ARCHIVED)
+        self.client.force_authenticate(user=self.me)
+        response = self.client.get("/services/")
+        services_ids = [s["slug"] for s in response.data]
+        self.assertIn(service.slug, services_ids)
+
+    def test_can_see_my_archived_services_in_structure(self):
+        service = make_service(structure=self.my_struct, status=ServiceStatus.ARCHIVED)
+        self.client.force_authenticate(user=self.me)
+        response = self.client.get(f"/structures/{self.my_struct.slug}/")
+        self.assertEqual(response.data["archived_services"][0]["slug"], service.slug)
+
+    def test_dont_see_archive_by_default(self):
+        make_service(structure=self.my_struct, status=ServiceStatus.ARCHIVED)
+        self.client.force_authenticate(user=self.me)
+        # TODO; pour l'instant l'endpoint /services/ récupère les archives…
+        # response = self.client.get("/services/")
+        # services_ids = [s["slug"] for s in response.data]
+        # self.assertNotIn(service.slug, services_ids)
+
+        response = self.client.get(f"/structures/{self.my_struct.slug}/")
+        self.assertEqual(response.data["services"], [])
+
+    def test_cant_see_others_archives(self):
+        make_service(status=ServiceStatus.ARCHIVED)
+        self.client.force_authenticate(user=self.me)
+        response = self.client.get(f"/structures/{self.my_struct.slug}/")
+        self.assertEqual(response.data["archived_services"], [])
+
+    def test_anonymous_cant_see_any_archives(self):
+        make_service(status=ServiceStatus.ARCHIVED)
+        response = self.client.get(f"/structures/{self.my_struct.slug}/")
+        self.assertEqual(response.data["archived_services"], [])
+
+    def test_superuser_can_see_any_archives(self):
+        service = make_service(status=ServiceStatus.ARCHIVED)
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.get(f"/structures/{service.structure.slug}/")
+        self.assertEqual(response.data["archived_services"][0]["slug"], service.slug)
+
+    def test_archives_dont_appear_in_search_results_anon(self):
+        city = baker.make("City", code="12345")
+        make_service(
+            status=ServiceStatus.ARCHIVED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+        )
+        response = self.client.get(f"/search/?city={city.code}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_archives_dont_appear_in_search_results_auth(self):
+        city = baker.make("City", code="12345")
+        make_service(
+            status=ServiceStatus.ARCHIVED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+        )
+        self.client.force_authenticate(user=self.me)
+        response = self.client.get(f"/search/?city={city.code}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_archives_dont_appear_in_public_api_anon(self):
+        make_service(status=ServiceStatus.ARCHIVED)
+        response = self.client.get("/api/v1/services/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_archives_dont_appear_in_public_api_auth(self):
+        make_service(status=ServiceStatus.ARCHIVED)
+        self.client.force_authenticate(user=self.me)
+        response = self.client.get("/api/v1/services/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
