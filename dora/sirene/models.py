@@ -19,7 +19,7 @@ class Establishment(models.Model):
     longitude = models.FloatField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)
 
-    full_search_text = models.TextField()
+    full_search_text = models.TextField(help_text="Renseigner NOM + SIRET")
 
     class Meta:
         indexes = [
@@ -30,3 +30,7 @@ class Establishment(models.Model):
                 opclasses=("gin_trgm_ops",),
             )
         ]
+        verbose_name = "Établissement"
+
+    def __str__(self):
+        return f"{self.name} ({self.siret})"
