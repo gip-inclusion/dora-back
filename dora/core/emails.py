@@ -21,7 +21,7 @@ def send_mail(
         "X-TM-TEXTVERSION": 1,
     }
 
-    if settings.FAKE_EMAIL_RECIPIENT:
+    if settings.FAKE_EMAIL_RECIPIENT and not settings.IS_TESTING:
         subject = f"[TEST pour {to}] {subject}"
         to = settings.FAKE_EMAIL_RECIPIENT
 
