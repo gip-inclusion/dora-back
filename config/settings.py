@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+import logging
 import os
 import random
 from datetime import timedelta
@@ -18,6 +19,9 @@ import dj_database_url
 import sentry_sdk
 from corsheaders.defaults import default_headers
 from sentry_sdk.integrations.django import DjangoIntegration
+
+logger = logging.getLogger(__name__)
+
 
 random.seed()
 
@@ -274,6 +278,16 @@ SUPPORT_EMAIL = os.environ["SUPPORT_EMAIL"]
 
 INVITATION_LINK_EXPIRATION = timedelta(days=15)
 AUTH_LINK_EXPIRATION = timedelta(days=1)
+
+# Si cette variable est remplie, tous les mails sortants seront envoyés à cette adresse.
+FAKE_EMAIL_RECIPIENT = os.environ.get("FAKE_EMAIL_RECIPIENT")
+if not FAKE_EMAIL_RECIPIENT and (DEBUG is True or ENVIRONMENT != "production"):
+    assert False, "Vous devez définir la variable d'environnement FAKE_EMAIL_RECIPIENT"
+
+if FAKE_EMAIL_RECIPIENT and ENVIRONMENT == "production":
+    FAKE_EMAIL_RECIPIENT = None
+    logging.error("FAKE_EMAIL_RECIPIENT should not be defined in production")
+
 
 ################
 # APP SETTINGS #
