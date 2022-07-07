@@ -382,3 +382,9 @@ TEST_RUNNER = "dora.core.test_runner.MyTestRunner"
 
 SIB_API_KEY = os.environ["SIB_API_KEY"]
 SIB_ONBOARDING_LIST = os.environ["SIB_ONBOARDING_LIST"]
+
+########################
+# DRAFTS NOTIFICATIONS #
+########################
+
+DRAFT_AGE_NOTIFICATION_DAYS = 7
