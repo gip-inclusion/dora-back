@@ -149,7 +149,8 @@ class ServiceFilter(django_filters.FilterSet):
 class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
     versioning_class = NamespaceVersioning
     queryset = (
-        Service.objects.select_related("structure")
+        Service.objects.published()
+        .select_related("structure")
         .prefetch_related(
             "kinds",
             "categories",
@@ -162,7 +163,6 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
             "credentials",
             "location_kinds",
         )
-        .filter(is_draft=False, is_suggestion=False, is_model=False)
     )
     serializer_class = ServiceSerializer
     permission_classes = [permissions.AllowAny]

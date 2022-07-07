@@ -21,6 +21,7 @@ from .models import (
     Service,
     ServiceCategory,
     ServiceKind,
+    ServiceModel,
     ServiceSubCategory,
 )
 
@@ -240,7 +241,7 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     model_changed = serializers.SerializerMethodField()
     model = serializers.SlugRelatedField(
-        queryset=Service.objects.all(),
+        queryset=ServiceModel.objects.all(),
         slug_field="slug",
         required=False,
         allow_null=True,
@@ -292,8 +293,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "structure",
             "creation_date",
             "modification_date",
-            "is_draft",
-            "is_suggestion",
+            "status",
             "is_available",
             "forms_info",
             "structure",
@@ -447,7 +447,7 @@ class ServiceModelSerializer(ServiceSerializer):
     )
 
     class Meta:
-        model = Service
+        model = ServiceModel
 
         fields = [
             "slug",
@@ -550,8 +550,7 @@ class ServiceListSerializer(ServiceSerializer):
             "postal_code",
             "city",
             "department",
-            "is_draft",
-            "is_suggestion",
+            "status",
             "modification_date",
             "categories_display",
             "short_desc",

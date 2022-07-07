@@ -14,17 +14,13 @@ def send_invitation_email(member, host_fullname, token):
         "homepage_url": settings.FRONTEND_URL,
     }
     body = render_to_string("invitation.html", params)
-    if settings.DEBUG:
-        print(
-            f"Would send invitation mail to {member.user.email} for {member.structure.name}"
-        )
-    else:
-        send_mail(
-            "[DORA] Votre invitation sur DORA",
-            member.user.email,
-            body,
-            tags=["invitation"],
-        )
+
+    send_mail(
+        "[DORA] Votre invitation sur DORA",
+        member.user.email,
+        body,
+        tags=["invitation"],
+    )
 
 
 def send_invitation_accepted_notification(member, admin_user):

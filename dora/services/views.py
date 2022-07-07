@@ -17,6 +17,7 @@ from dora.core.notify import send_mattermost_notification
 from dora.core.pagination import OptionalPageNumberPagination
 from dora.core.utils import FALSY_VALUES, TRUTHY_VALUES
 from dora.services.emails import send_service_feedback_email
+from dora.services.enums import ServiceStatus
 from dora.services.models import (
     AccessCondition,
     AdminDivisionType,
@@ -29,6 +30,7 @@ from dora.services.models import (
     Service,
     ServiceCategory,
     ServiceKind,
+    ServiceModel,
     ServiceModificationHistoryItem,
     ServiceSubCategory,
 )
@@ -65,7 +67,7 @@ class ServicePermission(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         user = request.user
         # Only suggestions can be deleted
-        if request.method == "DELETE" and not obj.is_suggestion:
+        if request.method == "DELETE" and not obj.status == ServiceStatus.SUGGESTION:
             return False
 
         # Anybody can read
@@ -97,8 +99,7 @@ class ServiceViewSet(
     def get_queryset(self):
         qs = None
         user = self.request.user
-        only_mine = self.request.query_params.get("mine")
-
+        only_mine = self.request.query_params.get("mine") in TRUTHY_VALUES
         structure_slug = self.request.query_params.get("structure")
         published_only = self.request.query_params.get("published")
 
@@ -128,9 +129,7 @@ class ServiceViewSet(
                 qs = all_services.filter(structure__membership__user=user)
         # Everybody can see published services
         elif not user or not user.is_authenticated:
-            qs = all_services.filter(
-                Q(Q(is_draft=False) | Q(is_model=True)), is_suggestion=False
-            )
+            qs = all_services.filter(status=ServiceStatus.PUBLISHED)
         # Staff can see everything
         elif user.is_staff:
             qs = all_services
@@ -138,16 +137,13 @@ class ServiceViewSet(
             # Authentified users can see everything in their structure
             # plus published services for other structures
             qs = all_services.filter(
-                Q(is_draft=False, is_suggestion=False)
-                | Q(structure__membership__user=user)
+                Q(status=ServiceStatus.PUBLISHED) | Q(structure__membership__user=user)
             )
         if structure_slug:
             qs = qs.filter(structure__slug=structure_slug)
 
         if published_only:
-            qs = qs.filter(is_draft=False, is_suggestion=False)
-
-        qs = qs.filter(is_model=False)
+            qs = qs.filter(status=ServiceStatus.PUBLISHED)
 
         return qs.order_by("-modification_date").distinct()
 
@@ -169,12 +165,13 @@ class ServiceViewSet(
     @action(detail=False, methods=["get"], url_path="last-draft")
     def get_last_draft(self, request):
         user = request.user
-        last_drafts = Service.objects.filter(
-            is_draft=True,
-            is_suggestion=False,
-            is_model=False,
-            creator=user,
-        ).order_by("-modification_date")
+        last_drafts = (
+            Service.objects.draft()
+            .filter(
+                creator=user,
+            )
+            .order_by("-modification_date")
+        )
         if not user.is_staff:
             last_drafts = last_drafts.filter(
                 structure__membership__user__id=user.id,
@@ -201,21 +198,12 @@ class ServiceViewSet(
         return Response(status=201)
 
     def perform_create(self, serializer):
-        model = serializer.validated_data.get("model")
-        if model and not model.is_model:
-            raise serializers.ValidationError(
-                {
-                    "model": "Impossible d'instancier un service à partir d'un autre service"
-                },
-                "not_a_model",
-            )
         service = serializer.save(
             creator=self.request.user, last_editor=self.request.user
         )
-        # TODO: log the model eventually used
-        if service.is_draft:
+        if service.status == ServiceStatus.DRAFT:
             self._send_draft_service_created_notification(service)
-        else:
+        elif service.status == ServiceStatus.PUBLISHED:
             self._send_service_published_notification(service)
         if service.model:
             service.last_sync_checksum = service.model.sync_checksum
@@ -263,13 +251,13 @@ class ServiceViewSet(
 
     def perform_update(self, serializer):
         mark_synced = self.request.data.get("mark_synced", "") in TRUTHY_VALUES
-        was_draft = serializer.instance.is_draft
+        was_draft = serializer.instance.status == ServiceStatus.DRAFT
         if not was_draft:
             self._log_history(serializer)
         service = serializer.save(last_editor=self.request.user)
         if (
             was_draft
-            and not service.is_draft
+            and service.status == ServiceStatus.PUBLISHED
             and not service.history_item.all().exists()
         ):
             self._send_service_published_notification(service)
@@ -291,8 +279,8 @@ class ModelViewSet(ServiceViewSet):
 
         structure_slug = self.request.query_params.get("structure")
 
-        all_services = (
-            Service.objects.all()
+        all_models = (
+            ServiceModel.objects.all()
             .select_related(
                 "structure",
             )
@@ -312,25 +300,15 @@ class ModelViewSet(ServiceViewSet):
         qs = None
         if only_mine:
             if not user or not user.is_authenticated:
-                qs = Service.objects.none()
+                qs = ServiceModel.objects.none()
             else:
-                qs = all_services.filter(structure__membership__user=user)
-        # Everybody can see published services
-        elif not user or not user.is_authenticated:
-            qs = all_services.filter(is_model=True)
-        # Staff can see everything
-        elif user.is_staff:
-            qs = all_services
+                qs = all_models.filter(structure__membership__user=user)
+        # Everybody can see models
         else:
-            # Authentified users can see everything in their structure
-            # plus models from other structures
-            qs = all_services.filter(
-                Q(is_model=True) | Q(structure__membership__user=user)
-            )
+            qs = all_models
+
         if structure_slug:
             qs = qs.filter(structure__slug=structure_slug)
-
-        qs = qs.filter(is_model=True)
 
         return qs.order_by("-modification_date").distinct()
 
@@ -341,7 +319,7 @@ class ModelViewSet(ServiceViewSet):
         service = None
         if service_slug:
             try:
-                service = Service.objects.get(slug=service_slug, is_model=False)
+                service = Service.objects.get(slug=service_slug)
             except Service.DoesNotExist:
                 raise Http404
 
@@ -372,7 +350,6 @@ class ModelViewSet(ServiceViewSet):
             creator=self.request.user,
             last_editor=self.request.user,
             is_model=True,
-            is_draft=False,
         )
         structure = model.structure
 
@@ -580,7 +557,8 @@ def search(request):
         has_fee = False
 
     services = (
-        Service.objects.select_related(
+        Service.objects.published()
+        .select_related(
             "structure",
         )
         .prefetch_related(
@@ -588,7 +566,6 @@ def search(request):
             "categories",
             "subcategories",
         )
-        .filter(is_draft=False, is_suggestion=False, is_model=False)
     )
     if category:
         services = services.filter(categories__value=category)

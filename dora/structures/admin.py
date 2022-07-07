@@ -133,7 +133,7 @@ class IsBranchListFilter(admin.SimpleListFilter):
 class ServiceInline(admin.TabularInline):
     model = Service
     show_change_link = True
-    fields = ["slug", "name", "is_draft"]
+    fields = ["slug", "name", "status"]
     extra = 0
 
 

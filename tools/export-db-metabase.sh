@@ -73,9 +73,12 @@ CREATE TABLE mb_all_service AS
     services_service.structure_id,
     services_service.slug,
     services_service.online_form,
-    services_service.is_draft,
+    -- TODO: deprecated
+    (select services_service.status!='PUBLISHED') AS is_draft,
+    (select services_service.status='SUGGESTION') AS is_suggestion,
+    --
+    services_service.status,
     services_service.publication_date,
-    services_service.is_suggestion,
     services_service.diffusion_zone_details,
     services_service.diffusion_zone_type,
     services_service.qpv_or_zrr,

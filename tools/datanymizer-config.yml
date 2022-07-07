@@ -7,8 +7,9 @@ tables:
           format: "{%if prev.email is ending_with('beta.gouv.fr') %}{{_0}}{% else %}{{_1}}{% endif %}"
           rules:
             - email:
-                safe: true
-                uniq: true
+                uniq:
+                  required: true
+                  try_count: 5
       first_name:
         template:
           # Preserve beta.gouv addresses

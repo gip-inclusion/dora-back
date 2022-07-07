@@ -4,7 +4,8 @@ from django.utils import timezone
 from rest_framework import exceptions, serializers
 
 from dora.rest_auth.models import Token
-from dora.services.models import Service
+from dora.services.enums import ServiceStatus
+from dora.services.models import Service, ServiceModel
 from dora.services.serializers import ServiceListSerializer
 from dora.structures.emails import send_invitation_email
 from dora.users.models import User
@@ -34,6 +35,7 @@ class StructureSerializer(serializers.ModelSerializer):
 
     num_services = serializers.SerializerMethodField()
     services = serializers.SerializerMethodField()
+    archived_services = serializers.SerializerMethodField()
 
     num_models = serializers.SerializerMethodField()
     models = serializers.SerializerMethodField()
@@ -72,6 +74,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "has_admin",
             "num_services",
             "services",
+            "archived_services",
             "num_models",
             "models",
         ]
@@ -121,8 +124,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     "postal_code",
                     "city",
                     "department",
-                    "is_draft",
-                    "is_suggestion",
+                    "status",
                     "modification_date",
                     "categories_display",
                     "short_desc",
@@ -135,9 +137,54 @@ class StructureSerializer(serializers.ModelSerializer):
                 ]
 
         user = self.context.get("request").user
-        qs = obj.services.filter(is_model=False)
-        if not (user.is_authenticated and (user.is_staff or obj.is_member(user))):
-            qs = qs.filter(is_draft=False, is_suggestion=False)
+        qs = obj.services.published()
+        if user.is_authenticated and (user.is_staff or obj.is_member(user)):
+            qs = obj.services.active()
+
+        qs = qs.filter(is_model=False)
+        return StructureServicesSerializer(
+            qs.prefetch_related(
+                "categories",
+            ),
+            many=True,
+        ).data
+
+    def get_archived_services(self, obj):
+        class StructureServicesSerializer(ServiceListSerializer):
+            structure = serializers.SlugRelatedField(
+                queryset=Structure.objects.all(),
+                slug_field="slug",
+                required=False,
+            )
+
+            class Meta:
+                model = Service
+                fields = [
+                    "category",
+                    "category_display",
+                    "slug",
+                    "name",
+                    "postal_code",
+                    "city",
+                    "department",
+                    "status",
+                    "modification_date",
+                    "categories_display",
+                    "short_desc",
+                    "diffusion_zone_type",
+                    "diffusion_zone_type_display",
+                    "diffusion_zone_details_display",
+                    "model_changed",
+                    "model",
+                    "structure",
+                ]
+
+        user = self.context.get("request").user
+        qs = obj.services.none()
+        if user.is_authenticated and (user.is_staff or obj.is_member(user)):
+            qs = obj.services.archived()
+
+        qs = qs.filter(is_model=False)
         return StructureServicesSerializer(
             qs.prefetch_related(
                 "categories",
@@ -148,7 +195,7 @@ class StructureSerializer(serializers.ModelSerializer):
     def get_num_models(self, structure):
         return structure.get_num_visible_models(self.context["request"].user)
 
-    def get_models(self, obj):
+    def get_models(self, structure):
         class StructureModelsSerializer(ServiceListSerializer):
             structure = serializers.SlugRelatedField(
                 queryset=Structure.objects.all(),
@@ -159,7 +206,7 @@ class StructureSerializer(serializers.ModelSerializer):
             num_services = serializers.SerializerMethodField()
 
             class Meta:
-                model = Service
+                model = ServiceModel
                 fields = [
                     "slug",
                     "name",
@@ -174,7 +221,7 @@ class StructureSerializer(serializers.ModelSerializer):
             def get_num_services(self, obj):
                 return obj.copies.count()
 
-        qs = obj.services.filter(is_model=True)
+        qs = ServiceModel.objects.filter(structure=structure)
         return StructureModelsSerializer(
             qs.prefetch_related(
                 "categories",
@@ -214,9 +261,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     branches_other.annotate(
                         num_services=Count(
                             "services",
-                            filter=Q(
-                                services__is_draft=False, services__is_suggestion=False
-                            ),
+                            filter=Q(services__status=ServiceStatus.PUBLISHED),
                         )
                     )
                 ),

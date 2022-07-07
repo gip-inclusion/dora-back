@@ -14,6 +14,7 @@ from .models import (
     Service,
     ServiceCategory,
     ServiceKind,
+    ServiceModel,
     ServiceModificationHistoryItem,
     ServiceSubCategory,
 )
@@ -57,13 +58,40 @@ class ServiceAdmin(admin.GISModelAdmin):
         "modification_date",
         "publication_date",
         "last_editor",
-        "is_draft",
-        "is_suggestion",
+        "status",
     ]
     list_filter = [
+        "status",
         "is_draft",
         "is_suggestion",
-        "is_model",
+        ("structure", RelatedOnlyFieldListFilter),
+    ]
+    inlines = [ServiceModificationHistoryItemInline]
+    ordering = ["-modification_date"]
+    save_as = True
+    readonly_fields = (
+        "creation_date",
+        "modification_date",
+    )
+
+
+class ServiceModelAdmin(admin.ModelAdmin):
+
+    search_fields = (
+        "name",
+        "structure__name",
+        "slug",
+    )
+    list_display = [
+        "name",
+        "slug",
+        "structure",
+        "creation_date",
+        "modification_date",
+        "publication_date",
+        "last_editor",
+    ]
+    list_filter = [
         ("structure", RelatedOnlyFieldListFilter),
     ]
     inlines = [ServiceModificationHistoryItemInline]
@@ -83,6 +111,7 @@ class CustomizableChoiceAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Service, ServiceAdmin)
+admin.site.register(ServiceModel, ServiceModelAdmin)
 admin.site.register(AccessCondition, CustomizableChoiceAdmin)
 admin.site.register(ConcernedPublic, CustomizableChoiceAdmin)
 admin.site.register(Requirement, CustomizableChoiceAdmin)
