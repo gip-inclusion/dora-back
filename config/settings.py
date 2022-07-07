@@ -49,7 +49,7 @@ if os.environ["ENVIRONMENT"] != "local":
         dsn=os.environ["SENTRY_DSN"],
         integrations=[DjangoIntegration()],
         traces_sample_rate=0,
-        send_default_pii=True,
+        send_default_pii=False,
         environment=os.environ["ENVIRONMENT"],
     )
 
