@@ -275,6 +275,11 @@ SUPPORT_EMAIL = os.environ["SUPPORT_EMAIL"]
 INVITATION_LINK_EXPIRATION = timedelta(days=15)
 AUTH_LINK_EXPIRATION = timedelta(days=1)
 
+# Si cette variable est remplie, tous les mails sortants seront envoyés à cette adresse.
+FAKE_EMAIL_RECIPIENT = os.environ.get("FAKE_EMAIL_RECIPIENT")
+if not FAKE_EMAIL_RECIPIENT and (DEBUG is True or ENVIRONMENT != "production"):
+    assert False, "Vous devez définir la variable d'environnement FAKE_EMAIL_RECIPIENT"
+
 ################
 # APP SETTINGS #
 ################
