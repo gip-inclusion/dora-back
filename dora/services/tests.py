@@ -1598,3 +1598,134 @@ class ServiceArchiveTestCase(APITestCase):
         response = self.client.get("/api/v1/services/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
+
+
+class FillingSeriveDurationTestCase(APITestCase):
+    def test_add_draft_duration_on_create(self):
+        duration_to_add = 30
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+        dest_struct = make_structure(user)
+
+        # WHEN created a service on draft status
+        response = self.client.post(
+            "/services/",
+            {
+                "structure": dest_struct.slug,
+                "duration_to_add": duration_to_add,
+                "status": ServiceStatus.DRAFT,
+                **DUMMY_SERVICE,
+            },
+        )
+
+        # THEN we expect the filling duration to be saved
+        self.assertEqual(response.status_code, 201)
+        self.assertEquals(duration_to_add, response.data.get("filling_duration"))
+
+    def test_add_publish_service_duration_on_create(self):
+        duration_to_add = 30
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+        dest_struct = make_structure(user)
+
+        # WHEN created a service on publish status
+        response = self.client.post(
+            "/services/",
+            {
+                "structure": dest_struct.slug,
+                "duration_to_add": duration_to_add,
+                "status": ServiceStatus.PUBLISHED,
+                **DUMMY_SERVICE,
+            },
+        )
+
+        # THEN we expect the filling duration to be saved
+        self.assertEqual(response.status_code, 201)
+        self.assertEquals(duration_to_add, response.data.get("filling_duration"))
+
+    def test_add_draft_service_duration_on_update(self):
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+        dest_struct = make_structure(user)
+
+        # GIVEN a service on draft status with a filling duration of 20
+        service_created = self.client.post(
+            "/services/",
+            {
+                "structure": dest_struct.slug,
+                "duration_to_add": 20,
+                "status": ServiceStatus.PUBLISHED,
+                **DUMMY_SERVICE,
+            },
+        )
+
+        # WHEN saving the service as draft with a duration of 10
+        self.client.patch(
+            f"/services/{service_created.data.get('slug')}/",
+            {
+                "duration_to_add": 10,
+                "status": ServiceStatus.DRAFT,
+            },
+        )
+
+        # THEN we expect the filling duration to be cumulated
+        response = self.client.get(f"/services/{service_created.data.get('slug')}/")
+        self.assertEquals(20 + 10, response.data.get("filling_duration"))
+
+    def test_publish_service_duration_on_update(self):
+        # GIVEN a service on draft status with a filling duration of 20
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+        dest_struct = make_structure(user)
+
+        service_created = self.client.post(
+            "/services/",
+            {
+                "structure": dest_struct.slug,
+                "duration_to_add": 20,
+                "status": ServiceStatus.DRAFT,
+                **DUMMY_SERVICE,
+            },
+        )
+
+        # WHEN saving the service as publish with a duration of 15
+        self.client.patch(
+            f"/services/{service_created.data.get('slug')}/",
+            {
+                "duration_to_add": 15,
+                "status": ServiceStatus.PUBLISHED,
+            },
+        )
+
+        # THEN we expect the filling duration to be cumulated
+        response = self.client.get(f"/services/{service_created.data.get('slug')}/")
+        self.assertEquals(20 + 15, response.data.get("filling_duration"))
+
+    def test_not_added_duration_to_published_service(self):
+        # GIVEN a service on publish status with a filling duration of 20
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+        dest_struct = make_structure(user)
+
+        service_created = self.client.post(
+            "/services/",
+            {
+                "structure": dest_struct.slug,
+                "duration_to_add": 20,
+                "status": ServiceStatus.PUBLISHED,
+                **DUMMY_SERVICE,
+            },
+        )
+
+        # WHEN saving the service as publish with a duration of 20
+        self.client.patch(
+            f"/services/{service_created.data.get('slug')}/",
+            {
+                "duration_to_add": 20,
+            },
+        )
+
+        # THEN we don't want the filling duration to be cumulated
+        response = self.client.get(f"/services/{service_created.data.get('slug')}/")
+        self.assertEquals(20, response.data.get("filling_duration"))
+        self.assertNotEquals(20 + 20, response.data.get("filling_duration"))
