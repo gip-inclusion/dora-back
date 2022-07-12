@@ -1608,7 +1608,7 @@ class FillingServiceDurationTestCase(APITestCase):
         dest_struct = make_structure(user)
 
         # QUAND on créait un service au status `brouillon`
-        response = self.client.post(
+        service_created = self.client.post(
             "/services/",
             {
                 "structure": dest_struct.slug,
@@ -1619,7 +1619,8 @@ class FillingServiceDurationTestCase(APITestCase):
         )
 
         # ALORS on s'attend que la durée de contribution soit sauvegardée
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(service_created.status_code, 201)
+        response = self.client.get(f"/services/{service_created.data.get('slug')}/")
         self.assertEqual(duration_to_add, response.data.get("filling_duration"))
 
     def test_add_publish_service_duration_on_create(self):
@@ -1629,7 +1630,7 @@ class FillingServiceDurationTestCase(APITestCase):
         dest_struct = make_structure(user)
 
         # QUAND on créait un service au status `publié`
-        response = self.client.post(
+        service_created = self.client.post(
             "/services/",
             {
                 "structure": dest_struct.slug,
@@ -1640,7 +1641,8 @@ class FillingServiceDurationTestCase(APITestCase):
         )
 
         # ALORS on s'attend que la durée de contribution soit sauvegardée
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(service_created.status_code, 201)
+        response = self.client.get(f"/services/{service_created.data.get('slug')}/")
         self.assertEqual(duration_to_add, response.data.get("filling_duration"))
 
     def test_add_draft_service_duration_on_update(self):
