@@ -199,9 +199,13 @@ class ServiceViewSet(
         return Response(status=201)
 
     def perform_create(self, serializer):
+        duration_to_add = self.request.data.get("duration_to_add", 0)
         service = serializer.save(
-            creator=self.request.user, last_editor=self.request.user
+            creator=self.request.user,
+            last_editor=self.request.user,
+            filling_duration=duration_to_add,
         )
+
         if service.status == ServiceStatus.DRAFT:
             self._send_draft_service_created_notification(service)
         elif service.status == ServiceStatus.PUBLISHED:
@@ -262,6 +266,14 @@ class ServiceViewSet(
             and not service.history_item.all().exists()
         ):
             self._send_service_published_notification(service)
+
+        # Si le service est toujours un brouillon ou passe au statut publié, on incrémente `filling_duration`
+        # TODO: gérer le cas du passage de `archivé` à `brouillon`
+        if (
+            was_draft and service.status == ServiceStatus.PUBLISHED
+        ) or service.status == ServiceStatus.DRAFT:
+            duration_to_add = self.request.data.get("duration_to_add", 0)
+            service.filling_duration = service.filling_duration + duration_to_add
 
         if mark_synced and service.model:
             service.last_sync_checksum = service.model.sync_checksum

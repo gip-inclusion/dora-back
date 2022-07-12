@@ -314,6 +314,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "can_write",
             "model_changed",
             "model",
+            "filling_duration",
         ]
         lookup_field = "slug"
 
