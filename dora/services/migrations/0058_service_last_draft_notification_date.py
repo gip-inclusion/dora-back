@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("services", "0056_servicemodel_alter_service_model"),
+        ("services", "0057_service_filling_duration"),
     ]
 
     operations = [

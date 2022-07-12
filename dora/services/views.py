@@ -136,7 +136,6 @@ class ServiceViewSet(
         else:
             # Authentified users can see everything in their structure
             # plus published services for other structures
-            # TODO
             qs = all_services.filter(
                 Q(status=ServiceStatus.PUBLISHED) | Q(structure__membership__user=user)
             )
