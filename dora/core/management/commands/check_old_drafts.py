@@ -10,7 +10,7 @@ from dora.services.models import Service, ServiceStatus
 
 
 class Command(BaseCommand):
-    help = "Mass-send user invitations"
+    help = "Notifications pour les brouillons en souffrance"
 
     def handle(self, *args, **options):
         expired_drafts = Service.objects.filter(

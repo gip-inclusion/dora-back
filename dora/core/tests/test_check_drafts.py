@@ -70,6 +70,17 @@ class CheckDraftsTestCase(APITestCase):
         self.assertTrue(self.me.email in [*mail.outbox[0].to, *mail.outbox[1].to])
         self.assertTrue(self.somebody.email in [*mail.outbox[0].to, *mail.outbox[1].to])
 
+    def test_notif_only_once_same_editor_creator(self):
+        with freeze_time(timezone.now() - timedelta(days=8)):
+            make_service(
+                status=ServiceStatus.DRAFT,
+                creator=self.me,
+                last_editor=self.me,
+                last_draft_notification_date=None,
+            )
+        self.call_command()
+        self.assertEqual(len(mail.outbox), 1)
+
     def test_notdraft_older_than_7_days_not_notified(self):
         with freeze_time(timezone.now() - timedelta(days=8)):
             service = make_service(

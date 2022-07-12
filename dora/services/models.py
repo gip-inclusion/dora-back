@@ -355,7 +355,6 @@ class Service(models.Model):
             self.slug = make_unique_slug(self, self.structure.slug, self.name)
             if self.status == ServiceStatus.PUBLISHED:
                 self.publication_date = timezone.now()
-        # TODO: intercept status changes; if back to draft, set last_draft_notification_date to NULL
         elif hasattr(self, "_original") and not self._state.adding:
             original_status = self._original["status"]
             if (
