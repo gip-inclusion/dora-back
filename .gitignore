@@ -5,7 +5,3 @@ __pycache__
 /envs/secrets.env
 .cache_ggshield
 .idea
-
-dora/lib/
-dora/bin/
-dora/pyvenv.cfg
