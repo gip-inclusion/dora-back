@@ -266,7 +266,8 @@ class ServiceViewSet(
         ):
             self._send_service_published_notification(service)
 
-        # Increment filling_duration if service become pusblished or is still a draft
+        # Si le service est toujours un brouillon ou passe au statut publié, on incrémente `filling_duration`
+        # TODO: gérer le cas du passage de `archivé` à `brouillon`
         if (
             was_draft and service.status == ServiceStatus.PUBLISHED
         ) or service.status == ServiceStatus.DRAFT:

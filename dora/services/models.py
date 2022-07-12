@@ -300,7 +300,7 @@ class Service(models.Model):
 
     # Temps passé (en seconde) sur le formulaire de création d'un service - avant la *toute* première publication
     # Plus exactement : temps de contribution cumulé en brouillon + temps de contribution final menant au statut "publié"
-    filling_duration = models.IntegerField(default=0)
+    filling_duration = models.IntegerField(null=True, default=None)
 
     creator = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True
