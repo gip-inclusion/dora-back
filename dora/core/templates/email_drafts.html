@@ -1,0 +1,122 @@
+{% extends "email_base.html" %}
+
+{% block content %}
+<h1
+  style="
+    color: #000091;
+    font-family: sans-serif;
+    line-height: 1.4;
+    margin: 0;
+    margin-bottom: 30px;
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+  "
+>{% block salutations %}Pensez à publier vos services&nbsp;!{% endblock %}</h1>
+<div
+  style="
+    font-family: sans-serif;
+    font-size: 15px;
+    font-weight: normal;
+    margin: 0;
+    margin-bottom: 15px;
+    text-align: left;
+  "
+>
+<img
+    src="{{homepage_url}}/emails/illu-saisir.png"
+    width="520"
+    height="264"
+    alt=""
+    style="
+      border: none;
+      -ms-interpolation-mode: bicubic;
+      max-width: 100%;
+    "
+/>
+
+<p><strong>Bonjour {{recipient_name}},</strong></p>
+
+<p>Votre expérience sur DORA se passe-t-elle bien&nbsp;?</p>
+
+<p>Nous avons remarqué que vous avez un/des service(s) créé(s) en brouillon depuis plus de 7 jours pour votre structure
+  <strong><a href="{{ structure.get_frontend_url }}">{{ structure.name }}</a></strong>&nbsp;:
+</p>
+{% for draft in drafts %}
+<li><a href="{{ draft.get_frontend_url }}">{{ draft.name }}</a></li>
+{% endfor %}
+
+
+        <table
+          role="presentation"
+          border="0"
+          cellpadding="0"
+          cellspacing="0"
+          style="
+            border-collapse: separate;
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+            min-width: auto;
+            width: auto;
+            margin-top: 20px;
+
+          "
+        >
+          <tbody>
+            <tr>
+              <td
+                style="
+                  font-family: sans-serif;
+                  font-size: 14px;
+                  vertical-align: top;
+                  border-radius: 5px;
+                  text-align: center;
+                  background-color: #5b12eb;
+                "
+                valign="top"
+                align="center"
+                bgcolor="#5B12EB"
+              >
+                <a
+                  href="{{ structure.get_frontend_url }}"
+                  target="_blank"
+                  style="
+                    border: solid 1px #5b12eb;
+                    border-radius: 5px;
+                    box-sizing: border-box;
+                    cursor: pointer;
+                    display: inline-block;
+                    font-size: 14px;
+                    font-weight: bold;
+                    margin: 0;
+                    padding: 12px 25px;
+                    text-decoration: none;
+                    background-color: #5b12eb;
+                    border-color: #5b12eb;
+                    color: #ffffff;
+                  "
+                >
+
+                Accéder au tableau de bord
+
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+
+<p>Pensez à le/les publier pour être visible des acteurs de l’insertion de votre territoire.</p>
+<p>Si vous hésitez encore à publier un service, sachez que lorsqu’un service est publié vous pouvez le modifier à tout moment en vous rendant dans le tableau de bord de votre structure dans l’onglet «&nbsp;Services&nbsp;».</p>
+
+<a href="https://aide.dora.fabrique.social.gouv.fr/fr/article/modifier-et-publier-un-service-b1a8tv/">Voir comment</a>
+
+<p>Si vous avez la moindre question ou difficulté sur l’utilisation de DORA, nous serions ravis de vous accompagner pour faciliter votre prise en main.</p>
+<p>Vous pouvez nous contacter en vous rendant sur notre <a href="https://aide.dora.fabrique.social.gouv.fr/">page d’aide</a></p>
+
+<p>À bientôt,</p>
+<p><strong>L’équipe DORA</strong></p>
+
+</div>
+
+{% endblock %}

@@ -324,6 +324,10 @@ class Service(models.Model):
     sync_checksum = models.CharField(max_length=32, blank=True)
     last_sync_checksum = models.CharField(max_length=32, blank=True)
 
+    last_draft_notification_date = models.DateTimeField(
+        blank=True, null=True, db_index=True
+    )
+
     objects = ServiceManager()
 
     class Meta:
@@ -338,7 +342,7 @@ class Service(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return f"{settings.FRONTEND_URL}/services/{self.slug}"
+        return self.get_frontend_url()
 
     @classmethod
     def from_db(cls, db, field_names, values):
