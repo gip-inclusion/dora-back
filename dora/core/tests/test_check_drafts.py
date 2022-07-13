@@ -1,4 +1,5 @@
 from datetime import timedelta
+from io import StringIO
 
 from django.core import mail
 from django.core.management import call_command
@@ -19,7 +20,7 @@ class CheckDraftsTestCase(APITestCase):
         self.my_struct = make_structure(self.me)
 
     def call_command(self):
-        call_command("check_old_drafts")
+        call_command("check_old_drafts", stdout=StringIO())
 
     def test_draft_older_than_7_days_notified(self):
         with freeze_time(timezone.now() - timedelta(days=8)):
