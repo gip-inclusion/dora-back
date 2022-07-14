@@ -13,7 +13,7 @@ from rest_framework.response import Response
 
 from dora.admin_express.models import City
 from dora.admin_express.utils import arrdt_to_main_insee_code
-from dora.core.notify import send_mattermost_notification
+from dora.core.notify import send_mattermost_notification, send_moderation_email
 from dora.core.pagination import OptionalPageNumberPagination
 from dora.core.utils import FALSY_VALUES, TRUTHY_VALUES
 from dora.services.emails import send_service_feedback_email
@@ -232,7 +232,11 @@ class ServiceViewSet(
         time_elapsed_h = humanize.naturaldelta(time_elapsed, months=True)
         user = self.request.user
         send_mattermost_notification(
-            f":100: Service “{service.name}” publié dans la structure : **{structure.name} ({structure.department})** par {user.get_full_name()}, {time_elapsed_h} après sa création\n{settings.FRONTEND_URL}/services/{service.slug}"
+            f":100: Service “{service.name}” publié dans la structure : **{structure.name} ({structure.department})** par {user.get_full_name()}, {time_elapsed_h} après sa création\n{service.get_absolute_url()}"
+        )
+        send_moderation_email(
+            "Service publié",
+            f"Service <strong><a href='{service.get_absolute_url()}'>“{service.name}”</a></strong> publié dans la structure : <strong>{structure.name} ({structure.department})</strong>",
         )
 
     def _log_history(self, serializer):
@@ -251,6 +255,17 @@ class ServiceViewSet(
                 service=serializer.instance,
                 user=self.request.user,
                 fields=changed_fields,
+            )
+            structure = serializer.instance.structure
+            name = serializer.validated_data.get("name") or serializer.instance.name
+            send_moderation_email(
+                "Service modifié",
+                f"""
+                Le service <strong><a href="{serializer.instance.get_absolute_url()}">“{name}”</a></strong>
+                de la structure : <strong>{structure.name} ({structure.department})</strong>
+                a été modifié<br><br>
+
+                Champs modifiés: {" / ".join(changed_fields)}""",
             )
 
     def perform_update(self, serializer):
