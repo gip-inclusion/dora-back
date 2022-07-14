@@ -108,6 +108,11 @@ class CustomizableChoiceAdmin(admin.ModelAdmin):
     list_filter = [
         ("structure", RelatedOnlyFieldListFilter),
     ]
+    search_fields = (
+        "name",
+        "structure__name",
+    )
+    list_per_page = 1000
 
 
 admin.site.register(Service, ServiceAdmin)
