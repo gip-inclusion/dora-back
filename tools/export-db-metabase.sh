@@ -13,30 +13,7 @@ export DEST_DB_URL=$METABASE_DB_URL
 psql $SRC_DB_URL -c "DROP TABLE IF EXISTS mb_structure"
 psql $SRC_DB_URL -c "
 CREATE TABLE mb_structure AS
-SELECT structures_structure.id,
-    structures_structure.siret,
-    structures_structure.name,
-    structures_structure.short_desc,
-    structures_structure.url,
-    structures_structure.full_desc,
-    structures_structure.postal_code,
-    structures_structure.city_code,
-    structures_structure.city,
-    structures_structure.creation_date,
-    structures_structure.modification_date,
-    structures_structure.creator_id,
-    structures_structure.address1,
-    structures_structure.address2,
-    structures_structure.last_editor_id,
-    structures_structure.ape,
-    structures_structure.latitude,
-    structures_structure.longitude,
-    structures_structure.slug,
-    structures_structure.code_safir_pe,
-    structures_structure.department,
-    structures_structure.parent_id,
-    structures_structure.source_id,
-    structures_structure.typology_id
+SELECT *
    FROM structures_structure"
 psql $SRC_DB_URL -c "ALTER TABLE mb_structure ADD PRIMARY KEY (id)"
 
@@ -57,7 +34,6 @@ CREATE TABLE mb_all_service AS
     services_service.beneficiaries_access_modes_other,
     services_service.coach_orientation_modes_other,
     services_service.forms,
-    services_service.is_contact_info_public,
     services_service.remote_url,
     services_service.address1,
     services_service.address2,
@@ -85,7 +61,13 @@ CREATE TABLE mb_all_service AS
     services_service.is_model,
     services_service.model_id,
     ( SELECT st_y((services_service.geom)::geometry) AS st_y) AS latitude,
-    ( SELECT st_x((services_service.geom)::geometry) AS st_x) AS longitude
+    ( SELECT st_x((services_service.geom)::geometry) AS st_x) AS longitude,
+    services_service.last_draft_notification_date,
+    services_service.filling_duration,
+    services_service.is_contact_info_public,
+    (select services_service.contact_name != '') AS has_contact_name,
+    (select services_service.contact_phone != '') AS has_contact_phone,
+    (select services_service.contact_email != '') AS has_contact_email
    FROM services_service"
 psql $SRC_DB_URL -c "ALTER TABLE mb_all_service ADD PRIMARY KEY (id)"
 
