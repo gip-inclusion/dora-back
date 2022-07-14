@@ -15,8 +15,8 @@ class MyTestRunner(DiscoverRunner):
         setup_test_environment(debug=self.debug_mode)
         saved_data = SimpleNamespace()
         _TestState.saved_data = saved_data
-        saved_data.sib_key = settings.SIB_API_KEY
-        settings.SIB_API_KEY = None
+        saved_data.sib_active = settings.SIB_ACTIVE
+        settings.SIB_ACTIVE = False
         settings.IS_TESTING = True
         unittest.installHandler()
 
@@ -24,6 +24,6 @@ class MyTestRunner(DiscoverRunner):
         unittest.removeHandler()
         teardown_test_environment()
         saved_data = _TestState.saved_data
-        settings.SIB_API_KEY = saved_data.sib_key
+        settings.SIB_ACTIVE = saved_data.sib_active
         settings.IS_TESTING = False
         del _TestState.saved_data
