@@ -121,7 +121,7 @@ class StructureMemberViewset(viewsets.ModelViewSet):
 
             try:
                 StructureMember.objects.get(
-                    user_id=user.id, is_admin=True, structure__slug=structure_slug
+                    user_id=user.id, structure__slug=structure_slug
                 )
             except StructureMember.DoesNotExist:
                 raise exceptions.PermissionDenied
@@ -133,12 +133,10 @@ class StructureMemberViewset(viewsets.ModelViewSet):
             if user.is_authenticated and (user.is_staff or user.is_bizdev):
                 return StructureMember.objects.all()
 
-            structures_administered = StructureMember.objects.filter(
-                user_id=user.id, is_admin=True
+            structures_belonging = StructureMember.objects.filter(
+                user_id=user.id
             ).values_list("structure_id", flat=True)
-            return StructureMember.objects.filter(
-                structure_id__in=structures_administered
-            )
+            return StructureMember.objects.filter(structure_id__in=structures_belonging)
 
 
 class StructurePutativeMemberViewset(viewsets.ModelViewSet):
