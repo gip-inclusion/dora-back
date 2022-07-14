@@ -233,7 +233,7 @@ def register_structure_and_user(request):
         )
         send_moderation_email(
             "Nouvelle structure créée",
-            f"Nouvelle structure <strong><a href='{structure.get_absolute_url()}'>“{structure.name}”</strong> créée dans le departement {structure.department}",
+            f"Nouvelle structure <strong><a href='{structure.get_absolute_url()}'>“{structure.name}”</a></strong> créée dans le departement {structure.department}",
         )
     has_nonstaff_admin = structure.membership.filter(
         user__is_staff=False, is_admin=True
