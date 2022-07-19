@@ -28,8 +28,9 @@ def unlink_services_from_category(ServiceCategory, Service, slug):
             ]
             new_categories_ids.append(category.id)
 
-            service.categories.set(list(set(new_categories_ids)))
-            service.save()
+            Service.objects.filter(pk=service.pk).first().categories.set(
+                list(set(new_categories_ids))
+            )
 
 
 def unlink_services_from_subcategory(ServiceSubCategory, Service, slug):
@@ -52,8 +53,9 @@ def unlink_services_from_subcategory(ServiceSubCategory, Service, slug):
             ]
             new_subcategories_ids.append(subcategory.id)
 
-            service.subcategories.set(list(set(new_subcategories_ids)))
-            service.save()
+            Service.objects.filter(pk=service.pk).first().subcategories.set(
+                list(set(new_subcategories_ids))
+            )
 
 
 def add_categories_and_subcategories_if_subcategory(
@@ -110,7 +112,12 @@ def add_categories_and_subcategories_if_subcategory(
             service.subcategories.set(list(set(new_subcategories_ids)))
 
             # Sauvegarde
-            service.save()
+            Service.objects.filter(pk=service.pk).first().subcategories.set(
+                list(set(new_subcategories_ids))
+            )
+            Service.objects.filter(pk=service.pk).first().categories.set(
+                list(set(new_categories_ids))
+            )
 
 
 def create_category(ServiceCategory, slug, label):
@@ -176,8 +183,9 @@ def replace_subcategory(ServiceSubCategory, Service, from_slug, to_slug):
             ]
             new_subcategories_ids.append(to_subcategory.id)
 
-            service.subcategories.set(list(set(new_subcategories_ids)))
-            service.save()
+            Service.objects.filter(pk=service.pk).first().subcategories.set(
+                list(set(new_subcategories_ids)),
+            )
 
 
 def delete_subcategory(ServiceSubCategory, slug):
