@@ -32,6 +32,7 @@ from dora.services.models import (
     ServiceKind,
     ServiceModel,
     ServiceModificationHistoryItem,
+    ServiceStatusHistoryItem,
     ServiceSubCategory,
 )
 from dora.services.utils import filter_services_by_city_code
@@ -44,6 +45,7 @@ from .serializers import (
     ServiceModelSerializer,
     ServiceSerializer,
 )
+from .utils import update_sync_checksum
 
 
 class ServicePermission(permissions.BasePermission):
@@ -199,10 +201,15 @@ class ServiceViewSet(
 
     def perform_create(self, serializer):
         duration_to_add = self.request.data.get("duration_to_add", 0)
+        pub_date = None
+        if serializer.validated_data.get("status") == ServiceStatus.PUBLISHED:
+            pub_date = timezone.now()
+
         service = serializer.save(
             creator=self.request.user,
             last_editor=self.request.user,
             filling_duration=duration_to_add,
+            publication_date=pub_date,
         )
 
         if service.status == ServiceStatus.DRAFT:
@@ -211,8 +218,8 @@ class ServiceViewSet(
             self._send_service_published_notification(service)
         if service.model:
             service.last_sync_checksum = service.model.sync_checksum
-        # Force a save to update the sync_checksum
-        service.save()
+            # TODO: add a test then uncomment
+            # service.save()
 
     def _send_draft_service_created_notification(self, service):
         structure = service.structure
@@ -222,6 +229,7 @@ class ServiceViewSet(
         )
 
     def _send_service_published_notification(self, service):
+        assert service.publication_date is not None
         structure = service.structure
         time_elapsed = (
             service.publication_date - service.creation_date
@@ -239,7 +247,7 @@ class ServiceViewSet(
             f"Service <strong><a href='{service.get_absolute_url()}'>“{service.name}”</a></strong> publié dans la structure : <strong>{structure.name} ({structure.department})</strong>",
         )
 
-    def _log_history(self, serializer):
+    def _log_history(self, serializer, newly_published):
         changed_fields = []
         for key, value in serializer.validated_data.items():
             original_value = getattr(serializer.instance, key)
@@ -256,43 +264,79 @@ class ServiceViewSet(
                 user=self.request.user,
                 fields=changed_fields,
             )
-            structure = serializer.instance.structure
-            name = serializer.validated_data.get("name") or serializer.instance.name
-            send_moderation_email(
-                "Service modifié",
-                f"""
-                Le service <strong><a href="{serializer.instance.get_absolute_url()}">“{name}”</a></strong>
-                de la structure : <strong>{structure.name} ({structure.department})</strong>
-                a été modifié<br><br>
+            if newly_published:
+                self._send_service_published_notification(serializer.instance)
+            else:
+                name = serializer.validated_data.get("name") or serializer.instance.name
+                send_moderation_email(
+                    "Service modifié",
+                    f"""
+                    Le service <strong><a href="{serializer.instance.get_absolute_url()}">“{name}”</a></strong>
+                    de la structure : <strong>{serializer.instance.structure.name} ({serializer.instance.structure.department})</strong>
+                    a été modifié<br><br>
 
-                Champs modifiés: {" / ".join(changed_fields)}""",
-            )
+                    Champs modifiés: {" / ".join(changed_fields)}""",
+                )
+
+    def _update_status(self, service, new_status, previous_status, user):
+        if (
+            previous_status == ServiceStatus.DRAFT
+            and new_status == ServiceStatus.PUBLISHED
+        ):
+            service.publication_date = timezone.now()
+            service.save()
+
+        ServiceStatusHistoryItem.objects.create(
+            service=service,
+            user=user,
+            new_status=new_status,
+            previous_status=previous_status,
+        )
 
     def perform_update(self, serializer):
         mark_synced = self.request.data.get("mark_synced", "") in TRUTHY_VALUES
-        was_draft = serializer.instance.status == ServiceStatus.DRAFT
-        if not was_draft:
-            self._log_history(serializer)
-        service = serializer.save(last_editor=self.request.user)
-        if (
-            was_draft
-            and service.status == ServiceStatus.PUBLISHED
-            and not service.history_item.all().exists()
-        ):
-            self._send_service_published_notification(service)
+        status_before_update = serializer.instance.status
+        # TODO: old code should fail when the state is draft and is not changed:
+        # filling_duration should not be updated, so the tests should fail
+        # but they do not… fix that
+        # status_after_update = serializer.validated_data.get("status")
+        # New correct code should be
+        status_after_update = (
+            serializer.validated_data.get("status") or status_before_update
+        )
 
         # Si le service est toujours un brouillon ou passe au statut publié, on incrémente `filling_duration`
         # TODO: gérer le cas du passage de `archivé` à `brouillon`
+        filling_duration = serializer.instance.filling_duration
         if (
-            was_draft and service.status == ServiceStatus.PUBLISHED
-        ) or service.status == ServiceStatus.DRAFT:
+            status_before_update == ServiceStatus.DRAFT
+            and status_after_update == ServiceStatus.PUBLISHED
+        ) or status_after_update == ServiceStatus.DRAFT:
             duration_to_add = self.request.data.get("duration_to_add", 0)
-            service.filling_duration = (service.filling_duration or 0) + duration_to_add
+            filling_duration = (filling_duration or 0) + duration_to_add
 
-        if mark_synced and service.model:
-            service.last_sync_checksum = service.model.sync_checksum
-        # Force a save to update the sync_checksum
-        service.save()
+        last_sync_checksum = serializer.instance.last_sync_checksum
+        if mark_synced and serializer.instance.model:
+            last_sync_checksum = serializer.instance.model.sync_checksum
+
+        newly_published = (
+            status_before_update != serializer.instance.status
+            and serializer.instance.status == ServiceStatus.PUBLISHED
+        )
+
+        if status_after_update == ServiceStatus.PUBLISHED:
+            self._log_history(serializer, newly_published)
+
+        service = serializer.save(
+            last_editor=self.request.user,
+            filling_duration=filling_duration,
+            last_sync_checksum=last_sync_checksum,
+        )
+
+        if status_before_update != service.status:
+            self._update_status(
+                service, service.status, status_before_update, self.request.user
+            )
 
 
 class ModelViewSet(ServiceViewSet):
@@ -344,6 +388,7 @@ class ModelViewSet(ServiceViewSet):
         user_structures = Structure.objects.filter(membership__user=user)
         service_slug = self.request.data.get("service")
         service = None
+        # Création d'un modèle à partir d'un service
         if service_slug:
             try:
                 service = Service.objects.get(slug=service_slug)
@@ -355,7 +400,8 @@ class ModelViewSet(ServiceViewSet):
                     "Impossible de copier un service synchronisé"
                 )
 
-            # On peut uniquement transformer un service d'une de nos structures
+            # On peut uniquement transformer en modèle un service
+            # d'une de nos structures
             if not user.is_staff and service.structure not in user_structures:
                 raise PermissionDenied
 
@@ -369,27 +415,33 @@ class ModelViewSet(ServiceViewSet):
         if not (user.is_staff or structure in user_structures):
             raise PermissionDenied
 
-        # # On peut uniquement copier un service d'une de nos structures
-        # if service.structure not in user_structures:
-        #     raise PermissionDenied
-
         model = serializer.save(
             creator=self.request.user,
             last_editor=self.request.user,
             is_model=True,
         )
         structure = model.structure
-
         send_mattermost_notification(
             f":clipboard: Nouveau modèle “{model.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/modeles/{model.slug}"
         )
         # TODO "à partir du service………"
-        # Force a save to update the sync_checksum
+
+        # Doit être fait après la première sauvegarde pour prendre en compte
+        # les champs M2M
+        # TODO FIXME
+        model.save()
+        model.sync_checksum = update_sync_checksum(model)
         model.save()
         if service:
             service.model = model
             service.last_sync_checksum = model.sync_checksum
             service.save()
+
+    def perform_update(self, serializer):
+        self._log_history(serializer, False)
+        model = serializer.save(last_editor=self.request.user)
+        model.sync_checksum = update_sync_checksum(model)
+        model.save()
 
 
 @api_view()

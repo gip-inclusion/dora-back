@@ -16,6 +16,7 @@ from .models import (
     ServiceKind,
     ServiceModel,
     ServiceModificationHistoryItem,
+    ServiceStatusHistoryItem,
     ServiceSubCategory,
 )
 
@@ -36,6 +37,30 @@ class ServiceModificationHistoryItemAdmin(admin.ModelAdmin):
     list_display = ("service", "date", "user")
     date_hierarchy = "date"
     readonly_fields = ["user", "date", "fields", "service"]
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+class ServiceStatusHistoryItemInline(admin.TabularInline):
+    model = ServiceStatusHistoryItem
+    readonly_fields = ["user", "date", "new_status", "previous_status", "service"]
+    extra = 0
+
+    def has_add_permission(self, request, obj):
+        return False
+
+    def has_change_permission(self, request, obj):
+        return False
+
+
+class ServiceStatusHistoryItemAdmin(admin.ModelAdmin):
+    list_display = ("service", "date", "user", "new_status", "previous_status")
+    date_hierarchy = "date"
+    readonly_fields = ["user", "date", "new_status", "previous_status", "service"]
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -66,7 +91,7 @@ class ServiceAdmin(admin.GISModelAdmin):
         "is_suggestion",
         ("structure", RelatedOnlyFieldListFilter),
     ]
-    inlines = [ServiceModificationHistoryItemInline]
+    inlines = [ServiceStatusHistoryItemInline, ServiceModificationHistoryItemInline]
     ordering = ["-modification_date"]
     save_as = True
     readonly_fields = (
@@ -122,6 +147,7 @@ admin.site.register(ConcernedPublic, CustomizableChoiceAdmin)
 admin.site.register(Requirement, CustomizableChoiceAdmin)
 admin.site.register(Credential, CustomizableChoiceAdmin)
 admin.site.register(ServiceModificationHistoryItem, ServiceModificationHistoryItemAdmin)
+admin.site.register(ServiceStatusHistoryItem, ServiceStatusHistoryItemAdmin)
 
 admin.site.register(BeneficiaryAccessMode, EnumAdmin)
 admin.site.register(CoachOrientationMode, EnumAdmin)
