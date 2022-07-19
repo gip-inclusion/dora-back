@@ -340,7 +340,7 @@ def migrate_services_options(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("services", "0058_servicemodel_alter_service_numerique"),
+        ("services", "0062_servicemodel_alter_service_numerique"),
     ]
 
     operations = [
