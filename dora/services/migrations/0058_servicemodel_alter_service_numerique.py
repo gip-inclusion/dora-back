@@ -91,7 +91,7 @@ def migrate_services_options(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("services", "0056_servicemodel_alter_service_creation_activite"),
+        ("services", "0057_servicemodel_alter_service_creation_activite"),
     ]
 
     operations = [

@@ -36,23 +36,23 @@ SELECT COUNT(*) FROM services_service_subcategories WHERE servicesubcategory_id 
 
 -- 13 services ont en commun "emploi--preparer-candidature" et "emploi--autre"
 SELECT COUNT(DISTINCT(service_id)) FROM  services_service_subcategories WHERE service_id IN (
-	SELECT service_id FROM services_service_subcategories WHERE servicesubcategory_id IN (SELECT id FROM services_servicesubcategory WHERE "value" = 'emploi--preparer-candidature')
+    SELECT service_id FROM services_service_subcategories WHERE servicesubcategory_id IN (SELECT id FROM services_servicesubcategory WHERE "value" = 'emploi--preparer-candidature')
 ) AND service_id IN (
-	SELECT service_id FROM services_service_subcategories WHERE servicesubcategory_id = (SELECT id FROM services_servicesubcategory WHERE "value" = 'emploi--autre')
+    SELECT service_id FROM services_service_subcategories WHERE servicesubcategory_id = (SELECT id FROM services_servicesubcategory WHERE "value" = 'emploi--autre')
 );
 
 -- 11 services ont en commun "emploi--choisir-metier" et "emploi--autre"
 SELECT COUNT(DISTINCT(service_id)) FROM  services_service_subcategories WHERE service_id IN (
-	SELECT service_id FROM services_service_subcategories WHERE servicesubcategory_id IN (SELECT id FROM services_servicesubcategory WHERE "value" = 'emploi--choisir-metier')
+    SELECT service_id FROM services_service_subcategories WHERE servicesubcategory_id IN (SELECT id FROM services_servicesubcategory WHERE "value" = 'emploi--choisir-metier')
 ) AND service_id IN (
-	SELECT service_id FROM services_service_subcategories WHERE servicesubcategory_id = (SELECT id FROM services_servicesubcategory WHERE "value" = 'emploi--autre')
+    SELECT service_id FROM services_service_subcategories WHERE servicesubcategory_id = (SELECT id FROM services_servicesubcategory WHERE "value" = 'emploi--autre')
 );
 
 -- 16 services ont en commun "emploi--preparer-candidature" et "emploi--autre"
 SELECT COUNT(DISTINCT(service_id)) FROM  services_service_subcategories WHERE service_id IN (
-	SELECT service_id FROM services_service_subcategories WHERE servicesubcategory_id IN (SELECT id FROM services_servicesubcategory WHERE "value" = 'emploi--trouver-emploi')
+    SELECT service_id FROM services_service_subcategories WHERE servicesubcategory_id IN (SELECT id FROM services_servicesubcategory WHERE "value" = 'emploi--trouver-emploi')
 ) AND service_id IN (
-	SELECT service_id FROM services_service_subcategories WHERE servicesubcategory_id = (SELECT id FROM services_servicesubcategory WHERE "value" = 'emploi--autre')
+    SELECT service_id FROM services_service_subcategories WHERE servicesubcategory_id = (SELECT id FROM services_servicesubcategory WHERE "value" = 'emploi--autre')
 );
 
 
@@ -340,7 +340,7 @@ def migrate_services_options(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("services", "0057_servicemodel_alter_service_numerique"),
+        ("services", "0058_servicemodel_alter_service_numerique"),
     ]
 
     operations = [
