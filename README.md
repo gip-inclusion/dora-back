@@ -24,6 +24,29 @@ pip install -r requirements/dev.txt
 ./manage.py migrate
 ```
 
+## Problèmes avec GeoDjango
+
+GeoDjango a besoin des _packages_ `GEOS` et `GDAL` pour fonctionner.
+
+Si Django n'arrive pas à trouver les librairies nécessaires, vous pourrez ajouter les variables d'environnement suivante à votre shell
+
+```bash
+export GDAL_LIBRARY_PATH=
+export GEOS_LIBRARY_PATH=
+```
+
+Exemple sur Mac M1 avec gdal installé via homebrew :
+
+```bash
+export GDAL_LIBRARY_PATH="/opt/homebrew/opt/gdal/lib/libgdal.dylib"
+export GEOS_LIBRARY_PATH="/opt/homebrew/opt/geos/lib/libgeos_c.dylib"
+```
+
+Pour en savoir plus :
+
+- https://docs.djangoproject.com/en/4.0/ref/contrib/gis/install/geolibs/
+- https://docs.djangoproject.com/en/4.0/ref/contrib/gis/install/#libsettings
+
 ### Erreur on Mac M1
 
 Sur un Mac M1 Silicon, vous pouvez rencontrer l'erreur suivante :
