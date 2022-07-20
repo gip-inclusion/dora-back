@@ -309,7 +309,7 @@ class ServiceViewSet(
             duration_to_add = self.request.data.get("duration_to_add", 0)
             filling_duration = (filling_duration or 0) + duration_to_add
 
-        # Historique et notifications de modifications
+        # Historique de modifications
         changed_fields = self._log_history(serializer, status_after_update)
 
         # Synchronisation avec les modèles
