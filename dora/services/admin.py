@@ -23,7 +23,7 @@ from .models import (
 
 class ServiceModificationHistoryItemInline(admin.TabularInline):
     model = ServiceModificationHistoryItem
-    readonly_fields = ["user", "date", "fields", "service"]
+    readonly_fields = ["user", "date", "fields", "service", "status"]
     extra = 0
 
     def has_add_permission(self, request, obj):
@@ -34,9 +34,10 @@ class ServiceModificationHistoryItemInline(admin.TabularInline):
 
 
 class ServiceModificationHistoryItemAdmin(admin.ModelAdmin):
-    list_display = ("service", "date", "user")
+    list_display = ("service", "date", "user", "status")
     date_hierarchy = "date"
-    readonly_fields = ["user", "date", "fields", "service"]
+    list_filter = ("status",)
+    readonly_fields = ["user", "date", "fields", "service", "status"]
 
     def has_add_permission(self, request, obj=None):
         return False

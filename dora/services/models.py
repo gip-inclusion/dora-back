@@ -447,6 +447,14 @@ class ServiceModificationHistoryItem(models.Model):
             max_length=50,
         ),
     )
+    status = models.CharField(
+        max_length=20,
+        choices=ServiceStatus.choices,
+        verbose_name="Statut après modification",
+        default="",
+        blank=True,
+        db_index=True,
+    )
 
     class Meta:
         ordering = ["-date"]

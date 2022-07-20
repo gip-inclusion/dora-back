@@ -245,7 +245,7 @@ class ServiceViewSet(
             f"Service <strong><a href='{service.get_absolute_url()}'>“{service.name}”</a></strong> publié dans la structure : <strong>{structure.name} ({structure.department})</strong>",
         )
 
-    def _log_history(self, serializer, newly_published):
+    def _log_history(self, serializer, new_status=""):
         changed_fields = []
         for key, value in serializer.validated_data.items():
             original_value = getattr(serializer.instance, key)
@@ -261,21 +261,8 @@ class ServiceViewSet(
                 service=serializer.instance,
                 user=self.request.user,
                 fields=changed_fields,
+                status=new_status,
             )
-            # TODO: bof, bouger ça
-            if newly_published:
-                self._send_service_published_notification(serializer.instance)
-            else:
-                name = serializer.validated_data.get("name") or serializer.instance.name
-                send_moderation_email(
-                    "Service modifié",
-                    f"""
-                    Le service <strong><a href="{serializer.instance.get_absolute_url()}">“{name}”</a></strong>
-                    de la structure : <strong>{serializer.instance.structure.name} ({serializer.instance.structure.department})</strong>
-                    a été modifié<br><br>
-
-                    Champs modifiés: {" / ".join(changed_fields)}""",
-                )
 
     def _update_status(self, service, new_status, previous_status, user):
         if (
@@ -294,16 +281,13 @@ class ServiceViewSet(
 
     def perform_update(self, serializer):
         mark_synced = self.request.data.get("mark_synced", "") in TRUTHY_VALUES
+
         status_before_update = serializer.instance.status
-        # TODO: old code should fail when the state is draft and is not changed:
-        # filling_duration should not be updated, so the tests should fail
-        # but they do not… fix that
-        # status_after_update = serializer.validated_data.get("status")
-        # New correct code should be
         status_after_update = (
             serializer.validated_data.get("status") or status_before_update
         )
 
+        # Gestion de la durée d'édition:
         # Si le service est toujours un brouillon ou passe au statut publié, on incrémente `filling_duration`
         # TODO: gérer le cas du passage de `archivé` à `brouillon`
         filling_duration = serializer.instance.filling_duration
@@ -314,23 +298,42 @@ class ServiceViewSet(
             duration_to_add = self.request.data.get("duration_to_add", 0)
             filling_duration = (filling_duration or 0) + duration_to_add
 
-        last_sync_checksum = serializer.instance.last_sync_checksum
-        if mark_synced and serializer.instance.model:
-            last_sync_checksum = serializer.instance.model.sync_checksum
-
+        # Notifications de publication
         newly_published = (
             status_before_update != serializer.instance.status
             and serializer.instance.status == ServiceStatus.PUBLISHED
         )
 
-        self._log_history(serializer, newly_published)
+        if newly_published:
+            self._send_service_published_notification(serializer.instance)
 
+        # Historique et notifications de modifications
+        changed_fields = self._log_history(serializer, status_after_update)
+        if changed_fields and not newly_published:
+            name = serializer.validated_data.get("name") or serializer.instance.name
+            send_moderation_email(
+                "Service modifié",
+                f"""
+                Le service <strong><a href="{serializer.instance.get_absolute_url()}">“{name}”</a></strong>
+                de la structure : <strong>{serializer.instance.structure.name} ({serializer.instance.structure.department})</strong>
+                a été modifié<br><br>
+
+                Champs modifiés: {" / ".join(changed_fields)}""",
+            )
+
+        # Synchronisation avec les modèles
+        last_sync_checksum = serializer.instance.last_sync_checksum
+        if mark_synced and serializer.instance.model:
+            last_sync_checksum = serializer.instance.model.sync_checksum
+
+        # Enregistrement des mises à jour
         service = serializer.save(
             last_editor=self.request.user,
             filling_duration=filling_duration,
             last_sync_checksum=last_sync_checksum,
         )
 
+        # Historique des statuts
         if status_before_update != service.status:
             self._update_status(
                 service, service.status, status_before_update, self.request.user
@@ -434,7 +437,7 @@ class ModelViewSet(ServiceViewSet):
             service.save()
 
     def perform_update(self, serializer):
-        self._log_history(serializer, False)
+        self._log_history(serializer)
         model = serializer.save(last_editor=self.request.user)
         model.sync_checksum = update_sync_checksum(model)
         model.save()

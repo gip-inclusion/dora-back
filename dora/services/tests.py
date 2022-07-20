@@ -674,6 +674,7 @@ class ServiceTestCase(APITestCase):
         self.assertTrue(timezone.now() - hitem.date < timedelta(seconds=1))
 
     def test_editing_log_multiple_change(self):
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
         self.client.patch(
             f"/services/{self.my_service.slug}/", {"name": "xxx", "address1": "yyy"}
         )
@@ -681,6 +682,7 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(hitem.fields, ["name", "address1"])
 
     def test_editing_log_m2m_change(self):
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
         response = self.client.patch(
             f"/services/{self.my_service.slug}/", {"access_conditions": ["xxx"]}
         )
@@ -693,8 +695,9 @@ class ServiceTestCase(APITestCase):
             ],
         )
 
-    def test_creating_draft_doesnt_log_changes(self):
+    def test_creating_draft_does_log_changes(self):
         DUMMY_SERVICE["structure"] = self.my_struct.slug
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
         response = self.client.post(
             "/services/",
             DUMMY_SERVICE,
@@ -708,6 +711,20 @@ class ServiceTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(ServiceModificationHistoryItem.objects.exists())
+
+    def test_editing_log_current_status(self):
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
+        response = self.client.patch(
+            f"/services/{self.my_service.slug}/", {"name": "xxx", "status": "DRAFT"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(ServiceModificationHistoryItem.objects.exists())
+        hitem = ServiceModificationHistoryItem.objects.all()[0]
+        self.assertEqual(hitem.user, self.me)
+        self.assertEqual(hitem.status, ServiceStatus.DRAFT)
+        self.assertEqual(hitem.service, self.my_service)
+        self.assertEqual(hitem.fields, ["name", "status"])
+        self.assertTrue(timezone.now() - hitem.date < timedelta(seconds=1))
 
     # Services count
     def test_members_see_all_services_count(self):
@@ -1369,6 +1386,7 @@ class ServiceModelTestCase(APITestCase):
         self.assertTrue(timezone.now() - hitem.date < timedelta(seconds=1))
 
     def test_editing_log_multiple_change(self):
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
         model = make_model(structure=struct)
@@ -1380,6 +1398,7 @@ class ServiceModelTestCase(APITestCase):
         self.assertEqual(hitem.fields, ["name", "short_desc"])
 
     def test_editing_log_m2m_change(self):
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
         model = make_model(structure=struct)
@@ -1395,6 +1414,22 @@ class ServiceModelTestCase(APITestCase):
                 "access_conditions",
             ],
         )
+
+    def test_editing_doesnt_log_current_status(self):
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        model = make_model(structure=struct)
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
+        self.client.force_authenticate(user=user)
+        response = self.client.patch(
+            f"/models/{model.slug}/", {"name": "xxx", "status": "DRAFT"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(ServiceModificationHistoryItem.objects.exists())
+        hitem = ServiceModificationHistoryItem.objects.all()[0]
+        self.assertEqual(hitem.user, user)
+        self.assertEqual(hitem.status, "")
 
 
 class ServiceInstantiationTestCase(APITestCase):
