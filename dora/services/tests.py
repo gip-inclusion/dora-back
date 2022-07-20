@@ -706,6 +706,7 @@ class ServiceTestCase(APITestCase):
         self.assertFalse(ServiceModificationHistoryItem.objects.exists())
 
     def test_editing_does_log_draft_changes(self):
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
         response = self.client.patch(
             f"/services/{self.my_draft_service.slug}/", {"name": "xxx"}
         )
@@ -724,7 +725,6 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(hitem.status, ServiceStatus.DRAFT)
         self.assertEqual(hitem.service, self.my_service)
         self.assertEqual(hitem.fields, ["name", "status"])
-        self.assertTrue(timezone.now() - hitem.date < timedelta(seconds=1))
 
     # Services count
     def test_members_see_all_services_count(self):

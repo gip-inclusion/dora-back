@@ -245,6 +245,17 @@ class ServiceViewSet(
             f"Service <strong><a href='{service.get_absolute_url()}'>“{service.name}”</a></strong> publié dans la structure : <strong>{structure.name} ({structure.department})</strong>",
         )
 
+    def _send_service_modified_notification(self, service, changed_fields):
+        send_moderation_email(
+            "Service modifié",
+            f"""
+                Le service <strong><a href="{service.get_absolute_url()}">“{service.name}”</a></strong>
+                de la structure : <strong>{service.structure.name} ({service.structure.department})</strong>
+                a été modifié<br><br>
+
+                Champs modifiés: {" / ".join(changed_fields)}""",
+        )
+
     def _log_history(self, serializer, new_status=""):
         changed_fields = []
         for key, value in serializer.validated_data.items():
@@ -298,28 +309,8 @@ class ServiceViewSet(
             duration_to_add = self.request.data.get("duration_to_add", 0)
             filling_duration = (filling_duration or 0) + duration_to_add
 
-        # Notifications de publication
-        newly_published = (
-            status_before_update != serializer.instance.status
-            and serializer.instance.status == ServiceStatus.PUBLISHED
-        )
-
-        if newly_published:
-            self._send_service_published_notification(serializer.instance)
-
         # Historique et notifications de modifications
         changed_fields = self._log_history(serializer, status_after_update)
-        if changed_fields and not newly_published:
-            name = serializer.validated_data.get("name") or serializer.instance.name
-            send_moderation_email(
-                "Service modifié",
-                f"""
-                Le service <strong><a href="{serializer.instance.get_absolute_url()}">“{name}”</a></strong>
-                de la structure : <strong>{serializer.instance.structure.name} ({serializer.instance.structure.department})</strong>
-                a été modifié<br><br>
-
-                Champs modifiés: {" / ".join(changed_fields)}""",
-            )
 
         # Synchronisation avec les modèles
         last_sync_checksum = serializer.instance.last_sync_checksum
@@ -338,6 +329,16 @@ class ServiceViewSet(
             self._update_status(
                 service, service.status, status_before_update, self.request.user
             )
+
+        # Notifications
+        newly_published = (
+            status_before_update != service.status
+            and service.status == ServiceStatus.PUBLISHED
+        )
+        if newly_published:
+            self._send_service_published_notification(service)
+        elif changed_fields:
+            self._send_service_modified_notification(service, changed_fields)
 
 
 class ModelViewSet(ServiceViewSet):
