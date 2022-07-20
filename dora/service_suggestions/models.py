@@ -3,6 +3,10 @@ import uuid
 from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.db import models, transaction
+from dora.service_suggestions.emails import (
+    send_suggestion_validated_existing_structure_email,
+    send_suggestion_validated_new_structure_email,
+)
 from rest_framework import serializers
 
 from dora.core.utils import code_insee_to_code_dept
@@ -58,13 +62,17 @@ class ServiceSuggestion(models.Model):
             except Establishment.DoesNotExist:
                 raise serializers.ValidationError("SIRET inconnu", code="wrong_siret")
 
-    def convert_to_service(self):
+    def convert_to_service(self, send_mail=False):
         def values_to_objects(Model, values):
             return [Model.objects.get(value=v) for v in values]
 
+        is_new_structure = False
         try:
             structure = Structure.objects.get(siret=self.siret)
+
         except Structure.DoesNotExist:
+            is_new_structure = True
+
             try:
                 establishment = Establishment.objects.get(siret=self.siret)
                 structure = Structure.objects.create_from_establishment(establishment)
@@ -101,6 +109,7 @@ class ServiceSuggestion(models.Model):
             geom = Point(lon, lat, srid=4326)
         else:
             geom = None
+
         with transaction.atomic(durable=True):
             service = Service.objects.create(
                 name=self.name,
@@ -125,4 +134,34 @@ class ServiceSuggestion(models.Model):
             service.location_kinds.set(values_to_objects(LocationKind, location_kinds))
 
             self.delete()
-        return service
+
+        if send_mail:
+            emails_contacted = []
+            contact_email = self.contents.pop("contact_email", None) or None
+            if is_new_structure:
+                # Pour les nouvelles structures, on envoie un mail à la personne indiquée
+                # dans le formulaire (si présent)
+                if contact_email is not None:
+                    send_suggestion_validated_new_structure_email(
+                        contact_email, structure
+                    )
+                    emails_contacted.append(contact_email)
+            else:
+                # Pour une structure existante et dont l'administrateur est connu, on envoie un e-mail à ce dernier
+                # - et potentiellement au contact_email si différent de l'administrateur
+                emails_contacted = []
+
+                if (
+                    structure.creator is not None
+                    and structure.creator.email is not None
+                ):
+                    emails_contacted.append(structure.creator.email)
+
+                if contact_email is not None and contact_email not in emails_contacted:
+                    emails_contacted.append(contact_email)
+
+                send_suggestion_validated_existing_structure_email(
+                    emails_contacted, structure
+                )
+
+        return service, emails_contacted

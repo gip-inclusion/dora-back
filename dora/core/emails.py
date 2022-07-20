@@ -7,7 +7,7 @@ from django.template.loader import render_to_string
 
 def send_mail(
     subject,
-    to,
+    to,  # string ou tableau de string
     body,
     from_email=settings.DEFAULT_FROM_EMAIL,
     tags=None,
@@ -25,11 +25,15 @@ def send_mail(
         subject = f"[TEST pour {to}] {subject}"
         to = settings.FAKE_EMAIL_RECIPIENT
 
+    # Conversion en list si besoin
+    if not isinstance(to, list):
+        to = [to]
+
     msg = EmailMessage(
         subject,
         body,
         from_email,
-        [to],
+        to,
         headers=headers,
         reply_to=reply_to,
     )

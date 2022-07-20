@@ -13,9 +13,7 @@
     text-align: center;
   "
 >
-
   {% block salutations %}Bonjour {{recipient_name}} !{% endblock %}
-
 </h1>
 <p
   style="
@@ -26,10 +24,11 @@
     margin-bottom: 15px;
   "
 >
-
   {% block cta_description %} {% endblock %}
-
 </p>
+
+{% block before_cta_content %} {% endblock %}
+
 <table
   role="presentation"
   border="0"
@@ -105,9 +104,7 @@
                     color: #ffffff;
                   "
                 >
-
                   {% block cta_text %}{% endblock %}
-
                 </a>
               </td>
             </tr>
@@ -130,4 +127,7 @@
     >{{ cta_link }}</a
   >
 </p>
+
+{% block after_cta_content %} {% endblock %}
+
 {% endblock %}
