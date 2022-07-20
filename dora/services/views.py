@@ -218,8 +218,7 @@ class ServiceViewSet(
             self._send_service_published_notification(service)
         if service.model:
             service.last_sync_checksum = service.model.sync_checksum
-            # TODO: add a test then uncomment
-            # service.save()
+            service.save()
 
     def _send_draft_service_created_notification(self, service):
         structure = service.structure
@@ -229,7 +228,6 @@ class ServiceViewSet(
         )
 
     def _send_service_published_notification(self, service):
-        assert service.publication_date is not None
         structure = service.structure
         time_elapsed = (
             service.publication_date - service.creation_date
@@ -264,6 +262,7 @@ class ServiceViewSet(
                 user=self.request.user,
                 fields=changed_fields,
             )
+            # TODO: bof, bouger ça
             if newly_published:
                 self._send_service_published_notification(serializer.instance)
             else:
@@ -324,8 +323,7 @@ class ServiceViewSet(
             and serializer.instance.status == ServiceStatus.PUBLISHED
         )
 
-        if status_after_update == ServiceStatus.PUBLISHED:
-            self._log_history(serializer, newly_published)
+        self._log_history(serializer, newly_published)
 
         service = serializer.save(
             last_editor=self.request.user,
@@ -428,8 +426,6 @@ class ModelViewSet(ServiceViewSet):
 
         # Doit être fait après la première sauvegarde pour prendre en compte
         # les champs M2M
-        # TODO FIXME
-        model.save()
         model.sync_checksum = update_sync_checksum(model)
         model.save()
         if service:

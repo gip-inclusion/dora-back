@@ -94,10 +94,7 @@ class ServiceAdmin(admin.GISModelAdmin):
     inlines = [ServiceStatusHistoryItemInline, ServiceModificationHistoryItemInline]
     ordering = ["-modification_date"]
     save_as = True
-    readonly_fields = (
-        "creation_date",
-        "modification_date",
-    )
+    readonly_fields = ("creation_date", "modification_date", "status")
 
 
 class ServiceModelAdmin(admin.ModelAdmin):
@@ -122,10 +119,7 @@ class ServiceModelAdmin(admin.ModelAdmin):
     inlines = [ServiceModificationHistoryItemInline]
     ordering = ["-modification_date"]
     save_as = True
-    readonly_fields = (
-        "creation_date",
-        "modification_date",
-    )
+    readonly_fields = ("creation_date", "modification_date", "status")
 
 
 class CustomizableChoiceAdmin(admin.ModelAdmin):

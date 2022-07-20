@@ -348,16 +348,16 @@ class Service(models.Model):
     def get_previous_status(self):
         try:
             item = ServiceStatusHistoryItem.objects.filter(service=self).latest()
-            # if item.new_status != self.status:
-            #     logging.error(
-            #         "Inconsistent status history",
-            #         extra={
-            #             "service": self.slug,
-            #             "current_status": self.status,
-            #             "reported_current_status": item.new_status,
-            #             "history_item": item.id,
-            #         },
-            #     )
+            if item.new_status != self.status:
+                logging.error(
+                    "Inconsistent status history",
+                    extra={
+                        "service": self.slug,
+                        "current_status": self.status,
+                        "reported_current_status": item.new_status,
+                        "history_item": item.id,
+                    },
+                )
             return item.previous_status
         except ServiceStatusHistoryItem.DoesNotExist:
             return None

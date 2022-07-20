@@ -702,12 +702,12 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertFalse(ServiceModificationHistoryItem.objects.exists())
 
-    def test_editing_doesnt_log_draft_changes(self):
+    def test_editing_does_log_draft_changes(self):
         response = self.client.patch(
             f"/services/{self.my_draft_service.slug}/", {"name": "xxx"}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
+        self.assertTrue(ServiceModificationHistoryItem.objects.exists())
 
     # Services count
     def test_members_see_all_services_count(self):
@@ -1296,6 +1296,23 @@ class ServiceModelTestCase(APITestCase):
         service = ServiceModel.objects.get(slug=slug)
         self.assertEqual(service.structure.pk, struct.pk)
 
+    def test_create_model_from_service_becomes_ancestor(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        service = make_service(status=ServiceStatus.PUBLISHED, structure=struct)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/models/",
+            {"structure": struct.slug, "service": service.slug, **DUMMY_SERVICE},
+        )
+        self.assertEqual(response.status_code, 201)
+        slug = response.data["slug"]
+        model = ServiceModel.objects.get(slug=slug)
+        self.assertEqual(model.structure.pk, struct.pk)
+        service.refresh_from_db()
+        self.assertEqual(service.model, model)
+        self.assertEqual(service.last_sync_checksum, model.sync_checksum)
+
     def test_cant_create_model_from_others_service(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
@@ -1307,6 +1324,22 @@ class ServiceModelTestCase(APITestCase):
             {"structure": struct.slug, "service": service.slug, **DUMMY_SERVICE},
         )
         self.assertEqual(response.status_code, 403)
+
+    def test_can_create_service_from_any_model(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        model = make_model(structure=struct)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/services/",
+            {"structure": struct.slug, "model": model.slug, **DUMMY_SERVICE},
+        )
+        self.assertEqual(response.status_code, 201)
+        slug = response.data["slug"]
+        service = Service.objects.get(slug=slug)
+        self.assertEqual(service.structure.pk, struct.pk)
+        self.assertEqual(service.model, model)
+        self.assertEqual(service.last_sync_checksum, model.sync_checksum)
 
     def test_superuser_can_create_model_from_others_service(self):
         user = baker.make("users.User", is_valid=True, is_staff=True)
@@ -1837,11 +1870,11 @@ class ServiceStatusChangeTestCase(APITestCase):
             f"/services/{service.slug}/", {"status": "ARCHIVED"}
         )
         self.assertEqual(response.status_code, 200)
-
+        service.refresh_from_db()
         self.assertEqual(service.get_previous_status(), "PUBLISHED")
         response = self.client.patch(f"/services/{service.slug}/", {"status": "DRAFT"})
         self.assertEqual(response.status_code, 200)
-        service.save()
+        service.refresh_from_db()
         self.assertEqual(service.get_previous_status(), "ARCHIVED")
         self.assertEqual(
             ServiceStatusHistoryItem.objects.filter(service=service).count(), 2
