@@ -137,17 +137,17 @@ def migrate_services_options(apps, schema_editor):
     create_category(
         ServiceCategory,
         slug=emploi_choisir_un_metier_slug,
-        label="Emploi - Choisir un métier",
+        label="Emploi -> Choisir un métier",
     )
     create_category(
         ServiceCategory,
         slug=emploi_preparer_sa_candidature_slug,
-        label="Emploi - Préparer sa candidature",
+        label="Emploi -> Préparer sa candidature",
     )
     create_category(
         ServiceCategory,
         slug=emploi_trouver_un_emploi_slug,
-        label="Emploi - Trouver un emploi",
+        label="Emploi -> Trouver un emploi",
     )
 
     # emploi-choisir-metier--
