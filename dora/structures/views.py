@@ -7,7 +7,7 @@ from rest_framework import exceptions, mixins, permissions, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
-from dora.core.notify import send_mattermost_notification
+from dora.core.notify import send_mattermost_notification, send_moderation_email
 from dora.core.pagination import OptionalPageNumberPagination
 from dora.rest_auth.models import Token
 from dora.structures.emails import send_invitation_email
@@ -88,11 +88,16 @@ class StructureViewSet(
             else StructureSource.objects.get(value="porteur")
         )
         structure = serializer.save(creator=user, last_editor=user, source=source)
+        # When creating a structure, the creator becomes member and administrator of this structure
+        StructureMember.objects.create(user=user, structure=structure, is_admin=True)
+
         send_mattermost_notification(
             f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
         )
-        # When creating a structure, the creator becomes member and administrator of this structure
-        StructureMember.objects.create(user=user, structure=structure, is_admin=True)
+        send_moderation_email(
+            "Nouvelle structure créée",
+            f"Nouvelle structure <strong><a href='{structure.get_absolute_url()}'>“{structure.name}”</strong> créée dans le departement {structure.department}",
+        )
 
     def perform_update(self, serializer):
         serializer.save(last_editor=self.request.user)
@@ -116,7 +121,7 @@ class StructureMemberViewset(viewsets.ModelViewSet):
 
             try:
                 StructureMember.objects.get(
-                    user_id=user.id, is_admin=True, structure__slug=structure_slug
+                    user_id=user.id, structure__slug=structure_slug
                 )
             except StructureMember.DoesNotExist:
                 raise exceptions.PermissionDenied
@@ -128,12 +133,10 @@ class StructureMemberViewset(viewsets.ModelViewSet):
             if user.is_authenticated and (user.is_staff or user.is_bizdev):
                 return StructureMember.objects.all()
 
-            structures_administered = StructureMember.objects.filter(
-                user_id=user.id, is_admin=True
+            structures_belonging = StructureMember.objects.filter(
+                user_id=user.id
             ).values_list("structure_id", flat=True)
-            return StructureMember.objects.filter(
-                structure_id__in=structures_administered
-            )
+            return StructureMember.objects.filter(structure_id__in=structures_belonging)
 
 
 class StructurePutativeMemberViewset(viewsets.ModelViewSet):

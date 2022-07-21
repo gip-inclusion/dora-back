@@ -28,7 +28,7 @@ def code_insee_to_code_dept(code_insee):
 
 
 def add_to_sib(user):
-    if settings.SIB_API_KEY:
+    if settings.SIB_ACTIVE:
         # Configure API key authorization: api-key
         configuration = sib_api_v3_sdk.Configuration()
         configuration.api_key["api-key"] = settings.SIB_API_KEY

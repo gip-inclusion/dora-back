@@ -257,7 +257,7 @@ class Structure(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return f"{settings.FRONTEND_URL}/structures/{self.slug}"
+        return self.get_frontend_url()
 
     def _make_unique_branch_id(self):
         while True:
@@ -333,3 +333,11 @@ class Structure(models.Model):
         from dora.services.models import ServiceModel
 
         return ServiceModel.objects.filter(structure=self).count()
+
+    def get_frontend_url(self):
+        return f"{settings.FRONTEND_URL}/structures/{self.slug}"
+
+    def get_admin_url(self):
+        return (
+            f"https://{settings.ALLOWED_HOSTS[0]}/structures/structure/{self.id}/change"
+        )

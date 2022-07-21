@@ -280,12 +280,16 @@ class StructureMemberTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 403)
 
-    def test_standard_user_cant_see_structure_members(self):
+    def test_standard_user_can_see_structure_members(self):
         self.client.force_authenticate(user=self.user2)
         response = self.client.get(
             f"/structure-members/?structure={self.my_struct.slug}"
         )
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
+        emails = [m["user"]["email"] for m in response.data]
+        self.assertIn(self.me.email, emails)
+        self.assertIn(self.user1.email, emails)
+        self.assertIn(self.user2.email, emails)
 
     def test_super_user_can_see_structure_members(self):
         self.client.force_authenticate(user=self.superuser)
@@ -328,11 +332,11 @@ class StructureMemberTestCase(APITestCase):
         response = self.client.get(f"/structure-members/{member.id}/")
         self.assertEqual(response.status_code, 404)
 
-    def test_standard_user_cant_see_structure_member(self):
+    def test_standard_user_can_see_structure_member(self):
         self.client.force_authenticate(user=self.user2)
         member = self.user1.membership.get(structure=self.my_struct)
         response = self.client.get(f"/structure-members/{member.id}/")
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
 
     def test_super_user_can_see_structure_member(self):
         self.client.force_authenticate(user=self.superuser)
@@ -411,7 +415,7 @@ class StructureMemberTestCase(APITestCase):
             f"/structure-members/{member.id}/",
             {"is_admin": False, "user": {"last_name": "FOO", "email": "FOO@BAR.BUZ"}},
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 403)
 
     def test_standard_user_cant_gain_admin_privilege(self):
         self.client.force_authenticate(user=self.user2)
@@ -421,7 +425,7 @@ class StructureMemberTestCase(APITestCase):
             f"/structure-members/{member.id}/",
             {"is_admin": True},
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 403)
 
     def test_super_user_can_change_structure_members(self):
         self.client.force_authenticate(user=self.superuser)
@@ -480,7 +484,7 @@ class StructureMemberTestCase(APITestCase):
         response = self.client.delete(
             f"/structure-members/{member.id}/",
         )
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 403)
 
     def test_super_user_can_delete_structure_members(self):
         self.client.force_authenticate(user=self.superuser)
@@ -802,8 +806,8 @@ class StructureMemberTestCase(APITestCase):
             {"is_admin": False},
         )
         self.assertEqual(response.status_code, 200)
-        response = self.client.get(f"/structure-members/{member.id}/")
-        self.assertEqual(response.status_code, 404)
+        member.refresh_from_db()
+        self.assertFalse(member.is_admin)
 
     # Invitation acceptation
     def test_user_can_accept_invitation(self):

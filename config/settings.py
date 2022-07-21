@@ -304,7 +304,6 @@ DORA_BOT_USER = "dora-bot@dora.beta.gouv.fr"
 PE_CLIENT_ID = os.environ["PE_CLIENT_ID"]
 PE_CLIENT_SECRET = os.environ["PE_CLIENT_SECRET"]
 
-MATTERMOST_HOOK_KEY = os.environ.get("MATTERMOST_HOOK_KEY")
 
 ################
 # SECURITY     #
@@ -380,5 +379,19 @@ TEST_RUNNER = "dora.core.test_runner.MyTestRunner"
 # SEND_IN_BLUE #
 ################
 
+SIB_ACTIVE = os.environ["SIB_ACTIVE"] == "true"
 SIB_API_KEY = os.environ["SIB_API_KEY"]
 SIB_ONBOARDING_LIST = os.environ["SIB_ONBOARDING_LIST"]
+
+########################
+# DRAFTS NOTIFICATIONS #
+########################
+
+DRAFT_AGE_NOTIFICATION_DAYS = 7
+
+##############################
+# NOTIFICATIONS / MODERATION #
+##############################
+
+MATTERMOST_HOOK_KEY = os.environ.get("MATTERMOST_HOOK_KEY")
+MODERATION_EMAIL_ADRESS = os.environ.get("MODERATION_EMAIL_ADRESS")

@@ -3,6 +3,8 @@ import json
 import requests
 from django.conf import settings
 
+from dora.core.emails import send_mail
+
 
 def send_mattermost_notification(msg):
     if settings.ENVIRONMENT == "local":
@@ -22,3 +24,11 @@ def send_mattermost_notification(msg):
         except requests.exceptions.RequestException:
             # TODO: logging
             print("HTTP Request failed")
+
+
+def send_moderation_email(subject, msg):
+    body = f"<html><body>{msg}</body>"
+    if settings.MODERATION_EMAIL_ADRESS:
+        send_mail(subject, settings.MODERATION_EMAIL_ADRESS, msg, tags=["moderation"])
+    elif not settings.IS_TESTING:
+        print("Moderation email:", subject, body)

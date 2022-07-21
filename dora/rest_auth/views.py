@@ -12,7 +12,7 @@ from rest_framework import exceptions, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from dora.core.notify import send_mattermost_notification
+from dora.core.notify import send_mattermost_notification, send_moderation_email
 from dora.rest_auth.authentication import TokenAuthentication
 from dora.rest_auth.models import Token
 from dora.rest_auth.serializers import (
@@ -229,7 +229,11 @@ def register_structure_and_user(request):
         structure.source = StructureSource.objects.get(value="porteur")
         structure.save()
         send_mattermost_notification(
-            f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
+            f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{structure.get_absolute_url()}"
+        )
+        send_moderation_email(
+            "Nouvelle structure créée",
+            f"Nouvelle structure <strong><a href='{structure.get_absolute_url()}'>“{structure.name}”</a></strong> créée dans le departement {structure.department}",
         )
     has_nonstaff_admin = structure.membership.filter(
         user__is_staff=False, is_admin=True

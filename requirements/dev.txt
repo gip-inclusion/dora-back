@@ -9,3 +9,4 @@ ggshield==1.11.0
 click==8.0.4
 django-silk==4.3.0
 django-querycount==0.7.0
+freezegun==1.2.1

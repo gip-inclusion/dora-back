@@ -55,9 +55,15 @@ class StructureMemberPermission(permissions.BasePermission):
         if user.is_staff:
             return True
 
-        # People can only edit their Structures' stuff
-        if obj.structure in Structure.objects.filter(membership__user=user):
+        # Struct admin can only edit their Structures' stuff
+        if obj.structure in Structure.objects.filter(
+            membership__user=user, membership__is_admin=True
+        ):
             return True
+
+        # People can only see their Structures' stuff
+        if obj.structure in Structure.objects.filter(membership__user=user):
+            return request.method in permissions.SAFE_METHODS
 
         # bizdevs can read only
         if user.is_bizdev:
