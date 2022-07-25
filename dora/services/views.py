@@ -198,7 +198,7 @@ class ServiceViewSet(
         return Response(status=201)
 
     def perform_create(self, serializer):
-        duration_to_add = self.request.data.get("duration_to_add", 0)
+        duration_to_add = self.request.data.get("duration_to_add") or 0
         service = serializer.save(
             creator=self.request.user,
             last_editor=self.request.user,
@@ -286,7 +286,7 @@ class ServiceViewSet(
         if (
             was_draft and service.status == ServiceStatus.PUBLISHED
         ) or service.status == ServiceStatus.DRAFT:
-            duration_to_add = self.request.data.get("duration_to_add", 0)
+            duration_to_add = self.request.data.get("duration_to_add") or 0
             service.filling_duration = (service.filling_duration or 0) + duration_to_add
 
         if mark_synced and service.model:
