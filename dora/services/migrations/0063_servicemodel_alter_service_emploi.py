@@ -130,154 +130,154 @@ def migrate_services_options(apps, schema_editor):
             "emploi-trouver-emploi--convaincre-un-recruteur-en-entretien" => Convaincre un recruteur en entretien
             "emploi-trouver-emploi--autre" => Autre
     """
-    emploi_choisir_un_metier_slug = "emploi-choisir-metier"
-    emploi_preparer_sa_candidature_slug = "emploi-preparer-sa-candidature"
-    emploi_trouver_un_emploi_slug = "emploi-trouver-emploi"
+    emploi_choisir_un_metier_value = "emploi-choisir-metier"
+    emploi_preparer_sa_candidature_value = "emploi-preparer-sa-candidature"
+    emploi_trouver_un_emploi_value = "emploi-trouver-emploi"
 
     create_category(
         ServiceCategory,
-        slug=emploi_choisir_un_metier_slug,
-        label="Emploi -> Choisir un métier",
+        value=emploi_choisir_un_metier_value,
+        label="Emploi - Choisir un métier",
     )
     create_category(
         ServiceCategory,
-        slug=emploi_preparer_sa_candidature_slug,
-        label="Emploi -> Préparer sa candidature",
+        value=emploi_preparer_sa_candidature_value,
+        label="Emploi - Préparer sa candidature",
     )
     create_category(
         ServiceCategory,
-        slug=emploi_trouver_un_emploi_slug,
-        label="Emploi -> Trouver un emploi",
+        value=emploi_trouver_un_emploi_value,
+        label="Emploi - Trouver un emploi",
     )
 
     # emploi-choisir-metier--
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{emploi_choisir_un_metier_slug}--identifier-ses-points-forts-et-ses-competences",
+        value=f"{emploi_choisir_un_metier_value}--identifier-ses-points-forts-et-ses-competences",
         label="Identifier ses points forts et ses compétences",
     )
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{emploi_choisir_un_metier_slug}--connaitre-les-opportunites-demploi",
+        value=f"{emploi_choisir_un_metier_value}--connaitre-les-opportunites-demploi",
         label="Connaître les opportunités d’emploi",
     )
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{emploi_choisir_un_metier_slug}--decouvrir-un-metier-ou-un-secteur-dactivite",
+        value=f"{emploi_choisir_un_metier_value}--decouvrir-un-metier-ou-un-secteur-dactivite",
         label="Découvrir un métier ou un secteur d’activité",
     )
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{emploi_choisir_un_metier_slug}--confirmer-son-choix-de-metier",
+        value=f"{emploi_choisir_un_metier_value}--confirmer-son-choix-de-metier",
         label="Confirmer son choix de métier",
     )
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{emploi_choisir_un_metier_slug}--autre",
+        value=f"{emploi_choisir_un_metier_value}--autre",
         label="Autre",
     )
 
     # emploi-preparer-sa-candidature--
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{emploi_preparer_sa_candidature_slug}--valoriser-ses-competences",
+        value=f"{emploi_preparer_sa_candidature_value}--valoriser-ses-competences",
         label="Valoriser ses compétences",
     )
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{emploi_preparer_sa_candidature_slug}--realiser-un-cv-etou-une-lettre-de-motivation",
+        value=f"{emploi_preparer_sa_candidature_value}--realiser-un-cv-etou-une-lettre-de-motivation",
         label="Réaliser un CV et/ou une lettre de motivation",
     )
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{emploi_preparer_sa_candidature_slug}--developper-son-reseau",
+        value=f"{emploi_preparer_sa_candidature_value}--developper-son-reseau",
         label="Développer son réseau",
     )
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{emploi_preparer_sa_candidature_slug}--organiser-ses-demarches-de-recherche-demploi",
+        value=f"{emploi_preparer_sa_candidature_value}--organiser-ses-demarches-de-recherche-demploi",
         label="Organiser ses démarches de recherche d’emploi",
     )
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{emploi_preparer_sa_candidature_slug}--autre",
+        value=f"{emploi_preparer_sa_candidature_value}--autre",
         label="Autre",
     )
 
     # emploi-trouver-emploi--
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{emploi_trouver_un_emploi_slug}--repondre-a-des-offres-demploi",
+        value=f"{emploi_trouver_un_emploi_value}--repondre-a-des-offres-demploi",
         label="Répondre à des offres d’emploi",
     )
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{emploi_trouver_un_emploi_slug}--faire-des-candidatures-spontanees",
+        value=f"{emploi_trouver_un_emploi_value}--faire-des-candidatures-spontanees",
         label="Faire des candidatures spontanées",
     )
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{emploi_trouver_un_emploi_slug}--suivre-ses-candidatures-et-relancer-les-employeurs",
+        value=f"{emploi_trouver_un_emploi_value}--suivre-ses-candidatures-et-relancer-les-employeurs",
         label="Suivre ses candidatures et relancer les employeurs",
     )
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{emploi_trouver_un_emploi_slug}--convaincre-un-recruteur-en-entretien",
+        value=f"{emploi_trouver_un_emploi_value}--convaincre-un-recruteur-en-entretien",
         label="Convaincre un recruteur en entretien",
     )
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{emploi_trouver_un_emploi_slug}--autre",
+        value=f"{emploi_trouver_un_emploi_value}--autre",
         label="Autre",
     )
 
     """
         2:
-            Rattacher les services liés au besoin "emploi--choisir-metier" à la thématique "emploi-choisir-metier" et aux besoins : "emploi-choisir-metier--identifier-ses-points-forts-et-ses-competences" -- "emploi-choisir-metier--connaitre-les-opportunites-demploi" -- "emploi-choisir-metier--decouvrir-un-metier-ou-un-secteur-dactivite" -- "emploi-choisir-metier--confirmer-son-choix-de-metier"
-            Rattacher les services liés au besoin "emploi--preparer-candidature" à la thématique "emploi-preparer-sa-candidature" et aux besoins : "emploi-preparer-sa-candidature--valoriser-ses-competences" -- "emploi-preparer-sa-candidature--realiser-un-cv-etou-une-lettre-de-motivation" -- "emploi-preparer-sa-candidature--developper-son-reseau" -- "emploi-preparer-sa-candidature--organiser-ses-demarches-de-recherche-demploi"
-            Rattacher les services liés au besoin "emploi--trouver-emploi" à la thématique "emploi-trouver-emploi" et aux besoins : "emploi-trouver-emploi--repondre-a-des-offres-demploi" -- "emploi-trouver-emploi--faire-des-candidatures-spontanees" -- "emploi-trouver-emploi--suivre-ses-candidatures-et-relancer-les-employeurs" -- "emploi-trouver-emploi--convaincre-un-recruteur-en-entretien"
+            Rattacher les services liés au besoin "emploi--choisir-metier" à la thématique "emploi-choisir-metier" et aux besoins : "emploi-choisir-metier--identifier-ses-points-forts-et-ses-competences" -- "emploi-choisir-metier--connaitre-les-opportunites-demploi" -- "emploi-choisir-metier--decouvrir-un-metier-ou-un-secteur-dactivite" -- "emploi-choisir-metier--confirmer-son-choix-de-metier" -- "emploi-choisir-metier--autre"
+            Rattacher les services liés au besoin "emploi--preparer-candidature" à la thématique "emploi-preparer-sa-candidature" et aux besoins : "emploi-preparer-sa-candidature--valoriser-ses-competences" -- "emploi-preparer-sa-candidature--realiser-un-cv-etou-une-lettre-de-motivation" -- "emploi-preparer-sa-candidature--developper-son-reseau" -- "emploi-preparer-sa-candidature--organiser-ses-demarches-de-recherche-demploi" -- "emploi-preparer-sa-candidature--autre"
+            Rattacher les services liés au besoin "emploi--trouver-emploi" à la thématique "emploi-trouver-emploi" et aux besoins : "emploi-trouver-emploi--repondre-a-des-offres-demploi" -- "emploi-trouver-emploi--faire-des-candidatures-spontanees" -- "emploi-trouver-emploi--suivre-ses-candidatures-et-relancer-les-employeurs" -- "emploi-trouver-emploi--convaincre-un-recruteur-en-entretien" -- "emploi-trouver-emploi--autre"
     """
     add_categories_and_subcategories_if_subcategory(
         ServiceCategory,
         ServiceSubCategory,
         Service,
-        categories_slug_to_add=["emploi-choisir-metier"],
-        subcategory_slugs_to_add=[
-            f"{emploi_choisir_un_metier_slug}--identifier-ses-points-forts-et-ses-competences",
-            f"{emploi_choisir_un_metier_slug}--connaitre-les-opportunites-demploi",
-            f"{emploi_choisir_un_metier_slug}--decouvrir-un-metier-ou-un-secteur-dactivite",
-            f"{emploi_choisir_un_metier_slug}--confirmer-son-choix-de-metier",
-            f"{emploi_choisir_un_metier_slug}--autre",
+        categories_value_to_add=[emploi_choisir_un_metier_value],
+        subcategory_value_to_add=[
+            f"{emploi_choisir_un_metier_value}--identifier-ses-points-forts-et-ses-competences",
+            f"{emploi_choisir_un_metier_value}--connaitre-les-opportunites-demploi",
+            f"{emploi_choisir_un_metier_value}--decouvrir-un-metier-ou-un-secteur-dactivite",
+            f"{emploi_choisir_un_metier_value}--confirmer-son-choix-de-metier",
+            f"{emploi_choisir_un_metier_value}--autre",
         ],
-        if_subcategory_slug="emploi--choisir-metier",
+        if_subcategory_value="emploi--choisir-metier",
     )
     add_categories_and_subcategories_if_subcategory(
         ServiceCategory,
         ServiceSubCategory,
         Service,
-        categories_slug_to_add=["emploi-preparer-sa-candidature"],
-        subcategory_slugs_to_add=[
-            f"{emploi_preparer_sa_candidature_slug}--valoriser-ses-competences",
-            f"{emploi_preparer_sa_candidature_slug}--realiser-un-cv-etou-une-lettre-de-motivation",
-            f"{emploi_preparer_sa_candidature_slug}--developper-son-reseau",
-            f"{emploi_preparer_sa_candidature_slug}--organiser-ses-demarches-de-recherche-demploi",
-            f"{emploi_preparer_sa_candidature_slug}--autre",
+        categories_value_to_add=["emploi-preparer-sa-candidature"],
+        subcategory_value_to_add=[
+            f"{emploi_preparer_sa_candidature_value}--valoriser-ses-competences",
+            f"{emploi_preparer_sa_candidature_value}--realiser-un-cv-etou-une-lettre-de-motivation",
+            f"{emploi_preparer_sa_candidature_value}--developper-son-reseau",
+            f"{emploi_preparer_sa_candidature_value}--organiser-ses-demarches-de-recherche-demploi",
+            f"{emploi_preparer_sa_candidature_value}--autre",
         ],
-        if_subcategory_slug="emploi--preparer-candidature",
+        if_subcategory_value="emploi--preparer-candidature",
     )
     add_categories_and_subcategories_if_subcategory(
         ServiceCategory,
         ServiceSubCategory,
         Service,
-        categories_slug_to_add=["emploi-trouver-emploi"],
-        subcategory_slugs_to_add=[
-            f"{emploi_trouver_un_emploi_slug}--repondre-a-des-offres-demploi",
-            f"{emploi_trouver_un_emploi_slug}--faire-des-candidatures-spontanees",
-            f"{emploi_trouver_un_emploi_slug}--suivre-ses-candidatures-et-relancer-les-employeurs",
-            f"{emploi_trouver_un_emploi_slug}--convaincre-un-recruteur-en-entretien",
-            f"{emploi_trouver_un_emploi_slug}--autre",
+        categories_value_to_add=["emploi-trouver-emploi"],
+        subcategory_value_to_add=[
+            f"{emploi_trouver_un_emploi_value}--repondre-a-des-offres-demploi",
+            f"{emploi_trouver_un_emploi_value}--faire-des-candidatures-spontanees",
+            f"{emploi_trouver_un_emploi_value}--suivre-ses-candidatures-et-relancer-les-employeurs",
+            f"{emploi_trouver_un_emploi_value}--convaincre-un-recruteur-en-entretien",
+            f"{emploi_trouver_un_emploi_value}--autre",
         ],
-        if_subcategory_slug="emploi--trouver-emploi",
+        if_subcategory_value="emploi--trouver-emploi",
     )
 
     """
@@ -288,53 +288,53 @@ def migrate_services_options(apps, schema_editor):
         ServiceCategory,
         ServiceSubCategory,
         Service,
-        categories_slug_to_add=[
-            emploi_trouver_un_emploi_slug,
-            emploi_preparer_sa_candidature_slug,
-            emploi_choisir_un_metier_slug,
+        categories_value_to_add=[
+            emploi_trouver_un_emploi_value,
+            emploi_preparer_sa_candidature_value,
+            emploi_choisir_un_metier_value,
         ],
-        subcategory_slugs_to_add=[
-            f"{emploi_preparer_sa_candidature_slug}--autre",
-            f"{emploi_choisir_un_metier_slug}--autre",
-            f"{emploi_trouver_un_emploi_slug}--autre",
+        subcategory_value_to_add=[
+            f"{emploi_preparer_sa_candidature_value}--autre",
+            f"{emploi_choisir_un_metier_value}--autre",
+            f"{emploi_trouver_un_emploi_value}--autre",
         ],
-        if_subcategory_slug="emploi--autre",
+        if_subcategory_value="emploi--autre",
     )
 
     """
         4: Délier la thématique "emploi" et les besoins "emploi--choisir-metier" "emploi--preparer-candidature" "emploi--trouver-emploi" aux services
     """
-    emploi_slug = "emploi"
-    unlink_services_from_category(ServiceCategory, Service, slug=emploi_slug)
+    emploi_value = "emploi"
+    unlink_services_from_category(ServiceCategory, Service, value=emploi_value)
     unlink_services_from_subcategory(
         ServiceSubCategory,
         Service,
-        slug=f"{emploi_slug}--choisir-metier",
+        value=f"{emploi_value}--choisir-metier",
     )
     unlink_services_from_subcategory(
         ServiceSubCategory,
         Service,
-        slug=f"{emploi_slug}--preparer-candidature",
+        value=f"{emploi_value}--preparer-candidature",
     )
     unlink_services_from_subcategory(
         ServiceSubCategory,
         Service,
-        slug=f"{emploi_slug}--trouver-emploi",
+        value=f"{emploi_value}--trouver-emploi",
     )
     unlink_services_from_subcategory(
         ServiceSubCategory,
         Service,
-        slug=f"{emploi_slug}--autre",
+        value=f"{emploi_value}--autre",
     )
 
     """
         5: Supprimer la thématique "emploi" et les besoins "emploi--choisir-metier" "emploi--preparer-candidature" "emploi--trouver-emploi" "emploi--autre"
     """
-    delete_category(ServiceCategory, emploi_slug)
-    delete_subcategory(ServiceSubCategory, f"{emploi_slug}--choisir-metier")
-    delete_subcategory(ServiceSubCategory, f"{emploi_slug}--preparer-candidature")
-    delete_subcategory(ServiceSubCategory, f"{emploi_slug}--trouver-emploi")
-    delete_subcategory(ServiceSubCategory, f"{emploi_slug}--autre")
+    delete_category(ServiceCategory, emploi_value)
+    delete_subcategory(ServiceSubCategory, f"{emploi_value}--choisir-metier")
+    delete_subcategory(ServiceSubCategory, f"{emploi_value}--preparer-candidature")
+    delete_subcategory(ServiceSubCategory, f"{emploi_value}--trouver-emploi")
+    delete_subcategory(ServiceSubCategory, f"{emploi_value}--autre")
 
 
 class Migration(migrations.Migration):

@@ -7,8 +7,7 @@ from dora.services.migration_utils import (
     create_subcategory,
     delete_subcategory,
     replace_subcategory,
-    update_subcategory_slug,
-    update_subcategory_label,
+    update_subcategory_value_and_label,
 )
 
 """
@@ -66,47 +65,48 @@ def migrate_services_options(apps, schema_editor):
         - remplacer les références à "numerique--accompagner-enfant" vers "numerique--autre"
         - supprimer "numerique--accompagner-enfant"
     """
-    numerique_slug = "numerique"
+    numerique_value = "numerique"
 
     replace_subcategory(
         ServiceSubCategory,
         Service,
-        from_slug=f"{numerique_slug}--accompagner-enfant",
-        to_slug=f"{numerique_slug}--autre",
+        from_value=f"{numerique_value}--accompagner-enfant",
+        to_value=f"{numerique_value}--autre",
     )
-    delete_subcategory(ServiceSubCategory, f"{numerique_slug}--accompagner-enfant")
+    delete_subcategory(ServiceSubCategory, f"{numerique_value}--accompagner-enfant")
 
     """
     2:
         - Ajouter besoins :
+            - "numerique--etre-accompagne-dans-les-demarches-administratives" => "Être accompagné dans les démarches administratives"
             - "numerique--acceder-a-une-connexion-internet" => "Accéder à une connexion internet"
             - "numerique--acceder-a-du-materiel" => "Accéder à du matériel"
             - "numerique--creer-et-developper-mon-entreprise" => "Créer et développer mon entreprise"
     """
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{numerique_slug}--etre-accompagne-dans-les-demarches-administratives",
+        value=f"{numerique_value}--etre-accompagne-dans-les-demarches-administratives",
         label="Être accompagné dans les démarches administratives",
     )
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{numerique_slug}--acceder-a-une-connexion-internet",
+        value=f"{numerique_value}--acceder-a-une-connexion-internet",
         label="Accéder à une connexion internet",
     )
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{numerique_slug}--acceder-a-du-materiel",
+        value=f"{numerique_value}--acceder-a-du-materiel",
         label="Accéder à du matériel",
     )
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{numerique_slug}--creer-et-developper-mon-entreprise",
+        value=f"{numerique_value}--creer-et-developper-mon-entreprise",
         label="Créer et développer mon entreprise",
     )
 
     """
     3:
-        - Changer slug et label :
+        - Changer value et label :
             - "numerique--connaitre-env-numerique" => "numerique--approfondir-ma-culture-numerique" & "Approfondir ma culture numérique"
             - "numerique--prendre-en-main-equipement-informatique" => "numerique--prendre-en-main-un-ordinateur" & "Prendre en main un ordinateur"`
             - "numerique--realiser-demarche-en-ligne" => "numerique--gagner-en-autonomie-dans-les-demarches-administratives" & "Gagner en autonomie dans les démarches administratives"
@@ -114,58 +114,35 @@ def migrate_services_options(apps, schema_editor):
             - "numerique--utiliser-smartphone" => "numerique--prendre-en-main-un-smartphone-ou-une-tablette" & "Prendre en main un smartphone ou une tablette"
     """
 
-    update_subcategory_slug(
+    update_subcategory_value_and_label(
         ServiceSubCategory,
-        old_slug=f"{numerique_slug}--connaitre-env-numerique",
-        new_slug=f"{numerique_slug}--approfondir-ma-culture-numerique",
-    )
-    update_subcategory_label(
-        ServiceSubCategory,
-        slug=f"{numerique_slug}--approfondir-ma-culture-numerique",
+        old_value=f"{numerique_value}--connaitre-env-numerique",
+        new_value=f"{numerique_value}--approfondir-ma-culture-numerique",
         new_label="Approfondir ma culture numérique",
     )
-
-    update_subcategory_slug(
+    update_subcategory_value_and_label(
         ServiceSubCategory,
-        old_slug=f"{numerique_slug}--prendre-en-main-equipement-informatique",
-        new_slug=f"{numerique_slug}--prendre-en-main-un-ordinateur",
-    )
-    update_subcategory_label(
-        ServiceSubCategory,
-        slug=f"{numerique_slug}--prendre-en-main-un-ordinateur",
+        old_value=f"{numerique_value}--prendre-en-main-equipement-informatique",
+        new_value=f"{numerique_value}--prendre-en-main-un-ordinateur",
         new_label="Prendre en main un ordinateur",
     )
-
-    update_subcategory_slug(
+    update_subcategory_value_and_label(
         ServiceSubCategory,
-        old_slug=f"{numerique_slug}--realiser-demarche-en-ligne",
-        new_slug=f"{numerique_slug}--gagner-en-autonomie-dans-les-demarches-administratives",
-    )
-    update_subcategory_label(
-        ServiceSubCategory,
-        slug=f"{numerique_slug}--gagner-en-autonomie-dans-les-demarches-administratives",
+        old_value=f"{numerique_value}--realiser-demarche-en-ligne",
+        new_value=f"{numerique_value}--gagner-en-autonomie-dans-les-demarches-administratives",
         new_label="Gagner en autonomie dans les démarches administratives",
     )
-
-    update_subcategory_slug(
+    update_subcategory_value_and_label(
         ServiceSubCategory,
-        old_slug=f"{numerique_slug}--trouver-emploi-formation",
-        new_slug=f"{numerique_slug}--favoriser-mon-insertion-professionnelle",
-    )
-    update_subcategory_label(
-        ServiceSubCategory,
-        slug=f"{numerique_slug}--favoriser-mon-insertion-professionnelle",
+        old_value=f"{numerique_value}--trouver-emploi-formation",
+        new_value=f"{numerique_value}--favoriser-mon-insertion-professionnelle",
         new_label="Favoriser mon insertion professionnelle",
     )
 
-    update_subcategory_slug(
+    update_subcategory_value_and_label(
         ServiceSubCategory,
-        old_slug=f"{numerique_slug}--utiliser-smartphone",
-        new_slug=f"{numerique_slug}--prendre-en-main-un-smartphone-ou-une-tablette",
-    )
-    update_subcategory_label(
-        ServiceSubCategory,
-        slug=f"{numerique_slug}--prendre-en-main-un-smartphone-ou-une-tablette",
+        old_value=f"{numerique_value}--utiliser-smartphone",
+        new_value=f"{numerique_value}--prendre-en-main-un-smartphone-ou-une-tablette",
         new_label="Prendre en main un smartphone ou une tablette",
     )
 
@@ -173,45 +150,52 @@ def migrate_services_options(apps, schema_editor):
     4:
         - Modifier besoins :
             - Creer "numerique--utiliser-le-numerique-au-quotidien" avec label "Utiliser le numérique au quotidien"
-            - Migrer "numerique--creer-gerer-contenus-numeriques", "numerique--echanger-avec-proches", "numerique--naviguer-internet", "numerique--usage-courriels" vers "numerique--utiliser-le-numerique-au-quotidien"
+            - Migrer "numerique--creer-gerer-contenus-numeriques", "numerique--echanger-avec-proches", "numerique--naviguer-internet", "numerique--usage-courriels" vers "numerique--utiliser-le-numerique-au-quotidien","numerique--bases-traitement-texte"
             - Supprimer "numerique--creer-gerer-contenus-numeriques", "numerique--echanger-avec-proches", "numerique--naviguer-internet", "numerique--usage-courriels"
     """
 
     create_subcategory(
         ServiceSubCategory,
-        slug=f"{numerique_slug}--utiliser-le-numerique-au-quotidien",
+        value=f"{numerique_value}--utiliser-le-numerique-au-quotidien",
         label="Utiliser le numérique au quotidien",
     )
     replace_subcategory(
         ServiceSubCategory,
         Service,
-        from_slug=f"{numerique_slug}--creer-gerer-contenus-numeriques",
-        to_slug=f"{numerique_slug}--utiliser-le-numerique-au-quotidien",
+        from_value=f"{numerique_value}--creer-gerer-contenus-numeriques",
+        to_value=f"{numerique_value}--utiliser-le-numerique-au-quotidien",
     )
     replace_subcategory(
         ServiceSubCategory,
         Service,
-        from_slug=f"{numerique_slug}--echanger-avec-proches",
-        to_slug=f"{numerique_slug}--utiliser-le-numerique-au-quotidien",
+        from_value=f"{numerique_value}--echanger-avec-proches",
+        to_value=f"{numerique_value}--utiliser-le-numerique-au-quotidien",
     )
     replace_subcategory(
         ServiceSubCategory,
         Service,
-        from_slug=f"{numerique_slug}--naviguer-internet",
-        to_slug=f"{numerique_slug}--utiliser-le-numerique-au-quotidien",
+        from_value=f"{numerique_value}--naviguer-internet",
+        to_value=f"{numerique_value}--utiliser-le-numerique-au-quotidien",
     )
     replace_subcategory(
         ServiceSubCategory,
         Service,
-        from_slug=f"{numerique_slug}--usage-courriels",
-        to_slug=f"{numerique_slug}--utiliser-le-numerique-au-quotidien",
+        from_value=f"{numerique_value}--usage-courriels",
+        to_value=f"{numerique_value}--utiliser-le-numerique-au-quotidien",
+    )
+    replace_subcategory(
+        ServiceSubCategory,
+        Service,
+        from_value=f"{numerique_value}--bases-traitement-texte",
+        to_value=f"{numerique_value}--utiliser-le-numerique-au-quotidien",
     )
     delete_subcategory(
-        ServiceSubCategory, f"{numerique_slug}--creer-gerer-contenus-numeriques"
+        ServiceSubCategory, f"{numerique_value}--creer-gerer-contenus-numeriques"
     )
-    delete_subcategory(ServiceSubCategory, f"{numerique_slug}--echanger-avec-proches")
-    delete_subcategory(ServiceSubCategory, f"{numerique_slug}--naviguer-internet")
-    delete_subcategory(ServiceSubCategory, f"{numerique_slug}--usage-courriels")
+    delete_subcategory(ServiceSubCategory, f"{numerique_value}--echanger-avec-proches")
+    delete_subcategory(ServiceSubCategory, f"{numerique_value}--naviguer-internet")
+    delete_subcategory(ServiceSubCategory, f"{numerique_value}--usage-courriels")
+    delete_subcategory(ServiceSubCategory, f"{numerique_value}--bases-traitement-texte")
 
 
 class Migration(migrations.Migration):

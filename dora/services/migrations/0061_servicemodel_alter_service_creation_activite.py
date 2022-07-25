@@ -3,10 +3,10 @@
 from django.db import migrations
 
 from dora.services.migration_utils import (
+    create_subcategory,
     delete_subcategory,
     replace_subcategory,
-    update_subcategory_label,
-    update_subcategory_slug,
+    update_subcategory_value_and_label,
 )
 
 """
@@ -54,30 +54,26 @@ def migrate_services_options(apps, schema_editor):
     # 1 - Création d’activité :
     """
     1:
-    - Renommer slug "creation-activite--demarrer-activite" en "creation-activite--structurer-son-projet-de-creation-dentreprise"
+    - Renommer value "creation-activite--demarrer-activite" en "creation-activite--structurer-son-projet-de-creation-dentreprise"
     - Renommer label de "creation-activite--structurer-son-projet-de-creation-dentreprise" en "Structurer son projet de création d’entreprise"
     - Remplacer toutes les références à "creation-activite--elaborer-projet" vers "creation-activite--structurer-son-projet-de-creation-dentreprise"
     - Supprimer "creation-activite--elaborer-projet"
     """
-    creation_activite_slug = "creation-activite"
-    update_subcategory_slug(
+    creation_activite_value = "creation-activite"
+    update_subcategory_value_and_label(
         ServiceSubCategory,
-        old_slug=f"{creation_activite_slug}--demarrer-activite",
-        new_slug=f"{creation_activite_slug}--structurer-son-projet-de-creation-dentreprise",
-    )
-    update_subcategory_label(
-        ServiceSubCategory,
-        slug=f"{creation_activite_slug}--structurer-son-projet-de-creation-dentreprise",
+        old_value=f"{creation_activite_value}--demarrer-activite",
+        new_value=f"{creation_activite_value}--structurer-son-projet-de-creation-dentreprise",
         new_label="Structurer son projet de création d’entreprise",
     )
     replace_subcategory(
         ServiceSubCategory,
         Service,
-        from_slug=f"{creation_activite_slug}--elaborer-projet",
-        to_slug=f"{creation_activite_slug}--structurer-son-projet-de-creation-dentreprise",
+        from_value=f"{creation_activite_value}--elaborer-projet",
+        to_value=f"{creation_activite_value}--structurer-son-projet-de-creation-dentreprise",
     )
     delete_subcategory(
-        ServiceSubCategory, slug=f"{creation_activite_slug}--elaborer-projet"
+        ServiceSubCategory, value=f"{creation_activite_value}--elaborer-projet"
     )
 
     """
@@ -85,15 +81,27 @@ def migrate_services_options(apps, schema_editor):
         - Renommer value "creation-activite--de-lidee-au-projet" en "creation-activite--definir-son-projet-de-creation-dentreprise"
         - Renommer label "creation-activite--definir-son-projet-de-creation-dentreprise" en "Définir son projet de création d’entreprise"
     """
-    update_subcategory_slug(
+    update_subcategory_value_and_label(
         ServiceSubCategory,
-        old_slug=f"{creation_activite_slug}--de-lidee-au-projet",
-        new_slug=f"{creation_activite_slug}--definir-son-projet-de-creation-dentreprise",
-    )
-    update_subcategory_label(
-        ServiceSubCategory,
-        slug=f"{creation_activite_slug}--definir-son-projet-de-creation-dentreprise",
+        old_value=f"{creation_activite_value}--de-lidee-au-projet",
+        new_value=f"{creation_activite_value}--definir-son-projet-de-creation-dentreprise",
         new_label="Définir son projet de création d’entreprise",
+    )
+
+    """
+        3: Ajouter 3 besoins
+        - "creation-activite--reseautage-pour-createurs-dentreprise" => "Réseautage pour créateurs d’entreprise"
+        - "creation-activite--financer-son-projet" => "Financer son projet"
+    """
+    create_subcategory(
+        ServiceSubCategory,
+        value=f"{creation_activite_value}--reseautage-pour-createurs-dentreprise",
+        new_label="Réseautage pour créateurs d’entreprise",
+    )
+    create_subcategory(
+        ServiceSubCategory,
+        value=f"{creation_activite_value}--financer-son-projet",
+        new_label="Financer son projet",
     )
 
 
