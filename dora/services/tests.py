@@ -18,6 +18,7 @@ from .models import (
     ServiceKind,
     ServiceModel,
     ServiceModificationHistoryItem,
+    ServiceStatusHistoryItem,
 )
 
 DUMMY_SERVICE = {"name": "Mon service"}
@@ -618,12 +619,24 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.data["contact_phone"], "")
         self.assertEqual(response.data["contact_email"], "")
 
-    # # Modifications
-    # def test_is_draft_by_default(self):
-    #     service = make_service()
-    #     self.assertEqual(service.status, ServiceStatus.DRAFT)
+    def test_direct_publishing_updates_publication_date(self):
+        response = self.client.post(
+            "/services/",
+            {
+                **DUMMY_SERVICE,
+                "status": ServiceStatus.PUBLISHED,
+                "structure": self.my_struct.slug,
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        service = Service.objects.get(slug=response.data["slug"])
+        self.assertEqual(service.status, ServiceStatus.PUBLISHED)
+        self.assertIsNotNone(service.publication_date)
+        self.assertTrue(
+            timezone.now() - service.publication_date < timedelta(seconds=1)
+        )
 
-    def test_publishing_updates_publication_date(self):
+    def test_publishing_from_draft_updates_publication_date(self):
         service = make_service(status=ServiceStatus.DRAFT, structure=self.my_struct)
         self.assertIsNone(service.publication_date)
         response = self.client.patch(
@@ -661,6 +674,7 @@ class ServiceTestCase(APITestCase):
         self.assertTrue(timezone.now() - hitem.date < timedelta(seconds=1))
 
     def test_editing_log_multiple_change(self):
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
         self.client.patch(
             f"/services/{self.my_service.slug}/", {"name": "xxx", "address1": "yyy"}
         )
@@ -668,6 +682,7 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(hitem.fields, ["name", "address1"])
 
     def test_editing_log_m2m_change(self):
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
         response = self.client.patch(
             f"/services/{self.my_service.slug}/", {"access_conditions": ["xxx"]}
         )
@@ -680,8 +695,9 @@ class ServiceTestCase(APITestCase):
             ],
         )
 
-    def test_creating_draft_doesnt_log_changes(self):
+    def test_creating_draft_does_log_changes(self):
         DUMMY_SERVICE["structure"] = self.my_struct.slug
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
         response = self.client.post(
             "/services/",
             DUMMY_SERVICE,
@@ -689,13 +705,28 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertFalse(ServiceModificationHistoryItem.objects.exists())
 
-    def test_editing_doesnt_log_draft_changes(self):
+    def test_editing_does_log_draft_changes(self):
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
         response = self.client.patch(
             f"/services/{self.my_draft_service.slug}/", {"name": "xxx"}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
+        self.assertTrue(ServiceModificationHistoryItem.objects.exists())
 
+    def test_editing_log_current_status(self):
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
+        response = self.client.patch(
+            f"/services/{self.my_service.slug}/", {"name": "xxx", "status": "DRAFT"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(ServiceModificationHistoryItem.objects.exists())
+        hitem = ServiceModificationHistoryItem.objects.all()[0]
+        self.assertEqual(hitem.user, self.me)
+        self.assertEqual(hitem.status, ServiceStatus.DRAFT)
+        self.assertEqual(hitem.service, self.my_service)
+        self.assertEqual(hitem.fields, ["name", "status"])
+
+    # Services count
     def test_members_see_all_services_count(self):
         user = baker.make("users.User", is_valid=True)
         structure = make_structure(user)
@@ -1282,6 +1313,23 @@ class ServiceModelTestCase(APITestCase):
         service = ServiceModel.objects.get(slug=slug)
         self.assertEqual(service.structure.pk, struct.pk)
 
+    def test_create_model_from_service_becomes_ancestor(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        service = make_service(status=ServiceStatus.PUBLISHED, structure=struct)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/models/",
+            {"structure": struct.slug, "service": service.slug, **DUMMY_SERVICE},
+        )
+        self.assertEqual(response.status_code, 201)
+        slug = response.data["slug"]
+        model = ServiceModel.objects.get(slug=slug)
+        self.assertEqual(model.structure.pk, struct.pk)
+        service.refresh_from_db()
+        self.assertEqual(service.model, model)
+        self.assertEqual(service.last_sync_checksum, model.sync_checksum)
+
     def test_cant_create_model_from_others_service(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
@@ -1294,6 +1342,22 @@ class ServiceModelTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 403)
 
+    def test_can_create_service_from_any_model(self):
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        model = make_model(structure=struct)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/services/",
+            {"structure": struct.slug, "model": model.slug, **DUMMY_SERVICE},
+        )
+        self.assertEqual(response.status_code, 201)
+        slug = response.data["slug"]
+        service = Service.objects.get(slug=slug)
+        self.assertEqual(service.structure.pk, struct.pk)
+        self.assertEqual(service.model, model)
+        self.assertEqual(service.last_sync_checksum, model.sync_checksum)
+
     def test_superuser_can_create_model_from_others_service(self):
         user = baker.make("users.User", is_valid=True, is_staff=True)
         struct = make_structure(user)
@@ -1304,6 +1368,68 @@ class ServiceModelTestCase(APITestCase):
             {"structure": struct.slug, "service": service.slug, **DUMMY_SERVICE},
         )
         self.assertEqual(response.status_code, 201)
+
+    # History logging
+    def test_editing_log_change(self):
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        model = make_model(structure=struct)
+        self.client.force_authenticate(user=user)
+        response = self.client.patch(f"/models/{model.slug}/", {"name": "xxx"})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(ServiceModificationHistoryItem.objects.exists())
+        hitem = ServiceModificationHistoryItem.objects.all()[0]
+        self.assertEqual(hitem.user, user)
+        self.assertEqual(hitem.service, model)
+        self.assertEqual(hitem.fields, ["name"])
+        self.assertTrue(timezone.now() - hitem.date < timedelta(seconds=1))
+
+    def test_editing_log_multiple_change(self):
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        model = make_model(structure=struct)
+        self.client.force_authenticate(user=user)
+        self.client.patch(
+            f"/models/{model.slug}/", {"name": "xxx", "short_desc": "yyy"}
+        )
+        hitem = ServiceModificationHistoryItem.objects.all()[0]
+        self.assertEqual(hitem.fields, ["name", "short_desc"])
+
+    def test_editing_log_m2m_change(self):
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        model = make_model(structure=struct)
+        self.client.force_authenticate(user=user)
+        response = self.client.patch(
+            f"/models/{model.slug}/", {"access_conditions": ["xxx"]}
+        )
+        self.assertEqual(response.status_code, 200)
+        hitem = ServiceModificationHistoryItem.objects.all()[0]
+        self.assertEqual(
+            hitem.fields,
+            [
+                "access_conditions",
+            ],
+        )
+
+    def test_editing_doesnt_log_current_status(self):
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        model = make_model(structure=struct)
+        self.assertFalse(ServiceModificationHistoryItem.objects.exists())
+        self.client.force_authenticate(user=user)
+        response = self.client.patch(
+            f"/models/{model.slug}/", {"name": "xxx", "status": "DRAFT"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(ServiceModificationHistoryItem.objects.exists())
+        hitem = ServiceModificationHistoryItem.objects.all()[0]
+        self.assertEqual(hitem.user, user)
+        self.assertEqual(hitem.status, "")
 
 
 class ServiceInstantiationTestCase(APITestCase):
@@ -1374,13 +1500,13 @@ class ServiceSyncTestCase(APITestCase):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
 
-        service = make_service(structure=struct, status=ServiceStatus.PUBLISHED)
+        model = make_model(structure=struct)
         self.client.force_authenticate(user=user)
 
         for field in SYNC_FIELDS:
-            initial_checksum = service.sync_checksum
-            if isinstance(getattr(service, field), bool):
-                new_val = not getattr(service, field)
+            initial_checksum = model.sync_checksum
+            if isinstance(getattr(model, field), bool):
+                new_val = not getattr(model, field)
             elif field in ("online_form", "remote_url"):
                 new_val = "https://example.com"
             elif field == "forms":
@@ -1395,53 +1521,52 @@ class ServiceSyncTestCase(APITestCase):
                 continue
             else:
                 new_val = "xxx"
-            response = self.client.patch(f"/services/{service.slug}/", {field: new_val})
+            response = self.client.patch(f"/models/{model.slug}/", {field: new_val})
             self.assertEqual(response.status_code, 200, response.data)
 
-            service.refresh_from_db()
-            self.assertNotEqual(service.sync_checksum, initial_checksum)
+            model.refresh_from_db()
+            self.assertNotEqual(model.sync_checksum, initial_checksum)
 
     def test_other_field_change_doesnt_updates_checksum(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
-        service = make_service(structure=struct, status=ServiceStatus.DRAFT)
+        model = make_model(structure=struct)
         self.client.force_authenticate(user=user)
 
-        initial_checksum = service.sync_checksum
-        response = self.client.patch(
-            f"/services/{service.slug}/", {"status": ServiceStatus.PUBLISHED}
-        )
+        initial_checksum = model.sync_checksum
+        response = self.client.patch(f"/models/{model.slug}/", {"address1": "xxx"})
         self.assertEqual(response.status_code, 200)
-        service.refresh_from_db()
-        self.assertEqual(service.sync_checksum, initial_checksum)
+
+        model.refresh_from_db()
+        self.assertEqual(model.sync_checksum, initial_checksum)
 
     def test_m2m_field_change_updates_checksum(self):
         user = baker.make("users.User", is_valid=True)
         struct = make_structure(user)
-        service = make_service(structure=struct, status=ServiceStatus.PUBLISHED)
+        model = make_model(structure=struct)
         self.client.force_authenticate(user=user)
 
         for field in SYNC_M2M_FIELDS:
-            initial_checksum = service.sync_checksum
-            rel_model = getattr(service, field).target_field.related_model
+            initial_checksum = model.sync_checksum
+            rel_model = getattr(model, field).target_field.related_model
             new_value = baker.make(rel_model)
             response = self.client.patch(
-                f"/services/{service.slug}/", {field: [new_value.value]}
+                f"/models/{model.slug}/", {field: [new_value.value]}
             )
             self.assertEqual(response.status_code, 200)
-            service.refresh_from_db()
-            self.assertNotEqual(service.sync_checksum, initial_checksum)
+            model.refresh_from_db()
+            self.assertNotEqual(model.sync_checksum, initial_checksum)
 
         for field in SYNC_CUSTOM_M2M_FIELDS:
-            initial_checksum = service.sync_checksum
-            rel_model = getattr(service, field).target_field.related_model
+            initial_checksum = model.sync_checksum
+            rel_model = getattr(model, field).target_field.related_model
             new_value = baker.make(rel_model)
             response = self.client.patch(
-                f"/services/{service.slug}/", {field: [new_value.id]}
+                f"/models/{model.slug}/", {field: [new_value.id]}
             )
             self.assertEqual(response.status_code, 200)
-            service.refresh_from_db()
-            self.assertNotEqual(service.sync_checksum, initial_checksum)
+            model.refresh_from_db()
+            self.assertNotEqual(model.sync_checksum, initial_checksum)
 
 
 class ServiceArchiveTestCase(APITestCase):
@@ -1666,7 +1791,6 @@ class FillingServiceDurationTestCase(APITestCase):
             f"/services/{service_created.data.get('slug')}/",
             {
                 "duration_to_add": 10,
-                "status": ServiceStatus.DRAFT,
             },
         )
 
@@ -1731,3 +1855,62 @@ class FillingServiceDurationTestCase(APITestCase):
         response = self.client.get(f"/services/{service_created.data.get('slug')}/")
         self.assertEqual(20, response.data.get("filling_duration"))
         self.assertNotEquals(20 + 20, response.data.get("filling_duration"))
+
+
+class ServiceStatusChangeTestCase(APITestCase):
+    def setUp(self):
+        self.user = baker.make("users.User", is_valid=True)
+        self.struct = make_structure(self.user)
+        self.client.force_authenticate(user=self.user)
+
+    def test_changing_state_creates_history_item(self):
+        service = make_service(structure=self.struct, status=ServiceStatus.DRAFT)
+        self.assertEqual(
+            ServiceStatusHistoryItem.objects.filter(service=service).count(), 0
+        )
+        response = self.client.patch(
+            f"/services/{service.slug}/", {"status": "PUBLISHED"}
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(
+            ServiceStatusHistoryItem.objects.filter(service=service).count(), 1
+        )
+        status_item = ServiceStatusHistoryItem.objects.get(service=service)
+        self.assertEqual(status_item.new_status, "PUBLISHED")
+        self.assertEqual(status_item.previous_status, "DRAFT")
+
+    def test_history_item_logs_user(self):
+        service = make_service(structure=self.struct, status=ServiceStatus.DRAFT)
+        self.assertEqual(
+            ServiceStatusHistoryItem.objects.filter(service=service).count(), 0
+        )
+        response = self.client.patch(
+            f"/services/{service.slug}/", {"status": "PUBLISHED"}
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(
+            ServiceStatusHistoryItem.objects.filter(service=service).count(), 1
+        )
+        status_item = ServiceStatusHistoryItem.objects.get(service=service)
+        self.assertEqual(status_item.user, self.user)
+
+    def test_get_previous_status_returns_correct_value(self):
+        service = make_service(structure=self.struct, status=ServiceStatus.PUBLISHED)
+        self.assertEqual(
+            ServiceStatusHistoryItem.objects.filter(service=service).count(), 0
+        )
+        response = self.client.patch(
+            f"/services/{service.slug}/", {"status": "ARCHIVED"}
+        )
+        self.assertEqual(response.status_code, 200)
+        service.refresh_from_db()
+        self.assertEqual(service.get_previous_status(), "PUBLISHED")
+        response = self.client.patch(f"/services/{service.slug}/", {"status": "DRAFT"})
+        self.assertEqual(response.status_code, 200)
+        service.refresh_from_db()
+        self.assertEqual(service.get_previous_status(), "ARCHIVED")
+        self.assertEqual(
+            ServiceStatusHistoryItem.objects.filter(service=service).count(), 2
+        )

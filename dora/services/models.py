@@ -1,10 +1,10 @@
+import logging
 import uuid
 
 from django.conf import settings
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import CharField, Q
-from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
@@ -13,7 +13,8 @@ from dora.core.models import EnumModel
 from dora.structures.models import Structure, StructureMember
 
 from .enums import ServiceStatus
-from .utils import update_sync_checksum
+
+logger = logging.getLogger(__name__)
 
 
 def make_unique_slug(instance, parent_slug, value, length=20):
@@ -344,25 +345,26 @@ class Service(models.Model):
     def get_absolute_url(self):
         return self.get_frontend_url()
 
-    @classmethod
-    def from_db(cls, db, field_names, values):
-        instance = super().from_db(db, field_names, values)
-        instance._original = dict(zip(field_names, values))
-        return instance
+    def get_previous_status(self):
+        try:
+            item = ServiceStatusHistoryItem.objects.filter(service=self).latest()
+            if item.new_status != self.status:
+                logging.error(
+                    "Inconsistent status history",
+                    extra={
+                        "service": self.slug,
+                        "current_status": self.status,
+                        "reported_current_status": item.new_status,
+                        "history_item": item.id,
+                    },
+                )
+            return item.previous_status
+        except ServiceStatusHistoryItem.DoesNotExist:
+            return None
 
-    def save(self, *args, **kwargs):
+    def save(self, user=None, *args, **kwargs):
         if not self.slug:
             self.slug = make_unique_slug(self, self.structure.slug, self.name)
-            if self.status == ServiceStatus.PUBLISHED:
-                self.publication_date = timezone.now()
-        elif hasattr(self, "_original") and not self._state.adding:
-            original_status = self._original["status"]
-            if (
-                original_status == ServiceStatus.DRAFT
-                and self.status == ServiceStatus.PUBLISHED
-            ):
-                self.publication_date = timezone.now()
-        self.sync_checksum = update_sync_checksum(self)
         return super().save(*args, **kwargs)
 
     def can_write(self, user):
@@ -393,6 +395,42 @@ class ServiceModel(Service):
         proxy = True
 
 
+class ServiceStatusHistoryItem(models.Model):
+    service = models.ForeignKey(
+        Service, on_delete=models.CASCADE, related_name="status_history_item"
+    )
+    date = models.DateTimeField(auto_now=True, db_index=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
+
+    new_status = models.CharField(
+        max_length=20,
+        choices=ServiceStatus.choices,
+        verbose_name="Nouveau statut",
+        db_index=True,
+    )
+
+    previous_status = models.CharField(
+        max_length=20,
+        choices=ServiceStatus.choices,
+        verbose_name="Statut précédent",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        ordering = ["-date"]
+        verbose_name = "Historique des statuts de service"
+        get_latest_by = "date"
+
+    def __str__(self):
+        return f"{self.service_id} {self.previous_status} => {self.new_status}"
+
+
 class ServiceModificationHistoryItem(models.Model):
     service = models.ForeignKey(
         Service, on_delete=models.CASCADE, related_name="history_item"
@@ -408,6 +446,14 @@ class ServiceModificationHistoryItem(models.Model):
         models.CharField(
             max_length=50,
         ),
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=ServiceStatus.choices,
+        verbose_name="Statut après modification",
+        default="",
+        blank=True,
+        db_index=True,
     )
 
     class Meta:

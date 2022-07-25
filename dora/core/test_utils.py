@@ -3,6 +3,8 @@ import random
 from django.utils.crypto import get_random_string
 from model_bakery import baker
 
+from dora.services.utils import update_sync_checksum
+
 
 def make_structure(user=None, **kwargs):
     siret = kwargs.pop("siret", None)
@@ -30,4 +32,7 @@ def make_service(**kwargs):
 
 def make_model(**kwargs):
     structure = kwargs.pop("structure") if "structure" in kwargs else make_structure()
-    return baker.make("ServiceModel", structure=structure, is_model=True, **kwargs)
+    model = baker.make("ServiceModel", structure=structure, is_model=True, **kwargs)
+    model.sync_checksum = update_sync_checksum(model)
+    model.save()
+    return model
