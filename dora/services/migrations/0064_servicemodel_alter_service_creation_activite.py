@@ -89,19 +89,19 @@ def migrate_services_options(apps, schema_editor):
     )
 
     """
-        3: Ajouter 3 besoins
+        3: Ajouter 2 besoins
         - "creation-activite--reseautage-pour-createurs-dentreprise" => "Réseautage pour créateurs d’entreprise"
         - "creation-activite--financer-son-projet" => "Financer son projet"
     """
     create_subcategory(
         ServiceSubCategory,
         value=f"{creation_activite_value}--reseautage-pour-createurs-dentreprise",
-        new_label="Réseautage pour créateurs d’entreprise",
+        label="Réseautage pour créateurs d’entreprise",
     )
     create_subcategory(
         ServiceSubCategory,
         value=f"{creation_activite_value}--financer-son-projet",
-        new_label="Financer son projet",
+        label="Financer son projet",
     )
 
 

@@ -305,26 +305,26 @@ def migrate_services_options(apps, schema_editor):
         4: Délier la thématique "emploi" et les besoins "emploi--choisir-metier" "emploi--preparer-candidature" "emploi--trouver-emploi" aux services
     """
     emploi_value = "emploi"
-    unlink_services_from_category(ServiceCategory, Service, value=emploi_value)
+    unlink_services_from_category(ServiceCategory, Service, category_value=emploi_value)
     unlink_services_from_subcategory(
         ServiceSubCategory,
         Service,
-        value=f"{emploi_value}--choisir-metier",
+        subcategory_value=f"{emploi_value}--choisir-metier",
     )
     unlink_services_from_subcategory(
         ServiceSubCategory,
         Service,
-        value=f"{emploi_value}--preparer-candidature",
+        subcategory_value=f"{emploi_value}--preparer-candidature",
     )
     unlink_services_from_subcategory(
         ServiceSubCategory,
         Service,
-        value=f"{emploi_value}--trouver-emploi",
+        subcategory_value=f"{emploi_value}--trouver-emploi",
     )
     unlink_services_from_subcategory(
         ServiceSubCategory,
         Service,
-        value=f"{emploi_value}--autre",
+        subcategory_value=f"{emploi_value}--autre",
     )
 
     """

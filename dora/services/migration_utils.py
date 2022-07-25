@@ -9,65 +9,35 @@ def extract_categories(service):
     return [s["value"] for s in service.categories.values()]
 
 
-def unlink_services_from_category(ServiceCategory, Service, value):
+def unlink_services_from_category(ServiceCategory, Service, category_value):
     """
     Retire la thématique de tous les services
     """
-    category = get_category_by_value(ServiceCategory, value)
+    category = get_category_by_value(ServiceCategory, category_value)
     if category is None:
-        raise ValidationError(f"Aucune thématique trouvé avec la value '{value}'")
+        raise ValidationError(
+            f"Aucune thématique trouvé avec la value '{category_value}'"
+        )
 
     services = Service.objects.filter(categories=category)
     for service in services:
         service.categories.remove(category)
 
-    """
-    for service in Service.objects.all():
-        categories = extract_categories(service)
 
-        if value in categories:
-            new_categories_ids = [
-                s.get("id")
-                for s in service.categories.values()
-                if s.get("value") != value
-            ]
-            new_categories_ids.append(category.id)
-
-            Service.objects.filter(pk=service.pk).first().categories.set(
-                list(set(new_categories_ids))
-            )
-    """
-
-
-def unlink_services_from_subcategory(ServiceSubCategory, Service, value):
+def unlink_services_from_subcategory(ServiceSubCategory, Service, subcategory_value):
     """
     Retire le besoin de tous les services
     """
-    subcategory = get_subcategory_by_value(ServiceSubCategory, value)
+    subcategory = get_subcategory_by_value(ServiceSubCategory, subcategory_value)
 
     if subcategory is None:
-        raise ValidationError(f"Aucun besoin trouvé avec la value: '{value}'")
+        raise ValidationError(
+            f"Aucun besoin trouvé avec la value: '{subcategory_value}'"
+        )
 
-    services = Service.objects.filter(sub_categories=subcategory)
+    services = Service.objects.filter(subcategories=subcategory)
     for service in services:
-        service.sub_categories.remove(subcategory)
-
-    """
-    for service in Service.objects.all():
-        sub_categories = extract_subcategories(service)
-
-        if value in sub_categories:
-            new_subcategories_ids = [
-                s.get("id")
-                for s in service.subcategories.values()
-                if s.get("value") != value
-            ]
-            new_subcategories_ids.append(subcategory.id)
-
-            Service.objects.filter(pk=service.pk).first().subcategories.set(
-                list(set(new_subcategories_ids))
-            )
-    """
+        service.subcategories.remove(subcategory)
 
 
 def add_categories_and_subcategories_if_subcategory(
@@ -93,6 +63,13 @@ def add_categories_and_subcategories_if_subcategory(
             )
         categories_to_add_ids.append(category.id)
 
+    # On vérifie si la if_subcategory existe
+    if_subcategory = get_subcategory_by_value(ServiceSubCategory, if_subcategory_value)
+    if if_subcategory is None:
+        raise ValidationError(
+            f"Aucun besoin trouvé avec la value: '{if_subcategory_value}'"
+        )
+
     # On vérifie si tous les besoins existent
     subcategories_to_add_ids = []
     for subcategory_value in subcategory_value_to_add:
@@ -103,21 +80,19 @@ def add_categories_and_subcategories_if_subcategory(
             )
         subcategories_to_add_ids.append(subcategory.id)
 
-    for service in Service.objects.all():
+    for service in Service.objects.filter(subcategories=if_subcategory):
         sub_categories = extract_subcategories(service)
 
         if if_subcategory_value in sub_categories:
             # Ajout des thématiques
-            new_categories_ids = [s.get("id") for s in service.categories.values()]
+            new_categories_ids = [s["id"] for s in service.categories.values()]
             for id in categories_to_add_ids:
                 new_categories_ids.append(id)
 
             service.categories.set(list(set(new_categories_ids)))
 
             # Ajout des besoins
-            new_subcategories_ids = [
-                s.get("id") for s in service.subcategories.values()
-            ]
+            new_subcategories_ids = [s["id"] for s in service.subcategories.values()]
             for id in subcategories_to_add_ids:
                 new_subcategories_ids.append(id)
 
