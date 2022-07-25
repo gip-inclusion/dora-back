@@ -200,7 +200,7 @@ class ServiceViewSet(
         return Response(status=201)
 
     def perform_create(self, serializer):
-        duration_to_add = self.request.data.get("duration_to_add", 0)
+        duration_to_add = self.request.data.get("duration_to_add") or 0
         pub_date = None
         if serializer.validated_data.get("status") == ServiceStatus.PUBLISHED:
             pub_date = timezone.now()
@@ -306,7 +306,7 @@ class ServiceViewSet(
             status_before_update == ServiceStatus.DRAFT
             and status_after_update == ServiceStatus.PUBLISHED
         ) or status_after_update == ServiceStatus.DRAFT:
-            duration_to_add = self.request.data.get("duration_to_add", 0)
+            duration_to_add = self.request.data.get("duration_to_add") or 0
             filling_duration = (filling_duration or 0) + duration_to_add
 
         # Historique de modifications
