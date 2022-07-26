@@ -376,7 +376,7 @@ if DEBUG:
     MIDDLEWARE = ["querycount.middleware.QueryCountMiddleware"] + MIDDLEWARE
     QUERYCOUNT = {
         "IGNORE_SQL_PATTERNS": [r"silk_"],
-        "IGNORE_REQUEST_PATTERNS": [r"^/admin/", r"/silk/"],
+        "IGNORE_REQUEST_PATTERNS": [r"/silk/"],
     }
 
 #########
