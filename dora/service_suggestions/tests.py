@@ -176,7 +176,7 @@ class ServiceSuggestionsTestCase(APITestCase):
 
     def test_mail_send_to_contact_email(self):
         # ÉTANT DONNÉ une suggestion avec email de contact et sans structure associée
-        email = "mail@mail.fr"
+        email = "mail@example.com"
         suggestion = baker.make(
             "ServiceSuggestion",
             siret=DUMMY_SUGGESTION["siret"],
@@ -194,7 +194,7 @@ class ServiceSuggestionsTestCase(APITestCase):
 
     def test_mail_send_to_structure_admin(self):
         # ÉTANT DONNÉ une structure avec un administrateur
-        admin_mail = "admin@mail.fr"
+        admin_mail = "admin@example.com"
         admin_user = baker.make("users.User", is_valid=True, email=admin_mail)
         structure = baker.make(
             "Structure", siret=DUMMY_SUGGESTION["siret"], creator=admin_user
@@ -218,8 +218,8 @@ class ServiceSuggestionsTestCase(APITestCase):
 
     def test_mail_send_to_structure_admin_and_contact_email(self):
         # ÉTANT DONNÉ une structure avec un administrateur
-        admin_mail = "admin@mail.fr"
-        contact_mail = "mail@mail.fr"
+        admin_mail = "admin@example.com"
+        contact_mail = "mail@example.com"
         admin_user = baker.make("users.User", is_valid=True, email=admin_mail)
         structure = baker.make(
             "Structure", siret=DUMMY_SUGGESTION["siret"], creator=admin_user
