@@ -21,13 +21,13 @@ def send_mail(
         "X-TM-TEXTVERSION": 1,
     }
 
-    if settings.FAKE_EMAIL_RECIPIENT and not settings.IS_TESTING:
-        subject = f"[TEST pour {to}] {subject}"
-        to = settings.FAKE_EMAIL_RECIPIENT
-
     # Conversion en list si besoin
     if not isinstance(to, list):
         to = [to]
+
+    if settings.FAKE_EMAIL_RECIPIENT and not settings.IS_TESTING:
+        subject = f"[TEST pour {to.join(', ')}] {subject}"
+        to = settings.FAKE_EMAIL_RECIPIENT
 
     msg = EmailMessage(
         subject,
