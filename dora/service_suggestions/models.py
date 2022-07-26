@@ -21,7 +21,7 @@ from dora.services.models import (
 )
 from dora.sirene.models import Establishment
 from dora.sirene.serializers import EstablishmentSerializer
-from dora.structures.models import Structure, StructureSource
+from dora.structures.models import Structure, StructureMember, StructureSource
 
 
 class ServiceSuggestion(models.Model):
@@ -148,11 +148,11 @@ class ServiceSuggestion(models.Model):
             else:
                 # Pour une structure existante et dont l'administrateur est connu, on envoie un e-mail à ce dernier
                 # - et potentiellement au contact_email si différent de l'administrateur
-                if (
-                    structure.creator is not None
-                    and structure.creator.email is not None
-                ):
-                    emails_contacted.add(structure.creator.email)
+                structure_admins = StructureMember.objects.filter(
+                    structure=structure, is_admin=True
+                )
+                for admin in structure_admins:
+                    emails_contacted.add(admin.user.email)
 
                 if contact_email is not None:
                     emails_contacted.add(contact_email)

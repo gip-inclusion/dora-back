@@ -196,9 +196,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         # ÉTANT DONNÉ une structure avec un administrateur
         admin_mail = "admin@example.com"
         admin_user = baker.make("users.User", is_valid=True, email=admin_mail)
-        structure = baker.make(
-            "Structure", siret=DUMMY_SUGGESTION["siret"], creator=admin_user
-        )
+        structure = baker.make("Structure", siret=DUMMY_SUGGESTION["siret"])
         baker.make(StructureMember, structure=structure, user=admin_user, is_admin=True)
 
         # et une suggestion de service pour cette structure mais sans email de contact
@@ -221,9 +219,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         admin_mail = "admin@example.com"
         contact_mail = "mail@example.com"
         admin_user = baker.make("users.User", is_valid=True, email=admin_mail)
-        structure = baker.make(
-            "Structure", siret=DUMMY_SUGGESTION["siret"], creator=admin_user
-        )
+        structure = baker.make("Structure", siret=DUMMY_SUGGESTION["siret"])
         baker.make(StructureMember, structure=structure, user=admin_user, is_admin=True)
 
         # et une suggestion de service pour cette structure mais sans email de contact
