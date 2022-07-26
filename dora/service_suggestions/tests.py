@@ -239,10 +239,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
 
         # ALORS la personne en contact est contacté
-        self.assertEqual(
-            response.data["emails_contacted"],
-            [admin_mail, contact_mail],
-        )
+        self.assertEqual(response.data["emails_contacted"], [admin_mail, contact_mail])
         self.assertEqual(response.status_code, 201)
 
     # Validated services visibility

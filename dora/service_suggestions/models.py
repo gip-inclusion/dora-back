@@ -134,7 +134,7 @@ class ServiceSuggestion(models.Model):
 
             self.delete()
 
-        emails_contacted = []
+        emails_contacted = set()
         if send_notification_mail:
             contact_email = self.contents.get("contact_email", None) or None
             if is_new_structure:
@@ -144,7 +144,7 @@ class ServiceSuggestion(models.Model):
                     send_suggestion_validated_new_structure_email(
                         contact_email, structure
                     )
-                    emails_contacted.append(contact_email)
+                    emails_contacted.add(contact_email)
             else:
                 # Pour une structure existante et dont l'administrateur est connu, on envoie un e-mail à ce dernier
                 # - et potentiellement au contact_email si différent de l'administrateur
@@ -152,13 +152,13 @@ class ServiceSuggestion(models.Model):
                     structure.creator is not None
                     and structure.creator.email is not None
                 ):
-                    emails_contacted.append(structure.creator.email)
+                    emails_contacted.add(structure.creator.email)
 
-                if contact_email is not None and contact_email not in emails_contacted:
-                    emails_contacted.append(contact_email)
+                if contact_email is not None:
+                    emails_contacted.add(contact_email)
 
                 send_suggestion_validated_existing_structure_email(
                     emails_contacted, structure, service
                 )
 
-        return service, emails_contacted
+        return service, list(emails_contacted)
