@@ -224,6 +224,41 @@ class ServiceSuggestionsTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 201)
 
+    def test_mail_send_to_structure_admin(self):
+        # ÉTANT DONNÉ une structure avec deux administrateurs
+        admin_mail = "admin@example.com"
+        admin_user = baker.make("users.User", is_valid=True, email=admin_mail)
+        admin_mail_2 = "admin2@example.com"
+        admin_user_2 = baker.make("users.User", is_valid=True, email=admin_mail_2)
+        structure = baker.make("Structure", siret=DUMMY_SUGGESTION["siret"])
+
+        baker.make(StructureMember, structure=structure, user=admin_user, is_admin=True)
+        baker.make(
+            StructureMember, structure=structure, user=admin_user_2, is_admin=True
+        )
+
+        # et une suggestion de service pour cette structure mais sans email de contact
+        suggestion = baker.make(
+            "ServiceSuggestion",
+            siret=DUMMY_SUGGESTION["siret"],
+        )
+
+        # QUAND je valide cette suggestion
+        bizdev_user = baker.make("users.User", is_valid=True, is_bizdev=True)
+        self.client.force_authenticate(user=bizdev_user)
+        response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
+
+        # ALORS les deux administrateurs sont contactés
+        self.assertEqual(
+            sorted(response.data["emails_contacted"]),
+            sorted([admin_mail, admin_mail_2]),
+        )
+        self.assertIn(
+            "[DORA] Vous avez reçu une nouvelle suggestion de service ! 🥳 🎉",
+            mail.outbox[0].subject,
+        )
+        self.assertEqual(response.status_code, 201)
+
     def test_mail_send_to_structure_admin_and_contact_email(self):
         # ÉTANT DONNÉ une structure avec un administrateur
         admin_mail = "admin@example.com"
@@ -245,7 +280,10 @@ class ServiceSuggestionsTestCase(APITestCase):
         response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
 
         # ALORS l'administrateur et la personne en contact sont contactés
-        self.assertEqual(response.data["emails_contacted"], [admin_mail, contact_mail])
+        self.assertEqual(
+            sorted(response.data["emails_contacted"]),
+            sorted([admin_mail, contact_mail]),
+        )
         self.assertIn(
             "[DORA] Vous avez reçu une nouvelle suggestion de service ! 🥳 🎉",
             mail.outbox[0].subject,
