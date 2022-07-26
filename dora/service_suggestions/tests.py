@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.core import mail
 from django.utils import timezone
 from dora.structures.models import StructureMember
 from model_bakery import baker
@@ -172,6 +173,7 @@ class ServiceSuggestionsTestCase(APITestCase):
 
         # ALORS aucune personne n'est contacté
         self.assertEqual(response.data["emails_contacted"], [])
+        self.assertEqual(len(mail.outbox), 0)
         self.assertEqual(response.status_code, 201)
 
     def test_mail_send_to_contact_email(self):
@@ -190,6 +192,10 @@ class ServiceSuggestionsTestCase(APITestCase):
 
         # ALORS la personne en contact est contacté
         self.assertEqual(response.data["emails_contacted"], [email])
+        self.assertIn(
+            "[DORA] Des acteurs de l’insertion sont intéressés par vos services !",
+            mail.outbox[0].subject,
+        )
         self.assertEqual(response.status_code, 201)
 
     def test_mail_send_to_structure_admin(self):
@@ -210,8 +216,12 @@ class ServiceSuggestionsTestCase(APITestCase):
         self.client.force_authenticate(user=bizdev_user)
         response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
 
-        # ALORS la personne en contact est contacté
+        # ALORS l'administrateur est contacté
         self.assertEqual(response.data["emails_contacted"], [admin_mail])
+        self.assertIn(
+            "[DORA] Vous avez reçu une nouvelle suggestion de service ! 🥳 🎉",
+            mail.outbox[0].subject,
+        )
         self.assertEqual(response.status_code, 201)
 
     def test_mail_send_to_structure_admin_and_contact_email(self):
@@ -234,8 +244,12 @@ class ServiceSuggestionsTestCase(APITestCase):
         self.client.force_authenticate(user=bizdev_user)
         response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
 
-        # ALORS la personne en contact est contacté
+        # ALORS l'administrateur et la personne en contact sont contactés
         self.assertEqual(response.data["emails_contacted"], [admin_mail, contact_mail])
+        self.assertIn(
+            "[DORA] Vous avez reçu une nouvelle suggestion de service ! 🥳 🎉",
+            mail.outbox[0].subject,
+        )
         self.assertEqual(response.status_code, 201)
 
     # Validated services visibility
