@@ -21,6 +21,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        if settings.ENVIRONMENT != "production":
+            return
 
         dry_run = options["dry_run"]
         self.stdout.write(
