@@ -20,8 +20,9 @@ def send_suggestion_validated_new_structure_email(email, structure):
     )
 
 
-def send_suggestion_validated_existing_structure_email(to, service):
+def send_suggestion_validated_existing_structure_email(to, structure, service):
     params = {
+        "structure": structure,
         "cta_link": service.get_frontend_url(),
         # "more_details_link": "",
     }

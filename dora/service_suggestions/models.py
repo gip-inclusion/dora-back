@@ -158,7 +158,7 @@ class ServiceSuggestion(models.Model):
                     emails_contacted.append(contact_email)
 
                 send_suggestion_validated_existing_structure_email(
-                    emails_contacted, structure
+                    emails_contacted, structure, service
                 )
 
         return service, emails_contacted
