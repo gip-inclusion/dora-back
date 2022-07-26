@@ -69,7 +69,6 @@ class ServiceSuggestion(models.Model):
         is_new_structure = False
         try:
             structure = Structure.objects.get(siret=self.siret)
-
         except Structure.DoesNotExist:
             is_new_structure = True
 
@@ -135,8 +134,8 @@ class ServiceSuggestion(models.Model):
 
             self.delete()
 
+        emails_contacted = []
         if send_mail:
-            emails_contacted = []
             contact_email = self.contents.pop("contact_email", None) or None
             if is_new_structure:
                 # Pour les nouvelles structures, on envoie un mail à la personne indiquée
@@ -149,8 +148,6 @@ class ServiceSuggestion(models.Model):
             else:
                 # Pour une structure existante et dont l'administrateur est connu, on envoie un e-mail à ce dernier
                 # - et potentiellement au contact_email si différent de l'administrateur
-                emails_contacted = []
-
                 if (
                     structure.creator is not None
                     and structure.creator.email is not None
