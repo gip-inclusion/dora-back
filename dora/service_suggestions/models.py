@@ -157,8 +157,9 @@ class ServiceSuggestion(models.Model):
                 if contact_email is not None:
                     emails_contacted.add(contact_email)
 
-                send_suggestion_validated_existing_structure_email(
-                    emails_contacted, structure, service
-                )
+                if len(emails_contacted):
+                    send_suggestion_validated_existing_structure_email(
+                        list(emails_contacted), structure, service
+                    )
 
         return service, list(emails_contacted)

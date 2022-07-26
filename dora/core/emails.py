@@ -26,8 +26,8 @@ def send_mail(
         to = [to]
 
     if settings.FAKE_EMAIL_RECIPIENT and not settings.IS_TESTING:
-        subject = f"[TEST pour {to.join(', ')}] {subject}"
-        to = settings.FAKE_EMAIL_RECIPIENT
+        subject = f"[TEST pour {', '.join(to)}] {subject}"
+        to = [settings.FAKE_EMAIL_RECIPIENT]
 
     msg = EmailMessage(
         subject,
