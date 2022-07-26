@@ -158,6 +158,16 @@ except KeyError:
     }
 
 
+# Cache
+# https://docs.djangoproject.com/en/4.0/topics/cache/
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.environ["REDIS_URL"],
+    }
+}
+
 AUTH_USER_MODEL = "users.User"
 
 # Password validation
