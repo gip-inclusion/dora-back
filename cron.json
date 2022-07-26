@@ -1,6 +1,6 @@
 {
   "jobs": [
     { "command": "17 08-19 * * * tools/export-db-metabase.sh", "size": "S" },
-    { "command": "20 8 * * * manage.py check_old_drafts", "size": "S" }
+    { "command": "30 8 * * * python manage.py check_old_drafts", "size": "S" }
   ]
 }
