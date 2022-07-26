@@ -1,4 +1,3 @@
-import json
 from django.conf import settings
 from dora.core.emails import send_mail
 from rest_framework import mixins, permissions, viewsets
