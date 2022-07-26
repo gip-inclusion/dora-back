@@ -16,7 +16,7 @@ def send_suggestion_validated_new_structure_email(email, structure):
         "[DORA] Des acteurs de l’insertion sont intéressés par vos services !",
         email,
         body,
-        tags=["validate_new_structure"],
+        tags=["validate_suggestion_new_structure"],
     )
 
 
@@ -31,5 +31,5 @@ def send_suggestion_validated_existing_structure_email(to, service):
         "[DORA] Vous avez reçu une nouvelle suggestion de service ! 🥳 🎉",
         to,
         body,
-        tags=["suggestion_existing_structure"],
+        tags=["validate_suggestion_existing_structure"],
     )
