@@ -62,7 +62,7 @@ class ServiceSuggestion(models.Model):
             except Establishment.DoesNotExist:
                 raise serializers.ValidationError("SIRET inconnu", code="wrong_siret")
 
-    def convert_to_service(self, send_mail=False):
+    def convert_to_service(self, send_notification_mail=False):
         def values_to_objects(Model, values):
             return [Model.objects.get(value=v) for v in values]
 
@@ -135,7 +135,7 @@ class ServiceSuggestion(models.Model):
             self.delete()
 
         emails_contacted = []
-        if send_mail:
+        if send_notification_mail:
             contact_email = self.contents.get("contact_email", None) or None
             if is_new_structure:
                 # Pour les nouvelles structures, on envoie un mail à la personne indiquée
