@@ -224,7 +224,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 201)
 
-    def test_mail_send_to_structure_admin(self):
+    def test_mail_send_to_structure_two_admins(self):
         # ÉTANT DONNÉ une structure avec deux administrateurs
         admin_mail = "admin@example.com"
         admin_user = baker.make("users.User", is_valid=True, email=admin_mail)
