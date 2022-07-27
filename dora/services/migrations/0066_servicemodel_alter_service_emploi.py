@@ -255,7 +255,7 @@ def migrate_services_options(apps, schema_editor):
         ServiceCategory,
         ServiceSubCategory,
         Service,
-        categories_value_to_add=["emploi-preparer-sa-candidature"],
+        categories_value_to_add=[emploi_preparer_sa_candidature_value],
         subcategory_value_to_add=[
             f"{emploi_preparer_sa_candidature_value}--valoriser-ses-competences",
             f"{emploi_preparer_sa_candidature_value}--realiser-un-cv-etou-une-lettre-de-motivation",
@@ -269,7 +269,7 @@ def migrate_services_options(apps, schema_editor):
         ServiceCategory,
         ServiceSubCategory,
         Service,
-        categories_value_to_add=["emploi-trouver-emploi"],
+        categories_value_to_add=[emploi_trouver_un_emploi_value],
         subcategory_value_to_add=[
             f"{emploi_trouver_un_emploi_value}--repondre-a-des-offres-demploi",
             f"{emploi_trouver_un_emploi_value}--faire-des-candidatures-spontanees",

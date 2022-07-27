@@ -83,7 +83,7 @@ def add_categories_and_subcategories_if_subcategory(
     for service in Service.objects.filter(subcategories=if_subcategory):
         sub_categories = extract_subcategories(service)
 
-        if if_subcategory_value in sub_categories:
+        if if_subcategory_value in sub_categories:  # TODO; utile ?
             # Ajout des thématiques
             new_categories_ids = [s["id"] for s in service.categories.values()]
             for id in categories_to_add_ids:
@@ -99,6 +99,7 @@ def add_categories_and_subcategories_if_subcategory(
             service.subcategories.set(list(set(new_subcategories_ids)))
 
             # Sauvegarde
+            # TODO: utiliser service.subcategories.set()
             Service.objects.filter(pk=service.pk).first().subcategories.set(
                 list(set(new_subcategories_ids))
             )
@@ -108,7 +109,7 @@ def add_categories_and_subcategories_if_subcategory(
 
 
 def create_category(ServiceCategory, value, label):
-    ServiceCategory.objects.create(value=value, label=label)
+    return ServiceCategory.objects.create(value=value, label=label)
 
 
 def get_subcategory_by_value(ServiceSubCategory, value):
@@ -120,7 +121,7 @@ def get_category_by_value(ServiceCategory, value):
 
 
 def create_subcategory(ServiceSubCategory, value, label):
-    ServiceSubCategory.objects.create(value=value, label=label)
+    return ServiceSubCategory.objects.create(value=value, label=label)
 
 
 def update_subcategory_value_and_label(
@@ -153,6 +154,7 @@ def replace_subcategory(ServiceSubCategory, Service, from_value, to_value):
     if to_subcategory is None:
         raise ValidationError(f"Aucun besoin trouvé avec la value: '{to_value}'")
 
+    # TODO: utiliser `add` et `remove`
     for service in Service.objects.all():
         sub_categories = extract_subcategories(service)
 
@@ -173,6 +175,7 @@ def delete_subcategory(ServiceSubCategory, value):
     """
     Supprime le besoin de la base de données
     """
+    # TODO : vérifier que le besoin n'est plus utilisé
     subcategory = get_subcategory_by_value(ServiceSubCategory, value)
     if subcategory is None:
         raise ValidationError(
@@ -185,6 +188,7 @@ def delete_category(ServiceCategory, value):
     """
     Supprime la thématique de la base de données
     """
+    # TODO : vérifier que la thématique n'est plus utilisée
     category = get_category_by_value(ServiceCategory, value)
     if category is None:
         raise ValidationError(
