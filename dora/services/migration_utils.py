@@ -109,6 +109,7 @@ def add_categories_and_subcategories_if_subcategory(
 
 
 def create_category(ServiceCategory, value, label):
+    # TODO: check category not exists already
     return ServiceCategory.objects.create(value=value, label=label)
 
 
@@ -121,6 +122,7 @@ def get_category_by_value(ServiceCategory, value):
 
 
 def create_subcategory(ServiceSubCategory, value, label):
+    # TODO: check subcategory not exists already
     return ServiceSubCategory.objects.create(value=value, label=label)
 
 
