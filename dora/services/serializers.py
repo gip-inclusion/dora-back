@@ -328,7 +328,6 @@ class ServiceSerializer(serializers.ModelSerializer):
         return cats[0].value if cats else ""
 
     def get_category_display(self, obj):
-        # TODO: à reformuler
         # On n'utilise volontairement pas .first() ici pour éviter une requete supplémentaire
         # (obj.categories est caché via un prefetch_related)
         cats = obj.categories.all()
@@ -338,6 +337,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         return True
 
     def get_already_published(self, obj):
+        # TODO: à reformuler & réfléchir au nom du champs : already_published ? eligible_to_tally_form ?
         # Le champs `get_already_published` a pour but de savoir s'il est nécessaire d'afficher le formulaire Tally
         # Du coup, on ne peut pas utiliser new_status car il renverrait vrai en permanence (dès que le service serait publié)
         history = obj.status_history_item.filter(
