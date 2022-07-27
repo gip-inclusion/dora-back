@@ -2,6 +2,7 @@ import logging
 
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
+from dora.services.enums import ServiceStatus
 from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 
@@ -238,6 +239,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     )
     department = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
+    already_published = serializers.SerializerMethodField()
 
     model_changed = serializers.SerializerMethodField()
     model = serializers.SlugRelatedField(
@@ -315,6 +317,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "model_changed",
             "model",
             "filling_duration",
+            "already_published",
         ]
         lookup_field = "slug"
 
@@ -325,6 +328,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         return cats[0].value if cats else ""
 
     def get_category_display(self, obj):
+        # TODO: à reformuler
         # On n'utilise volontairement pas .first() ici pour éviter une requete supplémentaire
         # (obj.categories est caché via un prefetch_related)
         cats = obj.categories.all()
@@ -332,6 +336,14 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     def get_is_available(self, obj):
         return True
+
+    def get_already_published(self, obj):
+        # Le champs `get_already_published` a pour but de savoir s'il est nécessaire d'afficher le formulaire Tally
+        # Du coup, on ne peut pas utiliser new_status car il renverrait vrai en permanence (dès que le service serait publié)
+        history = obj.status_history_item.filter(
+            previous_status=ServiceStatus.PUBLISHED
+        )
+        return len(history) > 0
 
     def get_forms_info(self, obj):
         forms = [{"name": form, "url": default_storage.url(form)} for form in obj.forms]
