@@ -135,7 +135,7 @@ def update_subcategory_value_and_label(
 
     new_subcategory = get_subcategory_by_value(ServiceSubCategory, new_value)
     if new_subcategory is not None:
-        raise ValidationError(f"La value '{new_value}' est déjà utilisé")
+        raise ValidationError(f"La value '{new_value}' est déjà utilisée")
 
     old_subcategory.value = new_value
     old_subcategory.label = new_label
