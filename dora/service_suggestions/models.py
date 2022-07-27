@@ -136,7 +136,7 @@ class ServiceSuggestion(models.Model):
 
         emails_contacted = set()
         if send_notification_mail:
-            contact_email = self.contents.get("contact_email", None) or None
+            contact_email = self.contents.get("contact_email", None)
             if is_new_structure:
                 # Pour les nouvelles structures, on envoie un mail à la personne indiquée
                 # dans le formulaire (si présent)
@@ -157,7 +157,7 @@ class ServiceSuggestion(models.Model):
                 if contact_email is not None:
                     emails_contacted.add(contact_email)
 
-                if len(emails_contacted):
+                if emails_contacted:
                     send_suggestion_validated_existing_structure_email(
                         list(emails_contacted), structure, service
                     )
