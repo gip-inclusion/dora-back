@@ -1856,6 +1856,64 @@ class FillingServiceDurationTestCase(APITestCase):
         self.assertEqual(20, response.data.get("filling_duration"))
         self.assertNotEquals(20 + 20, response.data.get("filling_duration"))
 
+    def test_not_added_duration_to_a_draft_service_but_pusblished_one_day(self):
+        # ÉTANT DONNÉ un service au statut `brouillon` avec 180 secondes de temps de complétion
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+        structure = make_structure(user=user)
+        service = make_service(
+            structure=structure, filling_duration=180, status=ServiceStatus.DRAFT
+        )
+        service.refresh_from_db()
+
+        # MAIS ayant déjà été publié dans le passé
+        baker.make(
+            ServiceStatusHistoryItem,
+            service=service,
+            new_status=ServiceStatus.PUBLISHED,
+        )
+
+        # QUAND je met à jour ce service avec un temps de complétion de 30 secondes
+        self.client.patch(
+            f"/services/{service.slug}/",
+            {"duration_to_add": 30, "status": ServiceStatus.PUBLISHED},
+        )
+
+        # ALORS on s'attend à conserver le temps de complétion initial de 180 secondes
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(180, response.data.get("filling_duration"))
+        self.assertNotEquals(180 + 30, response.data.get("filling_duration"))
+
+    def test_not_added_duration_when_publishing_service_that_already_pusblished_one_day(
+        self,
+    ):
+        # ÉTANT DONNÉ un service au statut `brouillon` avec 180 secondes de temps de complétion
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+        structure = make_structure(user=user)
+        service = make_service(
+            structure=structure, filling_duration=180, status=ServiceStatus.DRAFT
+        )
+        service.refresh_from_db()
+
+        # MAIS ayant déjà été publié dans le passé
+        baker.make(
+            ServiceStatusHistoryItem,
+            service=service,
+            new_status=ServiceStatus.PUBLISHED,
+        )
+
+        # QUAND je publie ce service avec un temps de complétion de 30 secondes
+        self.client.patch(
+            f"/services/{service.slug}/",
+            {"duration_to_add": 30, "status": ServiceStatus.PUBLISHED},
+        )
+
+        # ALORS on s'attend à conserver le temps de complétion initial de 180 secondes
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(180, response.data.get("filling_duration"))
+        self.assertNotEquals(180 + 30, response.data.get("filling_duration"))
+
 
 class ServiceStatusChangeTestCase(APITestCase):
     def setUp(self):

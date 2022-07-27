@@ -306,8 +306,14 @@ class ServiceViewSet(
             status_before_update == ServiceStatus.DRAFT
             and status_after_update == ServiceStatus.PUBLISHED
         ) or status_after_update == ServiceStatus.DRAFT:
-            duration_to_add = self.request.data.get("duration_to_add") or 0
-            filling_duration = (filling_duration or 0) + duration_to_add
+            # On ne modifie pas `filling_duration` si le service a déjà été publié par le passé
+            published_history_item = ServiceStatusHistoryItem.objects.filter(
+                service=serializer.instance, new_status=ServiceStatus.PUBLISHED
+            ).first()
+
+            if published_history_item is None:
+                duration_to_add = self.request.data.get("duration_to_add") or 0
+                filling_duration = (filling_duration or 0) + duration_to_add
 
         # Historique de modifications
         changed_fields = self._log_history(serializer, status_after_update)
