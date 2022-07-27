@@ -242,13 +242,7 @@ def migrate_services_options(apps, schema_editor):
         ServiceSubCategory,
         Service,
         categories_value_to_add=[emploi_choisir_un_metier_value],
-        subcategory_value_to_add=[
-            f"{emploi_choisir_un_metier_value}--identifier-ses-points-forts-et-ses-competences",
-            f"{emploi_choisir_un_metier_value}--connaitre-les-opportunites-demploi",
-            f"{emploi_choisir_un_metier_value}--decouvrir-un-metier-ou-un-secteur-dactivite",
-            f"{emploi_choisir_un_metier_value}--confirmer-son-choix-de-metier",
-            f"{emploi_choisir_un_metier_value}--autre",
-        ],
+        subcategory_value_to_add=[],
         if_subcategory_value="emploi--choisir-metier",
     )
     add_categories_and_subcategories_if_subcategory(
@@ -256,13 +250,7 @@ def migrate_services_options(apps, schema_editor):
         ServiceSubCategory,
         Service,
         categories_value_to_add=[emploi_preparer_sa_candidature_value],
-        subcategory_value_to_add=[
-            f"{emploi_preparer_sa_candidature_value}--valoriser-ses-competences",
-            f"{emploi_preparer_sa_candidature_value}--realiser-un-cv-etou-une-lettre-de-motivation",
-            f"{emploi_preparer_sa_candidature_value}--developper-son-reseau",
-            f"{emploi_preparer_sa_candidature_value}--organiser-ses-demarches-de-recherche-demploi",
-            f"{emploi_preparer_sa_candidature_value}--autre",
-        ],
+        subcategory_value_to_add=[],
         if_subcategory_value="emploi--preparer-candidature",
     )
     add_categories_and_subcategories_if_subcategory(
@@ -270,13 +258,7 @@ def migrate_services_options(apps, schema_editor):
         ServiceSubCategory,
         Service,
         categories_value_to_add=[emploi_trouver_un_emploi_value],
-        subcategory_value_to_add=[
-            f"{emploi_trouver_un_emploi_value}--repondre-a-des-offres-demploi",
-            f"{emploi_trouver_un_emploi_value}--faire-des-candidatures-spontanees",
-            f"{emploi_trouver_un_emploi_value}--suivre-ses-candidatures-et-relancer-les-employeurs",
-            f"{emploi_trouver_un_emploi_value}--convaincre-un-recruteur-en-entretien",
-            f"{emploi_trouver_un_emploi_value}--autre",
-        ],
+        subcategory_value_to_add=[],
         if_subcategory_value="emploi--trouver-emploi",
     )
 
@@ -284,6 +266,9 @@ def migrate_services_options(apps, schema_editor):
         3:
             Rattacher les services liés au besoin "emploi--autre" à toutes les thématiques et leur besoin "--autre"
     """
+
+    """
+    # Ces services vont être ré-attribués manuellement
     add_categories_and_subcategories_if_subcategory(
         ServiceCategory,
         ServiceSubCategory,
@@ -300,6 +285,7 @@ def migrate_services_options(apps, schema_editor):
         ],
         if_subcategory_value="emploi--autre",
     )
+    """
 
     """
         4: Délier la thématique "emploi" et les besoins "emploi--choisir-metier" "emploi--preparer-candidature" "emploi--trouver-emploi" aux services
