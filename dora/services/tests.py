@@ -1997,23 +1997,17 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         )
         self.assertEqual(ServiceSubCategory.objects.filter(value=value_2).count(), 1)
 
-    def test_replace_subcategory_err_to_category_not_exists(self):
-        # ÉTANT DONNÉ une thématique existante et une thématique indexistante
+    def test_cant_replace_subcategory_by_nonexistent_subcategory(self):
+        # ÉTANT DONNÉ une thématique existante et une thématique inexistante
         value = "subcategory_1"
         subcategory = baker.make("ServiceSubCategory", value=value)
         service = make_service()
         service.subcategories.add(subcategory)
 
-        # QUAND je remplace la thématique existante par une non existante
-        try:
+        with self.assertRaises(ValidationError):
             replace_subcategory(
                 ServiceSubCategory, Service, value, "non_existing_subcategory"
             )
-        except Exception as e:
-            err = e
-
-        # ALORS j'obtiens une erreur
-        self.assertTrue(isinstance(err, ValidationError))
 
     def test_replace_subcategory(self):
         # ÉTANT DONNÉ deux besoins
@@ -2026,7 +2020,7 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         baker.make("ServiceSubCategory", value=subcategory_value_2)
 
         service = Service.objects.filter(pk=service.pk).first()
-        subcategories = [s["value"] for s in service.subcategories.values()]
+        subcategories = service.subcategories.values_list("value", flat=True)
         self.assertTrue(subcategory_value_1 in subcategories)
         self.assertFalse(subcategory_value_2 in subcategories)
 
@@ -2037,7 +2031,7 @@ class ServiceMigrationUtilsTestCase(APITestCase):
 
         # ALORS le besoin a bien été remplacé
         service.refresh_from_db()
-        subcategories = [s["value"] for s in service.subcategories.values()]
+        subcategories = service.subcategories.values_list("value", flat=True)
         self.assertFalse(subcategory_value_1 in subcategories)
         self.assertTrue(subcategory_value_2 in subcategories)
 
@@ -2047,7 +2041,7 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         label = "label_category_1"
         self.assertEqual(ServiceCategory.objects.filter(value=value).count(), 0)
 
-        # QUAND je créais cette catégorie
+        # QUAND je créé cette catégorie
         create_category(ServiceCategory, value, label)
 
         # ALORS elle existe
@@ -2062,7 +2056,7 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         label = "label_subcategory_1"
         self.assertEqual(ServiceSubCategory.objects.filter(value=value).count(), 0)
 
-        # QUAND je créais cette catégorie
+        # QUAND je créé cette catégorie
         create_subcategory(ServiceSubCategory, value, label)
 
         # ALORS elle existe
@@ -2088,7 +2082,7 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         # QUAND je récupère cette thématique
         category = get_category_by_value(ServiceCategory, value=value)
 
-        # ALORS je récupère None
+        # ALORS je récupère la bonne catégorie
         self.assertTrue(category is not None)
         self.assertEqual(category.value, value)
         self.assertEqual(category.label, label)
@@ -2102,15 +2096,15 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         self.assertEqual(category, None)
 
     def test_get_subcategory_by_value(self):
-        # ÉTANT DONNÉ une thématique existante
+        # ÉTANT DONNÉ un besoin
         value = "value_subcategory_1"
         label = "label_subcategory_1"
         baker.make("ServiceSubCategory", value=value, label=label)
 
-        # QUAND je récupère cette thématique
+        # QUAND je récupère ce besoin
         subcategory = get_category_by_value(ServiceSubCategory, value=value)
 
-        # ALORS je récupère None
+        # ALORS je récupère le bon besoin
         self.assertTrue(subcategory is not None)
         self.assertEqual(subcategory.value, value)
         self.assertEqual(subcategory.label, label)
@@ -2275,7 +2269,7 @@ class ServiceMigrationUtilsTestCase(APITestCase):
 
         self.assertEqual(len(service.subcategories.values()), 4)
         self.assertEqual(
-            sorted([s["value"] for s in service.subcategories.values()]),
+            sorted(service.subcategories.values_list("value", flat=True)),
             sorted(
                 [
                     subcategory_value_1,
