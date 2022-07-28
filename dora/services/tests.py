@@ -772,6 +772,66 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["structure_info"]["num_services"], 2)
 
+    # Test eligible_to_tally_form
+    def test_eligible_to_tally_form_no_history(self):
+        # ÉTANT DONNÉ un service sans historique de changement
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        service = make_service(status=ServiceStatus.PUBLISHED, structure=structure)
+
+        # QUAND on récupère ce service
+        response = self.client.get(f"/services/{service.slug}/")
+
+        # ALORS il est éligible au formulaire Tally
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["eligible_to_tally_form"], True)
+
+    def test_eligible_to_tally_form_whithout_published_in_history(self):
+        # ÉTANT DONNÉ un service qui n'a jamais été déplublié
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        service = make_service(status=ServiceStatus.PUBLISHED, structure=structure)
+
+        baker.make(
+            ServiceStatusHistoryItem,
+            service=service,
+            previous_status=ServiceStatus.DRAFT,
+            new_status=ServiceStatus.PUBLISHED,
+        )
+
+        # QUAND on récupère ce service
+        response = self.client.get(f"/services/{service.slug}/")
+
+        # ALORS il est éligible au formulaire Tally
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["eligible_to_tally_form"], True)
+
+    def test_eligible_to_tally_form_with_pusblished_in_history(self):
+        # ÉTANT DONNÉ un service qui a été plublié par le passé
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        service = make_service(status=ServiceStatus.PUBLISHED, structure=structure)
+
+        baker.make(
+            ServiceStatusHistoryItem,
+            service=service,
+            previous_status=ServiceStatus.DRAFT,
+            new_status=ServiceStatus.PUBLISHED,
+        )
+        baker.make(
+            ServiceStatusHistoryItem,
+            service=service,
+            previous_status=ServiceStatus.PUBLISHED,
+            new_status=ServiceStatus.DRAFT,
+        )
+
+        # QUAND on récupère ce service
+        response = self.client.get(f"/services/{service.slug}/")
+
+        # ALORS il n'est pas éligible au formulaire Tally
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["eligible_to_tally_form"], False)
+
 
 class ServiceSearchTestCase(APITestCase):
     def setUp(self):
