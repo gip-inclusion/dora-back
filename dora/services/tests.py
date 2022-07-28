@@ -772,8 +772,8 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["structure_info"]["num_services"], 2)
 
-    # Test eligible_to_tally_form
-    def test_eligible_to_tally_form_no_history(self):
+    # Test has_already_been_unpublished
+    def test_has_already_been_unpublished_no_history(self):
         # ÉTANT DONNÉ un service sans historique de changement
         user = baker.make("users.User", is_valid=True)
         structure = make_structure(user)
@@ -782,11 +782,11 @@ class ServiceTestCase(APITestCase):
         # QUAND on récupère ce service
         response = self.client.get(f"/services/{service.slug}/")
 
-        # ALORS il est éligible au formulaire Tally
+        # ALORS il est considéré comme n'ayant jamais été dépublié
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["eligible_to_tally_form"], True)
+        self.assertEqual(response.data["has_already_been_unpublished"], True)
 
-    def test_eligible_to_tally_form_whithout_published_in_history(self):
+    def test_has_already_been_unpublished_whithout_published_in_history(self):
         # ÉTANT DONNÉ un service qui n'a jamais été déplublié
         user = baker.make("users.User", is_valid=True)
         structure = make_structure(user)
@@ -802,11 +802,11 @@ class ServiceTestCase(APITestCase):
         # QUAND on récupère ce service
         response = self.client.get(f"/services/{service.slug}/")
 
-        # ALORS il est éligible au formulaire Tally
+        # ALORS il est considéré comme n'ayant jamais été dépublié
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["eligible_to_tally_form"], True)
+        self.assertEqual(response.data["has_already_been_unpublished"], True)
 
-    def test_eligible_to_tally_form_with_pusblished_in_history(self):
+    def test_has_already_been_unpublished_with_pusblished_in_history(self):
         # ÉTANT DONNÉ un service qui a été plublié par le passé
         user = baker.make("users.User", is_valid=True)
         structure = make_structure(user)
@@ -828,9 +828,9 @@ class ServiceTestCase(APITestCase):
         # QUAND on récupère ce service
         response = self.client.get(f"/services/{service.slug}/")
 
-        # ALORS il n'est pas éligible au formulaire Tally
+        # ALORS il est considéré comme ayant déjà été dépublié
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["eligible_to_tally_form"], False)
+        self.assertEqual(response.data["has_already_been_unpublished"], False)
 
 
 class ServiceSearchTestCase(APITestCase):

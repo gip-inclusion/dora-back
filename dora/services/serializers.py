@@ -239,7 +239,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     )
     department = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
-    eligible_to_tally_form = serializers.SerializerMethodField()
+    has_already_been_unpublished = serializers.SerializerMethodField()
 
     model_changed = serializers.SerializerMethodField()
     model = serializers.SlugRelatedField(
@@ -317,7 +317,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "model_changed",
             "model",
             "filling_duration",
-            "eligible_to_tally_form",
+            "has_already_been_unpublished",
         ]
         lookup_field = "slug"
 
@@ -336,7 +336,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     def get_is_available(self, obj):
         return True
 
-    def get_eligible_to_tally_form(self, obj):
+    def get_has_already_been_unpublished(self, obj):
         # Note : on ne peut pas se baser sur le `new_status` car les services
         # fraîchement publiés ne deviendront plus éligibles au formulaire Tally...
         return not obj.status_history_item.filter(
