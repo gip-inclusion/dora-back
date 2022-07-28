@@ -339,10 +339,9 @@ class ServiceSerializer(serializers.ModelSerializer):
     def get_eligible_to_tally_form(self, obj):
         # Note : on ne peut pas se baser sur le `new_status` car les services
         # fraîchement publiés ne deviendront plus éligibles au formulaire Tally...
-        history = obj.status_history_item.filter(
+        return not obj.status_history_item.filter(
             previous_status=ServiceStatus.PUBLISHED
-        )
-        return len(history) > 0
+        ).exists()
 
     def get_forms_info(self, obj):
         forms = [{"name": form, "url": default_storage.url(form)} for form in obj.forms]
