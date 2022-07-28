@@ -1,4 +1,5 @@
 from django.conf import settings
+from dora.core.emails import send_mail
 from rest_framework import mixins, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -70,5 +71,6 @@ class ServiceSuggestionViewSet(
     )
     def validate_suggestion(self, request, pk):
         suggestion = self.get_object()
-        suggestion.convert_to_service()
-        return Response(status=201)
+        _, emails_contacted = suggestion.convert_to_service(send_notification_mail=True)
+
+        return Response({"emails_contacted": emails_contacted}, status=201)
