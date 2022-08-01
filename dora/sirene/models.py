@@ -10,8 +10,8 @@ class Establishment(models.Model):
     ape = models.CharField(
         max_length=6,
     )
-    address1 = models.CharField(max_length=255, blank=True)
-    address2 = models.CharField(max_length=255)
+    address1 = models.CharField(max_length=255)
+    address2 = models.CharField(max_length=255, blank=True)
     city = models.CharField(max_length=255)
     city_code = models.CharField(max_length=5, db_index=True)
     postal_code = models.CharField(max_length=5)
