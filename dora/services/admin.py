@@ -9,6 +9,7 @@ from .models import (
     CoachOrientationMode,
     ConcernedPublic,
     Credential,
+    CustomizableChoicesSet,
     LocationKind,
     Requirement,
     Service,
@@ -135,6 +136,42 @@ class CustomizableChoiceAdmin(admin.ModelAdmin):
     list_per_page = 1000
 
 
+class ServiceModelInline(admin.TabularInline):
+    model = ServiceModel
+    show_change_link = True
+    fields = [
+        "slug",
+        "name",
+        "structure",
+    ]
+    readonly_fields = [
+        "slug",
+        "name",
+        "structure",
+    ]
+    extra = 0
+
+
+class CustomizableChoicesSetAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "creation_date",
+        "modification_date",
+    )
+    search_fields = ("name",)
+    ordering = ["-modification_date"]
+    filter_horizontal = [
+        "access_conditions",
+        "concerned_public",
+        "requirements",
+        "credentials",
+    ]
+    readonly_fields = ("creation_date", "modification_date")
+    inlines = [
+        ServiceModelInline,
+    ]
+
+
 admin.site.register(Service, ServiceAdmin)
 admin.site.register(ServiceModel, ServiceModelAdmin)
 admin.site.register(AccessCondition, CustomizableChoiceAdmin)
@@ -150,3 +187,5 @@ admin.site.register(LocationKind, EnumAdmin)
 admin.site.register(ServiceCategory, EnumAdmin)
 admin.site.register(ServiceKind, EnumAdmin)
 admin.site.register(ServiceSubCategory, EnumAdmin)
+
+admin.site.register(CustomizableChoicesSet, CustomizableChoicesSetAdmin)
