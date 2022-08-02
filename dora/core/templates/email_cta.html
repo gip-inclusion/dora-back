@@ -13,11 +13,9 @@
     text-align: center;
   "
 >
-
   {% block salutations %}Bonjour {{recipient_name}} !{% endblock %}
-
 </h1>
-<p
+<div
   style="
     font-family: sans-serif;
     font-size: 15px;
@@ -26,10 +24,9 @@
     margin-bottom: 15px;
   "
 >
-
   {% block cta_description %} {% endblock %}
+</div>
 
-</p>
 <table
   role="presentation"
   border="0"
@@ -105,9 +102,7 @@
                     color: #ffffff;
                   "
                 >
-
                   {% block cta_text %}{% endblock %}
-
                 </a>
               </td>
             </tr>
@@ -130,4 +125,17 @@
     >{{ cta_link }}</a
   >
 </p>
+
+<div
+  style="
+    font-family: sans-serif;
+    font-size: 15px;
+    font-weight: normal;
+    margin: 0;
+    margin-bottom: 15px;
+  "
+>
+  {% block after_cta_content %} {% endblock %}
+</div>
+
 {% endblock %}

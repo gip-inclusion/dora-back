@@ -158,6 +158,17 @@ except KeyError:
     }
 
 
+# Cache
+# https://docs.djangoproject.com/en/4.0/topics/cache/
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.environ["REDIS_URL"],
+        "TIMEOUT": None,
+    }
+}
+
 AUTH_USER_MODEL = "users.User"
 
 # Password validation
@@ -365,7 +376,7 @@ if DEBUG:
     MIDDLEWARE = ["querycount.middleware.QueryCountMiddleware"] + MIDDLEWARE
     QUERYCOUNT = {
         "IGNORE_SQL_PATTERNS": [r"silk_"],
-        "IGNORE_REQUEST_PATTERNS": [r"^/admin/", r"/silk/"],
+        "IGNORE_REQUEST_PATTERNS": [r"/silk/"],
     }
 
 #########
