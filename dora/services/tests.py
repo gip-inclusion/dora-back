@@ -784,10 +784,10 @@ class ServiceTestCase(APITestCase):
 
         # ALORS il est considéré comme n'ayant jamais été dépublié
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["has_already_been_unpublished"], True)
+        self.assertEqual(response.data["has_already_been_unpublished"], False)
 
-    def test_has_already_been_unpublished_whithout_published_in_history(self):
-        # ÉTANT DONNÉ un service qui n'a jamais été déplublié
+    def test_has_already_been_unpublished_without_published_in_history(self):
+        # ÉTANT DONNÉ un service qui n'a jamais été dépublié
         user = baker.make("users.User", is_valid=True)
         structure = make_structure(user)
         service = make_service(status=ServiceStatus.PUBLISHED, structure=structure)
@@ -804,10 +804,10 @@ class ServiceTestCase(APITestCase):
 
         # ALORS il est considéré comme n'ayant jamais été dépublié
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["has_already_been_unpublished"], True)
+        self.assertEqual(response.data["has_already_been_unpublished"], False)
 
-    def test_has_already_been_unpublished_with_pusblished_in_history(self):
-        # ÉTANT DONNÉ un service qui a été plublié par le passé
+    def test_has_already_been_unpublished_with_published_in_history(self):
+        # ÉTANT DONNÉ un service qui a été publié par le passé
         user = baker.make("users.User", is_valid=True)
         structure = make_structure(user)
         service = make_service(status=ServiceStatus.PUBLISHED, structure=structure)
@@ -830,7 +830,7 @@ class ServiceTestCase(APITestCase):
 
         # ALORS il est considéré comme ayant déjà été dépublié
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["has_already_been_unpublished"], False)
+        self.assertEqual(response.data["has_already_been_unpublished"], True)
 
 
 class ServiceSearchTestCase(APITestCase):
@@ -1887,7 +1887,7 @@ class FillingServiceDurationTestCase(APITestCase):
         response = self.client.get(f"/services/{service_created.data.get('slug')}/")
         self.assertEqual(20 + 15, response.data.get("filling_duration"))
 
-    def test_not_added_duration_to_published_service(self):
+    def test__filling_duration_stays_the_same_when_updating_a_published_service(self):
         # ÉTANT DONNÉ un service au statut `publié` avec 20 secondes de temps de complétion
         user = baker.make("users.User", is_valid=True)
         self.client.force_authenticate(user=user)
@@ -1916,7 +1916,9 @@ class FillingServiceDurationTestCase(APITestCase):
         self.assertEqual(20, response.data.get("filling_duration"))
         self.assertNotEquals(20 + 20, response.data.get("filling_duration"))
 
-    def test_not_added_duration_to_a_draft_service_but_pusblished_one_day(self):
+    def test__filling_duration_stays_the_same_when_updating_a_draft_service_already_published_in_the_past(
+        self,
+    ):
         # ÉTANT DONNÉ un service au statut `brouillon` avec 180 secondes de temps de complétion
         user = baker.make("users.User", is_valid=True)
         self.client.force_authenticate(user=user)
@@ -1944,7 +1946,7 @@ class FillingServiceDurationTestCase(APITestCase):
         self.assertEqual(180, response.data.get("filling_duration"))
         self.assertNotEquals(180 + 30, response.data.get("filling_duration"))
 
-    def test_not_added_duration_when_publishing_service_that_already_pusblished_one_day(
+    def test_filling_duration_stays_the_same_when_publishing_a_service_for_the_second_time(
         self,
     ):
         # ÉTANT DONNÉ un service au statut `brouillon` avec 180 secondes de temps de complétion

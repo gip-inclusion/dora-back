@@ -339,7 +339,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     def get_has_already_been_unpublished(self, obj):
         # Note : on ne peut pas se baser sur le `new_status` car les services
         # fraîchement publiés ne deviendront plus éligibles au formulaire Tally...
-        return not obj.status_history_item.filter(
+        return obj.status_history_item.filter(
             previous_status=ServiceStatus.PUBLISHED
         ).exists()
 
