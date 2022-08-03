@@ -300,14 +300,19 @@ class ServiceViewSet(
 
         # Gestion de la durée d'édition:
         # Si le service est toujours un brouillon ou passe au statut publié, on incrémente `filling_duration`
-        # TODO: gérer le cas du passage de `archivé` à `brouillon`
         filling_duration = serializer.instance.filling_duration
         if (
             status_before_update == ServiceStatus.DRAFT
             and status_after_update == ServiceStatus.PUBLISHED
         ) or status_after_update == ServiceStatus.DRAFT:
-            duration_to_add = self.request.data.get("duration_to_add") or 0
-            filling_duration = (filling_duration or 0) + duration_to_add
+            # On ne modifie pas `filling_duration` si le service a déjà été publié par le passé
+            has_been_published_one_day = ServiceStatusHistoryItem.objects.filter(
+                service=serializer.instance, new_status=ServiceStatus.PUBLISHED
+            ).exists()
+
+            if not has_been_published_one_day:
+                duration_to_add = self.request.data.get("duration_to_add") or 0
+                filling_duration = (filling_duration or 0) + duration_to_add
 
         # Historique de modifications
         changed_fields = self._log_history(serializer, status_after_update)

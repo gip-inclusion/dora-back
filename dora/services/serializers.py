@@ -2,6 +2,7 @@ import logging
 
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
+from dora.services.enums import ServiceStatus
 from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 
@@ -239,6 +240,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     )
     department = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
+    has_already_been_unpublished = serializers.SerializerMethodField()
 
     model_changed = serializers.SerializerMethodField()
     model = serializers.SlugRelatedField(
@@ -316,6 +318,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "model_changed",
             "model",
             "filling_duration",
+            "has_already_been_unpublished",
         ]
         lookup_field = "slug"
 
@@ -333,6 +336,13 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     def get_is_available(self, obj):
         return True
+
+    def get_has_already_been_unpublished(self, obj):
+        # Note : on ne peut pas se baser sur le `new_status` car les services
+        # fraîchement publiés ne deviendront plus éligibles au formulaire Tally...
+        return obj.status_history_item.filter(
+            previous_status=ServiceStatus.PUBLISHED
+        ).exists()
 
     def get_forms_info(self, obj):
         forms = [{"name": form, "url": default_storage.url(form)} for form in obj.forms]
