@@ -70,7 +70,7 @@ def migrate_cats_subcats(apps, schema_editor):
         # Délier emploi
         cats = [val for val in cats if val != "emploi"]
         # Délier les besoins emploi
-        subcats = [val for val in subcats if not val.startswith("emploi-")]
+        subcats = [val for val in subcats if not val.startswith("emploi--")]
 
         # print("###")
         # print(sorted(s.contents["categories"]))
