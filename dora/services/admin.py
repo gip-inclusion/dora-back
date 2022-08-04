@@ -93,6 +93,14 @@ class ServiceAdmin(admin.GISModelAdmin):
         "is_suggestion",
         ("structure", RelatedOnlyFieldListFilter),
     ]
+    filter_horizontal = [
+        "categories",
+        "subcategories",
+        "access_conditions",
+        "concerned_public",
+        "requirements",
+        "credentials",
+    ]
     inlines = [ServiceStatusHistoryItemInline, ServiceModificationHistoryItemInline]
     ordering = ["-modification_date"]
     save_as = True
@@ -117,6 +125,14 @@ class ServiceModelAdmin(admin.ModelAdmin):
     ]
     list_filter = [
         ("structure", RelatedOnlyFieldListFilter),
+    ]
+    filter_horizontal = [
+        "categories",
+        "subcategories",
+        "access_conditions",
+        "concerned_public",
+        "requirements",
+        "credentials",
     ]
     inlines = [ServiceModificationHistoryItemInline]
     ordering = ["-modification_date"]
