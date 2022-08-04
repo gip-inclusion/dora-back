@@ -90,7 +90,12 @@ class AuthTestCase(APITestCase):
         self.client.force_authenticate(user=None)
         establishment = baker.make("Establishment", siret="12345678901234")
         structure = baker.make("Structure", siret=establishment.siret)
-        baker.make(StructureMember, structure=structure, is_admin=False)
+        baker.make(
+            StructureMember,
+            structure=structure,
+            is_admin=False,
+            user__is_valid=True,
+        )
         data = {
             "first_name": "Foo",
             "last_name": "Bar",
@@ -122,7 +127,12 @@ class AuthTestCase(APITestCase):
         self.client.force_authenticate(user=None)
         establishment = baker.make("Establishment", siret="12345678901234")
         structure = baker.make("Structure", siret=establishment.siret)
-        baker.make(StructureMember, structure=structure, is_admin=True)
+        baker.make(
+            StructureMember,
+            structure=structure,
+            is_admin=True,
+            user__is_valid=True,
+        )
         data = {
             "first_name": "Foo",
             "last_name": "Bar",
@@ -140,7 +150,12 @@ class AuthTestCase(APITestCase):
         self.client.force_authenticate(user=None)
         establishment = baker.make("Establishment", siret="12345678901234")
         structure = baker.make("Structure", siret=establishment.siret)
-        baker.make(StructureMember, structure=structure, is_admin=True)
+        baker.make(
+            StructureMember,
+            structure=structure,
+            is_admin=True,
+            user__is_valid=True,
+        )
         data = {
             "first_name": "Foo",
             "last_name": "Bar",
