@@ -2,13 +2,14 @@ import logging
 
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
-from dora.services.enums import ServiceStatus
 from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 
 from dora.admin_express.models import EPCI, City, Department, Region
 from dora.core.utils import code_insee_to_code_dept
+from dora.services.enums import ServiceStatus
 from dora.structures.models import Structure, StructureMember
+from dora.users.models import User
 
 from .models import (
     AccessCondition,
@@ -601,3 +602,101 @@ class FeedbackSerializer(serializers.Serializer):
     full_name = serializers.CharField()
     email = serializers.EmailField()
     message = serializers.CharField()
+
+
+class UserSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(label="Email address", max_length=255, validators=[])
+    full_name = serializers.CharField(source="get_full_name", read_only=True)
+
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "full_name", "email"]
+
+
+class ServiceModerationSerializer(ServiceSerializer):
+    creator = UserSerializer()
+    last_editor = UserSerializer()
+
+    class Meta:
+        model = Service
+        fields = [
+            "category",
+            "category_display",
+            "slug",
+            "name",
+            "short_desc",
+            "full_desc",
+            "kinds",
+            "categories",
+            "subcategories",
+            "access_conditions",
+            "concerned_public",
+            "is_cumulative",
+            "has_fee",
+            "fee_details",
+            "beneficiaries_access_modes",
+            "beneficiaries_access_modes_other",
+            "coach_orientation_modes",
+            "coach_orientation_modes_other",
+            "requirements",
+            "credentials",
+            "forms",
+            "online_form",
+            "contact_name",
+            "contact_phone",
+            "contact_email",
+            "is_contact_info_public",
+            "location_kinds",
+            "diffusion_zone_type",
+            "diffusion_zone_details",
+            "qpv_or_zrr",
+            "remote_url",
+            "address1",
+            "address2",
+            "postal_code",
+            "city_code",
+            "city",
+            "geom",
+            "recurrence",
+            "suspension_date",
+            "structure",
+            "creation_date",
+            "modification_date",
+            "status",
+            "is_available",
+            "forms_info",
+            "structure",
+            "structure_info",
+            "kinds_display",
+            "categories_display",
+            "subcategories_display",
+            "access_conditions_display",
+            "concerned_public_display",
+            "requirements_display",
+            "credentials_display",
+            "location_kinds_display",
+            "diffusion_zone_type_display",
+            "diffusion_zone_details_display",
+            "beneficiaries_access_modes_display",
+            "coach_orientation_modes_display",
+            "department",
+            "can_write",
+            "model_changed",
+            "model",
+            "filling_duration",
+            "has_already_been_unpublished",
+            "creator",
+            "last_editor",
+        ]
+        lookup_field = "slug"
+
+    # def get_members(self, obj):
+    #     members = StructureMember.objects.filter(structure=obj)
+    #     return StructureMemberSerializer(members, many=True).data
+
+    # def get_pending_members(self, obj):
+    #     pmembers = StructurePutativeMember.objects.filter(structure=obj)
+    #     return StructurePutativeMemberSerializer(pmembers, many=True).data
+
+    # def get_source(self, obj):
+    #     return obj.source.label if obj.source else ""

@@ -408,3 +408,94 @@ class StructurePutativeMemberSerializer(serializers.ModelSerializer):
             tmp_token.key,
         )
         return member
+
+
+class UserModerationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "email",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "email",
+            "is_active",
+            "is_valid",
+            "date_joined",
+            "newsletter",
+        ]
+
+
+class StructureModerationSerializer(StructureSerializer):
+    creator = UserModerationSerializer()
+    last_editor = UserModerationSerializer()
+    source = serializers.SerializerMethodField()
+    members = serializers.SerializerMethodField()
+    pending_members = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Structure
+        fields = [
+            "id",
+            "siret",
+            "code_safir_pe",
+            "typology",
+            "typology_display",
+            "slug",
+            "name",
+            "short_desc",
+            "url",
+            "full_desc",
+            "phone",
+            "email",
+            "postal_code",
+            "city_code",
+            "city",
+            "department",
+            "address1",
+            "address2",
+            "ape",
+            "longitude",
+            "latitude",
+            "creation_date",
+            "modification_date",
+            "parent",
+            "branches",
+            "has_admin",
+            "num_services",
+            "services",
+            "archived_services",
+            "num_models",
+            "models",
+            "creator",
+            "last_editor",
+            "source",
+            "members",
+            "pending_members",
+        ]
+        lookup_field = "slug"
+
+    def get_members(self, obj):
+        class SMSerializer(serializers.ModelSerializer):
+            user = UserModerationSerializer()
+
+            class Meta:
+                model = StructureMember
+                fields = ["id", "user", "is_admin", "creation_date"]
+
+        members = StructureMember.objects.filter(structure=obj)
+        return SMSerializer(members, many=True).data
+
+    def get_pending_members(self, obj):
+        class SPMSerializer(serializers.ModelSerializer):
+            user = UserModerationSerializer()
+
+            class Meta:
+                model = StructurePutativeMember
+                fields = ["id", "user", "is_admin", "creation_date", "invited_by_admin"]
+
+        pmembers = StructurePutativeMember.objects.filter(structure=obj)
+        return SPMSerializer(pmembers, many=True).data
+
+    def get_source(self, obj):
+        return obj.source.label if obj.source else ""
