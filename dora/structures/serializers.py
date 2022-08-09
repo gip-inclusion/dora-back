@@ -432,6 +432,10 @@ class StructureModerationSerializer(StructureSerializer):
     source = serializers.SerializerMethodField()
     members = serializers.SerializerMethodField()
     pending_members = serializers.SerializerMethodField()
+    parent = serializers.SerializerMethodField()
+    branches = serializers.SerializerMethodField()
+    services = serializers.SerializerMethodField()
+    models = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
@@ -499,3 +503,45 @@ class StructureModerationSerializer(StructureSerializer):
 
     def get_source(self, obj):
         return obj.source.label if obj.source else ""
+
+    def get_parent(self, obj):
+        if obj.parent:
+            return {
+                "name": obj.parent.name,
+                "slug": obj.parent.slug,
+                "id": obj.parent.pk,
+            }
+        return {}
+
+    def get_branches(self, obj):
+        branches = obj.branches.all()
+
+        class BranchSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = Structure
+                fields = ["slug", "name", "id", "short_desc"]
+                lookup_field = "slug"
+
+        return BranchSerializer(branches, many=True).data
+
+    def get_models(self, obj):
+        models = ServiceModel.objects.filter(structure=obj)
+
+        class ModelSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = ServiceModel
+                fields = ["slug", "name", "id", "short_desc"]
+                lookup_field = "slug"
+
+        return ModelSerializer(models, many=True).data
+
+    def get_services(self, obj):
+        services = Service.objects.filter(structure=obj, status=ServiceStatus.PUBLISHED)
+
+        class ServiceSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = Service
+                fields = ["slug", "name", "id", "short_desc"]
+                lookup_field = "slug"
+
+        return ServiceSerializer(services, many=True).data
