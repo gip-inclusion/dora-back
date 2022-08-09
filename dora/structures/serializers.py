@@ -485,7 +485,7 @@ class StructureModerationSerializer(StructureSerializer):
 
             class Meta:
                 model = StructureMember
-                fields = ["id", "user", "is_admin", "creation_date"]
+                fields = ["user", "is_admin", "creation_date"]
 
         members = StructureMember.objects.filter(structure=obj)
         return SMSerializer(members, many=True).data
@@ -496,7 +496,7 @@ class StructureModerationSerializer(StructureSerializer):
 
             class Meta:
                 model = StructurePutativeMember
-                fields = ["id", "user", "is_admin", "creation_date", "invited_by_admin"]
+                fields = ["user", "is_admin", "creation_date", "invited_by_admin"]
 
         pmembers = StructurePutativeMember.objects.filter(structure=obj)
         return SPMSerializer(pmembers, many=True).data

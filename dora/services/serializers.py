@@ -613,15 +613,64 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["first_name", "last_name", "full_name", "email"]
 
 
+class UserModerationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "email",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "email",
+            "is_active",
+            "is_valid",
+            "date_joined",
+            "newsletter",
+        ]
+
+
+class StructureModerationSerializer(serializers.ModelSerializer):
+    creator = UserModerationSerializer()
+    last_editor = UserModerationSerializer()
+    members = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Structure
+        fields = [
+            "id",
+            "slug",
+            "name",
+            "creator",
+            "last_editor",
+            "members",
+            "url",
+            "phone",
+            "email",
+        ]
+
+    def get_members(self, obj):
+        class SMSerializer(serializers.ModelSerializer):
+            user = UserModerationSerializer()
+
+            class Meta:
+                model = StructureMember
+                fields = ["user", "creation_date", "is_admin"]
+
+        members = StructureMember.objects.filter(structure=obj)
+        return SMSerializer(members, many=True).data
+
+
 class ServiceModerationSerializer(ServiceSerializer):
-    creator = UserSerializer()
-    last_editor = UserSerializer()
+
+    creator = UserModerationSerializer()
+    last_editor = UserModerationSerializer()
+    structure = StructureModerationSerializer(read_only=True)
+    model = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
         fields = [
-            "category",
-            "category_display",
+            "id",
             "slug",
             "name",
             "short_desc",
@@ -666,7 +715,6 @@ class ServiceModerationSerializer(ServiceSerializer):
             "is_available",
             "forms_info",
             "structure",
-            "structure_info",
             "kinds_display",
             "categories_display",
             "subcategories_display",
@@ -680,23 +728,13 @@ class ServiceModerationSerializer(ServiceSerializer):
             "beneficiaries_access_modes_display",
             "coach_orientation_modes_display",
             "department",
-            "can_write",
-            "model_changed",
             "model",
-            "filling_duration",
-            "has_already_been_unpublished",
             "creator",
             "last_editor",
         ]
         lookup_field = "slug"
 
-    # def get_members(self, obj):
-    #     members = StructureMember.objects.filter(structure=obj)
-    #     return StructureMemberSerializer(members, many=True).data
-
-    # def get_pending_members(self, obj):
-    #     pmembers = StructurePutativeMember.objects.filter(structure=obj)
-    #     return StructurePutativeMemberSerializer(pmembers, many=True).data
-
-    # def get_source(self, obj):
-    #     return obj.source.label if obj.source else ""
+    def get_model(self, obj):
+        if obj.model:
+            return {"id": obj.model.pk, "name": obj.model.name, "slug": obj.model.slug}
+        return {}
