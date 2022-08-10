@@ -89,6 +89,7 @@ class ServiceAdmin(admin.GISModelAdmin):
     ]
     list_filter = [
         "status",
+        "moderation_status",
         "is_draft",
         "is_suggestion",
         ("structure", RelatedOnlyFieldListFilter),

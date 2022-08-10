@@ -10,3 +10,30 @@ class EnumModel(models.Model):
 
     def __str__(self):
         return self.label
+
+
+class ModerationStatus(models.TextChoices):
+    NEED_INITIAL_MODERATION = (
+        "NEED_INITIAL_MODERATION",
+        "Première modération nécessaire",
+    )
+    NEED_NEW_MODERATION = "NEED_NEW_MODERATION", "Nouvelle modération nécessaire"
+    IN_PROGRESS = "IN_PROGRESS", "En cours"
+    VALIDATED = "VALIDATED", "Validé"
+
+
+class ModerationMixin(models.Model):
+
+    moderation_status = models.CharField(
+        max_length=30,
+        choices=ModerationStatus.choices,
+        verbose_name="Modération",
+        db_index=True,
+        null=True,
+        blank=True,
+    )
+
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        abstract = True

@@ -22,6 +22,17 @@ class UserAdminSerializer(serializers.ModelSerializer):
             "date_joined",
             "newsletter",
         ]
+        read_only_fields = [
+            "email",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "email",
+            "is_active",
+            "is_valid",
+            "date_joined",
+            "newsletter",
+        ]
 
 
 class StructureAdminSerializer(StructureSerializer):
@@ -38,6 +49,39 @@ class StructureAdminSerializer(StructureSerializer):
     class Meta:
         model = Structure
         fields = [
+            "address1",
+            "address2",
+            "ape",
+            "branches",
+            "city",
+            "creation_date",
+            "creator",
+            "department",
+            "email",
+            "full_desc",
+            "last_editor",
+            "latitude",
+            "longitude",
+            "members",
+            "models",
+            "moderation_status",
+            "modification_date",
+            "name",
+            "notes",
+            "parent",
+            "pending_members",
+            "phone",
+            "postal_code",
+            "services",
+            "short_desc",
+            "siret",
+            "slug",
+            "source",
+            "typology_display",
+            "typology",
+            "url",
+        ]
+        read_only_fields = [
             "address1",
             "address2",
             "ape",
@@ -144,6 +188,13 @@ class StructureAdminListSerializer(StructureAdminSerializer):
             "slug",
             "name",
             "department",
+            "moderation_status",
+            "typology_display",
+        ]
+        read_only_fields = [
+            "slug",
+            "name",
+            "department",
             "typology_display",
         ]
         lookup_field = "slug"
@@ -158,6 +209,33 @@ class ServiceAdminSerializer(ServiceSerializer):
     class Meta:
         model = Service
         fields = [
+            "categories_display",
+            "city",
+            "contact_email",
+            "contact_name",
+            "contact_phone",
+            "creation_date",
+            "creator",
+            "department",
+            "diffusion_zone_details_display",
+            "diffusion_zone_type_display",
+            "fee_details",
+            "full_desc",
+            "has_fee",
+            "is_contact_info_public",
+            "last_editor",
+            "model",
+            "moderation_status",
+            "modification_date",
+            "name",
+            "notes",
+            "postal_code",
+            "short_desc",
+            "slug",
+            "structure",
+            "subcategories_display",
+        ]
+        read_only_fields = [
             "categories_display",
             "city",
             "contact_email",
@@ -196,6 +274,15 @@ class ServiceAdminListSerializer(ServiceAdminSerializer):
     class Meta:
         model = Service
         fields = [
+            "name",
+            "slug",
+            "diffusion_zone_type",
+            "diffusion_zone_type_display",
+            "diffusion_zone_details_display",
+            "moderation_status",
+            "structure_name",
+        ]
+        read_only_fields = [
             "name",
             "slug",
             "diffusion_zone_type",

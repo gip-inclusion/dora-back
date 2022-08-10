@@ -9,7 +9,7 @@ from django.db.models.functions import Length
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
-from dora.core.models import EnumModel
+from dora.core.models import EnumModel, ModerationMixin
 from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import validate_safir, validate_siret
 from dora.sirene.models import Establishment
@@ -142,7 +142,7 @@ class StructureManager(models.Manager):
         return structure
 
 
-class Structure(models.Model):
+class Structure(ModerationMixin, models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # Les antennes peuvent avoir un Siret null

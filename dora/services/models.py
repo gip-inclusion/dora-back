@@ -10,7 +10,7 @@ from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
 from dora.admin_express.models import AdminDivisionType
-from dora.core.models import EnumModel
+from dora.core.models import EnumModel, ModerationMixin
 from dora.structures.models import Structure, StructureMember
 
 from .enums import ServiceStatus
@@ -170,7 +170,7 @@ class ServiceManager(models.Manager):
         return self.filter(status=ServiceStatus.ARCHIVED)
 
 
-class Service(models.Model):
+class Service(ModerationMixin, models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     slug = models.SlugField(max_length=100, blank=True, null=True, unique=True)
 
