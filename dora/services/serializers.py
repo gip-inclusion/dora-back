@@ -2,12 +2,12 @@ import logging
 
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
-from dora.services.enums import ServiceStatus
 from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 
 from dora.admin_express.models import EPCI, City, Department, Region
 from dora.core.utils import code_insee_to_code_dept
+from dora.services.enums import ServiceStatus
 from dora.structures.models import Structure, StructureMember
 
 from .models import (

@@ -103,7 +103,7 @@ class ServiceViewSet(
         user = self.request.user
         only_mine = self.request.query_params.get("mine") in TRUTHY_VALUES
         structure_slug = self.request.query_params.get("structure")
-        published_only = self.request.query_params.get("published")
+        published_only = self.request.query_params.get("published") in TRUTHY_VALUES
 
         all_services = (
             Service.objects.all()
