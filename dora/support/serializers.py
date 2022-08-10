@@ -100,7 +100,6 @@ class StructureAdminSerializer(StructureSerializer):
             return {
                 "name": obj.parent.name,
                 "slug": obj.parent.slug,
-                "id": obj.parent.pk,
             }
         return {}
 
@@ -110,7 +109,7 @@ class StructureAdminSerializer(StructureSerializer):
         class BranchSerializer(serializers.ModelSerializer):
             class Meta:
                 model = Structure
-                fields = ["slug", "name", "id", "short_desc"]
+                fields = ["slug", "name", "short_desc"]
                 lookup_field = "slug"
 
         return BranchSerializer(branches, many=True).data
@@ -121,7 +120,7 @@ class StructureAdminSerializer(StructureSerializer):
         class ModelSerializer(serializers.ModelSerializer):
             class Meta:
                 model = ServiceModel
-                fields = ["slug", "name", "id", "short_desc"]
+                fields = ["slug", "name", "short_desc"]
                 lookup_field = "slug"
 
         return ModelSerializer(models, many=True).data
@@ -132,7 +131,7 @@ class StructureAdminSerializer(StructureSerializer):
         class ServiceSerializer(serializers.ModelSerializer):
             class Meta:
                 model = Service
-                fields = ["slug", "name", "id", "short_desc"]
+                fields = ["slug", "name", "short_desc"]
                 lookup_field = "slug"
 
         return ServiceSerializer(services, many=True).data
