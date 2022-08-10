@@ -13,7 +13,6 @@ from dora.support.serializers import (
 
 
 class StructureAdminPermission(permissions.BasePermission):
-    # TODO: unittest
     def has_permission(self, request, view):
         user = request.user
         if request.method in permissions.SAFE_METHODS:
@@ -22,7 +21,6 @@ class StructureAdminPermission(permissions.BasePermission):
 
 
 class ServiceAdminPermission(permissions.BasePermission):
-    # TODO: unittest
     def has_permission(self, request, view):
         user = request.user
         if request.method in permissions.SAFE_METHODS:

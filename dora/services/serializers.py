@@ -9,7 +9,6 @@ from dora.admin_express.models import EPCI, City, Department, Region
 from dora.core.utils import code_insee_to_code_dept
 from dora.services.enums import ServiceStatus
 from dora.structures.models import Structure, StructureMember
-from dora.users.models import User
 
 from .models import (
     AccessCondition,
@@ -602,12 +601,3 @@ class FeedbackSerializer(serializers.Serializer):
     full_name = serializers.CharField()
     email = serializers.EmailField()
     message = serializers.CharField()
-
-
-class UserSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(label="Email address", max_length=255, validators=[])
-    full_name = serializers.CharField(source="get_full_name", read_only=True)
-
-    class Meta:
-        model = User
-        fields = ["first_name", "last_name", "full_name", "email"]

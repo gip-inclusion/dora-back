@@ -25,53 +25,48 @@ class UserAdminSerializer(serializers.ModelSerializer):
 
 
 class StructureAdminSerializer(StructureSerializer):
+    branches = serializers.SerializerMethodField()
     creator = UserAdminSerializer()
     last_editor = UserAdminSerializer()
-    source = serializers.SerializerMethodField()
     members = serializers.SerializerMethodField()
-    pending_members = serializers.SerializerMethodField()
-    parent = serializers.SerializerMethodField()
-    branches = serializers.SerializerMethodField()
-    services = serializers.SerializerMethodField()
     models = serializers.SerializerMethodField()
+    parent = serializers.SerializerMethodField()
+    pending_members = serializers.SerializerMethodField()
+    services = serializers.SerializerMethodField()
+    source = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
         fields = [
-            "siret",
-            "typology",
-            "typology_display",
-            "slug",
-            "name",
-            "short_desc",
-            "url",
-            "full_desc",
-            "phone",
-            "email",
-            "postal_code",
-            "city_code",
-            "city",
-            "department",
             "address1",
             "address2",
             "ape",
-            "longitude",
-            "latitude",
-            "creation_date",
-            "modification_date",
-            "parent",
             "branches",
-            "has_admin",
-            "num_services",
-            "services",
-            "archived_services",
-            "num_models",
-            "models",
+            "city",
+            "creation_date",
             "creator",
+            "department",
+            "email",
+            "full_desc",
             "last_editor",
-            "source",
+            "latitude",
+            "longitude",
             "members",
+            "models",
+            "modification_date",
+            "name",
+            "parent",
             "pending_members",
+            "phone",
+            "postal_code",
+            "services",
+            "short_desc",
+            "siret",
+            "slug",
+            "source",
+            "typology_display",
+            "typology",
+            "url",
         ]
         lookup_field = "slug"
 
@@ -155,106 +150,38 @@ class StructureAdminListSerializer(StructureAdminSerializer):
         lookup_field = "slug"
 
 
-# class StructureModerationSerializer(serializers.ModelSerializer):
-#     creator = UserModerationSerializer()
-#     last_editor = UserModerationSerializer()
-#     members = serializers.SerializerMethodField()
-
-#     class Meta:
-#         model = Structure
-#         fields = [
-#             "slug",
-#             "name",
-#             "creator",
-#             "last_editor",
-#             "members",
-#             "url",
-#             "phone",
-#             "email",
-#         ]
-
-#     def get_members(self, obj):
-#         class SMSerializer(serializers.ModelSerializer):
-#             user = UserModerationSerializer()
-
-#             class Meta:
-#                 model = StructureMember
-#                 fields = ["user", "creation_date", "is_admin"]
-
-#         members = StructureMember.objects.filter(structure=obj)
-#         return SMSerializer(members, many=True).data
-
-
 class ServiceAdminSerializer(ServiceSerializer):
-
     creator = UserAdminSerializer()
     last_editor = UserAdminSerializer()
-    structure = StructureAdminSerializer()
     model = serializers.SerializerMethodField()
+    structure = StructureAdminSerializer()
 
     class Meta:
         model = Service
         fields = [
-            "slug",
-            "name",
-            "short_desc",
-            "full_desc",
-            "kinds",
-            "categories",
-            "subcategories",
-            "access_conditions",
-            "concerned_public",
-            "is_cumulative",
-            "has_fee",
-            "fee_details",
-            "beneficiaries_access_modes",
-            "beneficiaries_access_modes_other",
-            "coach_orientation_modes",
-            "coach_orientation_modes_other",
-            "requirements",
-            "credentials",
-            "forms",
-            "online_form",
+            "categories_display",
+            "city",
+            "contact_email",
             "contact_name",
             "contact_phone",
-            "contact_email",
-            "is_contact_info_public",
-            "location_kinds",
-            "diffusion_zone_type",
-            "diffusion_zone_details",
-            "qpv_or_zrr",
-            "remote_url",
-            "address1",
-            "address2",
-            "postal_code",
-            "city_code",
-            "city",
-            "geom",
-            "recurrence",
-            "suspension_date",
-            "structure",
             "creation_date",
-            "modification_date",
-            "status",
-            "is_available",
-            "forms_info",
-            "structure",
-            "kinds_display",
-            "categories_display",
-            "subcategories_display",
-            "access_conditions_display",
-            "concerned_public_display",
-            "requirements_display",
-            "credentials_display",
-            "location_kinds_display",
-            "diffusion_zone_type_display",
-            "diffusion_zone_details_display",
-            "beneficiaries_access_modes_display",
-            "coach_orientation_modes_display",
-            "department",
-            "model",
             "creator",
+            "department",
+            "diffusion_zone_details_display",
+            "diffusion_zone_type_display",
+            "fee_details",
+            "full_desc",
+            "has_fee",
+            "is_contact_info_public",
             "last_editor",
+            "model",
+            "modification_date",
+            "name",
+            "postal_code",
+            "short_desc",
+            "slug",
+            "structure",
+            "subcategories_display",
         ]
         lookup_field = "slug"
 
