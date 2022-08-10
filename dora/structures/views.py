@@ -28,7 +28,6 @@ from .serializers import (
     SiretClaimedSerializer,
     StructureListSerializer,
     StructureMemberSerializer,
-    StructureModerationSerializer,
     StructurePutativeMemberSerializer,
     StructureSerializer,
 )
@@ -102,14 +101,6 @@ class StructureViewSet(
 
     def perform_update(self, serializer):
         serializer.save(last_editor=self.request.user)
-
-    @action(detail=True, methods=["get"], url_path="moderation-info")
-    def get_moderation_info(self, request, slug):
-        assert request.user.is_authenticated and request.user.is_staff
-        structure = self.get_object()
-        return Response(
-            StructureModerationSerializer(structure, context={"request": request}).data
-        )
 
 
 class StructureMemberViewset(viewsets.ModelViewSet):

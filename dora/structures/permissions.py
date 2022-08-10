@@ -11,11 +11,6 @@ class StructurePermission(permissions.BasePermission):
         if request.method == "DELETE":
             return False
 
-        # Only staff can see moderation info
-        # TODO: unittest
-        if view.action == "get_moderation_info":
-            return user and user.is_authenticated and user.is_staff
-
         # Anybody can read
         if request.method in permissions.SAFE_METHODS:
             return True

@@ -43,7 +43,6 @@ from .serializers import (
     FeedbackSerializer,
     ServiceListSerializer,
     ServiceModelSerializer,
-    ServiceModerationSerializer,
     ServiceSerializer,
 )
 from .utils import update_sync_checksum
@@ -345,14 +344,6 @@ class ServiceViewSet(
             self._send_service_published_notification(service)
         elif changed_fields:
             self._send_service_modified_notification(service, changed_fields)
-
-    @action(detail=True, methods=["get"], url_path="moderation-info")
-    def get_moderation_info(self, request, slug):
-        assert request.user.is_authenticated and request.user.is_staff
-        service = self.get_object()
-        return Response(
-            ServiceModerationSerializer(service, context={"request": request}).data
-        )
 
 
 class ModelViewSet(ServiceViewSet):
