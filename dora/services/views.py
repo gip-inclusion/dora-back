@@ -274,6 +274,7 @@ class ServiceViewSet(
                 fields=changed_fields,
                 status=new_status,
             )
+        return changed_fields
 
     def _update_status(self, service, new_status, previous_status, user):
         if (
@@ -342,7 +343,7 @@ class ServiceViewSet(
         )
         if newly_published:
             self._send_service_published_notification(service)
-        elif changed_fields:
+        elif changed_fields and service.status == ServiceStatus.PUBLISHED:
             self._send_service_modified_notification(service, changed_fields)
 
 
