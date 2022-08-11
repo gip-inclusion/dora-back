@@ -4,6 +4,7 @@ import uuid
 from django.conf import settings
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
+from django.core.cache import cache
 from django.db.models import CharField, Q
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
@@ -48,8 +49,20 @@ class CustomizableChoice(models.Model):
             )
         ]
 
+    def _get_cache_key(self, fct_name):
+        return f"{self.__class__.__name__}-{fct_name}-{self.pk}"
+
     def __str__(self):
-        return self.name
+        cachekey = self._get_cache_key("__str__")
+        cached_value = cache.get(cachekey)
+        if not cached_value:
+            cached_value = f'{self.name} ({"global" if not self.structure else self.structure.name})'
+            cache.set(cachekey, cached_value)
+        return cached_value
+
+    def save(self, *args, **kwargs):
+        cache.delete(self._get_cache_key("__str__"))
+        return super().save(*args, **kwargs)
 
 
 class AccessCondition(CustomizableChoice):
@@ -109,6 +122,35 @@ class LocationKind(EnumModel):
     class Meta:
         verbose_name = "Lieu de déroulement"
         verbose_name_plural = "Lieux de déroulement"
+
+
+class CustomizableChoicesSet(models.Model):
+    name = models.CharField(max_length=140)
+
+    creation_date = models.DateTimeField(auto_now_add=True)
+    modification_date = models.DateTimeField(auto_now=True)
+
+    access_conditions = models.ManyToManyField(
+        AccessCondition, verbose_name="Critères d’admission", blank=True
+    )
+    concerned_public = models.ManyToManyField(
+        ConcernedPublic, verbose_name="Publics concernés", blank=True
+    )
+    requirements = models.ManyToManyField(
+        Requirement,
+        verbose_name="Pré-requis ou compétences ?",
+        blank=True,
+    )
+    credentials = models.ManyToManyField(
+        Credential, verbose_name="Justificatifs à fournir ?", blank=True
+    )
+
+    class Meta:
+        verbose_name = "Liste de choix"
+        verbose_name_plural = "Listes de choix"
+
+    def __str__(self):
+        return f"{self.name} (#{self.pk})"
 
 
 class ServiceManager(models.Manager):
@@ -327,6 +369,14 @@ class Service(models.Model):
 
     last_draft_notification_date = models.DateTimeField(
         blank=True, null=True, db_index=True
+    )
+
+    customizable_choices_set = models.ForeignKey(
+        CustomizableChoicesSet,
+        verbose_name="Liste de choix",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
     )
 
     objects = ServiceManager()

@@ -1,3 +1,4 @@
+import logging
 import random
 from time import sleep
 
@@ -36,6 +37,8 @@ from .serializers import (
     StructureAndUserSerializer,
     UserInfoSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def update_last_login(user):
@@ -167,6 +170,30 @@ def validate_email(request):
         user.save()
         user.start_onboarding()
 
+    # Si l'utilisateur est administrateur d'une structure, c'est qu'il est le premier administrateur
+    # d'une structure orpheline (autrement, ce serait un StructurePutativeMember et non pas un StructureMember)
+    memberships = StructureMember.objects.filter(user=user, is_admin=True)
+    for m in memberships:
+        if (
+            StructureMember.objects.filter(
+                structure=m.structure,
+                is_admin=True,
+                user__is_valid=True,
+                user__is_active=True,
+            )
+            .exclude(user=user)
+            .exists()
+        ):
+            logging.error(
+                "Administrateur ajouté directement a une structure ayant déjà un administrateur"
+            )
+
+        structure = m.structure
+        send_moderation_email(
+            "Premier administrateur ajouté",
+            f"Premier administrateur ajouté pour la structure <strong><a href='{structure.get_absolute_url()}'>“{structure.name}”</a></strong>",
+        )
+
     # Once the email is valid, we can inform the admins that
     # an access request was sent
     putative_memberships = StructurePutativeMember.objects.filter(
@@ -231,12 +258,9 @@ def register_structure_and_user(request):
         send_mattermost_notification(
             f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{structure.get_absolute_url()}"
         )
-        send_moderation_email(
-            "Nouvelle structure créée",
-            f"Nouvelle structure <strong><a href='{structure.get_absolute_url()}'>“{structure.name}”</a></strong> créée dans le departement {structure.department}",
-        )
+
     has_nonstaff_admin = structure.membership.filter(
-        user__is_staff=False, is_admin=True
+        user__is_staff=False, user__is_valid=True, user__is_active=True, is_admin=True
     ).exists()
 
     need_admin_validation = True

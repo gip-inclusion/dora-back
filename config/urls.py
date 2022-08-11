@@ -12,6 +12,7 @@ import dora.service_suggestions.views
 import dora.services.views
 import dora.sirene.views
 import dora.structures.views
+import dora.support.views
 import dora.users.views
 
 from .url_converters import InseeCodeConverter, SiretConverter
@@ -37,6 +38,20 @@ router.register(
     dora.service_suggestions.views.ServiceSuggestionViewSet,
     basename="service-suggestion",
 )
+
+router.register(
+    r"structures-admin",
+    dora.support.views.StructureAdminViewSet,
+    basename="structure-admin",
+)
+
+router.register(
+    r"services-admin",
+    dora.support.views.ServiceAdminViewSet,
+    basename="service-admin",
+)
+
+
 register_converter(InseeCodeConverter, "insee_code")
 register_converter(SiretConverter, "siret")
 
@@ -93,5 +108,5 @@ private_api_patterns = [
 
 urlpatterns = [*private_api_patterns, *public_api_patterns, *spectacular_patterns]
 
-if settings.DEBUG:
+if settings.PROFILE:
     urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]

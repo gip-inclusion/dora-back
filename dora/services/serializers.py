@@ -7,6 +7,7 @@ from rest_framework.relations import PrimaryKeyRelatedField
 
 from dora.admin_express.models import EPCI, City, Department, Region
 from dora.core.utils import code_insee_to_code_dept
+from dora.services.enums import ServiceStatus
 from dora.structures.models import Structure, StructureMember
 
 from .models import (
@@ -16,6 +17,7 @@ from .models import (
     CoachOrientationMode,
     ConcernedPublic,
     Credential,
+    CustomizableChoicesSet,
     LocationKind,
     Requirement,
     Service,
@@ -238,6 +240,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     )
     department = serializers.SerializerMethodField()
     can_write = serializers.SerializerMethodField()
+    has_already_been_unpublished = serializers.SerializerMethodField()
 
     model_changed = serializers.SerializerMethodField()
     model = serializers.SlugRelatedField(
@@ -315,6 +318,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "model_changed",
             "model",
             "filling_duration",
+            "has_already_been_unpublished",
         ]
         lookup_field = "slug"
 
@@ -332,6 +336,13 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     def get_is_available(self, obj):
         return True
+
+    def get_has_already_been_unpublished(self, obj):
+        # Note : on ne peut pas se baser sur le `new_status` car les services
+        # fraîchement publiés ne deviendront plus éligibles au formulaire Tally...
+        return obj.status_history_item.filter(
+            previous_status=ServiceStatus.PUBLISHED
+        ).exists()
 
     def get_forms_info(self, obj):
         forms = [{"name": form, "url": default_storage.url(form)} for form in obj.forms]
@@ -419,6 +430,19 @@ class ServiceSerializer(serializers.ModelSerializer):
         return None
 
 
+class CustomizableChoicesSetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomizableChoicesSet
+
+        fields = [
+            "name",
+            "access_conditions",
+            "concerned_public",
+            "requirements",
+            "credentials",
+        ]
+
+
 class ServiceModelSerializer(ServiceSerializer):
     num_services = serializers.SerializerMethodField()
     access_conditions = ModelCreatablePrimaryKeyRelatedField(
@@ -446,6 +470,8 @@ class ServiceModelSerializer(ServiceSerializer):
         max_length=140,
         required=False,
     )
+
+    customizable_choices_set = CustomizableChoicesSetSerializer(read_only=True)
 
     class Meta:
         model = ServiceModel
@@ -491,6 +517,7 @@ class ServiceModelSerializer(ServiceSerializer):
             "department",
             "can_write",
             "num_services",
+            "customizable_choices_set",
         ]
         lookup_field = "slug"
 

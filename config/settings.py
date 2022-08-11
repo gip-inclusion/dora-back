@@ -61,6 +61,7 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ["DJANGO_DEBUG"] == "true"
+PROFILE = False
 
 # DJANGO_ADMINS=Name1:email1,Name2:email2
 ADMINS = (
@@ -364,7 +365,7 @@ SPECTACULAR_SETTINGS = {
 ########
 # SILK #
 ########
-if DEBUG:
+if DEBUG and PROFILE:
     SILKY_PYTHON_PROFILER = True
     INSTALLED_APPS.append("silk")
     MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE
@@ -372,7 +373,7 @@ if DEBUG:
 ###############
 # Query Count #
 ###############
-if DEBUG:
+if DEBUG and PROFILE:
     MIDDLEWARE = ["querycount.middleware.QueryCountMiddleware"] + MIDDLEWARE
     QUERYCOUNT = {
         "IGNORE_SQL_PATTERNS": [r"silk_"],
