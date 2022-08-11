@@ -196,7 +196,7 @@ class Structure(ModerationMixin, models.Model):
     ape = models.CharField(max_length=6, blank=True)
 
     creation_date = models.DateTimeField(auto_now_add=True)
-    modification_date = models.DateTimeField(auto_now=True)
+    modification_date = models.DateTimeField(blank=True, null=True)
     creator = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

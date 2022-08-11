@@ -3,14 +3,15 @@ import uuid
 from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.db import models, transaction
-from dora.service_suggestions.emails import (
-    send_suggestion_validated_existing_structure_email,
-    send_suggestion_validated_new_structure_email,
-)
+from django.utils import timezone
 from rest_framework import serializers
 
 from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import validate_siret
+from dora.service_suggestions.emails import (
+    send_suggestion_validated_existing_structure_email,
+    send_suggestion_validated_new_structure_email,
+)
 from dora.services.enums import ServiceStatus
 from dora.services.models import (
     LocationKind,
@@ -118,6 +119,7 @@ class ServiceSuggestion(models.Model):
                 last_editor=self.creator,
                 status=ServiceStatus.SUGGESTION,
                 contact_phone=contact_phone,
+                modification_date=timezone.now(),
                 **self.contents,
             )
             service.access_conditions.set(access_conditions)

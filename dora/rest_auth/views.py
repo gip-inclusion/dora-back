@@ -13,7 +13,8 @@ from rest_framework import exceptions, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from dora.core.notify import send_mattermost_notification, send_moderation_email
+from dora.core.models import ModerationStatus
+from dora.core.notify import send_mattermost_notification, send_moderation_notification
 from dora.rest_auth.authentication import TokenAuthentication
 from dora.rest_auth.models import Token
 from dora.rest_auth.serializers import (
@@ -189,9 +190,10 @@ def validate_email(request):
             )
 
         structure = m.structure
-        send_moderation_email(
-            "Premier administrateur ajouté",
-            f"Premier administrateur ajouté pour la structure <strong><a href='{structure.get_absolute_url()}'>“{structure.name}”</a></strong>",
+        send_moderation_notification(
+            structure,
+            "Premier administrateur ajouté (par lui-même)",
+            ModerationStatus.NEED_INITIAL_MODERATION,
         )
 
     # Once the email is valid, we can inform the admins that

@@ -338,7 +338,7 @@ class Service(ModerationMixin, models.Model):
     is_suggestion = models.BooleanField(default=False)
 
     creation_date = models.DateTimeField(auto_now_add=True)
-    modification_date = models.DateTimeField(auto_now=True)
+    modification_date = models.DateTimeField(blank=True, null=True)
     publication_date = models.DateTimeField(blank=True, null=True)
 
     # Temps passé (en seconde) sur le formulaire de création d'un service - avant la *toute* première publication

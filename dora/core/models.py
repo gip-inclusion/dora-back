@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 
 class EnumModel(models.Model):
@@ -37,3 +38,7 @@ class ModerationMixin(models.Model):
 
     class Meta:
         abstract = True
+
+    def log_note(self, msg):
+        timestamp = timezone.now().strftime("%d/%m/%Y a %Hh%M")
+        self.notes = f"{self.notes.strip()}\n{timestamp} | {msg}\n---"
