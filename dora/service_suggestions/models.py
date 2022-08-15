@@ -3,17 +3,21 @@ import uuid
 from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.db import models, transaction
-from dora.service_suggestions.emails import (
-    send_suggestion_validated_existing_structure_email,
-    send_suggestion_validated_new_structure_email,
-)
 from rest_framework import serializers
 
 from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import validate_siret
+from dora.service_suggestions.emails import (
+    send_suggestion_validated_existing_structure_email,
+    send_suggestion_validated_new_structure_email,
+)
 from dora.services.enums import ServiceStatus
 from dora.services.models import (
+    AccessCondition,
+    ConcernedPublic,
+    Credential,
     LocationKind,
+    Requirement,
     Service,
     ServiceCategory,
     ServiceKind,
@@ -120,10 +124,15 @@ class ServiceSuggestion(models.Model):
                 contact_phone=contact_phone,
                 **self.contents,
             )
-            service.access_conditions.set(access_conditions)
-            service.concerned_public.set(concerned_public)
-            service.requirements.set(requirements)
-            service.credentials.set(credentials)
+
+            service.access_conditions.set(
+                AccessCondition.objects.filter(id__in=access_conditions)
+            )
+            service.concerned_public.set(
+                ConcernedPublic.objects.filter(id__in=concerned_public)
+            )
+            service.requirements.set(Requirement.objects.filter(id__in=requirements))
+            service.credentials.set(Credential.objects.filter(id__in=credentials))
 
             service.categories.set(values_to_objects(ServiceCategory, categories))
             service.subcategories.set(
