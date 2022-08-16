@@ -7,6 +7,8 @@ from dora.structures.models import Structure, StructureMember, StructurePutative
 from dora.structures.serializers import StructureSerializer
 from dora.users.models import User
 
+from ..core.models import LogItem
+
 
 class UserAdminSerializer(serializers.ModelSerializer):
     class Meta:
@@ -35,6 +37,14 @@ class UserAdminSerializer(serializers.ModelSerializer):
         ]
 
 
+class LogItemSerializer(serializers.ModelSerializer):
+    user = UserAdminSerializer()
+
+    class Meta:
+        fields = ["user", "message", "date"]
+        model = LogItem
+
+
 class StructureAdminSerializer(StructureSerializer):
     branches = serializers.SerializerMethodField()
     creator = UserAdminSerializer()
@@ -45,6 +55,7 @@ class StructureAdminSerializer(StructureSerializer):
     pending_members = serializers.SerializerMethodField()
     services = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
+    notes = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
@@ -65,6 +76,7 @@ class StructureAdminSerializer(StructureSerializer):
             "members",
             "models",
             "moderation_status",
+            "moderation_date",
             "modification_date",
             "name",
             "notes",
@@ -99,6 +111,7 @@ class StructureAdminSerializer(StructureSerializer):
             "models",
             "modification_date",
             "name",
+            "notes",
             "parent",
             "pending_members",
             "phone",
@@ -180,6 +193,10 @@ class StructureAdminSerializer(StructureSerializer):
 
         return ServiceSerializer(services, many=True).data
 
+    def get_notes(self, obj):
+        logs = LogItem.objects.filter(structure=obj).order_by("-date")
+        return LogItemSerializer(logs, many=True).data
+
 
 class StructureAdminListSerializer(StructureAdminSerializer):
     class Meta:
@@ -189,6 +206,7 @@ class StructureAdminListSerializer(StructureAdminSerializer):
             "name",
             "department",
             "moderation_status",
+            "moderation_date",
             "typology_display",
         ]
         read_only_fields = [
@@ -205,6 +223,7 @@ class ServiceAdminSerializer(ServiceSerializer):
     last_editor = UserAdminSerializer()
     model = serializers.SerializerMethodField()
     structure = StructureAdminSerializer()
+    notes = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
@@ -226,6 +245,7 @@ class ServiceAdminSerializer(ServiceSerializer):
             "last_editor",
             "model",
             "moderation_status",
+            "moderation_date",
             "modification_date",
             "name",
             "notes",
@@ -254,6 +274,7 @@ class ServiceAdminSerializer(ServiceSerializer):
             "model",
             "modification_date",
             "name",
+            "notes",
             "postal_code",
             "short_desc",
             "slug",
@@ -267,9 +288,14 @@ class ServiceAdminSerializer(ServiceSerializer):
             return {"name": obj.model.name, "slug": obj.model.slug}
         return {}
 
+    def get_notes(self, obj):
+        logs = LogItem.objects.filter(service=obj).order_by("-date")
+        return LogItemSerializer(logs, many=True).data
+
 
 class ServiceAdminListSerializer(ServiceAdminSerializer):
     structure_name = serializers.SerializerMethodField()
+    structure_dept = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
@@ -280,7 +306,9 @@ class ServiceAdminListSerializer(ServiceAdminSerializer):
             "diffusion_zone_type_display",
             "diffusion_zone_details_display",
             "moderation_status",
+            "moderation_date",
             "structure_name",
+            "structure_dept",
         ]
         read_only_fields = [
             "name",
@@ -289,7 +317,11 @@ class ServiceAdminListSerializer(ServiceAdminSerializer):
             "diffusion_zone_type_display",
             "diffusion_zone_details_display",
             "structure_name",
+            "structure_dept",
         ]
 
     def get_structure_name(self, obj):
         return obj.structure.name
+
+    def get_structure_dept(self, obj):
+        return obj.structure.department

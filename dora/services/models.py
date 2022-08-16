@@ -10,7 +10,7 @@ from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
 from dora.admin_express.models import AdminDivisionType
-from dora.core.models import EnumModel, ModerationMixin
+from dora.core.models import EnumModel, LogItem, ModerationMixin
 from dora.structures.models import Structure, StructureMember
 
 from .enums import ServiceStatus
@@ -430,6 +430,9 @@ class Service(ModerationMixin, models.Model):
 
     def get_admin_url(self):
         return f"https://{settings.ALLOWED_HOSTS[0]}/services/service/{self.id}/change"
+
+    def log_note(self, user, msg):
+        LogItem.objects.create(service=self, user=user, message=msg.strip())
 
 
 class ServiceModelManager(models.Manager):

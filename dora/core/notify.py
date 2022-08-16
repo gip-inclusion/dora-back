@@ -2,6 +2,7 @@ import json
 
 import requests
 from django.conf import settings
+from django.utils import timezone
 
 
 def send_mattermost_notification(msg):
@@ -24,7 +25,8 @@ def send_mattermost_notification(msg):
             print("HTTP Request failed")
 
 
-def send_moderation_notification(entity, msg, new_status):
-    entity.log_note(msg)
+def send_moderation_notification(entity, user, msg, new_status):
+    entity.log_note(user, msg)
     entity.moderation_status = new_status
+    entity.moderation_date = timezone.now()
     entity.save()

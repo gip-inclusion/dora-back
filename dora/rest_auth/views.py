@@ -192,6 +192,7 @@ def validate_email(request):
         structure = m.structure
         send_moderation_notification(
             structure,
+            user,
             "Premier administrateur ajouté (par lui-même)",
             ModerationStatus.NEED_INITIAL_MODERATION,
         )

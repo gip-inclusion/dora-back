@@ -106,7 +106,8 @@ class StructureViewSet(
         )
         send_moderation_notification(
             structure,
-            f"Créée par {self.request.user.email}",
+            self.request.user,
+            "Création",
             ModerationStatus.NEED_INITIAL_MODERATION,
         )
 

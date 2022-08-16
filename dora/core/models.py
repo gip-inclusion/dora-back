@@ -1,5 +1,5 @@
+from django.conf import settings
 from django.db import models
-from django.utils import timezone
 
 
 class EnumModel(models.Model):
@@ -33,12 +33,30 @@ class ModerationMixin(models.Model):
         null=True,
         blank=True,
     )
-
-    notes = models.TextField(blank=True)
+    moderation_date = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         abstract = True
 
-    def log_note(self, msg):
-        timestamp = timezone.now().strftime("%d/%m/%Y a %Hh%M")
-        self.notes = f"{self.notes.strip()}\n{timestamp} | {msg}\n---"
+
+class LogItem(models.Model):
+    structure = models.ForeignKey(
+        "structures.Structure",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
+    service = models.ForeignKey(
+        "services.Service",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
+    date = models.DateTimeField(auto_now_add=True)
+    message = models.TextField()

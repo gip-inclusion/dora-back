@@ -1,4 +1,5 @@
-from rest_framework import mixins, permissions, viewsets
+from django.utils import timezone
+from rest_framework import mixins, permissions, serializers, viewsets
 
 from dora.core.models import ModerationStatus
 from dora.core.pagination import OptionalPageNumberPagination
@@ -30,7 +31,23 @@ class ServiceAdminPermission(permissions.BasePermission):
         return False
 
 
+class ModerationMixin:
+    def perform_update(self, serializer):
+        status_before_update = serializer.instance.moderation_status
+        status_after_update = (
+            serializer.validated_data.get("moderation_status") or status_before_update
+        )
+
+        if not status_before_update != status_after_update:
+            raise serializers.ValidationError(
+                "Mise à jour du statut de modération sans changement de statut"
+            )
+
+        serializer.save(moderation_date=timezone.now())
+
+
 class StructureAdminViewSet(
+    ModerationMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
     mixins.ListModelMixin,
@@ -56,6 +73,7 @@ class StructureAdminViewSet(
 
 
 class ServiceAdminViewSet(
+    ModerationMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
     mixins.ListModelMixin,
@@ -80,3 +98,15 @@ class ServiceAdminViewSet(
         if self.action == "list":
             return ServiceAdminListSerializer
         return super().get_serializer_class()
+
+    def perform_update(self, serializer):
+        status_before_update = serializer.instance.moderation_status
+        status_after_update = (
+            serializer.validated_data.get("moderation_status") or status_before_update
+        )
+
+        if not status_before_update != status_after_update:
+            raise serializers.ValidationError(
+                "Mise à jour du statut de modération sans changement de statut"
+            )
+        serializer.save(moderation_date=timezone.now())

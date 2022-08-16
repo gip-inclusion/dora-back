@@ -217,7 +217,7 @@ class ServiceViewSet(
         if service.status == ServiceStatus.DRAFT:
             self._send_draft_service_created_notification(service)
         elif service.status == ServiceStatus.PUBLISHED:
-            self._send_service_published_notification(service)
+            self._send_service_published_notification(service, self.request.user)
         if service.model:
             service.last_sync_checksum = service.model.sync_checksum
             service.save()
@@ -229,7 +229,7 @@ class ServiceViewSet(
             f":tada: Nouveau brouillon “{service.name}” créé dans la structure : **{structure.name} ({structure.department})** par {user.get_full_name()}\n{settings.FRONTEND_URL}/services/{service.slug}"
         )
 
-    def _send_service_published_notification(self, service):
+    def _send_service_published_notification(self, service, user):
         structure = service.structure
         time_elapsed = (
             service.publication_date - service.creation_date
@@ -244,14 +244,16 @@ class ServiceViewSet(
         )
         send_moderation_notification(
             service,
-            f"Publié par {self.request.user.email}",
+            user,
+            "Service publié",
             ModerationStatus.NEED_INITIAL_MODERATION,
         )
 
-    def _send_service_modified_notification(self, service, changed_fields):
+    def _send_service_modified_notification(self, service, user, changed_fields):
         send_moderation_notification(
             service,
-            f"Modifié par {self.request.user.email} ; champs modifiés : {' / '.join(changed_fields)}",
+            user,
+            f"Service modifié ; champs modifiés : {' / '.join(changed_fields)}",
             ModerationStatus.NEED_NEW_MODERATION,
         )
 
@@ -342,9 +344,11 @@ class ServiceViewSet(
             and service.status == ServiceStatus.PUBLISHED
         )
         if newly_published:
-            self._send_service_published_notification(service)
+            self._send_service_published_notification(service, self.request.user)
         elif changed_fields and service.status == ServiceStatus.PUBLISHED:
-            self._send_service_modified_notification(service, changed_fields)
+            self._send_service_modified_notification(
+                service, self.request.user, changed_fields
+            )
 
 
 class ModelViewSet(ServiceViewSet):

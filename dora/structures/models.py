@@ -9,7 +9,7 @@ from django.db.models.functions import Length
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
-from dora.core.models import EnumModel, ModerationMixin
+from dora.core.models import EnumModel, LogItem, ModerationMixin
 from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import validate_safir, validate_siret
 from dora.sirene.models import Establishment
@@ -341,3 +341,6 @@ class Structure(ModerationMixin, models.Model):
         return (
             f"https://{settings.ALLOWED_HOSTS[0]}/structures/structure/{self.id}/change"
         )
+
+    def log_note(self, user, msg):
+        LogItem.objects.create(structure=self, user=user, message=msg.strip())
