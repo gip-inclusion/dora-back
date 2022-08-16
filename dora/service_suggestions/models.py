@@ -171,6 +171,8 @@ class ServiceSuggestion(models.Model):
                 #     emails_contacted.add(contact_email)
 
                 if emails_contacted:
+                    # FIXME: mettre des destinataires multiples dans le champ To: n'est sans doute pas une bonne idée…
+                    # voir: https://www.notion.so/dora-beta/Notification-de-suggestion-valid-e-destinataires-multiples-9d1aa1b15f334721a423346107aeab53
                     send_suggestion_validated_existing_structure_email(
                         list(emails_contacted), structure, service
                     )
