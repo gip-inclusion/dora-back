@@ -163,8 +163,12 @@ class ServiceSuggestion(models.Model):
                 for admin in structure_admins:
                     emails_contacted.add(admin.user.email)
 
-                if contact_email is not None:
-                    emails_contacted.add(contact_email)
+                # Pour l'instant on désactive l'envoi au contact_email, étant donnée que le message actuel
+                # n'est pas pertinent pour un utilisateur qui ne fait pas déjà partie de la structure,
+                # et on n'a pas cette garantie.
+
+                # if contact_email is not None:
+                #     emails_contacted.add(contact_email)
 
                 if emails_contacted:
                     send_suggestion_validated_existing_structure_email(
