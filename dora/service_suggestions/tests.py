@@ -2,12 +2,12 @@ from datetime import timedelta
 
 from django.core import mail
 from django.utils import timezone
-from dora.structures.models import StructureMember
 from model_bakery import baker
 from rest_framework.test import APITestCase, APITransactionTestCase
 
 from dora.core.test_utils import make_structure
 from dora.services.enums import ServiceStatus
+from dora.structures.models import StructureMember
 
 from .models import ServiceSuggestion
 
@@ -279,10 +279,10 @@ class ServiceSuggestionsTestCase(APITestCase):
         self.client.force_authenticate(user=bizdev_user)
         response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
 
-        # ALORS l'administrateur et la personne en contact sont contactés
+        # ALORS seul l'administrateur est contacté
         self.assertEqual(
             sorted(response.data["emails_contacted"]),
-            sorted([admin_mail, contact_mail]),
+            sorted([admin_mail]),
         )
         self.assertIn(
             "[DORA] Vous avez reçu une nouvelle suggestion de service ! 🥳 🎉",
