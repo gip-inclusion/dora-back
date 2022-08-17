@@ -10,7 +10,7 @@ from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
 from dora.admin_express.models import AdminDivisionType
-from dora.core.models import EnumModel
+from dora.core.models import EnumModel, LogItem, ModerationMixin
 from dora.structures.models import Structure, StructureMember
 
 from .enums import ServiceStatus
@@ -170,7 +170,7 @@ class ServiceManager(models.Manager):
         return self.filter(status=ServiceStatus.ARCHIVED)
 
 
-class Service(models.Model):
+class Service(ModerationMixin, models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     slug = models.SlugField(max_length=100, blank=True, null=True, unique=True)
 
@@ -338,7 +338,7 @@ class Service(models.Model):
     is_suggestion = models.BooleanField(default=False)
 
     creation_date = models.DateTimeField(auto_now_add=True)
-    modification_date = models.DateTimeField(auto_now=True)
+    modification_date = models.DateTimeField(blank=True, null=True)
     publication_date = models.DateTimeField(blank=True, null=True)
 
     # Temps passé (en seconde) sur le formulaire de création d'un service - avant la *toute* première publication
@@ -430,6 +430,9 @@ class Service(models.Model):
 
     def get_admin_url(self):
         return f"https://{settings.ALLOWED_HOSTS[0]}/services/service/{self.id}/change"
+
+    def log_note(self, user, msg):
+        LogItem.objects.create(service=self, user=user, message=msg.strip())
 
 
 class ServiceModelManager(models.Manager):

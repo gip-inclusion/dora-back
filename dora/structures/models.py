@@ -6,10 +6,11 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CharField, Q
 from django.db.models.functions import Length
+from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
-from dora.core.models import EnumModel
+from dora.core.models import EnumModel, LogItem, ModerationMixin
 from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import validate_safir, validate_siret
 from dora.sirene.models import Establishment
@@ -137,12 +138,13 @@ class StructureManager(models.Manager):
             ape=data["ape"],
             longitude=data["longitude"],
             latitude=data["latitude"],
+            modification_date=timezone.now(),
         )
         structure.save()
         return structure
 
 
-class Structure(models.Model):
+class Structure(ModerationMixin, models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # Les antennes peuvent avoir un Siret null
@@ -196,7 +198,7 @@ class Structure(models.Model):
     ape = models.CharField(max_length=6, blank=True)
 
     creation_date = models.DateTimeField(auto_now_add=True)
-    modification_date = models.DateTimeField(auto_now=True)
+    modification_date = models.DateTimeField(blank=True, null=True)
     creator = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -341,3 +343,6 @@ class Structure(models.Model):
         return (
             f"https://{settings.ALLOWED_HOSTS[0]}/structures/structure/{self.id}/change"
         )
+
+    def log_note(self, user, msg):
+        LogItem.objects.create(structure=self, user=user, message=msg.strip())

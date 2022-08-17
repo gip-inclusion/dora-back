@@ -49,6 +49,7 @@ class Command(BaseCommand):
                         structure = Structure.objects.create_from_establishment(
                             establishment
                         )
+                        # TODO: ajoute une notification de modération ?
                         structure.source = source
                         structure.creator = bot_user
                         structure.last_editor = bot_user
