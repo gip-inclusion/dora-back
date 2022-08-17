@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CharField, Q
 from django.db.models.functions import Length
+from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
@@ -137,6 +138,7 @@ class StructureManager(models.Manager):
             ape=data["ape"],
             longitude=data["longitude"],
             latitude=data["latitude"],
+            modification_date=timezone.now(),
         )
         structure.save()
         return structure

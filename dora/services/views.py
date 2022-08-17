@@ -253,7 +253,7 @@ class ServiceViewSet(
         send_moderation_notification(
             service,
             user,
-            f"Service modifié ; champs modifiés : {' / '.join(changed_fields)}",
+            f"Service modifié ({' / '.join(changed_fields)})",
             ModerationStatus.NEED_NEW_MODERATION,
         )
 
@@ -449,13 +449,18 @@ class ModelViewSet(ServiceViewSet):
             service.save()
 
     def perform_update(self, serializer):
-        self._log_history(serializer)
+        changed_fields = self._log_history(serializer)
         model = serializer.save(
             last_editor=self.request.user,
             modification_date=timezone.now(),
         )
         model.sync_checksum = update_sync_checksum(model)
         model.save()
+        if changed_fields:
+            model.log_note(
+                self.request.user,
+                f"Modèle modifié ({' / '.join(changed_fields)})",
+            )
 
 
 @api_view()

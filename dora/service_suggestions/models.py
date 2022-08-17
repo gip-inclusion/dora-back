@@ -28,6 +28,9 @@ from dora.sirene.models import Establishment
 from dora.sirene.serializers import EstablishmentSerializer
 from dora.structures.models import Structure, StructureMember, StructureSource
 
+from ..core.models import ModerationStatus
+from ..core.notify import send_moderation_notification
+
 
 class ServiceSuggestion(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -67,7 +70,7 @@ class ServiceSuggestion(models.Model):
             except Establishment.DoesNotExist:
                 raise serializers.ValidationError("SIRET inconnu", code="wrong_siret")
 
-    def convert_to_service(self, send_notification_mail=False):
+    def convert_to_service(self, send_notification_mail=False, user=None):
         def values_to_objects(Model, values):
             return [Model.objects.get(value=v) for v in values]
 
@@ -80,12 +83,18 @@ class ServiceSuggestion(models.Model):
             try:
                 establishment = Establishment.objects.get(siret=self.siret)
                 structure = Structure.objects.create_from_establishment(establishment)
-                structure.creator = self.creator
-                structure.last_editor = self.creator
+                structure.creator = self.creator or user
+                structure.last_editor = self.creator or user
                 structure.source = StructureSource.objects.get(
                     value="suggestion-collaborative"
                 )
                 structure.save()
+                send_moderation_notification(
+                    structure,
+                    user,
+                    "Structure créée à partir d'une contribution",
+                    ModerationStatus.VALIDATED,
+                )
             except Establishment.DoesNotExist:
                 raise serializers.ValidationError("SIRET inconnu", code="wrong_siret")
 
@@ -119,8 +128,8 @@ class ServiceSuggestion(models.Model):
                 name=self.name,
                 structure=structure,
                 geom=geom,
-                creator=self.creator,
-                last_editor=self.creator,
+                creator=self.creator or user,
+                last_editor=self.creator or user,
                 status=ServiceStatus.SUGGESTION,
                 contact_phone=contact_phone,
                 modification_date=timezone.now(),

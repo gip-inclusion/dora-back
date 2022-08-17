@@ -112,10 +112,11 @@ class StructureViewSet(
         )
 
     def perform_update(self, serializer):
-        serializer.save(
+        structure = serializer.save(
             last_editor=self.request.user,
             modification_date=timezone.now(),
         )
+        structure.log_note(self.request.user, "Structure modifiée")
 
 
 class StructureMemberViewset(viewsets.ModelViewSet):

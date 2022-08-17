@@ -42,6 +42,7 @@ def structure_from_siret(siret, name, user, for_parent=False):
             else:
                 raise serializers.ValidationError(f"Invalid siret {siret} for {name}")
         structure = Structure.objects.create_from_establishment(establishment)
+        # TODO: ajoute une notification de modération ?
         structure.creator = user
         structure.last_editor = user
         structure.source = StructureSource.objects.get(value="invitations-masse")
@@ -49,6 +50,7 @@ def structure_from_siret(siret, name, user, for_parent=False):
     if not for_parent and structure.name != name:
         structure.name = name
         structure.last_editor = user
+        structure.modification_date = timezone.now()
         structure.save()
     return structure
 
@@ -127,6 +129,7 @@ class Command(BaseCommand):
                             branch.source = StructureSource.objects.get(
                                 value="invitations-masse"
                             )
+                            branch.modification_date = timezone.now()
                             branch.save()
                         target_structure = branch
 

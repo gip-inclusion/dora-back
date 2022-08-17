@@ -1,4 +1,3 @@
-from django.utils import timezone
 from rest_framework import mixins, permissions, serializers, viewsets
 
 from dora.core.models import ModerationStatus
@@ -13,6 +12,8 @@ from dora.support.serializers import (
     StructureAdminListSerializer,
     StructureAdminSerializer,
 )
+
+from ..core.notify import send_moderation_notification
 
 
 class StructureAdminPermission(permissions.BasePermission):
@@ -35,15 +36,18 @@ class ModerationMixin:
     def perform_update(self, serializer):
         status_before_update = serializer.instance.moderation_status
         status_after_update = (
-            serializer.validated_data.get("moderation_status") or status_before_update
+            ModerationStatus(serializer.validated_data.get("moderation_status"))
+            or status_before_update
         )
 
         if not status_before_update != status_after_update:
             raise serializers.ValidationError(
                 "Mise à jour du statut de modération sans changement de statut"
             )
-
-        serializer.save(moderation_date=timezone.now())
+        msg = "Statut de modération changé par un•e membre de l'équipe"
+        send_moderation_notification(
+            serializer.instance, self.request.user, msg, status_after_update
+        )
 
 
 class StructureAdminViewSet(
@@ -98,15 +102,3 @@ class ServiceAdminViewSet(
         if self.action == "list":
             return ServiceAdminListSerializer
         return super().get_serializer_class()
-
-    def perform_update(self, serializer):
-        status_before_update = serializer.instance.moderation_status
-        status_after_update = (
-            serializer.validated_data.get("moderation_status") or status_before_update
-        )
-
-        if not status_before_update != status_after_update:
-            raise serializers.ValidationError(
-                "Mise à jour du statut de modération sans changement de statut"
-            )
-        serializer.save(moderation_date=timezone.now())
