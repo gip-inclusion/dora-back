@@ -6,6 +6,8 @@ from django.db import models, transaction
 from django.utils import timezone
 from rest_framework import serializers
 
+from dora.core.models import ModerationStatus
+from dora.core.notify import send_moderation_notification
 from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import validate_siret
 from dora.service_suggestions.emails import (
@@ -27,9 +29,6 @@ from dora.services.models import (
 from dora.sirene.models import Establishment
 from dora.sirene.serializers import EstablishmentSerializer
 from dora.structures.models import Structure, StructureMember, StructureSource
-
-from ..core.models import ModerationStatus
-from ..core.notify import send_moderation_notification
 
 
 class ServiceSuggestion(models.Model):

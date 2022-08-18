@@ -258,6 +258,12 @@ def register_structure_and_user(request):
         structure.last_editor = user
         structure.source = StructureSource.objects.get(value="porteur")
         structure.save()
+        send_moderation_notification(
+            structure,
+            user,
+            "Structure créée lors d'une inscription",
+            ModerationStatus.VALIDATED,
+        )
         send_mattermost_notification(
             f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{structure.get_absolute_url()}"
         )

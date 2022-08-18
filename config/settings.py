@@ -100,6 +100,7 @@ INSTALLED_APPS = [
     "dora.services",
     "dora.service_suggestions",
     "dora.sirene",
+    "dora.support",
     "dora.admin_express",
     "dora.stats",
 ]

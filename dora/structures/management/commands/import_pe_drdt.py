@@ -5,6 +5,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.utils import IntegrityError
 
+from dora.core.models import ModerationStatus
+from dora.core.notify import send_moderation_notification
 from dora.sirene.models import Establishment
 from dora.structures.models import Structure, StructureSource, StructureTypology
 from dora.users.models import User
@@ -49,7 +51,6 @@ class Command(BaseCommand):
                         structure = Structure.objects.create_from_establishment(
                             establishment
                         )
-                        # TODO: ajoute une notification de modération ?
                         structure.source = source
                         structure.creator = bot_user
                         structure.last_editor = bot_user
@@ -66,3 +67,9 @@ class Command(BaseCommand):
                                 )
                             )
                             continue
+                        send_moderation_notification(
+                            structure,
+                            bot_user,
+                            "Structure créée à partir d'un import PE",
+                            ModerationStatus.VALIDATED,
+                        )

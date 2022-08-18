@@ -1,6 +1,7 @@
 from rest_framework import mixins, permissions, serializers, viewsets
 
 from dora.core.models import ModerationStatus
+from dora.core.notify import send_moderation_notification
 from dora.core.pagination import OptionalPageNumberPagination
 from dora.core.utils import TRUTHY_VALUES
 from dora.services.enums import ServiceStatus
@@ -12,8 +13,6 @@ from dora.support.serializers import (
     StructureAdminListSerializer,
     StructureAdminSerializer,
 )
-
-from ..core.notify import send_moderation_notification
 
 
 class StructureAdminPermission(permissions.BasePermission):

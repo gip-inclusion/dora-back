@@ -5,6 +5,8 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from rest_framework import serializers
 
+from dora.core.models import ModerationStatus
+from dora.core.notify import send_moderation_notification
 from dora.rest_auth.models import Token
 from dora.sirene.models import Establishment
 from dora.structures.emails import send_invitation_email
@@ -42,11 +44,16 @@ def structure_from_siret(siret, name, user, for_parent=False):
             else:
                 raise serializers.ValidationError(f"Invalid siret {siret} for {name}")
         structure = Structure.objects.create_from_establishment(establishment)
-        # TODO: ajoute une notification de modération ?
         structure.creator = user
         structure.last_editor = user
         structure.source = StructureSource.objects.get(value="invitations-masse")
         structure.save()
+        send_moderation_notification(
+            structure,
+            user,
+            "Structure créée à partir d'une invitation en masse",
+            ModerationStatus.VALIDATED,
+        )
     if not for_parent and structure.name != name:
         structure.name = name
         structure.last_editor = user
