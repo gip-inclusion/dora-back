@@ -10,6 +10,8 @@ from django.db.models.expressions import RawSQL
 from tqdm import tqdm
 
 from dora.core import utils
+from dora.core.models import ModerationStatus
+from dora.core.notify import send_moderation_notification
 from dora.sirene.models import Establishment
 from dora.structures.models import Structure, StructureSource, StructureTypology
 from dora.users.models import User
@@ -169,6 +171,12 @@ class Command(BaseCommand):
                     )
                 structure.typology = StructureTypology.objects.get(value=datum["kind"])
                 structure.save()
+                send_moderation_notification(
+                    structure,
+                    bot_user,
+                    "Structure créée à partir d'un import ITOU'",
+                    ModerationStatus.VALIDATED,
+                )
 
                 # écriture "manuelle" de la date de modif pour contourner la réécriture
                 # automatique par django (dû à `auto_now=``)

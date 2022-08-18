@@ -1,13 +1,12 @@
 from rest_framework import serializers
 
+from dora.core.models import LogItem
 from dora.services.enums import ServiceStatus
 from dora.services.models import Service, ServiceModel
 from dora.services.serializers import ServiceSerializer
 from dora.structures.models import Structure, StructureMember, StructurePutativeMember
 from dora.structures.serializers import StructureSerializer
 from dora.users.models import User
-
-from ..core.models import LogItem
 
 
 class UserAdminSerializer(serializers.ModelSerializer):
