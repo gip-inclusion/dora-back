@@ -277,10 +277,7 @@ class ServiceViewSet(
         return changed_fields
 
     def _update_status(self, service, new_status, previous_status, user):
-        if (
-            previous_status == ServiceStatus.DRAFT
-            and new_status == ServiceStatus.PUBLISHED
-        ):
+        if new_status == ServiceStatus.PUBLISHED:
             service.publication_date = timezone.now()
             service.save()
 
