@@ -70,6 +70,8 @@ class ServiceSuggestionViewSet(
     )
     def validate_suggestion(self, request, pk):
         suggestion = self.get_object()
-        _, emails_contacted = suggestion.convert_to_service(send_notification_mail=True)
+        _, emails_contacted = suggestion.convert_to_service(
+            send_notification_mail=True, user=request.user
+        )
 
         return Response({"emails_contacted": emails_contacted}, status=201)
