@@ -6,6 +6,7 @@ import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils import timezone
 
 from dora.structures.models import Structure, StructureSource, StructureTypology
 from dora.users.models import User
@@ -145,6 +146,7 @@ class Command(BaseCommand):
                     structure.longitude = adresse["gpsLon"]
                     structure.latitude = adresse["gpsLat"]
                     structure.last_editor = bot_user
+                    structure.modification_date = timezone.now()
                     structure.save()
                 except KeyError as err:
                     self.stdout.write(

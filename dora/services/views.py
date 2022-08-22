@@ -13,7 +13,8 @@ from rest_framework.response import Response
 
 from dora.admin_express.models import City
 from dora.admin_express.utils import arrdt_to_main_insee_code
-from dora.core.notify import send_mattermost_notification, send_moderation_email
+from dora.core.models import ModerationStatus
+from dora.core.notify import send_mattermost_notification, send_moderation_notification
 from dora.core.pagination import OptionalPageNumberPagination
 from dora.core.utils import FALSY_VALUES, TRUTHY_VALUES
 from dora.services.emails import send_service_feedback_email
@@ -210,12 +211,13 @@ class ServiceViewSet(
             last_editor=self.request.user,
             filling_duration=duration_to_add,
             publication_date=pub_date,
+            modification_date=timezone.now(),
         )
 
         if service.status == ServiceStatus.DRAFT:
             self._send_draft_service_created_notification(service)
         elif service.status == ServiceStatus.PUBLISHED:
-            self._send_service_published_notification(service)
+            self._send_service_published_notification(service, self.request.user)
         if service.model:
             service.last_sync_checksum = service.model.sync_checksum
             service.save()
@@ -227,7 +229,7 @@ class ServiceViewSet(
             f":tada: Nouveau brouillon “{service.name}” créé dans la structure : **{structure.name} ({structure.department})** par {user.get_full_name()}\n{settings.FRONTEND_URL}/services/{service.slug}"
         )
 
-    def _send_service_published_notification(self, service):
+    def _send_service_published_notification(self, service, user):
         structure = service.structure
         time_elapsed = (
             service.publication_date - service.creation_date
@@ -240,20 +242,19 @@ class ServiceViewSet(
         send_mattermost_notification(
             f":100: Service “{service.name}” publié dans la structure : **{structure.name} ({structure.department})** par {user.get_full_name()}, {time_elapsed_h} après sa création\n{service.get_absolute_url()}"
         )
-        send_moderation_email(
+        send_moderation_notification(
+            service,
+            user,
             "Service publié",
-            f"Service <strong><a href='{service.get_absolute_url()}'>“{service.name}”</a></strong> publié dans la structure : <strong>{structure.name} ({structure.department})</strong>",
+            ModerationStatus.NEED_INITIAL_MODERATION,
         )
 
-    def _send_service_modified_notification(self, service, changed_fields):
-        send_moderation_email(
-            "Service modifié",
-            f"""
-                Le service <strong><a href="{service.get_absolute_url()}">“{service.name}”</a></strong>
-                de la structure : <strong>{service.structure.name} ({service.structure.department})</strong>
-                a été modifié<br><br>
-
-                Champs modifiés: {" / ".join(changed_fields)}""",
+    def _send_service_modified_notification(self, service, user, changed_fields):
+        send_moderation_notification(
+            service,
+            user,
+            f"Service modifié ({' / '.join(changed_fields)})",
+            ModerationStatus.NEED_NEW_MODERATION,
         )
 
     def _log_history(self, serializer, new_status=""):
@@ -325,6 +326,7 @@ class ServiceViewSet(
             last_editor=self.request.user,
             filling_duration=filling_duration,
             last_sync_checksum=last_sync_checksum,
+            modification_date=timezone.now(),
         )
 
         # Historique des statuts
@@ -339,9 +341,11 @@ class ServiceViewSet(
             and service.status == ServiceStatus.PUBLISHED
         )
         if newly_published:
-            self._send_service_published_notification(service)
+            self._send_service_published_notification(service, self.request.user)
         elif changed_fields and service.status == ServiceStatus.PUBLISHED:
-            self._send_service_modified_notification(service, changed_fields)
+            self._send_service_modified_notification(
+                service, self.request.user, changed_fields
+            )
 
 
 class ModelViewSet(ServiceViewSet):
@@ -424,6 +428,7 @@ class ModelViewSet(ServiceViewSet):
             creator=self.request.user,
             last_editor=self.request.user,
             is_model=True,
+            modification_date=timezone.now(),
         )
         structure = model.structure
         send_mattermost_notification(
@@ -441,10 +446,18 @@ class ModelViewSet(ServiceViewSet):
             service.save()
 
     def perform_update(self, serializer):
-        self._log_history(serializer)
-        model = serializer.save(last_editor=self.request.user)
+        changed_fields = self._log_history(serializer)
+        model = serializer.save(
+            last_editor=self.request.user,
+            modification_date=timezone.now(),
+        )
         model.sync_checksum = update_sync_checksum(model)
         model.save()
+        if changed_fields:
+            model.log_note(
+                self.request.user,
+                f"Modèle modifié ({' / '.join(changed_fields)})",
+            )
 
 
 @api_view()

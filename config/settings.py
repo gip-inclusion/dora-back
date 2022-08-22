@@ -100,6 +100,7 @@ INSTALLED_APPS = [
     "dora.services",
     "dora.service_suggestions",
     "dora.sirene",
+    "dora.support",
     "dora.admin_express",
     "dora.stats",
 ]
@@ -406,4 +407,3 @@ DRAFT_AGE_NOTIFICATION_DAYS = 7
 ##############################
 
 MATTERMOST_HOOK_KEY = os.environ.get("MATTERMOST_HOOK_KEY")
-MODERATION_EMAIL_ADRESS = os.environ.get("MODERATION_EMAIL_ADRESS")

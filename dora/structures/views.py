@@ -7,7 +7,8 @@ from rest_framework import exceptions, mixins, permissions, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
-from dora.core.notify import send_mattermost_notification, send_moderation_email
+from dora.core.models import ModerationStatus
+from dora.core.notify import send_mattermost_notification, send_moderation_notification
 from dora.core.pagination import OptionalPageNumberPagination
 from dora.rest_auth.models import Token
 from dora.structures.emails import send_invitation_email
@@ -87,20 +88,35 @@ class StructureViewSet(
             if user.is_staff
             else StructureSource.objects.get(value="porteur")
         )
-        structure = serializer.save(creator=user, last_editor=user, source=source)
+        structure = serializer.save(
+            creator=user,
+            last_editor=user,
+            source=source,
+            modification_date=timezone.now(),
+        )
         # When creating a structure, the creator becomes member and administrator of this structure
-        StructureMember.objects.create(user=user, structure=structure, is_admin=True)
+        StructureMember.objects.create(
+            user=user,
+            structure=structure,
+            is_admin=True,
+        )
 
         send_mattermost_notification(
             f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
         )
-        send_moderation_email(
-            "Nouvelle structure créée",
-            f"Nouvelle structure <strong><a href='{structure.get_absolute_url()}'>“{structure.name}”</strong> créée dans le departement {structure.department}",
+        send_moderation_notification(
+            structure,
+            self.request.user,
+            "Création",
+            ModerationStatus.NEED_INITIAL_MODERATION,
         )
 
     def perform_update(self, serializer):
-        serializer.save(last_editor=self.request.user)
+        structure = serializer.save(
+            last_editor=self.request.user,
+            modification_date=timezone.now(),
+        )
+        structure.log_note(self.request.user, "Structure modifiée")
 
 
 class StructureMemberViewset(viewsets.ModelViewSet):

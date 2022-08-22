@@ -149,7 +149,13 @@ class StructureAdmin(admin.ModelAdmin):
         "modification_date",
         "last_editor",
     ]
-    list_filter = [IsBranchListFilter, "source", "typology", "department"]
+    list_filter = [
+        IsBranchListFilter,
+        "moderation_status",
+        "source",
+        "typology",
+        "department",
+    ]
     search_fields = ("name", "siret", "code_safir_pe", "city", "department", "slug")
     ordering = ["-modification_date", "department"]
     inlines = [

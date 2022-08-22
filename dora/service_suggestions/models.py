@@ -3,8 +3,11 @@ import uuid
 from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.db import models, transaction
+from django.utils import timezone
 from rest_framework import serializers
 
+from dora.core.models import ModerationStatus
+from dora.core.notify import send_moderation_notification
 from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import validate_siret
 from dora.service_suggestions.emails import (
@@ -85,6 +88,12 @@ class ServiceSuggestion(models.Model):
                     value="suggestion-collaborative"
                 )
                 structure.save()
+                send_moderation_notification(
+                    structure,
+                    user,
+                    "Structure créée à partir d'une contribution",
+                    ModerationStatus.VALIDATED,
+                )
             except Establishment.DoesNotExist:
                 raise serializers.ValidationError("SIRET inconnu", code="wrong_siret")
 
@@ -122,6 +131,7 @@ class ServiceSuggestion(models.Model):
                 last_editor=self.creator or user,
                 status=ServiceStatus.SUGGESTION,
                 contact_phone=contact_phone,
+                modification_date=timezone.now(),
                 **self.contents,
             )
 

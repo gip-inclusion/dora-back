@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from dora.core.models import LogItem
 from dora.services.enums import ServiceStatus
 from dora.services.models import Service, ServiceModel
 from dora.services.serializers import ServiceSerializer
@@ -22,6 +23,25 @@ class UserAdminSerializer(serializers.ModelSerializer):
             "date_joined",
             "newsletter",
         ]
+        read_only_fields = [
+            "email",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "email",
+            "is_active",
+            "is_valid",
+            "date_joined",
+            "newsletter",
+        ]
+
+
+class LogItemSerializer(serializers.ModelSerializer):
+    user = UserAdminSerializer()
+
+    class Meta:
+        fields = ["user", "message", "date"]
+        model = LogItem
 
 
 class StructureAdminSerializer(StructureSerializer):
@@ -34,6 +54,7 @@ class StructureAdminSerializer(StructureSerializer):
     pending_members = serializers.SerializerMethodField()
     services = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
+    notes = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
@@ -53,8 +74,43 @@ class StructureAdminSerializer(StructureSerializer):
             "longitude",
             "members",
             "models",
+            "moderation_status",
+            "moderation_date",
             "modification_date",
             "name",
+            "notes",
+            "parent",
+            "pending_members",
+            "phone",
+            "postal_code",
+            "services",
+            "short_desc",
+            "siret",
+            "slug",
+            "source",
+            "typology_display",
+            "typology",
+            "url",
+        ]
+        read_only_fields = [
+            "address1",
+            "address2",
+            "ape",
+            "branches",
+            "city",
+            "creation_date",
+            "creator",
+            "department",
+            "email",
+            "full_desc",
+            "last_editor",
+            "latitude",
+            "longitude",
+            "members",
+            "models",
+            "modification_date",
+            "name",
+            "notes",
             "parent",
             "pending_members",
             "phone",
@@ -136,11 +192,23 @@ class StructureAdminSerializer(StructureSerializer):
 
         return ServiceSerializer(services, many=True).data
 
+    def get_notes(self, obj):
+        logs = LogItem.objects.filter(structure=obj).order_by("-date")
+        return LogItemSerializer(logs, many=True).data
+
 
 class StructureAdminListSerializer(StructureAdminSerializer):
     class Meta:
         model = Structure
         fields = [
+            "slug",
+            "name",
+            "department",
+            "moderation_status",
+            "moderation_date",
+            "typology_display",
+        ]
+        read_only_fields = [
             "slug",
             "name",
             "department",
@@ -154,6 +222,7 @@ class ServiceAdminSerializer(ServiceSerializer):
     last_editor = UserAdminSerializer()
     model = serializers.SerializerMethodField()
     structure = StructureAdminSerializer()
+    notes = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
@@ -174,8 +243,37 @@ class ServiceAdminSerializer(ServiceSerializer):
             "is_contact_info_public",
             "last_editor",
             "model",
+            "moderation_status",
+            "moderation_date",
             "modification_date",
             "name",
+            "notes",
+            "postal_code",
+            "short_desc",
+            "slug",
+            "structure",
+            "subcategories_display",
+        ]
+        read_only_fields = [
+            "categories_display",
+            "city",
+            "contact_email",
+            "contact_name",
+            "contact_phone",
+            "creation_date",
+            "creator",
+            "department",
+            "diffusion_zone_details_display",
+            "diffusion_zone_type_display",
+            "fee_details",
+            "full_desc",
+            "has_fee",
+            "is_contact_info_public",
+            "last_editor",
+            "model",
+            "modification_date",
+            "name",
+            "notes",
             "postal_code",
             "short_desc",
             "slug",
@@ -189,9 +287,14 @@ class ServiceAdminSerializer(ServiceSerializer):
             return {"name": obj.model.name, "slug": obj.model.slug}
         return {}
 
+    def get_notes(self, obj):
+        logs = LogItem.objects.filter(service=obj).order_by("-date")
+        return LogItemSerializer(logs, many=True).data
+
 
 class ServiceAdminListSerializer(ServiceAdminSerializer):
     structure_name = serializers.SerializerMethodField()
+    structure_dept = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
@@ -201,8 +304,23 @@ class ServiceAdminListSerializer(ServiceAdminSerializer):
             "diffusion_zone_type",
             "diffusion_zone_type_display",
             "diffusion_zone_details_display",
+            "moderation_status",
+            "moderation_date",
             "structure_name",
+            "structure_dept",
+        ]
+        read_only_fields = [
+            "name",
+            "slug",
+            "diffusion_zone_type",
+            "diffusion_zone_type_display",
+            "diffusion_zone_details_display",
+            "structure_name",
+            "structure_dept",
         ]
 
     def get_structure_name(self, obj):
         return obj.structure.name
+
+    def get_structure_dept(self, obj):
+        return obj.structure.department
