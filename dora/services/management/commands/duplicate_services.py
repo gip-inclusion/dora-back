@@ -3,14 +3,14 @@ import sys
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from dora.services.models import Service
+from dora.services.models import ServiceModel
 from dora.services.utils import instantiate_model
 from dora.structures.models import Structure
 from dora.users.models import User
 
 
 class Command(BaseCommand):
-    help = "Takes one service and duplicates it into a list of structures"
+    help = "Takes one model and duplicates it into a list of structures"
 
     def add_arguments(self, parser):
         parser.add_argument("service_slug")
@@ -20,9 +20,9 @@ class Command(BaseCommand):
         service_slug = options["service_slug"]
         structures_slugs = options["structures_slugs"]
         try:
-            source = Service.objects.get(slug=service_slug)
-        except Service.DoesNotExist:
-            self.stderr.write(self.style.ERROR(f"Service {service_slug} not found"))
+            source = ServiceModel.objects.get(slug=service_slug)
+        except ServiceModel.DoesNotExist:
+            self.stderr.write(self.style.ERROR(f"Modèle {service_slug} not found"))
             sys.exit(1)
 
         structures = Structure.objects.filter(slug__in=structures_slugs).exclude(
