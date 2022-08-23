@@ -132,8 +132,21 @@ class StructureSerializer(serializers.ModelSerializer):
                     "diffusion_zone_type_display",
                     "diffusion_zone_details_display",
                     "model_changed",
+                    "is_available",
+                    "is_cumulative",
                     "model",
                     "structure",
+                    "location_kinds",
+                    "location_kinds_display",
+                    "remote_url",
+                    "address1",
+                    "address2",
+                    "postal_code",
+                    "city_code",
+                    "city",
+                    "contact_name",
+                    "contact_phone",
+                    "contact_email",
                 ]
 
         user = self.context.get("request").user

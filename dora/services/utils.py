@@ -1,10 +1,14 @@
 import hashlib
 
+from django.contrib.gis.geos import Point
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 from dora.admin_express.models import EPCI, AdminDivisionType, City, Department, Region
 from dora.admin_express.utils import arrdt_to_main_insee_code
+from dora.core.models import ModerationStatus
+from dora.services.enums import ServiceStatus
 
 SYNC_FIELDS = [
     "name",
@@ -39,7 +43,6 @@ SYNC_CUSTOM_M2M_FIELDS = [
 
 
 def _duplicate_customizable_choices(field, choices, structure):
-    # TODO add tests
     for choice in choices:
         if choice.structure:
             new_choice, _created = choice._meta.model.objects.get_or_create(
@@ -48,6 +51,48 @@ def _duplicate_customizable_choices(field, choices, structure):
             field.add(new_choice)
         else:
             field.add(choice)
+
+
+def instantiate_model(model, structure, user):
+    service = model.__class__.objects.create(structure=structure)
+
+    for field in SYNC_FIELDS:
+        setattr(service, field, getattr(model, field))
+
+    # Overwrite address, to default to the new structure one
+    service.address1 = structure.address1
+    service.address2 = structure.address2
+    service.postal_code = structure.postal_code
+    service.city_code = structure.city_code
+    service.city = structure.city
+    if structure.longitude and structure.latitude:
+        service.geom = Point(structure.longitude, structure.latitude, srid=4326)
+    else:
+        service.geom = None
+
+    # Metadata
+    service.is_draft = True
+    service.is_model = False
+    service.creator = model.creator
+    service.last_editor = user
+    service.model = model
+    service.last_sync_checksum = model.sync_checksum
+    service.modification_date = timezone.now()
+    service.moderation_status = ModerationStatus.VALIDATED
+    service.moderation_date = timezone.now()
+    service.status = ServiceStatus.DRAFT
+
+    # Restaure les champs M2M
+    for field in SYNC_M2M_FIELDS:
+        getattr(service, field).set(getattr(model, field).all())
+
+    for field in SYNC_CUSTOM_M2M_FIELDS:
+        _duplicate_customizable_choices(
+            getattr(service, field), getattr(model, field).all(), service.structure
+        )
+
+    service.save()
+    return service
 
 
 def update_sync_checksum(service):
