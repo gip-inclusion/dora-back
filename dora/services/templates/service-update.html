@@ -1,0 +1,129 @@
+{% extends "email_base.html" %} {% block content %}
+
+<div
+  style="
+    text-align: left;
+    font-size: 18px;
+    line-height: 32px;
+    font-family: Arial;
+  "
+>
+  <h1
+    style="color: #000091; margin-top: 0; font-size: 32px; margin-bottom: 40px"
+  >
+    Actualisez vos services
+  </h1>
+
+  <div
+    style="
+      padding-top: 29px;
+      padding-bottom: 29px;
+      text-align: center;
+      background-color: #f5f0fd;
+      border-radius: 24px;
+      margin-bottom: 40px;
+    "
+  >
+    <img
+      src="{{homepage_url}}/emails/service-update-illustration.png"
+      width="344"
+      height="278"
+      alt=""
+      style="border: none; -ms-interpolation-mode: bicubic; max-width: 100%"
+    />
+  </div>
+
+  <p>Bonjour,</p>
+
+  <div style="margin-bottom: 40px">
+    <p>
+      Chez
+      <strong
+        ><a style="color: #5b12eb" href="{{ homepage_url }}">DORA</a></strong
+      >, nous accordons une importance majeure à la qualité et à la « fraicheur
+      » des informations que nous mettons à disposition des acteurs sociaux.
+    </p>
+
+    <p>
+      Un ou plusieurs de vos services n’ont pas été actualisés depuis plus de 6
+      mois. Afin de garder vos services visibles et mobilisables, venez
+      confirmer ou actualiser vos informations.
+    </p>
+  </div>
+
+  <div style="margin-bottom: 40px">
+    <h2 style="color: #000091; font-size: 23px">
+      Vos fiches services à vérifier :
+    </h2>
+
+    <ul style="margin: 0; padding: 0">
+      {% for service in services %}
+      <li style="padding-bottom: 0">
+        <a style="color: #5b12eb" href="{{ service.get_frontend_url }}"
+          >{{ service.name }}</a
+        >
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div
+    style="
+      font-family: sans-serif;
+      font-size: 15px;
+      font-weight: normal;
+      margin: 0;
+      margin-top: 40px;
+      margin-bottom: 40px;
+      padding: 30px;
+      background-color: #f5f0fd;
+      border-radius: 24px;
+    "
+  >
+    <h2 style="color: #000091; margin-top: 0; font-size: 23px">
+      Comment actualiser vos services ?
+    </h2>
+
+    <table>
+      <tr>
+        <td style="vertical-align: top; padding-right: 10px">1.</td>
+        <td style="font-family: Arial; font-size: 18px; line-height: 32px">
+          Si les informations de vos services sont à jour, vous pouvez cliquer
+          sur le bouton « Marquer comme à jour » présent sur votre fiche ou via
+          votre tableau de bord/le menu des services.
+        </td>
+      </tr>
+      <tr>
+        <td style="vertical-align: top; padding-right: 10px; padding-top: 20px">
+          2.
+        </td>
+        <td
+          style="
+            padding-top: 20px;
+            font-family: Arial;
+            font-size: 18px;
+            line-height: 32px;
+          "
+        >
+          Si vous devez modifier des informations, cliquez sur « Modifier »,
+          apportez les modifications nécessaires et cliquez sur « Publier ».
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div>
+    <p>
+      Vous pouvez trouver plus d’informations dans
+      <a
+        style="color: #5b12eb"
+        href="https://aide.dora.fabrique.social.gouv.fr/fr/"
+        >notre documentation</a
+      >
+      et en cas de pépin vous pouvez nous contacter.
+    </p>
+    <p>Passez une agréable journée,</p>
+    <strong style="color: #5b12eb">L’équipe DORA</strong>
+  </div>
+</div>
+{% endblock %}

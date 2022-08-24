@@ -1,6 +1,22 @@
 from django.conf import settings
+from django.template.loader import render_to_string
 
 from dora.core.emails import send_mail
+
+
+def send_services_update_email(emails, services):
+    params = {
+        "services": services,
+        "homepage_url": settings.FRONTEND_URL,
+    }
+    body = render_to_string("service-update.html", params)
+
+    send_mail(
+        "[DORA] Actualisation de services",
+        emails,
+        body,
+        tags=["service-update-notification"],
+    )
 
 
 def send_service_feedback_email(service, full_name, email, message):
