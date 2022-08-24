@@ -102,6 +102,13 @@ private_api_patterns = [
     path("admin/", admin.site.urls),
     path("ping/", dora.core.views.ping),
     path("sentry-debug/", dora.core.views.trigger_error),
+    path(
+        "inclusion-connect-login-info/",
+        dora.core.views.get_inclusion_connect_login_info,
+    ),
+    path(
+        "inclusion-connect-user-info/", dora.core.views.get_inclusion_connect_user_info
+    ),
     path("", include(router.urls)),
 ]
 

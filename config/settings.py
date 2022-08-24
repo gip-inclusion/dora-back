@@ -407,3 +407,10 @@ DRAFT_AGE_NOTIFICATION_DAYS = 7
 ##############################
 
 MATTERMOST_HOOK_KEY = os.environ.get("MATTERMOST_HOOK_KEY")
+
+#####################
+# INCLUSION CONNECT #
+#####################
+IC_BASE_URL = os.environ.get("IC_BASE_URL")
+IC_CLIENT_ID = os.environ.get("IC_CLIENT_ID")
+IC_CLIENT_SECRET = os.environ.get("IC_CLIENT_SECRET")
