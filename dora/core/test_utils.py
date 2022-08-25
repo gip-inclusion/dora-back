@@ -33,12 +33,11 @@ def make_structure(user=None, **kwargs):
 
 def make_service(**kwargs):
     structure = kwargs.pop("structure") if "structure" in kwargs else make_structure()
-    modification_date = kwargs.pop("modification_date", timezone.now())
     return baker.make(
         "Service",
         structure=structure,
         is_model=False,
-        modification_date=modification_date,
+        modification_date=timezone.now(),
         **kwargs,
     )
 

@@ -4,6 +4,7 @@ from io import StringIO
 from django.core import mail
 from django.core.management import call_command
 from django.utils import timezone
+from freezegun import freeze_time
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
@@ -28,11 +29,12 @@ class ServiceUpdateNotificationTestCase(APITestCase):
     def test_no_mails_for_service_recently_updated(self):
         # ÉTANT DONNÉ un service mis à jour récemment
         structure = make_structure(name="My Structure")
-        make_service(
-            structure=structure,
-            status=ServiceStatus.PUBLISHED,
-            modification_date=timezone.now() - timedelta(days=1),
-        )
+
+        with freeze_time(timezone.now() - timedelta(days=1)):
+            make_service(
+                structure=structure,
+                status=ServiceStatus.PUBLISHED,
+            )
 
         # QUAND j'appelle la commande de rappel d'actualisation
         self.call_command()
@@ -44,11 +46,11 @@ class ServiceUpdateNotificationTestCase(APITestCase):
         # ÉTANT DONNÉ un service nécessitant une mise à jour
         # relié à une structure sans admin
         structure = make_structure(name="My Structure")
-        make_service(
-            structure=structure,
-            status=ServiceStatus.PUBLISHED,
-            modification_date=timezone.now() - timedelta(days=300),
-        )
+        with freeze_time(timezone.now() - timedelta(days=300)):
+            make_service(
+                structure=structure,
+                status=ServiceStatus.PUBLISHED,
+            )
 
         # QUAND j'appelle la commande de rappel d'actualisation
         self.call_command()
@@ -65,12 +67,12 @@ class ServiceUpdateNotificationTestCase(APITestCase):
 
         structure = make_structure(name="My Structure")
         baker.make(StructureMember, structure=structure, user=admin_user, is_admin=True)
-        make_service(
-            name=service_name,
-            structure=structure,
-            status=ServiceStatus.PUBLISHED,
-            modification_date=timezone.now() - timedelta(days=300),
-        )
+        with freeze_time(timezone.now() - timedelta(days=300)):
+            make_service(
+                name=service_name,
+                structure=structure,
+                status=ServiceStatus.PUBLISHED,
+            )
 
         # QUAND j'appelle la commande de rappel d'actualisation
         self.call_command()
@@ -97,12 +99,12 @@ class ServiceUpdateNotificationTestCase(APITestCase):
         baker.make(
             StructureMember, structure=structure, user=admin_user_2, is_admin=True
         )
-        make_service(
-            name=service_name,
-            structure=structure,
-            status=ServiceStatus.PUBLISHED,
-            modification_date=timezone.now() - timedelta(days=300),
-        )
+        with freeze_time(timezone.now() - timedelta(days=300)):
+            make_service(
+                name=service_name,
+                structure=structure,
+                status=ServiceStatus.PUBLISHED,
+            )
 
         # QUAND j'appelle la commande de rappel d'actualisation
         self.call_command()
@@ -123,18 +125,18 @@ class ServiceUpdateNotificationTestCase(APITestCase):
 
         structure = make_structure(name="My Structure")
         baker.make(StructureMember, structure=structure, user=admin_user, is_admin=True)
-        make_service(
-            name=service_name_1,
-            structure=structure,
-            status=ServiceStatus.PUBLISHED,
-            modification_date=timezone.now() - timedelta(days=300),
-        )
-        make_service(
-            name=service_name_2,
-            structure=structure,
-            status=ServiceStatus.PUBLISHED,
-            modification_date=timezone.now() - timedelta(days=3),
-        )
+        with freeze_time(timezone.now() - timedelta(days=300)):
+            make_service(
+                name=service_name_1,
+                structure=structure,
+                status=ServiceStatus.PUBLISHED,
+            )
+        with freeze_time(timezone.now() - timedelta(days=3)):
+            make_service(
+                name=service_name_2,
+                structure=structure,
+                status=ServiceStatus.PUBLISHED,
+            )
 
         # QUAND j'appelle la commande de rappel d'actualisation
         self.call_command()
@@ -154,12 +156,13 @@ class ServiceUpdateNotificationTestCase(APITestCase):
         service_name_1 = "Struct 1 - My service"
         structure = make_structure(name="My Structure")
         baker.make(StructureMember, structure=structure, user=admin_user, is_admin=True)
-        make_service(
-            name=service_name_1,
-            structure=structure,
-            status=ServiceStatus.PUBLISHED,
-            modification_date=timezone.now() - timedelta(days=300),
-        )
+
+        with freeze_time(timezone.now() - timedelta(days=300)):
+            make_service(
+                name=service_name_1,
+                structure=structure,
+                status=ServiceStatus.PUBLISHED,
+            )
 
         # ET un second service ne nécessitant pas de mise à jour
         # relié à une structure avec un admin
@@ -172,12 +175,12 @@ class ServiceUpdateNotificationTestCase(APITestCase):
         baker.make(
             StructureMember, structure=structure_2, user=admin_user_2, is_admin=True
         )
-        make_service(
-            name=service_name_2,
-            structure=structure_2,
-            status=ServiceStatus.PUBLISHED,
-            modification_date=timezone.now() - timedelta(days=30),
-        )
+        with freeze_time(timezone.now() - timedelta(days=30)):
+            make_service(
+                name=service_name_2,
+                structure=structure_2,
+                status=ServiceStatus.PUBLISHED,
+            )
 
         # QUAND j'appelle la commande de rappel d'actualisation
         self.call_command()
@@ -197,12 +200,13 @@ class ServiceUpdateNotificationTestCase(APITestCase):
         service_name_1 = "Struct 1 - My service"
         structure = make_structure(name="My Structure")
         baker.make(StructureMember, structure=structure, user=admin_user, is_admin=True)
-        make_service(
-            name=service_name_1,
-            structure=structure,
-            status=ServiceStatus.PUBLISHED,
-            modification_date=timezone.now() - timedelta(days=300),
-        )
+
+        with freeze_time(timezone.now() - timedelta(days=300)):
+            make_service(
+                name=service_name_1,
+                structure=structure,
+                status=ServiceStatus.PUBLISHED,
+            )
 
         # ET un second service nécessitant lui aussi une mise à jour
         # relié à une structure avec un admin
@@ -215,12 +219,12 @@ class ServiceUpdateNotificationTestCase(APITestCase):
         baker.make(
             StructureMember, structure=structure_2, user=admin_user_2, is_admin=True
         )
-        make_service(
-            name=service_name_2,
-            structure=structure_2,
-            status=ServiceStatus.PUBLISHED,
-            modification_date=timezone.now() - timedelta(days=450),
-        )
+        with freeze_time(timezone.now() - timedelta(days=450)):
+            make_service(
+                name=service_name_2,
+                structure=structure_2,
+                status=ServiceStatus.PUBLISHED,
+            )
 
         # QUAND j'appelle la commande de rappel d'actualisation
         self.call_command()
@@ -250,18 +254,18 @@ class ServiceUpdateNotificationTestCase(APITestCase):
         service_name_1_2 = "Struct 1-2 - My service"
         structure = make_structure(name="My Structure")
         baker.make(StructureMember, structure=structure, user=admin_user, is_admin=True)
-        make_service(
-            name=service_name_1_1,
-            structure=structure,
-            status=ServiceStatus.PUBLISHED,
-            modification_date=timezone.now() - timedelta(days=300),
-        )
-        make_service(
-            name=service_name_1_2,
-            structure=structure,
-            status=ServiceStatus.PUBLISHED,
-            modification_date=timezone.now() - timedelta(days=30),
-        )
+        with freeze_time(timezone.now() - timedelta(days=300)):
+            make_service(
+                name=service_name_1_1,
+                structure=structure,
+                status=ServiceStatus.PUBLISHED,
+            )
+        with freeze_time(timezone.now() - timedelta(days=30)):
+            make_service(
+                name=service_name_1_2,
+                structure=structure,
+                status=ServiceStatus.PUBLISHED,
+            )
 
         # ET un second service nécessitant lui aussi une mise à jour
         # relié à une structure avec un admin
@@ -274,12 +278,12 @@ class ServiceUpdateNotificationTestCase(APITestCase):
         baker.make(
             StructureMember, structure=structure_2, user=admin_user_2, is_admin=True
         )
-        make_service(
-            name=service_name_2,
-            structure=structure_2,
-            status=ServiceStatus.PUBLISHED,
-            modification_date=timezone.now() - timedelta(days=450),
-        )
+        with freeze_time(timezone.now() - timedelta(days=450)):
+            make_service(
+                name=service_name_2,
+                structure=structure_2,
+                status=ServiceStatus.PUBLISHED,
+            )
 
         # QUAND j'appelle la commande de rappel d'actualisation
         self.call_command()
