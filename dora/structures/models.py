@@ -304,6 +304,7 @@ class Structure(ModerationMixin, models.Model):
         branch.creator = user
         branch.last_editor = user
         branch.source = source
+        branch.modification_date = timezone.now()
         branch.save()
         structure_admins = StructureMember.objects.filter(structure=self, is_admin=True)
         for admin in structure_admins:
