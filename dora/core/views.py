@@ -4,7 +4,6 @@ import time
 import jwt
 import requests
 from django.conf import settings
-from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
 from django.core.files.storage import default_storage
 from django.shortcuts import get_object_or_404
@@ -61,8 +60,6 @@ def get_inclusion_connect_login_info(request):
     # https://stackoverflow.com/questions/46844285/difference-between-oauth-2-0-state-and-openid-nonce-parameter-why-state-cou/46859861#46859861
     state = get_random_string(32)
     nonce = get_random_string(32)
-    # Not sure hashing gets us anything…
-    hashed_nonce = make_password(nonce)
 
     cache.set(
         f"oidc-state-{state}",
@@ -73,7 +70,7 @@ def get_inclusion_connect_login_info(request):
     )
     return Response(
         {
-            "url": f"{settings.IC_BASE_URL}auth?response_type=code&from=dora&client_id={settings.IC_CLIENT_ID}&scope=openid profile email&nonce={hashed_nonce}",
+            "url": f"{settings.IC_BASE_URL}auth?response_type=code&from=dora&client_id={settings.IC_CLIENT_ID}&scope=openid profile email&nonce={nonce}",
             "state": state,
         }
     )
@@ -113,7 +110,7 @@ def get_inclusion_connect_user_info(request):
         assert settings.IC_CLIENT_ID in decoded_id_token["aud"]
         assert decoded_id_token["azp"] == settings.IC_CLIENT_ID
         assert int(decoded_id_token["exp"]) > time.time()
-        assert check_password(stored_nonce, decoded_id_token["nonce"])
+        assert stored_nonce and stored_nonce == decoded_id_token["nonce"]
         # TODO: valider le at_hash?
 
         user_dict = {
