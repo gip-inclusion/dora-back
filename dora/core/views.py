@@ -122,20 +122,38 @@ def get_inclusion_connect_user_info(request):
         # TODO: valider le at_hash?
 
         user_dict = {
+            "ic_id": decoded_id_token["sub"],
             "email": decoded_id_token["email"],
             "first_name": decoded_id_token["given_name"],
             "last_name": decoded_id_token["family_name"],
             "email_verified": decoded_id_token["email_verified"],
             "preferred_username": decoded_id_token["preferred_username"],
         }
-        user = User.objects.get(email=user_dict["email"])
+        try:
+            # On essaye de récupérer un utilisateur déjà migré
+            user = User.objects.get(ic_id=user_dict["ic_id"])
+        except User.DoesNotExist:
+            try:
+                # On essaye de faire la correspondance avec un utilisateur existant
+                # via son email, puis on le migre
+                user = User.objects.get(email=user_dict["email"])
+                if user.ic_id is not None:
+                    # Il y a un conflit…
+                    # TODO envoyer l'erreur vers Sentry, et informer l'utilisateur
+                    assert False
+                user.ic_id = user_dict["ic_id"]
+                user.save()
+            except User.DoesNotExist:
+                # TODO: L'utilisateur n'existe pas encore dans Dora : on le créé
+                assert False
+
         update_last_login(user)
         token, _created = Token.objects.get_or_create(user=user, expiration=None)
-        # TODO: maybe update firstname / lastname if applicable?
+        # TODO: mettre à jour email, nom, prénom s'ils ont changé coté IC ?
         return Response({"token": token.key, "valid_user": True})
     except requests.exceptions.RequestException as e:
         print("HTTP Request failed", e)
-    # TODO: return error
+        # TODO: return error
 
     # La requete /userinfo n'est pas nécessaire pour le moment,
     # puisqu'on a toutes les informations nécessaires dans le id_token,
