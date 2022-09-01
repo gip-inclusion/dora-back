@@ -9,6 +9,7 @@ from django.core.files.storage import default_storage
 from django.shortcuts import get_object_or_404
 from django.utils.crypto import get_random_string
 from django.utils.text import get_valid_filename
+from furl import furl
 from rest_framework import permissions
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.parsers import FileUploadParser
@@ -68,9 +69,16 @@ def get_inclusion_connect_login_info(request):
             "nonce": nonce,
         },
     )
+    query = {
+        "response_type": "code",
+        "from": "dora",
+        "client_id": {settings.IC_CLIENT_ID},
+        "scope": "openid profile email",
+        "nonce": nonce,
+    }
     return Response(
         {
-            "url": f"{settings.IC_BASE_URL}auth?response_type=code&from=dora&client_id={settings.IC_CLIENT_ID}&scope=openid profile email&nonce={nonce}",
+            "url": furl(settings.IC_AUTH_URL).add(query).url,
             "state": state,
         }
     )
@@ -89,7 +97,7 @@ def get_inclusion_connect_user_info(request):
 
     try:
         response = requests.post(
-            url=f"{settings.IC_BASE_URL}token",
+            url=settings.IC_TOKEN_URL,
             headers={
                 "Content-Type": "application/x-www-form-urlencoded",
             },
@@ -106,7 +114,7 @@ def get_inclusion_connect_user_info(request):
         id_token = result["id_token"]
         decoded_id_token = jwt.decode(id_token, options={"verify_signature": False})
 
-        assert settings.IC_BASE_URL.startswith(decoded_id_token["iss"])
+        assert decoded_id_token["iss"] == settings.IC_ISSUER_ID
         assert settings.IC_CLIENT_ID in decoded_id_token["aud"]
         assert decoded_id_token["azp"] == settings.IC_CLIENT_ID
         assert int(decoded_id_token["exp"]) > time.time()
