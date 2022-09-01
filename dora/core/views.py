@@ -111,9 +111,10 @@ def get_inclusion_connect_user_info(request):
 
         assert settings.IC_BASE_URL.startswith(decoded_id_token["iss"])
         assert settings.IC_CLIENT_ID in decoded_id_token["aud"]
-        decoded_id_token["azp"] == settings.IC_CLIENT_ID
+        assert decoded_id_token["azp"] == settings.IC_CLIENT_ID
         assert int(decoded_id_token["exp"]) > time.time()
         assert check_password(stored_nonce, decoded_id_token["nonce"])
+        # TODO: valider le at_hash?
 
         user_dict = {
             "email": decoded_id_token["email"],
