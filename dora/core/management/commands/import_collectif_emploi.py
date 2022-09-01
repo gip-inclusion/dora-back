@@ -88,11 +88,6 @@ class Command(BaseCommand):
                 if phone:
                     structure.phone = phone
                     modified = True
-            if not structure.email:
-                email = line[8]
-                if email:
-                    structure.email = email
-                    modified = True
 
             if not structure.url:
                 url = line[9] if line[9].lower() != "lien" else ""
@@ -120,6 +115,10 @@ class Command(BaseCommand):
                 structure.last_editor = bot_user
                 structure.save()
 
+            self.stdout.write(
+                f"Structure {structure.name} ({structure.department}) traitée: {structure.get_frontend_url()}"
+            )
+
             new_admin = line[8]
             if new_admin:
                 self.invite_user(structure, new_admin)
@@ -139,14 +138,14 @@ class Command(BaseCommand):
             )
         try:
             member = StructurePutativeMember.objects.get(user=user, structure=structure)
-            self.stdout.write(f"Member {member.user.email} already invited")
+            self.stdout.write(f"    Member {member.user.email} already invited")
             if not member.is_admin:
                 member.is_admin = True
                 member.save()
         except StructurePutativeMember.DoesNotExist:
             try:
                 member = StructureMember.objects.get(user=user, structure=structure)
-                self.stdout.write(f"Member {member.user.email} already exists")
+                self.stdout.write(f"    Member {member.user.email} already exists")
                 if not member.is_admin:
                     member.is_admin = True
                     member.save()
@@ -161,7 +160,7 @@ class Command(BaseCommand):
                     user=user,
                     expiration=timezone.now() + settings.INVITATION_LINK_EXPIRATION,
                 )
-                self.stdout.write(f"Inviting {member.user.email}")
+                self.stdout.write(f"    Inviting {member.user.email}")
                 send_invitation_email(
                     member,
                     "L’équipe DORA",
