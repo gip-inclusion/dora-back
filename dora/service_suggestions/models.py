@@ -11,8 +11,8 @@ from dora.core.notify import send_moderation_notification
 from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import validate_siret
 from dora.service_suggestions.emails import (
-    send_suggestion_validated_existing_structure_email,
-    send_suggestion_validated_new_structure_email,
+    send_suggestion_validated_structure_admin_email,
+    send_suggestion_validated_welcome_email,
 )
 from dora.services.enums import ServiceStatus
 from dora.services.models import (
@@ -160,31 +160,30 @@ class ServiceSuggestion(models.Model):
                 # Pour les nouvelles structures, on envoie un mail à la personne indiquée
                 # dans le formulaire (si présent)
                 if contact_email is not None:
-                    send_suggestion_validated_new_structure_email(
-                        contact_email, structure
-                    )
+                    send_suggestion_validated_welcome_email(contact_email, structure)
                     emails_contacted.add(contact_email)
             else:
-                # Pour une structure existante et dont l'administrateur est connu, on envoie un e-mail à ce dernier
-                # - et potentiellement au contact_email si différent de l'administrateur
                 structure_admins = StructureMember.objects.filter(
                     structure=structure, is_admin=True
                 )
-                for admin in structure_admins:
-                    emails_contacted.add(admin.user.email)
 
-                # Pour l'instant on désactive l'envoi au contact_email, étant donnée que le message actuel
-                # n'est pas pertinent pour un utilisateur qui ne fait pas déjà partie de la structure,
-                # et on n'a pas cette garantie.
-
-                # if contact_email is not None:
-                #     emails_contacted.add(contact_email)
-
-                if emails_contacted:
-                    # FIXME: mettre des destinataires multiples dans le champ To: n'est sans doute pas une bonne idée…
-                    # voir: https://www.notion.so/dora-beta/Notification-de-suggestion-valid-e-destinataires-multiples-9d1aa1b15f334721a423346107aeab53
-                    send_suggestion_validated_existing_structure_email(
-                        list(emails_contacted), structure, service
+                if structure_admins:
+                    # Les administrateurs sont connus, on envoie un e-mail à ces derniers
+                    send_suggestion_validated_structure_admin_email(
+                        list(structure_admins), structure, service
                     )
+                    for admin in structure_admins:
+                        emails_contacted.add(admin.user.email)
+
+                    # Note: quid du contact dans le formulaire ?
+
+                else:
+                    # Absence d'administrateur, on envoie un mail à la personne indiquée
+                    # dans le formulaire (si présent)
+                    if contact_email is not None:
+                        send_suggestion_validated_welcome_email(
+                            contact_email, structure
+                        )
+                        emails_contacted.add(contact_email)
 
         return service, list(emails_contacted)
