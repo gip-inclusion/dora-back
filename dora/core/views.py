@@ -107,8 +107,6 @@ def get_inclusion_connect_user_info(request):
         result = json.loads(response.content)
 
         id_token = result["id_token"]
-
-        # TODO: décoder / verifier la signature
         decoded_id_token = jwt.decode(id_token, options={"verify_signature": False})
 
         assert settings.IC_BASE_URL.startswith(decoded_id_token["iss"])
