@@ -107,6 +107,10 @@ private_api_patterns = [
         dora.core.views.get_inclusion_connect_login_info,
     ),
     path(
+        "inclusion-connect-logout-info/",
+        dora.core.views.get_inclusion_connect_logout_info,
+    ),
+    path(
         "inclusion-connect-user-info/", dora.core.views.get_inclusion_connect_user_info
     ),
     path("", include(router.urls)),

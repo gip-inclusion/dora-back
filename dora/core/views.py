@@ -86,6 +86,23 @@ def get_inclusion_connect_login_info(request):
 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
+def get_inclusion_connect_logout_info(request):
+    redirect_uri = request.data.get("redirect_uri")
+
+    query = {
+        "from": "dora",
+        "client_id": {settings.IC_CLIENT_ID},
+        "post_logout_redirect_uri": redirect_uri,
+    }
+    return Response(
+        {
+            "url": furl(settings.IC_LOGOUT_URL).add(query).url,
+        }
+    )
+
+
+@api_view(["POST"])
+@permission_classes([permissions.AllowAny])
 def get_inclusion_connect_user_info(request):
     code = request.data.get("code")
     state = request.data.get("state")
