@@ -103,15 +103,16 @@ private_api_patterns = [
     path("ping/", dora.core.views.ping),
     path("sentry-debug/", dora.core.views.trigger_error),
     path(
-        "inclusion-connect-login-info/",
-        dora.core.views.get_inclusion_connect_login_info,
+        "inclusion-connect-get-login-info/",
+        dora.core.views.inclusion_connect_get_login_info,
     ),
     path(
-        "inclusion-connect-logout-info/",
-        dora.core.views.get_inclusion_connect_logout_info,
+        "inclusion-connect-get-logout-info/",
+        dora.core.views.inclusion_connect_get_logout_info,
     ),
     path(
-        "inclusion-connect-user-info/", dora.core.views.get_inclusion_connect_user_info
+        "inclusion-connect-authenticate/",
+        dora.core.views.inclusion_connect_authenticate,
     ),
     path("", include(router.urls)),
 ]

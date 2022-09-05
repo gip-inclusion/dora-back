@@ -50,24 +50,17 @@ def trigger_error(request):
     print(division_by_zero)
 
 
-@api_view()
+@api_view(["POST"])
 @permission_classes([permissions.AllowAny])
-def get_inclusion_connect_login_info(request):
-    # https://security.stackexchange.com/questions/147529/openid-connect-nonce-replay-attack
-    # https://stackoverflow.com/questions/46844285/difference-between-oauth-2-0-state-and-openid-nonce-parameter-why-state-cou
-    # https://blogs.aaddevsup.xyz/2019/11/state-parameter-in-mvc-application/
-    # https://stackoverflow.com/questions/35165793/what-attack-does-the-state-parameter-in-openid-connect-server-flow-prevent
-    # https://stackoverflow.com/questions/53246830/how-nonce-and-state-parameters-are-stored-and-transmitted-in-identityserver4
-    # https://stackoverflow.com/questions/46844285/difference-between-oauth-2-0-state-and-openid-nonce-parameter-why-state-cou/46859861#46859861
+def inclusion_connect_get_login_info(request):
+    redirect_uri = request.data.get("redirect_uri")
+
     state = get_random_string(32)
     nonce = get_random_string(32)
 
     cache.set(
         f"oidc-state-{state}",
-        {
-            "state": state,
-            "nonce": nonce,
-        },
+        {"state": state, "nonce": nonce, "redirect_uri": redirect_uri},
     )
     query = {
         "response_type": "code",
@@ -75,6 +68,8 @@ def get_inclusion_connect_login_info(request):
         "client_id": {settings.IC_CLIENT_ID},
         "scope": "openid profile email",
         "nonce": nonce,
+        "state": state,
+        "redirect_uri": redirect_uri,
     }
     return Response(
         {
@@ -86,7 +81,7 @@ def get_inclusion_connect_login_info(request):
 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
-def get_inclusion_connect_logout_info(request):
+def inclusion_connect_get_logout_info(request):
     redirect_uri = request.data.get("redirect_uri")
 
     query = {
@@ -103,14 +98,16 @@ def get_inclusion_connect_logout_info(request):
 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
-def get_inclusion_connect_user_info(request):
+def inclusion_connect_authenticate(request):
     code = request.data.get("code")
     state = request.data.get("state")
-    redirect_uri = request.data.get("redirect_uri")
+    frontend_state = request.data.get("frontend_state")
 
     stored_state = cache.get(f"oidc-state-{state}")
-    assert stored_state["state"] == state
+    assert stored_state["state"] == state == frontend_state
+
     stored_nonce = stored_state["nonce"]
+    stored_redirect_uri = stored_state["redirect_uri"]
 
     try:
         response = requests.post(
@@ -123,7 +120,7 @@ def get_inclusion_connect_user_info(request):
                 "client_secret": settings.IC_CLIENT_SECRET,
                 "code": code,
                 "grant_type": "authorization_code",
-                "redirect_uri": redirect_uri,
+                "redirect_uri": stored_redirect_uri,
             },
         )
         result = json.loads(response.content)
