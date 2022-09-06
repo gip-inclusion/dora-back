@@ -184,6 +184,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     "modification_date",
                     "categories_display",
                     "short_desc",
+                    "is_available",
                     "diffusion_zone_type",
                     "diffusion_zone_type_display",
                     "diffusion_zone_details_display",
