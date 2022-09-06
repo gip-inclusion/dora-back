@@ -49,6 +49,11 @@ class UserCreationForm(forms.ModelForm):
         return user
 
 
+@admin.display(description="Sur Inclusion Connect", boolean=True, ordering="ic_id")
+def has_migrated_to_ic(obj):
+    return obj.ic_id is not None
+
+
 class UserAdmin(BaseUserAdmin):
     def get_actions(self, request):
         actions = super().get_actions(request)
@@ -72,6 +77,7 @@ class UserAdmin(BaseUserAdmin):
         "is_valid",
         "date_joined",
         "newsletter",
+        has_migrated_to_ic,
     )
     list_filter = ("is_staff", "is_bizdev", "is_active", "is_valid", "newsletter")
     fieldsets = (
