@@ -12,7 +12,12 @@ from django.utils.text import slugify
 
 from dora.core.models import EnumModel, LogItem, ModerationMixin
 from dora.core.utils import code_insee_to_code_dept
-from dora.core.validators import validate_safir, validate_siret
+from dora.core.validators import (
+    validate_accesslibre_url,
+    validate_osm_hours_str,
+    validate_safir,
+    validate_siret,
+)
 from dora.sirene.models import Establishment
 from dora.sirene.serializers import EstablishmentSerializer
 from dora.structures.emails import (
@@ -119,6 +124,11 @@ class StructureSource(EnumModel):
         verbose_name = "Source"
 
 
+class StructureNationalLabel(EnumModel):
+    class Meta:
+        verbose_name = "Label national"
+
+
 class StructureTypology(EnumModel):
     class Meta:
         verbose_name = "Typologie"
@@ -196,6 +206,21 @@ class Structure(ModerationMixin, models.Model):
     geocoding_score = models.FloatField(blank=True, null=True)
 
     ape = models.CharField(max_length=6, blank=True)
+
+    accesslibre_url = models.URLField(
+        verbose_name="URL accesslibre",
+        blank=True,
+        null=True,
+        validators=[validate_accesslibre_url],
+    )
+    osm_hours = models.CharField(
+        max_length=255, blank=True, null=True, validators=[validate_osm_hours_str]
+    )
+    hours_details = models.CharField(max_length=255, blank=True, null=True)
+    national_labels = models.ManyToManyField(
+        StructureNationalLabel, blank=True, null=True
+    )
+    other_labels = models.CharField(max_length=255, null=True)
 
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(blank=True, null=True)
