@@ -251,6 +251,23 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
             status=200,
         )
 
+    # TODO: finalize the acceptation that was previously done on password creation
+    #     if not already_had_password:
+    #         # it's a new user, created via invitation. Notify all administrators
+    #         # of the structures he was invited to.
+    #         putative_memberships = StructurePutativeMember.objects.filter(
+    #             user=request.user
+    #         )
+    #         for pm in putative_memberships:
+    #             with transaction.atomic(durable=True):
+    #                 assert pm.invited_by_admin is True
+    #                 membership = StructureMember.objects.create(
+    #                     user=pm.user,
+    #                     structure=pm.structure,
+    #                     is_admin=pm.is_admin,
+    #                 )
+    #                 membership.notify_admins_invitation_accepted()
+    #                 pm.delete()
     @action(
         detail=True,
         methods=["post"],
@@ -394,14 +411,3 @@ def options(request):
         ],
     }
     return Response(result)
-
-
-@api_view()
-@permission_classes([permissions.AllowAny])
-def search_safir(request):
-    safir_code = request.query_params.get("safir", "")
-    if not safir_code:
-        return Response("need safir")
-
-    structure = get_object_or_404(Structure, code_safir_pe=safir_code)
-    return Response(StructureSerializer(structure, context={"request": request}).data)

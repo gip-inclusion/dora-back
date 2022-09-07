@@ -102,7 +102,6 @@ def inclusion_connect_authenticate(request):
     code = request.data.get("code")
     state = request.data.get("state")
     frontend_state = request.data.get("frontend_state")
-
     stored_state = cache.get(f"oidc-state-{state}")
     assert stored_state["state"] == state == frontend_state
 
@@ -133,15 +132,13 @@ def inclusion_connect_authenticate(request):
         assert decoded_id_token["azp"] == settings.IC_CLIENT_ID
         assert int(decoded_id_token["exp"]) > time.time()
         assert stored_nonce and stored_nonce == decoded_id_token["nonce"]
-        # TODO: valider le at_hash?
 
         user_dict = {
             "ic_id": decoded_id_token["sub"],
             "email": decoded_id_token["email"],
             "first_name": decoded_id_token["given_name"],
             "last_name": decoded_id_token["family_name"],
-            "email_verified": decoded_id_token["email_verified"],
-            "preferred_username": decoded_id_token["preferred_username"],
+            "is_valid": decoded_id_token["email_verified"],
         }
         try:
             # On essaye de récupérer un utilisateur déjà migré
@@ -158,31 +155,13 @@ def inclusion_connect_authenticate(request):
                 user.ic_id = user_dict["ic_id"]
                 user.save()
             except User.DoesNotExist:
-                # TODO: L'utilisateur n'existe pas encore dans Dora : on le créé
-                assert False
+                user = User.objects.create(**user_dict)
 
         update_last_login(user)
         token, _created = Token.objects.get_or_create(user=user, expiration=None)
         # TODO: mettre à jour email, nom, prénom s'ils ont changé coté IC ?
+        # TODO: mettre à jour la validité de l'email
         return Response({"token": token.key, "valid_user": True})
     except requests.exceptions.RequestException as e:
         print("HTTP Request failed", e)
         # TODO: return error
-
-    # La requete /userinfo n'est pas nécessaire pour le moment,
-    # puisqu'on a toutes les informations nécessaires dans le id_token,
-    # mais le code ressemblerait à :
-
-    # access_token = result["access_token"]
-    # response = requests.get(
-    #     url=f"{settings.IC_BASE_URL}userinfo",
-    #     headers={
-    #         "Authorization": f"Bearer {access_token}",
-    #     },
-    # )
-    # print(
-    #     "Response HTTP Status Code: {status_code}".format(
-    #         status_code=response.status_code
-    #     )
-    # )
-    # result = json.loads(response.content)

@@ -81,7 +81,7 @@ class StructureSerializer(serializers.ModelSerializer):
         lookup_field = "slug"
 
     def get_has_admin(self, obj):
-        return obj.membership.filter(is_admin=True, user__is_staff=False).exists()
+        return obj.membership.filter(is_admin=True).exists()
 
     def get_can_write(self, obj):
         # TODO: DEPRECATED

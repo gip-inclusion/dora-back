@@ -866,31 +866,6 @@ class StructureMemberTestCase(APITestCase):
         )
         self.assertTrue(member.user.is_valid)
 
-    def test_user_must_set_strong_pw(self):
-        self.client.force_authenticate(user=self.me)
-        response = self.client.post(
-            f"/structure-putative-members/?structure={self.my_struct.slug}",
-            {
-                "is_admin": False,
-                "user": {
-                    "last_name": "FOO",
-                    "first_name": "FIZZ",
-                    "email": "FOO@BAR.BUZ",
-                },
-            },
-        )
-        self.assertEqual(response.status_code, 201)
-        member = StructurePutativeMember.objects.get(pk=response.data["id"])
-        self.client.force_authenticate(user=member.user)
-
-        response = self.client.post(
-            "/auth/password/reset/confirm/", {"new_password": "ABBA"}
-        )
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(
-            response.data["non_field_errors"][0]["code"], "password_too_short"
-        )
-
     # Fail safes
     def test_super_user_can_remove_last_admin(self):
         self.client.force_authenticate(user=self.superuser)
