@@ -114,7 +114,8 @@ CREATE TABLE mb_user AS
     users_user.is_bizdev,
     users_user.last_login,
     users_user.date_joined,
-    users_user.newsletter
+    users_user.newsletter,
+    (select users_user.ic_id is not NULL) AS on_inclusion_connect
    FROM users_user
   WHERE (users_user.is_active IS TRUE)"
 psql $SRC_DB_URL -c "ALTER TABLE mb_user ADD PRIMARY KEY (id)"
