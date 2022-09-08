@@ -10,7 +10,6 @@ from rest_framework.response import Response
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_mattermost_notification, send_moderation_notification
 from dora.core.pagination import OptionalPageNumberPagination
-from dora.rest_auth.models import Token
 from dora.structures.emails import send_invitation_email
 from dora.structures.models import (
     Structure,
@@ -197,60 +196,6 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
                 structure_id__in=structures_administered
             )
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="accept-invite",
-        permission_classes=[permissions.IsAuthenticated],
-    )
-    def accept_invite(self, request, pk):
-        try:
-            pm = StructurePutativeMember.objects.get(id=pk)
-        except StructurePutativeMember.DoesNotExist:
-            raise exceptions.NotFound
-
-        user = request.user
-
-        if pm.user.id != user.id:
-            raise exceptions.PermissionDenied
-
-        structure_name = pm.structure.name
-
-        if not user.is_valid:
-            user.is_valid = True
-            user.save()
-            user.start_onboarding()
-
-        must_set_password = not user.has_usable_password()
-        if must_set_password:
-            # generate a new short term token for password reset
-            # The invitation token will be deleted as soon as the user sets a password
-            tmp_token = Token.objects.create(
-                user=user, expiration=timezone.now() + settings.AUTH_LINK_EXPIRATION
-            )
-        else:
-            with transaction.atomic(durable=True):
-                membership = StructureMember.objects.create(
-                    user=pm.user,
-                    structure=pm.structure,
-                    is_admin=pm.is_admin,
-                )
-                pm.delete()
-                # The user already exists and hopefully know its password
-                # we can safely delete the invitation token
-                Token.objects.filter(user=user, expiration__isnull=False).delete()
-
-                # Then notify the administrators of this structure
-                membership.notify_admins_invitation_accepted()
-        return Response(
-            {
-                "structure_name": structure_name,
-                "must_set_password": must_set_password,
-                "token": tmp_token.key if must_set_password else None,
-            },
-            status=200,
-        )
-
     # TODO: finalize the acceptation that was previously done on password creation
     #     if not already_had_password:
     #         # it's a new user, created via invitation. Notify all administrators
@@ -290,14 +235,9 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
             except StructureMember.DoesNotExist:
                 raise exceptions.PermissionDenied
 
-        tmp_token = Token.objects.create(
-            user=member.user,
-            expiration=timezone.now() + settings.INVITATION_LINK_EXPIRATION,
-        )
         send_invitation_email(
             member,
             request_user.get_full_name(),
-            tmp_token.key,
         )
         return Response(status=201)
 

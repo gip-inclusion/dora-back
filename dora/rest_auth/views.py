@@ -100,19 +100,36 @@ def join_structure(request):
             )
 
     # Link them
-    # TODO: test that the user is not already member or putative member
+    # TODO: test that the user is not already a member
     if not need_admin_validation or not has_nonstaff_admin:
         StructureMember.objects.create(
             user=user, structure=structure, is_admin=not has_nonstaff_admin
         )
     else:
-        # _putative_member =
-        StructurePutativeMember.objects.create(
-            user=user,
-            structure=structure,
-            is_admin=not has_nonstaff_admin,
-            invited_by_admin=False,
-        )
+        # Si l'utilisateur a été invité, on le valide directement
+        try:
+            pm = StructurePutativeMember.objects.get(
+                user=user,
+                structure=structure,
+                invited_by_admin=True,
+            )
+            # user.start_onboarding() if it's the first structure it's linked to
+            # or rather do that somewhere more generic
+            membership = StructureMember.objects.create(
+                user=pm.user,
+                structure=pm.structure,
+                is_admin=pm.is_admin,
+            )
+            pm.delete()
+            # Then notify the administrators of this structure
+            membership.notify_admins_invitation_accepted()
+        except StructurePutativeMember.DoesNotExist:
+            pm = StructurePutativeMember.objects.create(
+                user=user,
+                structure=structure,
+                is_admin=not has_nonstaff_admin,
+                invited_by_admin=False,
+            )
 
     # TODO: si premier admin d'une structure, envoyer les notifs de moderation
     # memberships = StructureMember.objects.filter(user=user, is_admin=True)

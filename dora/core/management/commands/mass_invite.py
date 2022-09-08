@@ -1,13 +1,11 @@
 import csv
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from rest_framework import serializers
 
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
-from dora.rest_auth.models import Token
 from dora.sirene.models import Establishment
 from dora.structures.emails import send_invitation_email
 from dora.structures.models import (
@@ -173,13 +171,8 @@ class Command(BaseCommand):
                     invited_by_admin=True,
                     is_admin=is_admin,
                 )
-                tmp_token = Token.objects.create(
-                    user=user,
-                    expiration=timezone.now() + settings.INVITATION_LINK_EXPIRATION,
-                )
                 self.stdout.write(f"Inviting {member.user.email}")
                 send_invitation_email(
                     member,
                     "L’équipe DORA",
-                    tmp_token.key,
                 )

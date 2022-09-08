@@ -1,9 +1,6 @@
-from django.conf import settings
 from django.db.models import Count, Q
-from django.utils import timezone
 from rest_framework import exceptions, serializers
 
-from dora.rest_auth.models import Token
 from dora.services.enums import ServiceStatus
 from dora.services.models import Service, ServiceModel
 from dora.services.serializers import ServiceListSerializer
@@ -364,7 +361,6 @@ class StructureMemberSerializer(serializers.ModelSerializer):
 
 class StructurePutativeMemberSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-    must_set_password = serializers.SerializerMethodField()
 
     class Meta:
         model = StructurePutativeMember
@@ -372,13 +368,9 @@ class StructurePutativeMemberSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "is_admin",
-            "must_set_password",
             "invited_by_admin",
         ]
         validators = []
-
-    def get_must_set_password(self, obj):
-        return not obj.user.has_usable_password()
 
     def validate(self, data):
         structure_slug = self.context["request"].query_params.get("structure")
@@ -413,12 +405,8 @@ class StructurePutativeMemberSerializer(serializers.ModelSerializer):
             invited_by_admin=True,
         )
         # Send invitation email
-        tmp_token = Token.objects.create(
-            user=user, expiration=timezone.now() + settings.INVITATION_LINK_EXPIRATION
-        )
         send_invitation_email(
             member,
             request_user.get_full_name(),
-            tmp_token.key,
         )
         return member

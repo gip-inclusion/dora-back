@@ -54,7 +54,7 @@ def trigger_error(request):
 @permission_classes([permissions.AllowAny])
 def inclusion_connect_get_login_info(request):
     redirect_uri = request.data.get("redirect_uri")
-
+    login_hint = request.data.get("login_hint", "")
     state = get_random_string(32)
     nonce = get_random_string(32)
 
@@ -70,6 +70,7 @@ def inclusion_connect_get_login_info(request):
         "nonce": nonce,
         "state": state,
         "redirect_uri": redirect_uri,
+        "login_hint": login_hint,
     }
     return Response(
         {
@@ -154,6 +155,9 @@ def inclusion_connect_authenticate(request):
                     # TODO envoyer l'erreur vers Sentry, et informer l'utilisateur
                     assert False
                 user.ic_id = user_dict["ic_id"]
+                user.first_name = user_dict["first_name"]
+                user.last_name = user_dict["last_name"]
+                user.is_valid = user_dict["is_valid"]
                 user.save()
             except User.DoesNotExist:
                 user = User.objects.create(**user_dict)
