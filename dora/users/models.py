@@ -36,6 +36,9 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser):
+    ic_id = models.UUIDField(
+        verbose_name="Identifiant Inclusion Connect", null=True, blank=True
+    )
     email = models.EmailField(
         verbose_name="email address",
         max_length=255,
