@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 
 import jwt
@@ -12,6 +13,7 @@ from django.utils.text import get_valid_filename
 from furl import furl
 from rest_framework import permissions
 from rest_framework.decorators import api_view, parser_classes, permission_classes
+from rest_framework.exceptions import APIException
 from rest_framework.parsers import FileUploadParser
 from rest_framework.response import Response
 
@@ -20,6 +22,8 @@ from dora.rest_auth.views import update_last_login
 from dora.services.models import Service
 from dora.structures.models import Structure
 from dora.users.models import User
+
+logger = logging.getLogger(__name__)
 
 
 @api_view(["POST"])
@@ -144,15 +148,37 @@ def inclusion_connect_authenticate(request):
         try:
             # On essaye de récupérer un utilisateur déjà migré
             user = User.objects.get(ic_id=user_dict["ic_id"])
+            should_save = False
+            if user.email != user_dict["email"]:
+                user.email = user_dict["email"]
+                should_save = True
+            if user.first_name != user_dict["first_name"]:
+                user.first_name = user_dict["first_name"]
+                should_save = True
+            if user.last_name != user_dict["last_name"]:
+                user.last_name = user_dict["last_name"]
+                should_save = True
+            if user.is_valid != user_dict["is_valid"]:
+                user.is_valid = user_dict["is_valid"]
+                should_save = True
+            if should_save:
+                user.save()
         except User.DoesNotExist:
             try:
                 # On essaye de faire la correspondance avec un utilisateur existant
                 # via son email, puis on le migre
                 user = User.objects.get(email=user_dict["email"])
                 if user.ic_id is not None:
-                    # Il y a un conflit…
-                    # TODO envoyer l'erreur vers Sentry, et informer l'utilisateur
-                    assert False
+                    logging.error(
+                        "Conflit avec Keycloak",
+                        extra={
+                            # Potentiel problème RGPD; en attente d'un avis du DPO.
+                            # new_ic_id: user_dict["ic_id"],
+                            # email: user.email,
+                            # old_ic_id: user.ic_id
+                        },
+                    )
+                    return APIException("Conflit avec le fournisseur d'identité")
                 user.ic_id = user_dict["ic_id"]
                 user.first_name = user_dict["first_name"]
                 user.last_name = user_dict["last_name"]
@@ -163,9 +189,7 @@ def inclusion_connect_authenticate(request):
 
         update_last_login(user)
         token, _created = Token.objects.get_or_create(user=user, expiration=None)
-        # TODO: mettre à jour email, nom, prénom s'ils ont changé coté IC ?
-        # TODO: mettre à jour la validité de l'email
         return Response({"token": token.key, "valid_user": True})
     except requests.exceptions.RequestException as e:
-        print("HTTP Request failed", e)
-        # TODO: return error
+        logging.exception(e)
+        return APIException("Erreur de communication avec le fournisseur d'identité")

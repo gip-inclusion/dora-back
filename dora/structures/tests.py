@@ -921,7 +921,6 @@ class StructureMemberTestCase(APITestCase):
                 "siret": self.my_struct.siret,
             },
         )
-        print(response.content)
         self.assertEqual(response.status_code, 200)
         StructurePutativeMember.objects.get(
             structure__siret=self.my_struct.siret, user=user
