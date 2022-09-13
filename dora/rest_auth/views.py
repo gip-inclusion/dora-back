@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.views.decorators.debug import sensitive_post_parameters
 from rest_framework import exceptions, permissions
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from dora.core.models import ModerationStatus
@@ -18,7 +19,6 @@ from dora.structures.models import (
     StructureMember,
     StructurePutativeMember,
     StructureSource,
-    StructureTypology,
 )
 from dora.structures.serializers import StructureSerializer
 
@@ -47,17 +47,7 @@ def user_info(request):
     return Response(UserInfoSerializer(user).data, status=200)
 
 
-@api_view(["POST"])
-@permission_classes([permissions.IsAuthenticated])
-@transaction.atomic
-def join_structure(request):
-    user = request.user
-    serializer = SiretSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    data = serializer.validated_data
-
-    # Create Structure
-    establishment = data["establishment"]
+def _create_structure(establishment, user):
     try:
         structure = Structure.objects.get(siret=establishment.siret)
     except Structure.DoesNotExist:
@@ -75,96 +65,85 @@ def join_structure(request):
         send_mattermost_notification(
             f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{structure.get_absolute_url()}"
         )
+    has_admin = structure.membership.filter(
+        user__is_valid=True, user__is_active=True, is_admin=True
+    ).exists()
+    return has_admin, structure
 
-    has_nonstaff_admin = structure.membership.filter(
-        user__is_staff=False, user__is_valid=True, user__is_active=True, is_admin=True
+
+def _is_member_of_structure(structure, user):
+    try:
+        StructureMember.objects.get(user=user, structure=structure)
+        return True
+    except StructureMember.DoesNotExist:
+        return False
+
+
+def _add_user_to_structure_as_admin(structure, user):
+    StructureMember.objects.create(user=user, structure=structure, is_admin=True)
+    send_moderation_notification(
+        structure,
+        user,
+        "Premier administrateur ajouté (par lui-même)",
+        ModerationStatus.NEED_INITIAL_MODERATION,
+    )
+
+
+def _add_user_to_structure_or_waitlist(structure, user):
+    # Si l'utilisateur a été invité, on le valide directement
+    try:
+        pm = StructurePutativeMember.objects.get(
+            user=user,
+            structure=structure,
+            invited_by_admin=True,
+        )
+
+        # or rather do that somewhere more generic
+        membership = StructureMember.objects.create(
+            user=pm.user,
+            structure=pm.structure,
+            is_admin=pm.is_admin,
+        )
+        pm.delete()
+        # Then notify the administrators of this structure
+        membership.notify_admins_invitation_accepted()
+    except StructurePutativeMember.DoesNotExist:
+        pm = StructurePutativeMember.objects.create(
+            user=user,
+            structure=structure,
+            is_admin=False,
+            invited_by_admin=False,
+        )
+        pm.notify_admin_access_requested()
+
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+@transaction.atomic
+def join_structure(request):
+    # user.start_onboarding() if it's the first structure it's linked to
+    user = request.user
+    serializer = SiretSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+    establishment = data["establishment"]
+
+    has_admin, structure = _create_structure(establishment, user)
+
+    if _is_member_of_structure(structure, user):
+        raise ValidationError("Cet utilisateur est déjà membre de cette structure")
+
+    was_member_of_a_structure = StructureMember.objects.filter(
+        user=user, structure=structure
     ).exists()
 
-    need_admin_validation = True
-
-    # TODO: est-qu'on bloque completement le rattachement aux structures PE?
-    # If the structure is a Pole Emploi agency, check that the email finishes
-    # in @pole-emploi.fr or @pole-emploi.net
-    if structure.typology == StructureTypology.objects.get(value="PE"):
-        need_admin_validation = False
-        if not (
-            user.email.endswith("@pole-emploi.fr")
-            or user.email.endswith("@pole-emploi.net")
-            or (
-                user.email.endswith("@dora.beta.gouv.fr")
-                and settings.ENVIRONMENT != "production"
-            )
-        ):
-            raise exceptions.PermissionDenied(
-                "Merci de renseigner une adresse valide (@pole-emploi.fr ou @pole-emploi.net)"
-            )
-
-    # Link them
-    # TODO: test that the user is not already a member
-    if not need_admin_validation or not has_nonstaff_admin:
-        StructureMember.objects.create(
-            user=user, structure=structure, is_admin=not has_nonstaff_admin
-        )
+    if not has_admin:
+        _add_user_to_structure_as_admin(structure, user)
     else:
-        # Si l'utilisateur a été invité, on le valide directement
-        try:
-            pm = StructurePutativeMember.objects.get(
-                user=user,
-                structure=structure,
-                invited_by_admin=True,
-            )
-            # user.start_onboarding() if it's the first structure it's linked to
-            # or rather do that somewhere more generic
-            membership = StructureMember.objects.create(
-                user=pm.user,
-                structure=pm.structure,
-                is_admin=pm.is_admin,
-            )
-            pm.delete()
-            # Then notify the administrators of this structure
-            membership.notify_admins_invitation_accepted()
-        except StructurePutativeMember.DoesNotExist:
-            pm = StructurePutativeMember.objects.create(
-                user=user,
-                structure=structure,
-                is_admin=not has_nonstaff_admin,
-                invited_by_admin=False,
-            )
+        _add_user_to_structure_or_waitlist(structure, user)
 
-    # TODO: si premier admin d'une structure, envoyer les notifs de moderation
-    # memberships = StructureMember.objects.filter(user=user, is_admin=True)
-    # for m in memberships:
-    #     if (
-    #             StructureMember.objects.filter(
-    #                 structure=m.structure,
-    #                 is_admin=True,
-    #                 user__is_valid=True,
-    #                 user__is_active=True,
-    #             )
-    #                     .exclude(user=user)
-    #                     .exists()
-    #     ):
-    #         logging.error(
-    #             "Administrateur ajouté directement a une structure ayant déjà un administrateur"
-    #         )
-    #
-    #     structure = m.structure
-    #     send_moderation_notification(
-    #         structure,
-    #         user,
-    #         "Premier administrateur ajouté (par lui-même)",
-    #         ModerationStatus.NEED_INITIAL_MODERATION,
-    #     )
-
-    # TODO: si la structure existe déjà, notifier ses admins
-    # putative_memberships = StructurePutativeMember.objects.filter(
-    #     user=user, invited_by_admin=False
-    # )
-    # for pm in putative_memberships:
-    #     pm.notify_admin_access_requested()
-
-    # TODO start onboarding after user creation
-    # user.start_onboarding()
+    if not was_member_of_a_structure:
+        user.start_onboarding()
 
     send_mattermost_notification(
         f":adult: Nouvel utilisateur “{user.get_full_name()}” enregistré dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/structures/{structure.slug}"

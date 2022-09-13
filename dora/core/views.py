@@ -133,7 +133,6 @@ def inclusion_connect_authenticate(request):
         assert decoded_id_token["azp"] == settings.IC_CLIENT_ID
         assert int(decoded_id_token["exp"]) > time.time()
         assert stored_nonce and stored_nonce == decoded_id_token["nonce"]
-        # TODO: valider le at_hash?
 
         user_dict = {
             "ic_id": decoded_id_token["sub"],
