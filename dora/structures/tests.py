@@ -134,7 +134,7 @@ class StructureTestCase(APITestCase):
         slug = self.my_struct.slug
         national_labels = ["mobin", "pole-emploi"]
         response = self.client.patch(
-            f"/structures/{self.my_other_struct.slug}/",
+            f"/structures/{slug}/",
             {"national_labels": national_labels},
         )
 
@@ -143,7 +143,9 @@ class StructureTestCase(APITestCase):
 
         response = self.client.get(f"/structures/{slug}/")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["national_labels"], national_labels)
+        self.assertEqual(
+            sorted(response.data["national_labels"]), sorted(national_labels)
+        )
 
     # Superuser
 
