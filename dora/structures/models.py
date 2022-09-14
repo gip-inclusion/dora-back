@@ -14,7 +14,7 @@ from dora.core.models import EnumModel, LogItem, ModerationMixin
 from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import (
     validate_accesslibre_url,
-    validate_osm_hours_str,
+    validate_opening_hours_str,
     validate_safir,
     validate_siret,
 )
@@ -213,10 +213,10 @@ class Structure(ModerationMixin, models.Model):
         null=True,
         validators=[validate_accesslibre_url],
     )
-    osm_hours = models.CharField(
-        max_length=255, blank=True, null=True, validators=[validate_osm_hours_str]
+    opening_hours = models.CharField(
+        max_length=255, blank=True, null=True, validators=[validate_opening_hours_str]
     )
-    hours_details = models.CharField(max_length=255, blank=True, null=True)
+    opening_hours_details = models.CharField(max_length=255, blank=True, null=True)
     national_labels = models.ManyToManyField(
         StructureNationalLabel, blank=True, null=True
     )

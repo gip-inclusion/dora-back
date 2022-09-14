@@ -8,11 +8,11 @@ def validate_siret(siret):
         raise ValidationError("Le numéro SIRET doit être composé de 14 chiffres.")
 
 
-def validate_osm_hours_str(osm_hours_str):
+def validate_opening_hours_str(opening_hours_str):
     try:
-        pyopening_hours.OpeningHours(osm_hours_str)
+        pyopening_hours.OpeningHours(opening_hours_str)
     except pyopening_hours.ParseException:
-        raise ValidationError("Le format des horaires d'ouverture est incorrecte")
+        raise ValidationError("Le format des horaires d'ouverture est incorrect")
 
 
 def validate_accesslibre_url(url):

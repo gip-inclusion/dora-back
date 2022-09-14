@@ -107,28 +107,30 @@ class StructureTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["accesslibre_url"], url)
 
-    def test_update_validate_osm_hours_rejected(self):
+    def test_update_validate_opening_hours_rejected(self):
         response = self.client.patch(
             f"/structures/{self.my_other_struct.slug}/",
-            {"osm_hours": "xxx"},
+            {"opening_hours": "xxx"},
         )
         self.assertEqual(
-            response.data.get("osm_hours")[0].get("message"),
-            "Le format des horaires d'ouverture est incorrecte",
+            response.data.get("opening_hours")[0].get("message"),
+            "Le format des horaires d'ouverture est incorrect",
         )
         self.assertEqual(response.status_code, 400)
 
-    def test_update_validate_osm_hours_accepted(self):
+    def test_update_validate_opening_hours_accepted(self):
         slug = self.my_struct.slug
-        osm_hours = "Mo-Fr 09:00-12:00,14:00-18:30; Sa 08:30-12:00"
-        response = self.client.patch(f"/structures/{slug}/", {"osm_hours": osm_hours})
+        opening_hours = "Mo-Fr 09:00-12:00,14:00-18:30; Sa 08:30-12:00"
+        response = self.client.patch(
+            f"/structures/{slug}/", {"opening_hours": opening_hours}
+        )
 
         self.assertEqual(response.status_code, 200)
         self.my_struct.refresh_from_db()
 
         response = self.client.get(f"/structures/{slug}/")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["osm_hours"], osm_hours)
+        self.assertEqual(response.data["opening_hours"], opening_hours)
 
     def test_update_national_labels_accepted(self):
         slug = self.my_struct.slug

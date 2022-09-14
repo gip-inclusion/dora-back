@@ -86,8 +86,8 @@ class StructureSerializer(serializers.ModelSerializer):
             "num_models",
             "models",
             "accesslibre_url",
-            "osm_hours",
-            "hours_details",
+            "opening_hours",
+            "opening_hours_details",
             "national_labels",
             "other_labels",
         ]

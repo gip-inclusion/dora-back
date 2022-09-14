@@ -43,17 +43,17 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="structure",
-            name="hours_details",
+            name="opening_hours_details",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
             model_name="structure",
-            name="osm_hours",
+            name="opening_hours",
             field=models.CharField(
                 blank=True,
                 max_length=255,
                 null=True,
-                validators=[dora.core.validators.validate_osm_hours_str],
+                validators=[dora.core.validators.validate_opening_hours_str],
             ),
         ),
         migrations.AddField(
