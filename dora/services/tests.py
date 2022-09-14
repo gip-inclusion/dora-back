@@ -12,6 +12,7 @@ from dora.services.enums import ServiceStatus
 from dora.services.migration_utils import (
     add_categories_and_subcategories_if_subcategory,
     create_category,
+    create_service_kind,
     create_subcategory,
     delete_category,
     delete_subcategory,
@@ -2185,6 +2186,21 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         self.assertEqual(category.count(), 1)
         self.assertEqual(category.first().value, value)
         self.assertEqual(category.first().label, label)
+
+    def test_create_service_kind(self):
+        # ÉTANT DONNÉ un type de service non existant
+        value = "autonomie"
+        label = "En autonomie"
+        self.assertEqual(ServiceKind.objects.filter(value=value).count(), 0)
+
+        # QUAND je créé ce type de service
+        create_service_kind(ServiceKind, value, label)
+
+        # ALORS il existe
+        subcategory = ServiceKind.objects.filter(value=value)
+        self.assertEqual(subcategory.count(), 1)
+        self.assertEqual(subcategory.first().value, value)
+        self.assertEqual(subcategory.first().label, label)
 
     def test_create_subcategory(self):
         # ÉTANT DONNÉ un besoin non existant
