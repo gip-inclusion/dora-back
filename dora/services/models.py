@@ -357,9 +357,9 @@ class Service(ModerationMixin, models.Model):
     )
 
     is_model = models.BooleanField(default=False)
-    can_update_category = models.BooleanField(
+    can_update_categories = models.BooleanField(
         default=True,
-        verbose_name="En tant que modèle, la mise à thématiques est-elle possible ?",
+        verbose_name="En tant que modèle, la mise à jour des thématiques est-elle possible ?",
     )
     model = models.ForeignKey(
         "ServiceModel",

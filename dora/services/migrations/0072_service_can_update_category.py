@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="service",
-            name="can_update_category",
+            name="can_update_categories",
             field=models.BooleanField(default=True),
         ),
     ]
