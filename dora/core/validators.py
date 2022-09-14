@@ -1,5 +1,6 @@
-import pyopening_hours
 from django.core.exceptions import ValidationError
+from osm_time import ParseException
+from osm_time.opening_hours import OpeningHours
 
 
 # From: https://github.com/betagouv/itou/blob/master/itou/utils/validators.py
@@ -10,8 +11,8 @@ def validate_siret(siret):
 
 def validate_opening_hours_str(opening_hours_str):
     try:
-        pyopening_hours.OpeningHours(opening_hours_str)
-    except pyopening_hours.ParseException:
+        OpeningHours(opening_hours_str)
+    except ParseException:
         raise ValidationError("Le format des horaires d'ouverture est incorrect")
 
 
