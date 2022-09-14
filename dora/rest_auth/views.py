@@ -87,6 +87,9 @@ def _add_user_to_structure_as_admin(structure, user):
         "Premier administrateur ajouté (par lui-même)",
         ModerationStatus.NEED_INITIAL_MODERATION,
     )
+    send_mattermost_notification(
+        f":adult: Premier administrateur “{user.get_full_name()}” enregistré dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
+    )
 
 
 def _add_user_to_structure_or_waitlist(structure, user):
@@ -143,9 +146,5 @@ def join_structure(request):
 
     if not was_member_of_a_structure:
         user.start_onboarding()
-
-    send_mattermost_notification(
-        f":adult: Nouvel utilisateur “{user.get_full_name()}” enregistré dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
-    )
 
     return Response(StructureSerializer(structure, context={"request": request}).data)
