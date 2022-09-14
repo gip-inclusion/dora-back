@@ -83,6 +83,71 @@ class StructureTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["can_write"], False)
 
+    def test_update_validate_accesslibre_url_rejected(self):
+        response = self.client.patch(
+            f"/structures/{self.my_other_struct.slug}/",
+            {"accesslibre_url": "https://www.youtube.com"},
+        )
+        self.assertEqual(
+            response.data.get("accesslibre_url")[0].get("message"),
+            "L'URL doit débuter par https://acceslibre.beta.gouv.fr/",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_update_validate_accesslibre_url_accepted(self):
+        slug = self.my_struct.slug
+        url = "https://acceslibre.beta.gouv.fr/app/75-paris/a/restaurant/erp/breizh-cafe-marais-la-crepe-autrement/"
+        response = self.client.patch(f"/structures/{slug}/", {"accesslibre_url": url})
+
+        self.assertEqual(response.status_code, 200)
+        self.my_struct.refresh_from_db()
+
+        response = self.client.get(f"/structures/{slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["accesslibre_url"], url)
+
+    def test_update_validate_opening_hours_rejected(self):
+        response = self.client.patch(
+            f"/structures/{self.my_other_struct.slug}/",
+            {"opening_hours": "xxx"},
+        )
+        self.assertEqual(
+            response.data.get("opening_hours")[0].get("message"),
+            "Le format des horaires d'ouverture est incorrect",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_update_validate_opening_hours_accepted(self):
+        slug = self.my_struct.slug
+        opening_hours = "Mo-Fr 09:00-12:00,14:00-18:30; Sa 08:30-12:00"
+        response = self.client.patch(
+            f"/structures/{slug}/", {"opening_hours": opening_hours}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.my_struct.refresh_from_db()
+
+        response = self.client.get(f"/structures/{slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["opening_hours"], opening_hours)
+
+    def test_update_national_labels_accepted(self):
+        slug = self.my_struct.slug
+        national_labels = ["mobin", "pole-emploi"]
+        response = self.client.patch(
+            f"/structures/{slug}/",
+            {"national_labels": national_labels},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.my_struct.refresh_from_db()
+
+        response = self.client.get(f"/structures/{slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            sorted(response.data["national_labels"]), sorted(national_labels)
+        )
+
     # Superuser
 
     def test_superuser_can_sees_everything(self):

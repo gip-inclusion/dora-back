@@ -518,6 +518,7 @@ class ServiceModelSerializer(ServiceSerializer):
             "can_write",
             "num_services",
             "customizable_choices_set",
+            "can_update_categories",
         ]
         lookup_field = "slug"
 

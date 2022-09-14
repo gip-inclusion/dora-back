@@ -10,6 +10,7 @@ from dora.users.models import User
 from .models import (
     Structure,
     StructureMember,
+    StructureNationalLabel,
     StructurePutativeMember,
     StructureTypology,
 )
@@ -36,6 +37,13 @@ class StructureSerializer(serializers.ModelSerializer):
 
     num_models = serializers.SerializerMethodField()
     models = serializers.SerializerMethodField()
+
+    national_labels = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=StructureNationalLabel.objects.all(),
+        many=True,
+        required=False,
+    )
 
     class Meta:
         model = Structure
@@ -74,6 +82,11 @@ class StructureSerializer(serializers.ModelSerializer):
             "archived_services",
             "num_models",
             "models",
+            "accesslibre_url",
+            "opening_hours",
+            "opening_hours_details",
+            "national_labels",
+            "other_labels",
         ]
         lookup_field = "slug"
 
