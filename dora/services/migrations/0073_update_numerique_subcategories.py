@@ -85,7 +85,7 @@ def migrate_services_options(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("services", "0071_convert_history"),
+        ("services", "0072_service_can_update_category"),
     ]
 
     operations = [
