@@ -217,10 +217,8 @@ class Structure(ModerationMixin, models.Model):
         max_length=255, blank=True, null=True, validators=[validate_opening_hours_str]
     )
     opening_hours_details = models.CharField(max_length=255, blank=True, null=True)
-    national_labels = models.ManyToManyField(
-        StructureNationalLabel, blank=True, null=True
-    )
-    other_labels = models.CharField(max_length=255, null=True)
+    national_labels = models.ManyToManyField(StructureNationalLabel, blank=True)
+    other_labels = models.CharField(max_length=255, blank=True)
 
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(blank=True, null=True)
