@@ -98,21 +98,20 @@ def _add_user_to_structure_or_waitlist(structure, user):
             invited_by_admin=True,
         )
 
-        # or rather do that somewhere more generic
         membership = StructureMember.objects.create(
             user=pm.user,
             structure=pm.structure,
             is_admin=pm.is_admin,
         )
         pm.delete()
-        # Then notify the administrators of this structure
         membership.notify_admins_invitation_accepted()
     except StructurePutativeMember.DoesNotExist:
-        pm = StructurePutativeMember.objects.create(
+        # Sinon on le met en liste d'attente, ou on re-notifie l'administrateur s'il y était déjà
+        pm, _created = StructurePutativeMember.objects.get_or_create(
             user=user,
             structure=structure,
             is_admin=False,
-            invited_by_admin=False,
+            defaults={"invited_by_admin": False},
         )
         pm.notify_admin_access_requested()
 
