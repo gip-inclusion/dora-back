@@ -15,6 +15,7 @@ from dora.structures.emails import send_invitation_email
 from dora.structures.models import (
     Structure,
     StructureMember,
+    StructureNationalLabel,
     StructurePutativeMember,
     StructureSource,
     StructureTypology,
@@ -391,6 +392,10 @@ def options(request):
         "typologies": [
             {"value": c.value, "label": c.label}
             for c in StructureTypology.objects.all()
+        ],
+        "national_labels": [
+            {"value": c.value, "label": c.label}
+            for c in StructureNationalLabel.objects.all()
         ],
     }
     return Response(result)
