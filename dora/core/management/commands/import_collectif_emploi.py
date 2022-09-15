@@ -162,6 +162,10 @@ class Command(BaseCommand):
 
     def create_service(self, structure, line, idx_start, user):
 
+        fee_condition = (
+            "gratuit" if line[idx_start + 6].lower() == "gratuit" else "payant"
+        )
+
         service = Service.objects.create(
             name=Truncator(line[idx_start]).chars(Service.name.field.max_length),
             structure=structure,
@@ -172,6 +176,7 @@ class Command(BaseCommand):
             last_editor=user,
             status=ServiceStatus.DRAFT,
             has_fee=not line[idx_start + 6].lower() == "gratuit",
+            fee_condition=fee_condition,
             modification_date=timezone.now(),
         )
         try:

@@ -167,7 +167,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "access_conditions",
             "concerned_public",
             "is_cumulative",
-            "has_fee",
+            "fee_condition",
             "fee_details",
             "beneficiaries_access_modes",
             "beneficiaries_access_modes_other",

@@ -23,6 +23,7 @@ from dora.services.models import (
     Requirement,
     Service,
     ServiceCategory,
+    ServiceFee,
     ServiceKind,
     ServiceSubCategory,
 )
@@ -105,6 +106,7 @@ class ServiceSuggestion(models.Model):
         subcategories = self.contents.pop("subcategories", [])
         kinds = self.contents.pop("kinds", [])
         location_kinds = self.contents.pop("location_kinds", [])
+        fee_condition = self.contents.pop("fee_condition", "gratuit")
 
         # rétrocompatibilité: les anciennes suggestion avaient uniquement
         # un champ "category" au lieu du champ "categories" multiple
@@ -132,6 +134,7 @@ class ServiceSuggestion(models.Model):
                 status=ServiceStatus.SUGGESTION,
                 contact_phone=contact_phone,
                 modification_date=timezone.now(),
+                fee_condition=ServiceFee.objects.filter(value=fee_condition).first(),
                 **self.contents,
             )
 
