@@ -1,6 +1,5 @@
 import csv
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.utils.text import Truncator
@@ -8,7 +7,6 @@ from django.utils.text import Truncator
 from dora.core import utils
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
-from dora.rest_auth.models import Token
 from dora.services.enums import ServiceStatus
 from dora.services.models import Service, ServiceKind
 from dora.sirene.models import Establishment
@@ -156,15 +154,10 @@ class Command(BaseCommand):
                     invited_by_admin=True,
                     is_admin=True,
                 )
-                tmp_token = Token.objects.create(
-                    user=user,
-                    expiration=timezone.now() + settings.INVITATION_LINK_EXPIRATION,
-                )
                 self.stdout.write(f"    Inviting {member.user.email}")
                 send_invitation_email(
                     member,
                     "L’équipe DORA",
-                    tmp_token.key,
                 )
 
     def create_service(self, structure, line, idx_start, user):

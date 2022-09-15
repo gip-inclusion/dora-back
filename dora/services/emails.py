@@ -17,7 +17,6 @@ def send_service_feedback_email(service, full_name, email, message):
         {html_message}
         </body>
         """
-    print(body)
 
     send_mail(
         f"[{settings.ENVIRONMENT}] Suggestion d'amélioration de service",

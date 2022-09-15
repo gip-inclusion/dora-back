@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 import logging
 import os
 import random
-from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
@@ -288,9 +287,6 @@ EMAIL_USE_TLS = True
 EMAIL_DOMAIN = os.environ["EMAIL_DOMAIN"]
 FRONTEND_URL = os.environ["FRONTEND_URL"]
 SUPPORT_EMAIL = os.environ["SUPPORT_EMAIL"]
-
-INVITATION_LINK_EXPIRATION = timedelta(days=15)
-AUTH_LINK_EXPIRATION = timedelta(days=1)
 
 # Si cette variable est remplie, tous les mails sortants seront envoyés à cette adresse.
 FAKE_EMAIL_RECIPIENT = os.environ.get("FAKE_EMAIL_RECIPIENT")

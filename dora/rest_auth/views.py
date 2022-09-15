@@ -1,10 +1,6 @@
 import logging
-import random
-from time import sleep
 
 from django.conf import settings
-from django.contrib.auth.password_validation import password_changed, validate_password
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.http.response import Http404
 from django.utils import timezone
@@ -16,28 +12,16 @@ from rest_framework.response import Response
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_mattermost_notification, send_moderation_notification
 from dora.rest_auth.authentication import TokenAuthentication
-from dora.rest_auth.models import Token
-from dora.rest_auth.serializers import (
-    LoginSerializer,
-    PasswordResetConfirmSerializer,
-    PasswordResetSerializer,
-    TokenSerializer,
-)
+from dora.rest_auth.serializers import SiretSerializer, TokenSerializer
 from dora.structures.models import (
     Structure,
     StructureMember,
     StructurePutativeMember,
     StructureSource,
-    StructureTypology,
 )
-from dora.users.models import User
+from dora.structures.serializers import StructureSerializer
 
-from .emails import send_email_validation_email, send_password_reset_email
-from .serializers import (
-    ResendEmailValidationSerializer,
-    StructureAndUserSerializer,
-    UserInfoSerializer,
-)
+from .serializers import UserInfoSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -45,97 +29,6 @@ logger = logging.getLogger(__name__)
 def update_last_login(user):
     user.last_login = timezone.now()
     user.save(update_fields=["last_login"])
-
-
-@sensitive_post_parameters(["email", "password"])
-@api_view(["POST"])
-@permission_classes([permissions.AllowAny])
-def login(request):
-    serializer = LoginSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    user = serializer.validated_data["user"]
-    if not user.is_valid:
-        return Response({"valid_user": False})
-    else:
-        update_last_login(user)
-        # We don't want to return expirable tokens, they are just here for password
-        # resets !
-        token, _created = Token.objects.get_or_create(user=user, expiration=None)
-        return Response({"token": token.key, "valid_user": True})
-
-
-@sensitive_post_parameters(["email"])
-@api_view(["POST"])
-@permission_classes([permissions.AllowAny])
-def password_reset(request):
-    serializer = PasswordResetSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    email = serializer.validated_data["email"]
-    try:
-        user = User.objects.get(email=email)
-        tmp_token = Token.objects.create(
-            user=user, expiration=timezone.now() + settings.AUTH_LINK_EXPIRATION
-        )
-        send_password_reset_email(email, user.get_short_name(), tmp_token.key)
-        return Response(status=204)
-    except User.DoesNotExist:
-        # We don't want to expose the fact that the user doesn't exist
-        # Introduce a random delay to simulate the time spend sending the mail
-        sleep(random.random() * 1.5)
-        return Response(status=204)
-
-
-@sensitive_post_parameters(["new_password"])
-@api_view(["POST"])
-@permission_classes([permissions.IsAuthenticated])
-def password_reset_confirm(request):
-    serializer = PasswordResetConfirmSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    new_password = serializer.validated_data["new_password"]
-    try:
-        already_had_password = request.user.has_usable_password()
-        validate_password(new_password, request.user)
-        request.user.set_password(new_password)
-        request.user.save()
-        password_changed(new_password, request.user)
-        # Cleanup all temporary tokens
-        Token.objects.filter(user=request.user, expiration__isnull=False).delete()
-
-        if not already_had_password:
-            # it's a new user, created via invitation. Notify all administrators
-            # of the structures he was invited to.
-            putative_memberships = StructurePutativeMember.objects.filter(
-                user=request.user
-            )
-            for pm in putative_memberships:
-                with transaction.atomic(durable=True):
-                    assert pm.invited_by_admin is True
-                    membership = StructureMember.objects.create(
-                        user=pm.user,
-                        structure=pm.structure,
-                        is_admin=pm.is_admin,
-                    )
-                    membership.notify_admins_invitation_accepted()
-                    pm.delete()
-
-        return Response(status=204)
-    except DjangoValidationError:
-        raise
-
-
-@sensitive_post_parameters(["key"])
-@api_view(["POST"])
-@permission_classes([permissions.AllowAny])
-def token_verify(request):
-    serializer = TokenSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    key = serializer.validated_data["key"]
-    try:
-        TokenAuthentication().authenticate_credentials(key)
-    except exceptions.AuthenticationFailed:
-        raise Http404
-
-    return Response({"result": "ok"}, status=200)
 
 
 @sensitive_post_parameters(["key"])
@@ -153,103 +46,7 @@ def user_info(request):
     return Response(UserInfoSerializer(user).data, status=200)
 
 
-@sensitive_post_parameters(["key"])
-@api_view(["POST"])
-@permission_classes([permissions.AllowAny])
-@transaction.atomic
-def validate_email(request):
-    serializer = TokenSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    key = serializer.validated_data["key"]
-    try:
-        user, token = TokenAuthentication().authenticate_credentials(key)
-        token.delete()
-    except exceptions.AuthenticationFailed:
-        raise Http404
-    if not user.is_valid:
-        user.is_valid = True
-        user.save()
-        user.start_onboarding()
-
-    # Si l'utilisateur est administrateur d'une structure, c'est qu'il est le premier administrateur
-    # d'une structure orpheline (autrement, ce serait un StructurePutativeMember et non pas un StructureMember)
-    memberships = StructureMember.objects.filter(user=user, is_admin=True)
-    for m in memberships:
-        if (
-            StructureMember.objects.filter(
-                structure=m.structure,
-                is_admin=True,
-                user__is_valid=True,
-                user__is_active=True,
-            )
-            .exclude(user=user)
-            .exists()
-        ):
-            logging.error(
-                "Administrateur ajouté directement a une structure ayant déjà un administrateur"
-            )
-
-        structure = m.structure
-        send_moderation_notification(
-            structure,
-            user,
-            "Premier administrateur ajouté (par lui-même)",
-            ModerationStatus.NEED_INITIAL_MODERATION,
-        )
-
-    # Once the email is valid, we can inform the admins that
-    # an access request was sent
-    putative_memberships = StructurePutativeMember.objects.filter(
-        user=user, invited_by_admin=False
-    )
-    for pm in putative_memberships:
-        pm.notify_admin_access_requested()
-
-    return Response({"result": "ok"}, status=200)
-
-
-@sensitive_post_parameters(["email"])
-@api_view(["POST"])
-@permission_classes([permissions.AllowAny])
-def resend_validation_email(request):
-    serializer = ResendEmailValidationSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    email = serializer.validated_data["email"]
-    try:
-        user = User.objects.get(email=email)
-        tmp_token = Token.objects.create(
-            user=user, expiration=timezone.now() + settings.AUTH_LINK_EXPIRATION
-        )
-        send_email_validation_email(email, user.get_short_name(), tmp_token.key)
-        return Response(status=204)
-    except User.DoesNotExist:
-        # We don't want to expose the fact that the user doesn't exist
-        # Introduce a random delay to simulate the time spend sending the mail
-        sleep(random.random() * 1.5)
-        return Response(status=204)
-
-
-@sensitive_post_parameters(["first_name", "last_name", "email", "password"])
-@api_view(["POST"])
-@permission_classes([permissions.AllowAny])
-@transaction.atomic
-def register_structure_and_user(request):
-    serializer = StructureAndUserSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-
-    data = serializer.validated_data
-
-    # Create User
-    user = User.objects.create_user(
-        data["email"],
-        data["password"],
-        first_name=data["first_name"],
-        last_name=data["last_name"],
-        newsletter=data["newsletter"],
-    )
-
-    # Create Structure
-    establishment = data["establishment"]
+def _create_structure(establishment, user):
     try:
         structure = Structure.objects.get(siret=establishment.siret)
     except Structure.DoesNotExist:
@@ -267,50 +64,88 @@ def register_structure_and_user(request):
         send_mattermost_notification(
             f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{structure.get_absolute_url()}"
         )
-
-    has_nonstaff_admin = structure.membership.filter(
-        user__is_staff=False, user__is_valid=True, user__is_active=True, is_admin=True
+    has_admin = structure.membership.filter(
+        user__is_valid=True, user__is_active=True, is_admin=True
     ).exists()
+    return has_admin, structure
 
-    need_admin_validation = True
 
-    # If the structure is a Pole Emploi agencie, check that the email finishes
-    # in @pole-emploi.fr or @pole-emploi.net
-    if structure.typology == StructureTypology.objects.get(value="PE"):
-        need_admin_validation = False
-        if not (
-            user.email.endswith("@pole-emploi.fr")
-            or user.email.endswith("@pole-emploi.net")
-            or (
-                user.email.endswith("@dora.beta.gouv.fr")
-                and settings.ENVIRONMENT != "production"
-            )
-        ):
-            raise exceptions.PermissionDenied(
-                "Merci de renseigner une adresse valide (@pole-emploi.fr ou @pole-emploi.net)"
-            )
+def _is_member_of_structure(structure, user):
+    try:
+        StructureMember.objects.get(user=user, structure=structure)
+        return True
+    except StructureMember.DoesNotExist:
+        return False
 
-    # Link them
-    if not need_admin_validation or not has_nonstaff_admin:
-        StructureMember.objects.create(
-            user=user, structure=structure, is_admin=not has_nonstaff_admin
-        )
-    else:
-        StructurePutativeMember.objects.create(
+
+def _add_user_to_structure_as_admin(structure, user):
+    StructureMember.objects.create(user=user, structure=structure, is_admin=True)
+    send_moderation_notification(
+        structure,
+        user,
+        "Premier administrateur ajouté (par lui-même)",
+        ModerationStatus.NEED_INITIAL_MODERATION,
+    )
+    send_mattermost_notification(
+        f":adult: Premier administrateur “{user.get_full_name()}” enregistré dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
+    )
+
+
+def _add_user_to_structure_or_waitlist(structure, user):
+    # Si l'utilisateur a été invité, on le valide directement
+    try:
+        pm = StructurePutativeMember.objects.get(
             user=user,
             structure=structure,
-            is_admin=not has_nonstaff_admin,
-            invited_by_admin=False,
+            invited_by_admin=True,
         )
 
-    # Send validation link email
-    tmp_token = Token.objects.create(
-        user=user, expiration=timezone.now() + settings.AUTH_LINK_EXPIRATION
-    )
-    send_email_validation_email(data["email"], user.get_short_name(), tmp_token.key)
+        membership = StructureMember.objects.create(
+            user=pm.user,
+            structure=pm.structure,
+            is_admin=pm.is_admin,
+        )
+        pm.delete()
+        membership.notify_admins_invitation_accepted()
+    except StructurePutativeMember.DoesNotExist:
+        # Sinon on le met en liste d'attente, ou on re-notifie l'administrateur s'il y était déjà
+        pm, _created = StructurePutativeMember.objects.get_or_create(
+            user=user,
+            structure=structure,
+            is_admin=False,
+            defaults={"invited_by_admin": False},
+        )
+        pm.notify_admin_access_requested()
 
-    send_mattermost_notification(
-        f":adult: Nouvel utilisateur “{user.get_full_name()}” enregistré dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
-    )
 
-    return Response(status=201)
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+@transaction.atomic
+def join_structure(request):
+    # user.start_onboarding() if it's the first structure it's linked to
+    user = request.user
+    serializer = SiretSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+    establishment = data["establishment"]
+
+    has_admin, structure = _create_structure(establishment, user)
+
+    if _is_member_of_structure(structure, user):
+        return Response(
+            StructureSerializer(structure, context={"request": request}).data
+        )
+
+    was_member_of_a_structure = StructureMember.objects.filter(
+        user=user, structure=structure
+    ).exists()
+
+    if not has_admin:
+        _add_user_to_structure_as_admin(structure, user)
+    else:
+        _add_user_to_structure_or_waitlist(structure, user)
+
+    if not was_member_of_a_structure:
+        user.start_onboarding()
+
+    return Response(StructureSerializer(structure, context={"request": request}).data)
