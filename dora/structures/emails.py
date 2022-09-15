@@ -11,7 +11,7 @@ def send_invitation_email(member, host_fullname):
         "recipient_name": member.user.get_short_name(),
         "host_name": host_fullname,
         "structure_name": member.structure.name,
-        "cta_link": f"{settings.FRONTEND_URL}/rattachement?siret={member.structure.siret}&login_hint={member.user.email}",
+        "cta_link": f"{settings.FRONTEND_URL}/auth/rattachement?siret={member.structure.siret}&login_hint={member.user.email}",
         "homepage_url": settings.FRONTEND_URL,
     }
     body = render_to_string("invitation.html", params)
