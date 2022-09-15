@@ -197,23 +197,6 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
                 structure_id__in=structures_administered
             )
 
-    # TODO: finalize the acceptation that was previously done on password creation
-    #     if not already_had_password:
-    #         # it's a new user, created via invitation. Notify all administrators
-    #         # of the structures he was invited to.
-    #         putative_memberships = StructurePutativeMember.objects.filter(
-    #             user=request.user
-    #         )
-    #         for pm in putative_memberships:
-    #             with transaction.atomic(durable=True):
-    #                 assert pm.invited_by_admin is True
-    #                 membership = StructureMember.objects.create(
-    #                     user=pm.user,
-    #                     structure=pm.structure,
-    #                     is_admin=pm.is_admin,
-    #                 )
-    #                 membership.notify_admins_invitation_accepted()
-    #                 pm.delete()
     @action(
         detail=True,
         methods=["post"],
