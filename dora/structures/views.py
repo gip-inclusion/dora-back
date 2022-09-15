@@ -391,11 +391,11 @@ def options(request):
     result = {
         "typologies": [
             {"value": c.value, "label": c.label}
-            for c in StructureTypology.objects.all()
+            for c in StructureTypology.objects.all().order_by("label")
         ],
         "national_labels": [
             {"value": c.value, "label": c.label}
-            for c in StructureNationalLabel.objects.all()
+            for c in StructureNationalLabel.objects.all().order_by("label")
         ],
     }
     return Response(result)
