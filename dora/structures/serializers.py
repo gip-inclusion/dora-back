@@ -298,6 +298,7 @@ class StructureListSerializer(StructureSerializer):
         model = Structure
         fields = [
             "slug",
+            "siret",
             "name",
             "department",
             "typology_display",

@@ -7,7 +7,6 @@ from django.utils import timezone
 from django.views.decorators.debug import sensitive_post_parameters
 from rest_framework import exceptions, permissions
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from dora.core.models import ModerationStatus
@@ -133,7 +132,9 @@ def join_structure(request):
     has_admin, structure = _create_structure(establishment, user)
 
     if _is_member_of_structure(structure, user):
-        raise ValidationError("Cet utilisateur est déjà membre de cette structure")
+        return Response(
+            StructureSerializer(structure, context={"request": request}).data
+        )
 
     was_member_of_a_structure = StructureMember.objects.filter(
         user=user, structure=structure

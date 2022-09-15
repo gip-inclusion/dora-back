@@ -89,13 +89,25 @@ class AuthenticationTestCase(APITestCase):
             },
         )
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            StructureMember.objects.filter(
+                structure__siret=DUMMY_SIRET, user=user
+            ).count(),
+            1,
+        )
         response2 = self.client.post(
             "/auth/join-structure/",
             {
                 "siret": DUMMY_SIRET,
             },
         )
-        self.assertEqual(response2.status_code, 400)
+        self.assertEqual(response2.status_code, 200)
+        self.assertEqual(
+            StructureMember.objects.filter(
+                structure__siret=DUMMY_SIRET, user=user
+            ).count(),
+            1,
+        )
 
     def test_first_user_in_structure_changes_moderation_status(self):
         baker.make("Establishment", siret=DUMMY_SIRET)
