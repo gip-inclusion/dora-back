@@ -4,13 +4,14 @@ from django.template.loader import render_to_string
 from dora.core.emails import send_mail
 
 
-def send_invitation_email(member, host_fullname, token):
+def send_invitation_email(member, host_fullname):
+
     params = {
         "recipient_email": member.user.email,
         "recipient_name": member.user.get_short_name(),
         "host_name": host_fullname,
         "structure_name": member.structure.name,
-        "cta_link": f"{settings.FRONTEND_URL}/auth/accepter-invitation?token={token}&membership={member.id}",
+        "cta_link": f"{settings.FRONTEND_URL}/auth/rattachement?siret={member.structure.siret}&login_hint={member.user.email}",
         "homepage_url": settings.FRONTEND_URL,
     }
     body = render_to_string("invitation.html", params)

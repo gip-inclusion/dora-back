@@ -105,7 +105,7 @@ class StructureSerializer(serializers.ModelSerializer):
         ]
 
     def get_has_admin(self, structure):
-        return structure.membership.filter(is_admin=True, user__is_staff=False).exists()
+        return structure.membership.filter(is_admin=True).exists()
 
     def get_num_services(self, structure):
         return structure.get_num_visible_services(self.context["request"].user)
@@ -518,6 +518,7 @@ class ServiceModelSerializer(ServiceSerializer):
             "can_write",
             "num_services",
             "customizable_choices_set",
+            "can_update_categories",
         ]
         lookup_field = "slug"
 

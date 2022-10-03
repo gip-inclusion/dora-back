@@ -1,9 +1,6 @@
-from django.conf import settings
 from django.db.models import Count, Q
-from django.utils import timezone
 from rest_framework import exceptions, serializers
 
-from dora.rest_auth.models import Token
 from dora.services.enums import ServiceStatus
 from dora.services.models import Service, ServiceModel
 from dora.services.serializers import ServiceListSerializer
@@ -13,6 +10,7 @@ from dora.users.models import User
 from .models import (
     Structure,
     StructureMember,
+    StructureNationalLabel,
     StructurePutativeMember,
     StructureTypology,
 )
@@ -39,6 +37,13 @@ class StructureSerializer(serializers.ModelSerializer):
 
     num_models = serializers.SerializerMethodField()
     models = serializers.SerializerMethodField()
+
+    national_labels = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=StructureNationalLabel.objects.all(),
+        many=True,
+        required=False,
+    )
 
     class Meta:
         model = Structure
@@ -77,11 +82,16 @@ class StructureSerializer(serializers.ModelSerializer):
             "archived_services",
             "num_models",
             "models",
+            "accesslibre_url",
+            "opening_hours",
+            "opening_hours_details",
+            "national_labels",
+            "other_labels",
         ]
         lookup_field = "slug"
 
     def get_has_admin(self, obj):
-        return obj.membership.filter(is_admin=True, user__is_staff=False).exists()
+        return obj.membership.filter(is_admin=True).exists()
 
     def get_can_write(self, obj):
         # TODO: DEPRECATED
@@ -288,6 +298,7 @@ class StructureListSerializer(StructureSerializer):
         model = Structure
         fields = [
             "slug",
+            "siret",
             "name",
             "department",
             "typology_display",
@@ -364,7 +375,6 @@ class StructureMemberSerializer(serializers.ModelSerializer):
 
 class StructurePutativeMemberSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-    must_set_password = serializers.SerializerMethodField()
 
     class Meta:
         model = StructurePutativeMember
@@ -372,13 +382,9 @@ class StructurePutativeMemberSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "is_admin",
-            "must_set_password",
             "invited_by_admin",
         ]
         validators = []
-
-    def get_must_set_password(self, obj):
-        return not obj.user.has_usable_password()
 
     def validate(self, data):
         structure_slug = self.context["request"].query_params.get("structure")
@@ -413,12 +419,8 @@ class StructurePutativeMemberSerializer(serializers.ModelSerializer):
             invited_by_admin=True,
         )
         # Send invitation email
-        tmp_token = Token.objects.create(
-            user=user, expiration=timezone.now() + settings.INVITATION_LINK_EXPIRATION
-        )
         send_invitation_email(
             member,
             request_user.get_full_name(),
-            tmp_token.key,
         )
         return member

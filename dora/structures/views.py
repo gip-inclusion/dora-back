@@ -10,11 +10,11 @@ from rest_framework.response import Response
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_mattermost_notification, send_moderation_notification
 from dora.core.pagination import OptionalPageNumberPagination
-from dora.rest_auth.models import Token
 from dora.structures.emails import send_invitation_email
 from dora.structures.models import (
     Structure,
     StructureMember,
+    StructureNationalLabel,
     StructurePutativeMember,
     StructureSource,
     StructureTypology,
@@ -200,60 +200,6 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=["post"],
-        url_path="accept-invite",
-        permission_classes=[permissions.IsAuthenticated],
-    )
-    def accept_invite(self, request, pk):
-        try:
-            pm = StructurePutativeMember.objects.get(id=pk)
-        except StructurePutativeMember.DoesNotExist:
-            raise exceptions.NotFound
-
-        user = request.user
-
-        if pm.user.id != user.id:
-            raise exceptions.PermissionDenied
-
-        structure_name = pm.structure.name
-
-        if not user.is_valid:
-            user.is_valid = True
-            user.save()
-            user.start_onboarding()
-
-        must_set_password = not user.has_usable_password()
-        if must_set_password:
-            # generate a new short term token for password reset
-            # The invitation token will be deleted as soon as the user sets a password
-            tmp_token = Token.objects.create(
-                user=user, expiration=timezone.now() + settings.AUTH_LINK_EXPIRATION
-            )
-        else:
-            with transaction.atomic(durable=True):
-                membership = StructureMember.objects.create(
-                    user=pm.user,
-                    structure=pm.structure,
-                    is_admin=pm.is_admin,
-                )
-                pm.delete()
-                # The user already exists and hopefully know its password
-                # we can safely delete the invitation token
-                Token.objects.filter(user=user, expiration__isnull=False).delete()
-
-                # Then notify the administrators of this structure
-                membership.notify_admins_invitation_accepted()
-        return Response(
-            {
-                "structure_name": structure_name,
-                "must_set_password": must_set_password,
-                "token": tmp_token.key if must_set_password else None,
-            },
-            status=200,
-        )
-
-    @action(
-        detail=True,
-        methods=["post"],
         url_path="resend-invite",
         permission_classes=[permissions.IsAuthenticated],
     )
@@ -273,14 +219,9 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
             except StructureMember.DoesNotExist:
                 raise exceptions.PermissionDenied
 
-        tmp_token = Token.objects.create(
-            user=member.user,
-            expiration=timezone.now() + settings.INVITATION_LINK_EXPIRATION,
-        )
         send_invitation_email(
             member,
             request_user.get_full_name(),
-            tmp_token.key,
         )
         return Response(status=201)
 
@@ -390,18 +331,11 @@ def options(request):
     result = {
         "typologies": [
             {"value": c.value, "label": c.label}
-            for c in StructureTypology.objects.all()
+            for c in StructureTypology.objects.all().order_by("label")
+        ],
+        "national_labels": [
+            {"value": c.value, "label": c.label}
+            for c in StructureNationalLabel.objects.all().order_by("label")
         ],
     }
     return Response(result)
-
-
-@api_view()
-@permission_classes([permissions.AllowAny])
-def search_safir(request):
-    safir_code = request.query_params.get("safir", "")
-    if not safir_code:
-        return Response("need safir")
-
-    structure = get_object_or_404(Structure, code_safir_pe=safir_code)
-    return Response(StructureSerializer(structure, context={"request": request}).data)

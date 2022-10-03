@@ -1,8 +1,14 @@
 from datetime import timedelta
 
 from django.contrib.gis.geos import MultiPolygon, Point
-from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.utils import timezone
+from model_bakery import baker
+from rest_framework.test import APITestCase
+
+from dora.admin_express.models import AdminDivisionType
+from dora.core.test_utils import make_model, make_service, make_structure
+from dora.services.enums import ServiceStatus
 from dora.services.migration_utils import (
     add_categories_and_subcategories_if_subcategory,
     create_category,
@@ -16,12 +22,6 @@ from dora.services.migration_utils import (
     unlink_services_from_subcategory,
     update_subcategory_value_and_label,
 )
-from model_bakery import baker
-from rest_framework.test import APITestCase
-
-from dora.admin_express.models import AdminDivisionType
-from dora.core.test_utils import make_model, make_service, make_structure
-from dora.services.enums import ServiceStatus
 from dora.services.utils import SYNC_CUSTOM_M2M_FIELDS, SYNC_FIELDS, SYNC_M2M_FIELDS
 from dora.structures.models import Structure
 
@@ -604,6 +604,22 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.data["contact_name"], "FOO")
         self.assertEqual(response.data["contact_phone"], "1234")
         self.assertEqual(response.data["contact_email"], "foo@bar.buz")
+
+    def test_logged_user_with_no_structure_cant_see_private_contact_info(self):
+        user = baker.make("users.User", is_valid=True)
+        service = make_service(
+            status=ServiceStatus.PUBLISHED,
+            contact_name="FOO",
+            contact_phone="1234",
+            contact_email="foo@bar.buz",
+            is_contact_info_public=False,
+        )
+        self.client.force_authenticate(user=user)
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["contact_name"], "")
+        self.assertEqual(response.data["contact_phone"], "")
+        self.assertEqual(response.data["contact_email"], "")
 
     def test_nonvalidated_user_cant_see_private_contact_info(self):
         self.me.is_valid = False
