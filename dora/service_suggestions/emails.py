@@ -20,11 +20,13 @@ def send_suggestion_validated_new_structure_email(email, structure):
     )
 
 
-def send_suggestion_validated_existing_structure_email(to, structure, service):
+def send_suggestion_validated_existing_structure_email(
+    to, structure, service, contact_email
+):
     params = {
         "structure": structure,
         "cta_link": service.get_frontend_url(),
-        # "more_details_link": "",
+        "contact_email": contact_email if contact_email not in to else None,
     }
     body = render_to_string("existing_structure.html", params)
 

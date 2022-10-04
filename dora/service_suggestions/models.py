@@ -173,18 +173,9 @@ class ServiceSuggestion(models.Model):
                 for admin in structure_admins:
                     emails_contacted.add(admin.user.email)
 
-                # Pour l'instant on désactive l'envoi au contact_email, étant donnée que le message actuel
-                # n'est pas pertinent pour un utilisateur qui ne fait pas déjà partie de la structure,
-                # et on n'a pas cette garantie.
-
-                # if contact_email is not None:
-                #     emails_contacted.add(contact_email)
-
                 if emails_contacted:
-                    # FIXME: mettre des destinataires multiples dans le champ To: n'est sans doute pas une bonne idée…
-                    # voir: https://www.notion.so/dora-beta/Notification-de-suggestion-valid-e-destinataires-multiples-9d1aa1b15f334721a423346107aeab53
                     send_suggestion_validated_existing_structure_email(
-                        list(emails_contacted), structure, service
+                        list(emails_contacted), structure, service, contact_email
                     )
 
         return service, list(emails_contacted)
