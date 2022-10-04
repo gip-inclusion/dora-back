@@ -7,7 +7,7 @@ from dora.services.migration_utils import create_service_kind
 
 def migrate_services_kind(apps, schema_editor):
     ServiceKind = apps.get_model("services", "ServiceKind")
-    create_service_kind(ServiceKind, "numérique", "Service numérique")
+    create_service_kind(ServiceKind, "numerique", "Service numérique")
     create_service_kind(ServiceKind, "autonomie", "En autonomie")
     create_service_kind(ServiceKind, "delegation", "Délégation")
     create_service_kind(ServiceKind, "financement", "Financement")
