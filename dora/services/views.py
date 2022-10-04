@@ -537,7 +537,9 @@ def options(request):
         "subcategories": ServiceSubCategorySerializer(
             ServiceSubCategory.objects.all(), many=True
         ).data,
-        "kinds": ServiceKindSerializer(ServiceKind.objects.all(), many=True).data,
+        "kinds": ServiceKindSerializer(
+            ServiceKind.objects.all().order_by("label"), many=True
+        ).data,
         "beneficiaries_access_modes": BeneficiaryAccessModeSerializer(
             BeneficiaryAccessMode.objects.all(), many=True
         ).data,

@@ -197,3 +197,7 @@ def delete_category(ServiceCategory, value):
             f"Suppression impossible: la thématique '{value}' n'existe pas"
         )
     category.delete()
+
+
+def create_service_kind(ServiceKind, value, label):
+    return ServiceKind.objects.create(value=value, label=label)
