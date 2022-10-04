@@ -171,7 +171,8 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
 
             if user.is_authenticated and (user.is_staff or user.is_bizdev):
                 return StructurePutativeMember.objects.filter(
-                    structure__slug=structure_slug
+                    Q(user__is_valid=True) | Q(invited_by_admin=True),
+                    structure__slug=structure_slug,
                 )
 
             try:
