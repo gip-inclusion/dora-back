@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
-from dora.core.models import EnumModel, LogItem, ModerationMixin
+from dora.core.models import EnumModel, LogItem, ModerationMixin, ModerationStatus
 from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import (
     validate_accesslibre_url,
@@ -328,6 +328,8 @@ class Structure(ModerationMixin, models.Model):
         branch.last_editor = user
         branch.source = source
         branch.modification_date = timezone.now()
+        branch.moderation_status = ModerationStatus.VALIDATED
+        branch.moderation_date = timezone.now()
         branch.save()
         structure_admins = StructureMember.objects.filter(structure=self, is_admin=True)
         for admin in structure_admins:
