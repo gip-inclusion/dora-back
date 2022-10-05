@@ -2189,8 +2189,8 @@ class ServiceMigrationUtilsTestCase(APITestCase):
 
     def test_create_service_kind(self):
         # ÉTANT DONNÉ un type de service non existant
-        value = "autonomie"
-        label = "En autonomie"
+        value = "new-value"
+        label = "Nouvelle valeur"
         self.assertEqual(ServiceKind.objects.filter(value=value).count(), 0)
 
         # QUAND je créé ce type de service
