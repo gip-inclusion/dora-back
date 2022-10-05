@@ -122,7 +122,6 @@ def _add_user_to_structure_or_waitlist(structure, user):
 @permission_classes([permissions.IsAuthenticated])
 @transaction.atomic
 def join_structure(request):
-    # user.start_onboarding() if it's the first structure it's linked to
     user = request.user
     serializer = SiretSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
