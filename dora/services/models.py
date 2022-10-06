@@ -224,7 +224,7 @@ class Service(ModerationMixin, models.Model):
     fee_condition = models.ForeignKey(
         ServiceFee,
         verbose_name="Frais à charge",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         blank=True,
         null=True,
     )
