@@ -29,7 +29,7 @@ CREATE VIEW services_export AS (
         ac.access_conditions AS "accessConditions",
         cp.concerned_public AS "concernedPublic",
         s.is_cumulative AS "isCumulative",
-        s.has_fee AS hasFee,
+        s.fee_condition AS "feeCondition",
         s.fee_details AS "feeDetails",
         bam.beneficiaries_access_modes AS "beneficiariesAccessModes",
         s.beneficiaries_access_modes_other AS "beneficiariesAccessModesOther",

@@ -31,6 +31,7 @@ from .models import (
     LocationKind,
     Service,
     ServiceCategory,
+    ServiceFee,
     ServiceKind,
     ServiceModel,
     ServiceModificationHistoryItem,
@@ -197,6 +198,27 @@ class ServiceTestCase(APITestCase):
         s = Service.objects.get(slug=slug)
         self.assertEqual(s.last_editor, self.me)
         self.assertNotEqual(s.creator, self.me)
+
+    def test_update_fee_condition(self):
+        slug = self.colleague_service.slug
+        fee_condition = "gratuit"
+        response = self.client.patch(
+            f"/services/{slug}/",
+            {"fee_condition": fee_condition},
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(f"/services/{slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["fee_condition"], fee_condition)
+
+    def test_update_fee_condition_error(self):
+        slug = self.colleague_service.slug
+        fee_condition = "xxx"
+        response = self.client.patch(
+            f"/services/{slug}/",
+            {"fee_condition": fee_condition},
+        )
+        self.assertEqual(response.status_code, 400)
 
     def test_can_write_field_true(self):
         response = self.client.get(f"/services/{self.my_service.slug}/")
@@ -1021,52 +1043,98 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
-    def test_filter_by_fee_true(self):
+    def test_filter_by_fee_free(self):
         service1 = make_service(
             status=ServiceStatus.PUBLISHED,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
-            has_fee=True,
+            fee_condition=ServiceFee.objects.filter(value="gratuit").first(),
         )
         make_service(
             status=ServiceStatus.PUBLISHED,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
-            has_fee=False,
+            fee_condition=ServiceFee.objects.filter(value="payant").first(),
         )
-        response = self.client.get(f"/search/?city={self.city1.code}&has_fee=1")
+        make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            fee_condition=ServiceFee.objects.filter(
+                value="gratuit-sous-conditions"
+            ).first(),
+        )
+        response = self.client.get(f"/search/?city={self.city1.code}&fee=gratuit")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service1.slug)
 
-    def test_filter_by_fee_false(self):
+    def test_filter_by_fee_payant(self):
         make_service(
             status=ServiceStatus.PUBLISHED,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
-            has_fee=True,
+            fee_condition=ServiceFee.objects.filter(value="gratuit").first(),
         )
         service2 = make_service(
             status=ServiceStatus.PUBLISHED,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
-            has_fee=False,
+            fee_condition=ServiceFee.objects.filter(value="payant").first(),
         )
-        response = self.client.get(f"/search/?city={self.city1.code}&has_fee=0")
+        make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            fee_condition=ServiceFee.objects.filter(
+                value="gratuit-sous-conditions"
+            ).first(),
+        )
+        response = self.client.get(f"/search/?city={self.city1.code}&fee=payant")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service2.slug)
+
+    def test_filter_by_fee_gratuit_sous_condition(self):
+        make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            fee_condition=ServiceFee.objects.filter(value="gratuit").first(),
+        )
+        make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            fee_condition=ServiceFee.objects.filter(value="payant").first(),
+        )
+        service3 = make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            fee_condition=ServiceFee.objects.filter(
+                value="gratuit-sous-conditions"
+            ).first(),
+        )
+        response = self.client.get(
+            f"/search/?city={self.city1.code}&fee=gratuit-sous-conditions"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], service3.slug)
 
     def test_filter_without_fee(self):
         make_service(
             status=ServiceStatus.PUBLISHED,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
-            has_fee=True,
+            fee_condition=ServiceFee.objects.filter(value="gratuit").first(),
         )
         make_service(
             status=ServiceStatus.PUBLISHED,
             diffusion_zone_type=AdminDivisionType.COUNTRY,
-            has_fee=False,
+            fee_condition=ServiceFee.objects.filter(value="payant").first(),
+        )
+        make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            fee_condition=ServiceFee.objects.filter(
+                value="gratuit-sous-conditions"
+            ).first(),
         )
         response = self.client.get(f"/search/?city={self.city1.code}")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 2)
+        self.assertEqual(len(response.data), 3)
 
     def test_filter_kinds_one(self):
         allowed_kinds = ServiceKind.objects.all()

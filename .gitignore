@@ -5,3 +5,4 @@ __pycache__
 /envs/secrets.env
 .cache_ggshield
 .idea
+*.rdb
