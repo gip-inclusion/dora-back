@@ -677,7 +677,8 @@ def search(request):
         services = services.filter(subcategories__value=subcategory)
 
     if fee:
-        services = services.filter(fee_condition__value=fee)
+        fee = fee.split(",")
+        services = services.filter(fee_condition__value__in=fee)
 
     geofiltered_services = filter_services_by_city_code(services, city_code)
 
