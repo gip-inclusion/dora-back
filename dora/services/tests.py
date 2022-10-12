@@ -1678,10 +1678,13 @@ class ServiceSyncTestCase(APITestCase):
                 new_val = AdminDivisionType.REGION
             elif field == "suspension_date":
                 new_val = "2022-10-10"
+            elif field == "fee_condition":
+                new_val = "payant"
             elif field == "geom":
                 continue
             else:
                 new_val = "xxx"
+
             response = self.client.patch(f"/models/{model.slug}/", {field: new_val})
             self.assertEqual(response.status_code, 200, response.data)
 
