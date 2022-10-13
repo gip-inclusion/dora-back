@@ -198,6 +198,29 @@ class ServiceSuggestionsTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 201)
 
+    def test_mail_send_to_contact_email_if_structure_without_admin(self):
+        # ÉTANT DONNÉ une suggestion avec email de contact et avec structure associée mais sans admin
+        baker.make("Structure", siret=DUMMY_SUGGESTION["siret"])
+        email = "mail@example.com"
+        suggestion = baker.make(
+            "ServiceSuggestion",
+            siret=DUMMY_SUGGESTION["siret"],
+            contents={"contact_email": email},
+        )
+        user = baker.make("users.User", is_valid=True, is_bizdev=True)
+        self.client.force_authenticate(user=user)
+
+        # QUAND je valide cette suggestion
+        response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
+
+        # ALORS la personne en contact est contacté
+        self.assertEqual(response.data["emails_contacted"], [email])
+        self.assertIn(
+            "[DORA] Des acteurs de l’insertion sont intéressés par vos services !",
+            mail.outbox[0].subject,
+        )
+        self.assertEqual(response.status_code, 201)
+
     def test_mail_send_to_structure_admin(self):
         # ÉTANT DONNÉ une structure avec un administrateur
         admin_mail = "admin@example.com"
