@@ -15,7 +15,7 @@ SYNC_FIELDS = [
     "short_desc",
     "full_desc",
     "is_cumulative",
-    "has_fee",
+    "fee_condition",
     "fee_details",
     "beneficiaries_access_modes_other",
     "coach_orientation_modes_other",

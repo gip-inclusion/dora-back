@@ -23,6 +23,7 @@ from dora.services.models import (
     Requirement,
     Service,
     ServiceCategory,
+    ServiceFee,
     ServiceKind,
     ServiceSubCategory,
 )
@@ -105,6 +106,7 @@ class ServiceSuggestion(models.Model):
         subcategories = self.contents.pop("subcategories", [])
         kinds = self.contents.pop("kinds", [])
         location_kinds = self.contents.pop("location_kinds", [])
+        fee_condition = self.contents.pop("fee_condition", None)
 
         # rétrocompatibilité: les anciennes suggestion avaient uniquement
         # un champ "category" au lieu du champ "categories" multiple
@@ -123,6 +125,10 @@ class ServiceSuggestion(models.Model):
             geom = None
 
         with transaction.atomic(durable=True):
+            fee_condition = (
+                ServiceFee.objects.get(value=fee_condition) if fee_condition else None
+            )
+
             service = Service.objects.create(
                 name=self.name,
                 structure=structure,
@@ -132,6 +138,7 @@ class ServiceSuggestion(models.Model):
                 status=ServiceStatus.SUGGESTION,
                 contact_phone=contact_phone,
                 modification_date=timezone.now(),
+                fee_condition=fee_condition,
                 **self.contents,
             )
 
@@ -166,25 +173,21 @@ class ServiceSuggestion(models.Model):
                     emails_contacted.add(contact_email)
             else:
                 # Pour une structure existante et dont l'administrateur est connu, on envoie un e-mail à ce dernier
-                # - et potentiellement au contact_email si différent de l'administrateur
+                # - et si pas d'administrateurs, on envoie au 'contact_email'
                 structure_admins = StructureMember.objects.filter(
                     structure=structure, is_admin=True
                 )
                 for admin in structure_admins:
                     emails_contacted.add(admin.user.email)
 
-                # Pour l'instant on désactive l'envoi au contact_email, étant donnée que le message actuel
-                # n'est pas pertinent pour un utilisateur qui ne fait pas déjà partie de la structure,
-                # et on n'a pas cette garantie.
-
-                # if contact_email is not None:
-                #     emails_contacted.add(contact_email)
-
                 if emails_contacted:
-                    # FIXME: mettre des destinataires multiples dans le champ To: n'est sans doute pas une bonne idée…
-                    # voir: https://www.notion.so/dora-beta/Notification-de-suggestion-valid-e-destinataires-multiples-9d1aa1b15f334721a423346107aeab53
                     send_suggestion_validated_existing_structure_email(
-                        list(emails_contacted), structure, service
+                        list(emails_contacted), structure, service, contact_email
                     )
+                elif contact_email:
+                    send_suggestion_validated_new_structure_email(
+                        contact_email, structure
+                    )
+                    emails_contacted.add(contact_email)
 
         return service, list(emails_contacted)

@@ -22,6 +22,7 @@ from .models import (
     Requirement,
     Service,
     ServiceCategory,
+    ServiceFee,
     ServiceKind,
     ServiceModel,
     ServiceSubCategory,
@@ -250,6 +251,13 @@ class ServiceSerializer(serializers.ModelSerializer):
         allow_null=True,
     )
 
+    fee_condition = serializers.SlugRelatedField(
+        queryset=ServiceFee.objects.all(),
+        slug_field="value",
+        required=False,
+        allow_null=True,
+    )
+
     class Meta:
         model = Service
 
@@ -266,7 +274,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "access_conditions",
             "concerned_public",
             "is_cumulative",
-            "has_fee",
+            "fee_condition",
             "fee_details",
             "beneficiaries_access_modes",
             "beneficiaries_access_modes_other",
@@ -487,7 +495,7 @@ class ServiceModelSerializer(ServiceSerializer):
             "access_conditions",
             "concerned_public",
             "is_cumulative",
-            "has_fee",
+            "fee_condition",
             "fee_details",
             "beneficiaries_access_modes",
             "beneficiaries_access_modes_other",

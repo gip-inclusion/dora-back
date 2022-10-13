@@ -16,7 +16,7 @@ from dora.admin_express.utils import arrdt_to_main_insee_code
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_mattermost_notification, send_moderation_notification
 from dora.core.pagination import OptionalPageNumberPagination
-from dora.core.utils import FALSY_VALUES, TRUTHY_VALUES
+from dora.core.utils import TRUTHY_VALUES
 from dora.services.emails import send_service_feedback_email
 from dora.services.enums import ServiceStatus
 from dora.services.models import (
@@ -30,6 +30,7 @@ from dora.services.models import (
     Requirement,
     Service,
     ServiceCategory,
+    ServiceFee,
     ServiceKind,
     ServiceModel,
     ServiceModificationHistoryItem,
@@ -517,6 +518,11 @@ def options(request):
             model = LocationKind
             fields = ["value", "label"]
 
+    class ServiceFeeSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = ServiceFee
+            fields = ["value", "label"]
+
     def filter_custom_choices(choices):
         user = request.user
         if not user.is_authenticated:
@@ -537,7 +543,12 @@ def options(request):
         "subcategories": ServiceSubCategorySerializer(
             ServiceSubCategory.objects.all(), many=True
         ).data,
-        "kinds": ServiceKindSerializer(ServiceKind.objects.all(), many=True).data,
+        "kinds": ServiceKindSerializer(
+            ServiceKind.objects.all().order_by("label"), many=True
+        ).data,
+        "fee_conditions": ServiceFeeSerializer(
+            ServiceFee.objects.all(), many=True
+        ).data,
         "beneficiaries_access_modes": BeneficiaryAccessModeSerializer(
             BeneficiaryAccessMode.objects.all(), many=True
         ).data,
@@ -643,13 +654,7 @@ def search(request):
     subcategory = request.GET.get("sub", "")
     city_code = request.GET.get("city", "")
     kinds = request.GET.get("kinds", "")
-    has_fee_param = request.GET.get("has_fee", "")
-
-    has_fee = None
-    if has_fee_param in TRUTHY_VALUES:
-        has_fee = True
-    elif has_fee_param in FALSY_VALUES:
-        has_fee = False
+    fee = request.GET.get("fee", "")
 
     services = (
         Service.objects.published()
@@ -664,15 +669,16 @@ def search(request):
     )
     if category:
         services = services.filter(categories__value=category)
-    if has_fee is True:
-        services = services.filter(has_fee=True)
-    elif has_fee is False:
-        services = services.filter(has_fee=False)
+
     if kinds:
         services = services.filter(kinds__value__in=kinds.split(","))
 
     if subcategory:
         services = services.filter(subcategories__value=subcategory)
+
+    if fee:
+        fee = fee.split(",")
+        services = services.filter(fee_condition__value__in=fee)
 
     geofiltered_services = filter_services_by_city_code(services, city_code)
 

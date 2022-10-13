@@ -77,6 +77,11 @@ class ConcernedPublic(CustomizableChoice):
         verbose_name_plural = "Publics concernés"
 
 
+class ServiceFee(EnumModel):
+    class Meta:
+        verbose_name = "Frais à charge"
+
+
 class Requirement(CustomizableChoice):
     class Meta(CustomizableChoice.Meta):
         verbose_name = "Pré-requis ou compétence"
@@ -215,6 +220,13 @@ class Service(ModerationMixin, models.Model):
     is_cumulative = models.BooleanField(verbose_name="Solution cumulable", default=True)
     has_fee = models.BooleanField(
         verbose_name="Frais à charge pour le bénéficiaire", default=False
+    )
+    fee_condition = models.ForeignKey(
+        ServiceFee,
+        verbose_name="Frais à charge",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
     )
     fee_details = models.TextField(verbose_name="Détail des frais", blank=True)
 

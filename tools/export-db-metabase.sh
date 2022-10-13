@@ -13,7 +13,8 @@ export DEST_DB_URL=$METABASE_DB_URL
 psql $SRC_DB_URL -c "DROP TABLE IF EXISTS mb_structure"
 psql $SRC_DB_URL -c "
 CREATE TABLE mb_structure AS
-SELECT *
+SELECT *,
+   (select concat('https://dora.fabrique.social.gouv.fr/structures/', slug)) as dora_url
    FROM structures_structure"
 psql $SRC_DB_URL -c "ALTER TABLE mb_structure ADD PRIMARY KEY (id)"
 
@@ -29,7 +30,7 @@ CREATE TABLE mb_all_service AS
     services_service.short_desc,
     services_service.full_desc,
     services_service.is_cumulative,
-    services_service.has_fee,
+    services_service.fee_condition_id,
     services_service.fee_details,
     services_service.beneficiaries_access_modes_other,
     services_service.coach_orientation_modes_other,
@@ -67,7 +68,8 @@ CREATE TABLE mb_all_service AS
     services_service.is_contact_info_public,
     (select services_service.contact_name != '') AS has_contact_name,
     (select services_service.contact_phone != '') AS has_contact_phone,
-    (select services_service.contact_email != '') AS has_contact_email
+    (select services_service.contact_email != '') AS has_contact_email,
+    (select concat('https://dora.fabrique.social.gouv.fr/services/', slug)) as dora_url
    FROM services_service"
 psql $SRC_DB_URL -c "ALTER TABLE mb_all_service ADD PRIMARY KEY (id)"
 
@@ -122,4 +124,4 @@ psql $SRC_DB_URL -c "ALTER TABLE mb_user ADD PRIMARY KEY (id)"
 
 pg_dump $DATABASE_URL -O -t mb_user -c | psql $DEST_DB_URL
 
-pg_dump $DATABASE_URL -O -t services_accesscondition -t services_beneficiaryaccessmode -t services_coachorientationmode -t services_concernedpublic -t services_credential -t services_locationkind -t services_requirement -t services_service_access_conditions -t services_service_beneficiaries_access_modes -t services_service_categories -t services_service_coach_orientation_modes -t services_service_concerned_public -t services_service_credentials -t services_service_kinds -t services_service_location_kinds -t services_service_requirements -t services_service_subcategories -t services_servicecategory -t services_servicekind -t services_servicemodificationhistoryitem -t services_servicestatushistoryitem -t services_servicesubcategory -t structures_structuremember -t structures_structureputativemember -t structures_structuresource -t structures_structuretypology -t stats_deploymentstate -c | psql $DEST_DB_URL
+pg_dump $DATABASE_URL -O -t services_servicefee -t services_accesscondition -t services_beneficiaryaccessmode -t services_coachorientationmode -t services_concernedpublic -t services_credential -t services_locationkind -t services_requirement -t services_service_access_conditions -t services_service_beneficiaries_access_modes -t services_service_categories -t services_service_coach_orientation_modes -t services_service_concerned_public -t services_service_credentials -t services_service_kinds -t services_service_location_kinds -t services_service_requirements -t services_service_subcategories -t services_servicecategory -t services_servicekind -t services_servicemodificationhistoryitem -t services_servicestatushistoryitem -t services_servicesubcategory -t structures_structuremember -t structures_structureputativemember -t structures_structuresource -t structures_structuretypology -t stats_deploymentstate -c | psql $DEST_DB_URL

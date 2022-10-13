@@ -198,6 +198,29 @@ class ServiceSuggestionsTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 201)
 
+    def test_mail_send_to_contact_email_if_structure_without_admin(self):
+        # ÉTANT DONNÉ une suggestion avec email de contact et avec structure associée mais sans admin
+        baker.make("Structure", siret=DUMMY_SUGGESTION["siret"])
+        email = "mail@example.com"
+        suggestion = baker.make(
+            "ServiceSuggestion",
+            siret=DUMMY_SUGGESTION["siret"],
+            contents={"contact_email": email},
+        )
+        user = baker.make("users.User", is_valid=True, is_bizdev=True)
+        self.client.force_authenticate(user=user)
+
+        # QUAND je valide cette suggestion
+        response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
+
+        # ALORS la personne en contact est contacté
+        self.assertEqual(response.data["emails_contacted"], [email])
+        self.assertIn(
+            "[DORA] Des acteurs de l’insertion sont intéressés par vos services !",
+            mail.outbox[0].subject,
+        )
+        self.assertEqual(response.status_code, 201)
+
     def test_mail_send_to_structure_admin(self):
         # ÉTANT DONNÉ une structure avec un administrateur
         admin_mail = "admin@example.com"
@@ -259,7 +282,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 201)
 
-    def test_mail_send_to_structure_admin_and_contact_email(self):
+    def test_mail_send_to_structure_admin_and_contact_email_different(self):
         # ÉTANT DONNÉ une structure avec un administrateur
         admin_mail = "admin@example.com"
         contact_mail = "mail@example.com"
@@ -267,7 +290,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         structure = baker.make("Structure", siret=DUMMY_SUGGESTION["siret"])
         baker.make(StructureMember, structure=structure, user=admin_user, is_admin=True)
 
-        # et une suggestion de service pour cette structure mais sans email de contact
+        # et une suggestion de service pour cette structure mais avec email de contact différent
         suggestion = baker.make(
             "ServiceSuggestion",
             siret=DUMMY_SUGGESTION["siret"],
@@ -287,6 +310,47 @@ class ServiceSuggestionsTestCase(APITestCase):
         self.assertIn(
             "[DORA] Vous avez reçu une nouvelle suggestion de service ! 🥳 🎉",
             mail.outbox[0].subject,
+        )
+        # Et il est fait mention du mail de contact
+        self.assertIn(
+            f"comme personne en charge de ce service : {contact_mail}.",
+            mail.outbox[0].body,
+        )
+        self.assertEqual(response.status_code, 201)
+
+    def test_mail_send_to_structure_admin_and_contact_email_same_as_admin(self):
+        # ÉTANT DONNÉ une structure avec un administrateur
+        admin_mail = "admin@example.com"
+        contact_mail = "admin@example.com"  # same as admin_mail
+        admin_user = baker.make("users.User", is_valid=True, email=admin_mail)
+        structure = baker.make("Structure", siret=DUMMY_SUGGESTION["siret"])
+        baker.make(StructureMember, structure=structure, user=admin_user, is_admin=True)
+
+        # et une suggestion de service pour cette structure mais avec email de contact identique à l'admin
+        suggestion = baker.make(
+            "ServiceSuggestion",
+            siret=DUMMY_SUGGESTION["siret"],
+            contents={"contact_email": contact_mail},
+        )
+
+        # QUAND je valide cette suggestion
+        bizdev_user = baker.make("users.User", is_valid=True, is_bizdev=True)
+        self.client.force_authenticate(user=bizdev_user)
+        response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
+
+        # ALORS seul l'administrateur est contacté
+        self.assertEqual(
+            sorted(response.data["emails_contacted"]),
+            sorted([admin_mail]),
+        )
+        self.assertIn(
+            "[DORA] Vous avez reçu une nouvelle suggestion de service ! 🥳 🎉",
+            mail.outbox[0].subject,
+        )
+        # Et il n'est pas fait mention du mail de contact
+        self.assertNotIn(
+            f"comme personne en charge de ce service : {contact_mail}.",
+            mail.outbox[0].body,
         )
         self.assertEqual(response.status_code, 201)
 
