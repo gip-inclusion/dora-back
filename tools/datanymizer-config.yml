@@ -9,7 +9,7 @@ tables:
             - email:
                 uniq:
                   required: true
-                  try_count: 5
+                  try_count: 50
       first_name:
         template:
           # Preserve beta.gouv addresses
