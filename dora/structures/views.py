@@ -338,5 +338,9 @@ def options(request):
             {"value": c.value, "label": c.label}
             for c in StructureNationalLabel.objects.all().order_by("label")
         ],
+        "sources": [
+            {"value": c.value, "label": c.label}
+            for c in StructureSource.objects.all().order_by("label")
+        ],
     }
     return Response(result)
