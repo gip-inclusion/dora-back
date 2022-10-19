@@ -395,6 +395,8 @@ class Service(ModerationMixin, models.Model):
         null=True,
     )
 
+    use_inclusion_numerique_scheme = models.BooleanField(default=False)
+
     objects = ServiceManager()
 
     class Meta:
