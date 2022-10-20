@@ -115,6 +115,7 @@ class StructureViewSet(
         structure = serializer.save(
             last_editor=self.request.user,
             modification_date=timezone.now(),
+            has_been_edited=True,
         )
         structure.log_note(self.request.user, "Structure modifiée")
 
