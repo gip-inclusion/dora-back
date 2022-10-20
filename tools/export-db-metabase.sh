@@ -69,6 +69,7 @@ CREATE TABLE mb_all_service AS
     (select services_service.contact_name != '') AS has_contact_name,
     (select services_service.contact_phone != '') AS has_contact_phone,
     (select services_service.contact_email != '') AS has_contact_email,
+    services_service.use_inclusion_numerique_scheme,
     (select concat('https://dora.fabrique.social.gouv.fr/services/', slug)) as dora_url
    FROM services_service"
 psql $SRC_DB_URL -c "ALTER TABLE mb_all_service ADD PRIMARY KEY (id)"
