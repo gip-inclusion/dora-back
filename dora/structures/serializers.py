@@ -90,8 +90,10 @@ class StructureSerializer(serializers.ModelSerializer):
             "national_labels",
             "other_labels",
             "source",
+            "has_been_edited",
         ]
         lookup_field = "slug"
+        read_only_fields = ["has_been_edited"]
 
     def get_has_admin(self, obj):
         return obj.membership.filter(is_admin=True).exists()
