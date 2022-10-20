@@ -18,6 +18,7 @@ class EnumAdmin(admin.ModelAdmin):
 class LogItemAdmin(admin.ModelAdmin):
     list_display = ["service", "structure", "user", "message"]
     readonly_fields = ["date"]
+    raw_id_fields = ["structure", "service", "user"]
 
 
 admin.site.register(LogItem, LogItemAdmin)
