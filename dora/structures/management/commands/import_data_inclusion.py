@@ -84,16 +84,6 @@ class Command(BaseCommand):
                 return
 
     def import_structures(self, source_value, structures):
-        # # TODO DON'T COMMIT THIS CODE
-        # if True:
-        #     for structure in structures:
-        #         try:
-        #             s = Structure.objects.get(siret=structure["siret"])
-        #             s.delete()
-        #         except Structure.DoesNotExist:
-        #             pass
-        # ########################
-
         bot_user = User.objects.get_dora_bot()
         source, _created = StructureSource.objects.get_or_create(
             value=f"di-{source_value}",
