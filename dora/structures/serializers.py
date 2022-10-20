@@ -45,6 +45,8 @@ class StructureSerializer(serializers.ModelSerializer):
         required=False,
     )
 
+    source = serializers.SerializerMethodField()
+
     class Meta:
         model = Structure
         fields = [
@@ -87,6 +89,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "opening_hours_details",
             "national_labels",
             "other_labels",
+            "source",
         ]
         lookup_field = "slug"
 
@@ -291,6 +294,13 @@ class StructureSerializer(serializers.ModelSerializer):
                 ),
             ]
         return StructureListSerializerWithCount(branches, many=True).data
+
+    def get_source(self, obj):
+        return (
+            {"value": obj.source.value, "label": obj.source.label}
+            if obj.source
+            else None
+        )
 
 
 class StructureListSerializer(StructureSerializer):
