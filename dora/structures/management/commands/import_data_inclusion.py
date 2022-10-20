@@ -99,11 +99,21 @@ class Command(BaseCommand):
             value=f"di-{source_value}",
             defaults={"label": "source_value"},
         )
+        if _created:
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Source: di-{source_value} inexistante. Pensez à renseigner son label dans l'interface "
+                    f"d'administration"
+                )
+            )
 
         for s in structures:
             if Structure.objects.filter(siret=s["siret"]).exists():
+                # Les doublons sont attendus -- itou a une unicité sur le couple (siret, typologie) par exemple
+                # alors que Dora a pour l'instant une unicité stricte sur le siret (hors antennes).
                 continue
             if s["structure_parente"]:
+                # Les antennes ne sont pas gérées pour l'instant
                 continue
             try:
                 establishment = Establishment.objects.get(siret=s["siret"])
@@ -118,6 +128,13 @@ class Command(BaseCommand):
                 typology, _created = StructureTypology.objects.get_or_create(
                     value=s["typologie"]
                 )
+                if _created:
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f"typology: {s['typologie']} inexistante. Pensez à renseigner son label dans l'interface "
+                            f"d'administration"
+                        )
+                    )
                 structure = Structure.objects.create(
                     siret=s["siret"],
                     name=s["nom"] or establishment.name,
