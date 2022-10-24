@@ -156,7 +156,6 @@ class StructureManager(models.Manager):
 
 class Structure(ModerationMixin, models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
     # Les antennes peuvent avoir un Siret null
     siret = models.CharField(
         verbose_name="Siret",
@@ -239,6 +238,7 @@ class Structure(ModerationMixin, models.Model):
     source = models.ForeignKey(
         StructureSource, null=True, blank=True, on_delete=models.PROTECT
     )
+    data_inclusion_id = models.TextField(blank=True)
 
     members = models.ManyToManyField(User, through=StructureMember)
 

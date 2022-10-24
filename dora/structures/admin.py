@@ -35,6 +35,7 @@ class StructurePutativeMemberAdmin(admin.ModelAdmin):
         "invited_by_admin",
         ("structure", RelatedOnlyFieldListFilter),
     ]
+
     ordering = ["-creation_date"]
     raw_id_fields = ["user", "structure"]
 
@@ -171,6 +172,7 @@ class StructureAdmin(admin.ModelAdmin):
     readonly_fields = (
         "creation_date",
         "modification_date",
+        "data_inclusion_id"
     )
     raw_id_fields = ["parent"]
 
