@@ -127,6 +127,7 @@ class StructureSource(EnumModel):
 class StructureNationalLabel(EnumModel):
     class Meta:
         verbose_name = "Label national"
+        verbose_name_plural = "Labels nationaux"
 
 
 class StructureTypology(EnumModel):
