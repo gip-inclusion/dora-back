@@ -124,6 +124,7 @@ class Command(BaseCommand):
                         )
                     )
                 structure = Structure.objects.create(
+                    data_inclusion_id=s["id"],
                     siret=s["siret"],
                     name=s["nom"] or establishment.name,
                     address1=s["adresse"] or establishment.address1,
@@ -162,5 +163,5 @@ class Command(BaseCommand):
                     f"Importé : {structure.name}, {structure.get_frontend_url()}"
                 )
             except Exception as e:
-                print(s)
+                self.stdout.write(s)
                 self.stderr.write(self.style.ERROR(e))

@@ -164,10 +164,7 @@ class StructureAdmin(admin.ModelAdmin):
         BranchInline,
         ServiceInline,
     ]
-    readonly_fields = (
-        "creation_date",
-        "modification_date",
-    )
+    readonly_fields = ("creation_date", "modification_date", "data_inclusion_id")
 
 
 admin.site.register(Structure, StructureAdmin)
