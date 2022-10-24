@@ -8,6 +8,7 @@ from dora.services.models import Service
 from .models import (
     Structure,
     StructureMember,
+    StructureNationalLabel,
     StructurePutativeMember,
     StructureSource,
     StructureTypology,
@@ -158,6 +159,7 @@ class StructureAdmin(admin.ModelAdmin):
     ]
     search_fields = ("name", "siret", "code_safir_pe", "city", "department", "slug")
     ordering = ["-modification_date", "department"]
+    date_hierarchy = "modification_date"
     inlines = [
         StructureMemberInline,
         StructurePutativeMemberInline,
@@ -172,3 +174,4 @@ admin.site.register(StructureMember, StructureMemberAdmin)
 admin.site.register(StructurePutativeMember, StructurePutativeMemberAdmin)
 admin.site.register(StructureSource, EnumAdmin)
 admin.site.register(StructureTypology, EnumAdmin)
+admin.site.register(StructureNationalLabel, EnumAdmin)
