@@ -17,26 +17,24 @@ from dora.users.models import User
 
 BASE_URL = furl(settings.DATA_INCLUSION_URL)
 
-# On importe les structures inexistantes source par source, dans l'ordre.
-SORTED_SOURCES = ["itou"]  # , "siao", "cd72", "cd35"]
-
 
 class Command(BaseCommand):
     help = "Importe les nouvelles structures Inclusion Connect qui n'existent pas encore dans Dora"
 
     def add_arguments(self, parser):
+        parser.add_argument("source", type=str)
         parser.add_argument("--department", type=str)
-        parser.add_argument("structures_slugs", nargs="*")
 
     def handle(self, *args, **options):
         department = options["department"]
-        for source in SORTED_SOURCES:
-            self.stdout.write(self.style.SUCCESS(f"Import de la source: {source}"))
-            try:
-                structures = self.get_structures(source, department)
-                self.import_structures(source, structures)
-            except requests.exceptions.RequestException as e:
-                self.stderr.write(self.style.ERROR(e))
+        source = options["source"]
+
+        self.stdout.write(self.style.SUCCESS(f"Import de la source: {source}"))
+        try:
+            structures = self.get_structures(source, department)
+            self.import_structures(source, structures)
+        except requests.exceptions.RequestException as e:
+            self.stderr.write(self.style.ERROR(e))
 
     def get_structures(self, source, department):
         structures = []
