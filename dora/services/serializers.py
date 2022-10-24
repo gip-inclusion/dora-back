@@ -597,6 +597,7 @@ class ServiceListSerializer(ServiceSerializer):
             "diffusion_zone_details_display",
             "model_changed",
             "model",
+            "use_inclusion_numerique_scheme",
         ]
         lookup_field = "slug"
 
