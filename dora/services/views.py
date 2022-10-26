@@ -650,8 +650,8 @@ def _sort_search_results(services, location):
 @api_view()
 @permission_classes([permissions.AllowAny])
 def search(request):
-    category = request.GET.get("cat", "")
-    subcategory = request.GET.get("sub", "")
+    categories = request.GET.get("cat", "")
+    subcategories = request.GET.get("sub", "")
     city_code = request.GET.get("city", "")
     kinds = request.GET.get("kinds", "")
     fee = request.GET.get("fee", "")
@@ -667,26 +667,32 @@ def search(request):
             "subcategories",
         )
     )
-    if category:
-        services = services.filter(categories__value=category)
+    if categories:
+        categories = categories.split(",")
+        services = services.filter(categories__value__in=categories)
 
     if kinds:
-        services = services.filter(kinds__value__in=kinds.split(","))
+        kinds = kinds.split(",")
+        services = services.filter(kinds__value__in=kinds)
 
-    if subcategory:
-        cat, subcat = subcategory.split("--")
-        if subcat == "other":
-            # Quand on cherche une sous-catégorie de type 'Autre', on veut
-            # aussi remonter les services sans sous-catégorie
-            all_sister_subcats = ServiceSubCategory.objects.filter(
-                value__startswith=f"{cat}--"
-            )
-            services = services.filter(
-                Q(subcategories__value=subcategory)
-                | (Q(categories__value=cat) & ~Q(subcategories__in=all_sister_subcats))
-            )
-        else:
-            services = services.filter(subcategories__value=subcategory)
+    if subcategories:
+        for subcategory in subcategories.split(","):
+            cat, subcat = subcategory.split("--")
+            if subcat == "other":
+                # Quand on cherche une sous-catégorie de type 'Autre', on veut
+                # aussi remonter les services sans sous-catégorie
+                all_sister_subcats = ServiceSubCategory.objects.filter(
+                    value__startswith=f"{cat}--"
+                )
+                services = services.filter(
+                    Q(subcategories__value=subcategory)
+                    | (
+                        Q(categories__value=cat)
+                        & ~Q(subcategories__in=all_sister_subcats)
+                    )
+                )
+            else:
+                services = services.filter(subcategories__value=subcategory)
 
     if fee:
         fee = fee.split(",")
