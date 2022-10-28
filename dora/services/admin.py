@@ -105,7 +105,8 @@ class ServiceAdmin(admin.GISModelAdmin):
     inlines = [ServiceStatusHistoryItemInline, ServiceModificationHistoryItemInline]
     ordering = ["-modification_date"]
     save_as = True
-    readonly_fields = ("creation_date", "modification_date", "status")
+    readonly_fields = ("creation_date", "status")
+    raw_id_fields = ["structure", "model", "creator", "last_editor"]
 
 
 class ServiceModelAdmin(admin.ModelAdmin):
@@ -139,6 +140,7 @@ class ServiceModelAdmin(admin.ModelAdmin):
     ordering = ["-modification_date"]
     save_as = True
     readonly_fields = ("creation_date", "modification_date", "status")
+    raw_id_fields = ["structure", "model", "creator", "last_editor"]
 
 
 class CustomizableChoiceAdmin(admin.ModelAdmin):
@@ -151,6 +153,7 @@ class CustomizableChoiceAdmin(admin.ModelAdmin):
         "structure__name",
     )
     list_per_page = 1000
+    raw_id_fields = ["structure"]
 
 
 class ServiceModelInline(admin.TabularInline):

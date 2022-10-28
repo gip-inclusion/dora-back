@@ -35,8 +35,8 @@ class StructurePutativeMemberAdmin(admin.ModelAdmin):
         "invited_by_admin",
         ("structure", RelatedOnlyFieldListFilter),
     ]
-
     ordering = ["-creation_date"]
+    raw_id_fields = ["user", "structure"]
 
 
 class StructureMemberAdmin(admin.ModelAdmin):
@@ -60,18 +60,22 @@ class StructureMemberAdmin(admin.ModelAdmin):
     ]
 
     ordering = ["-creation_date"]
+    raw_id_fields = ["user", "structure"]
 
 
 class StructureMemberInline(admin.TabularInline):
     model = StructureMember
     show_change_link = True
     extra = 0
+    raw_id_fields = ["user", "structure"]
+    raw_id_fields = ["user"]
 
 
 class StructurePutativeMemberInline(admin.TabularInline):
     model = StructurePutativeMember
     show_change_link = True
     extra = 0
+    raw_id_fields = ["user"]
 
 
 class BranchFormSet(BaseInlineFormSet):
@@ -168,6 +172,7 @@ class StructureAdmin(admin.ModelAdmin):
         "creation_date",
         "modification_date",
     )
+    raw_id_fields = ["parent"]
 
 
 admin.site.register(Structure, StructureAdmin)

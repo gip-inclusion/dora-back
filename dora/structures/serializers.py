@@ -157,6 +157,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     "contact_name",
                     "contact_phone",
                     "contact_email",
+                    "use_inclusion_numerique_scheme",
                 ]
 
         user = self.context.get("request").user
@@ -201,6 +202,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     "model_changed",
                     "model",
                     "structure",
+                    "use_inclusion_numerique_scheme",
                 ]
 
         user = self.context.get("request").user

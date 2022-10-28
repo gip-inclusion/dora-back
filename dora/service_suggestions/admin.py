@@ -13,6 +13,7 @@ class ServiceSuggestionAdmin(admin.OSMGeoAdmin):
         "siret",
         "creation_date",
     ]
+    raw_id_fields = ["creator"]
 
 
 admin.site.register(ServiceSuggestion, ServiceSuggestionAdmin)
