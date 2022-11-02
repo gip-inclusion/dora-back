@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 from model_bakery import baker
 
+from dora.services.models import ServiceCategory, ServiceSubCategory
 from dora.services.utils import update_sync_checksum
 
 
@@ -33,13 +34,25 @@ def make_structure(user=None, **kwargs):
 
 def make_service(**kwargs):
     structure = kwargs.pop("structure") if "structure" in kwargs else make_structure()
-    return baker.make(
+    categories = kwargs.pop("categories").split(",") if "categories" in kwargs else []
+    subcategories = (
+        kwargs.pop("subcategories").split(",") if "subcategories" in kwargs else []
+    )
+    service = baker.make(
         "Service",
         structure=structure,
         is_model=False,
         modification_date=timezone.now(),
         **kwargs,
     )
+    if categories:
+        service.categories.set(ServiceCategory.objects.filter(value__in=categories))
+    if subcategories:
+        service.subcategories.set(
+            ServiceSubCategory.objects.filter(value__in=subcategories)
+        )
+
+    return service
 
 
 def make_model(**kwargs):

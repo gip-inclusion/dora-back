@@ -903,6 +903,15 @@ class ServiceSearchTestCase(APITestCase):
         )
         self.city2 = baker.make("City")
 
+        baker.make("ServiceCategory", value="cat1", label="cat1")
+        baker.make("ServiceSubCategory", value="cat1--sub1", label="cat1--sub1")
+        baker.make("ServiceSubCategory", value="cat1--sub2", label="cat1--sub2")
+        baker.make("ServiceSubCategory", value="cat1--autre", label="cat1--autre")
+        baker.make("ServiceCategory", value="cat2", label="cat2")
+        baker.make("ServiceSubCategory", value="cat2--sub1", label="cat2--sub1")
+        baker.make("ServiceSubCategory", value="cat2--sub2", label="cat2--sub2")
+        baker.make("ServiceSubCategory", value="cat2--autre", label="cat2--autre")
+
     def test_needs_city_code(self):
         make_service(
             status=ServiceStatus.PUBLISHED,
@@ -1196,6 +1205,89 @@ class ServiceSearchTestCase(APITestCase):
         response = self.client.get(
             f"/search/?city={self.city1.code}&kinds={allowed_kinds[3].value}"
         )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_find_service_with_requested_cat(self):
+        service = make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            categories="cat1",
+        )
+        response = self.client.get(f"/search/?city={self.city1.code}&cat=cat1")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], service.slug)
+
+    def test_dont_find_service_without_requested_cat(self):
+        make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            categories="cat1",
+        )
+
+        response = self.client.get(f"/search/?city={self.city1.code}&cat=cat2")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_find_service_with_requested_subcat(self):
+        service = make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            subcategories="cat1--sub1",
+        )
+        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--sub1")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], service.slug)
+
+    def test_dont_find_service_without_requested_subcat(self):
+        make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            subcategories="cat1--sub1",
+        )
+
+        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--sub2")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_find_service_with_no_subcat_when_looking_for_the__other__subcat(self):
+        # On veut remonter les services sans sous-catégorie quand on interroge la
+        # sous-catégorie 'autres'
+        service = make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            categories="cat1",
+        )
+        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--other")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], service.slug)
+
+    def test_find_service_with_no_subcat_when_looking_for_the__other__subcat_2(
+        self,
+    ):
+        # On veut remonter les services sans sous-catégorie **de la même catégorie**
+        # quand on interroge la sous-catégorie 'autres'
+        service = make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            categories="cat1,cat2",
+            subcategories="cat2--sub1",
+        )
+        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--other")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], service.slug)
+
+    def test_dont_find_service_with_no_subcat_when_looking_for_any_subcat(self):
+        make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            categories="cat1",
+        )
+        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--sub1")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
