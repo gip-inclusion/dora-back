@@ -675,12 +675,10 @@ def search(request):
         )
     )
     if categories:
-        categories = categories.split(",")
-        services = services.filter(categories__value__in=categories)
+        services = services.filter(categories__value__in=categories.split(","))
 
     if kinds:
-        kinds = kinds.split(",")
-        services = services.filter(kinds__value__in=kinds)
+        services = services.filter(kinds__value__in=kinds.split(","))
 
     if subcategories:
         for subcategory in subcategories.split(","):
@@ -702,8 +700,7 @@ def search(request):
                 services = services.filter(subcategories__value=subcategory)
 
     if fee:
-        fee = fee.split(",")
-        services = services.filter(fee_condition__value__in=fee)
+        services = services.filter(fee_condition__value__in=fee.split(","))
 
     geofiltered_services = filter_services_by_city_code(services, city_code)
 
