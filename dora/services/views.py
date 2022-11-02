@@ -38,6 +38,7 @@ from dora.services.models import (
     ServiceSubCategory,
 )
 from dora.services.utils import filter_services_by_city_code
+from dora.stats.models import DeploymentLevel, DeploymentState
 from dora.structures.models import Structure, StructureMember
 
 from .serializers import (
@@ -586,6 +587,12 @@ def options(request):
         ).data,
         "diffusion_zone_type": [
             {"value": c[0], "label": c[1]} for c in AdminDivisionType.choices
+        ],
+        "deployment_departments": [
+            s["department_code"]
+            for s in DeploymentState.objects.filter(
+                state__in=[DeploymentLevel.IN_PROGRESS, DeploymentLevel.FINALIZING]
+            ).values()
         ],
     }
     return Response(result)
