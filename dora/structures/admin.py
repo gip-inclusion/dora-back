@@ -171,11 +171,7 @@ class StructureAdmin(admin.ModelAdmin):
         BranchInline,
         ServiceInline,
     ]
-    readonly_fields = (
-        "creation_date",
-        "modification_date",
-        "data_inclusion_id"
-    )
+    readonly_fields = ("creation_date", "modification_date", "data_inclusion_id")
     raw_id_fields = ["parent"]
 
 
