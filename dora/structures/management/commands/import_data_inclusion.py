@@ -10,7 +10,12 @@ from dora.core import utils
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
 from dora.sirene.models import Establishment
-from dora.structures.models import Structure, StructureSource, StructureTypology
+from dora.structures.models import (
+    Structure,
+    StructureNationalLabel,
+    StructureSource,
+    StructureTypology,
+)
 from dora.users.models import User
 
 # Documentation DI : https://data-inclusion-api-prod.osc-secnum-fr1.scalingo.io/api/v0/docs
@@ -56,7 +61,7 @@ class Command(BaseCommand):
         page = 1
         while True:
             paginated_url = url.copy().add({"page": page})
-            self.stdout.write(f"Chargement de {url}")
+            self.stdout.write(f"Chargement de {paginated_url}")
             response = requests.get(
                 paginated_url,
                 params={},
@@ -85,16 +90,16 @@ class Command(BaseCommand):
         bot_user = User.objects.get_dora_bot()
         source, _created = StructureSource.objects.get_or_create(
             value=f"di-{source_value}",
-            defaults={"label": "source_value"},
+            defaults={"label": source_value},
         )
         if _created:
             self.stdout.write(
-                self.style.SUCCESS(
+                self.style.ERROR(
                     f"Source: di-{source_value} inexistante. Pensez à renseigner son label dans l'interface "
                     f"d'administration"
                 )
             )
-
+        num_imported = 0
         for s in structures:
             if Structure.objects.filter(siret=s["siret"]).exists():
                 # Les doublons sont attendus -- itou a une unicité sur le couple (siret, typologie) par exemple
@@ -113,12 +118,14 @@ class Command(BaseCommand):
                 )
                 continue
             try:
-                typology, _created = StructureTypology.objects.get_or_create(
-                    value=s["typologie"]
-                )
+                typology = None
+                if s["typologie"]:
+                    typology, _created = StructureTypology.objects.get_or_create(
+                        value=s["typologie"]
+                    )
                 if _created:
                     self.stdout.write(
-                        self.style.SUCCESS(
+                        self.style.ERROR(
                             f"typology: {s['typologie']} inexistante. Pensez à renseigner son label dans l'interface "
                             f"d'administration"
                         )
@@ -140,18 +147,29 @@ class Command(BaseCommand):
                     full_desc=s["presentation_detail"] or "",
                     short_desc=s["presentation_resume"] or "",
                     typology=typology,
-                    opening_hours=s["horaires_ouverture"],
-                    other_labels=",".join(s["labels_autres"]),
                     accesslibre_url=s["accessibilite"],
-                    # parent=s['structure_parente'],
                     ape=establishment.ape,
                     source=source,
                     creator=bot_user,
                     last_editor=bot_user,
                     modification_date=timezone.now(),
+                    # Champs non gérés pour l'instant
+                    # opening_hours=s["horaires_ouverture"],
+                    # other_labels=",".join(s["labels_autres"]),
+                    # parent=s['structure_parente'],
                 )
-
-                structure.national_labels.set(s["labels_nationaux"])
+                for label in s["labels_nationaux"]:
+                    new_label, _created = StructureNationalLabel.objects.get_or_create(
+                        value=label
+                    )
+                    if _created:
+                        self.stdout.write(
+                            self.style.ERROR(
+                                f"Label national: {label} inexistant. Pensez à le compléter dans l'interface "
+                                f"d'administration"
+                            )
+                        )
+                    structure.national_labels.add(new_label)
 
                 send_moderation_notification(
                     structure,
@@ -159,9 +177,10 @@ class Command(BaseCommand):
                     f"Structure importée de Data Inclusion ({source})",
                     ModerationStatus.VALIDATED,
                 )
-                self.stdout.write(
-                    f"Importé : {structure.name}, {structure.get_frontend_url()}"
-                )
+                num_imported += 1
+
             except Exception as e:
-                self.stdout.write(s)
+                print(s)
+                self.stderr.write(s)
                 self.stderr.write(self.style.ERROR(e))
+        self.stdout.write(self.style.SUCCESS(f"{num_imported} structures importées"))
