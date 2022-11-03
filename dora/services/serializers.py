@@ -532,7 +532,7 @@ class ServiceModelSerializer(ServiceSerializer):
         lookup_field = "slug"
 
     def get_num_services(self, obj):
-        return obj.copies.count()
+        return obj.copies.exclude(status=ServiceStatus.ARCHIVED).count()
 
 
 class AnonymousServiceSerializer(ServiceSerializer):
