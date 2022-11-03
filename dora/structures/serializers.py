@@ -250,7 +250,7 @@ class StructureSerializer(serializers.ModelSerializer):
                 ]
 
             def get_num_services(self, obj):
-                return obj.copies.count()
+                return obj.copies.exclude(status=ServiceStatus.ARCHIVED).count()
 
         qs = ServiceModel.objects.filter(structure=structure)
         return StructureModelsSerializer(
@@ -278,7 +278,18 @@ class StructureSerializer(serializers.ModelSerializer):
 
         user = self.context.get("request").user
         if user.is_authenticated and user.is_staff:
-            branches = obj.branches.annotate(num_services=Count("services"))
+            branches = obj.branches.annotate(
+                num_services=Count(
+                    "services",
+                    filter=Q(
+                        services__status__in=(
+                            ServiceStatus.DRAFT,
+                            ServiceStatus.SUGGESTION,
+                            ServiceStatus.PUBLISHED,
+                        )
+                    ),
+                )
+            )
         else:
             branches_member_of = (
                 obj.branches.filter(membership__user=user)
@@ -287,7 +298,20 @@ class StructureSerializer(serializers.ModelSerializer):
             )
             branches_other = obj.branches.exclude(pk__in=branches_member_of)
             branches = [
-                *list(branches_member_of.annotate(num_services=Count("services"))),
+                *list(
+                    branches_member_of.annotate(
+                        num_services=Count(
+                            "services",
+                            filter=Q(
+                                services__status__in=(
+                                    ServiceStatus.DRAFT,
+                                    ServiceStatus.SUGGESTION,
+                                    ServiceStatus.PUBLISHED,
+                                )
+                            ),
+                        )
+                    )
+                ),
                 *list(
                     branches_other.annotate(
                         num_services=Count(
