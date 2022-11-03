@@ -115,6 +115,7 @@ class StructureViewSet(
         structure = serializer.save(
             last_editor=self.request.user,
             modification_date=timezone.now(),
+            has_been_edited=True,
         )
         structure.log_note(self.request.user, "Structure modifiée")
 
@@ -337,6 +338,10 @@ def options(request):
         "national_labels": [
             {"value": c.value, "label": c.label}
             for c in StructureNationalLabel.objects.all().order_by("label")
+        ],
+        "sources": [
+            {"value": c.value, "label": c.label}
+            for c in StructureSource.objects.all().order_by("label")
         ],
     }
     return Response(result)

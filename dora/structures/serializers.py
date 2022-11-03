@@ -45,6 +45,8 @@ class StructureSerializer(serializers.ModelSerializer):
         required=False,
     )
 
+    source = serializers.SerializerMethodField()
+
     class Meta:
         model = Structure
         fields = [
@@ -87,8 +89,11 @@ class StructureSerializer(serializers.ModelSerializer):
             "opening_hours_details",
             "national_labels",
             "other_labels",
+            "source",
+            "has_been_edited",
         ]
         lookup_field = "slug"
+        read_only_fields = ["has_been_edited"]
 
     def get_has_admin(self, obj):
         return obj.membership.filter(is_admin=True).exists()
@@ -293,6 +298,13 @@ class StructureSerializer(serializers.ModelSerializer):
                 ),
             ]
         return StructureListSerializerWithCount(branches, many=True).data
+
+    def get_source(self, obj):
+        return (
+            {"value": obj.source.value, "label": obj.source.label}
+            if obj.source
+            else None
+        )
 
 
 class StructureListSerializer(StructureSerializer):

@@ -127,6 +127,7 @@ class StructureSource(EnumModel):
 class StructureNationalLabel(EnumModel):
     class Meta:
         verbose_name = "Label national"
+        verbose_name_plural = "Labels nationaux"
 
 
 class StructureTypology(EnumModel):
@@ -156,7 +157,6 @@ class StructureManager(models.Manager):
 
 class Structure(ModerationMixin, models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
     # Les antennes peuvent avoir un Siret null
     siret = models.CharField(
         verbose_name="Siret",
@@ -220,6 +220,7 @@ class Structure(ModerationMixin, models.Model):
 
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(blank=True, null=True)
+    has_been_edited = models.BooleanField(default=False)
     creator = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -238,6 +239,7 @@ class Structure(ModerationMixin, models.Model):
     source = models.ForeignKey(
         StructureSource, null=True, blank=True, on_delete=models.PROTECT
     )
+    data_inclusion_id = models.TextField(blank=True)
 
     members = models.ManyToManyField(User, through=StructureMember)
 
