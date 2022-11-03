@@ -24,7 +24,7 @@ BASE_URL = furl(settings.DATA_INCLUSION_URL)
 
 
 class Command(BaseCommand):
-    help = "Importe les nouvelles structures Inclusion Connect qui n'existent pas encore dans Dora"
+    help = "Importe les nouvelles structures Data Inclusion qui n'existent pas encore dans Dora"
 
     def add_arguments(self, parser):
         parser.add_argument("source", type=str)
