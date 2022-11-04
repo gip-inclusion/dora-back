@@ -605,13 +605,14 @@ class SearchResultSerializer(ServiceListSerializer):
     class Meta:
         model = Service
         fields = [
-            "categories_display",
             "name",
             "short_desc",
             "slug",
-            "structure_info",
             "structure",
+            "structure_info",
+            "modification_date",
             "distance",
+            "status",
             "location",
         ]
 
@@ -622,7 +623,7 @@ class SearchResultSerializer(ServiceListSerializer):
         if obj.location_kinds.filter(value="en-presentiel").exists():
             return f"{obj.postal_code}, {obj.city}"
         elif obj.location_kinds.filter(value="a-distance").exists():
-            return "À distance"
+            return "a-distance"
         else:
             return ""
 
