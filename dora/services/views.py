@@ -690,16 +690,11 @@ def search(request):
                 all_sister_subcats = ServiceSubCategory.objects.filter(
                     value__startswith=f"{cat}--"
                 )
-                subcategories_filter.add(
-                    Q(subcategories__value=subcategory)
-                    | (
-                        Q(categories__value=cat)
-                        & ~Q(subcategories__in=all_sister_subcats)
-                    ),
-                    Q.OR,
+                subcategories_filter |= Q(subcategories__value=subcategory) | (
+                    Q(categories__value=cat) & ~Q(subcategories__in=all_sister_subcats)
                 )
             else:
-                subcategories_filter.add(Q(subcategories__value=subcategory), Q.OR)
+                subcategories_filter |= Q(subcategories__value=subcategory)
 
         services = services.filter(subcategories_filter)
 
