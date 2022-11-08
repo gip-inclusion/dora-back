@@ -681,6 +681,7 @@ def search(request):
         services = services.filter(kinds__value__in=kinds.split(","))
 
     if subcategories:
+        subcategories_filter = Q()
         for subcategory in subcategories.split(","):
             cat, subcat = subcategory.split("--")
             if subcat == "other":
@@ -689,15 +690,18 @@ def search(request):
                 all_sister_subcats = ServiceSubCategory.objects.filter(
                     value__startswith=f"{cat}--"
                 )
-                services = services.filter(
+                subcategories_filter.add(
                     Q(subcategories__value=subcategory)
                     | (
                         Q(categories__value=cat)
                         & ~Q(subcategories__in=all_sister_subcats)
-                    )
+                    ),
+                    Q.OR,
                 )
             else:
-                services = services.filter(subcategories__value=subcategory)
+                subcategories_filter.add(Q(subcategories__value=subcategory), Q.OR)
+
+        services = services.filter(subcategories_filter)
 
     if fee:
         services = services.filter(fee_condition__value__in=fee.split(","))
