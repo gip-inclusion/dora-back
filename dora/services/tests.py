@@ -1299,6 +1299,37 @@ class ServiceSearchTestCase(APITestCase):
         response_slugs = sorted([s["slug"] for s in response.data])
         self.assertEqual(response_slugs, sorted([service_1.slug, service_2.slug]))
 
+    def test_find_service_with_requested_subcats_different_cats(self):
+        service_1 = make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            subcategories="cat1--sub1",
+        )
+        service_2 = make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            subcategories="cat1--sub2",
+        )
+        service_3 = make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            subcategories="cat2--sub1",
+        )
+        make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            subcategories="cat2--sub2",
+        )
+        response = self.client.get(
+            f"/search/?city={self.city1.code}&sub=cat1--sub1,cat1--sub2,cat2--sub1"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 3)
+        response_slugs = sorted([s["slug"] for s in response.data])
+        self.assertEqual(
+            response_slugs, sorted([service_1.slug, service_2.slug, service_3.slug])
+        )
+
     def test_find_service_with_requested_subcats_exclude_one(self):
         service_1 = make_service(
             status=ServiceStatus.PUBLISHED,
