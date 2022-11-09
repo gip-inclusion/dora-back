@@ -793,6 +793,17 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["structure_info"]["num_services"], 3)
 
+    def test_members_dont_see_archived_services_count(self):
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        service = make_service(status=ServiceStatus.PUBLISHED, structure=structure)
+        make_service(status=ServiceStatus.PUBLISHED, structure=structure)
+        make_service(status=ServiceStatus.ARCHIVED, structure=structure)
+        self.client.force_authenticate(user=user)
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["structure_info"]["num_services"], 2)
+
     def test_su_see_all_services_count(self):
         user = baker.make("users.User", is_valid=True)
         structure = make_structure(user)
@@ -803,6 +814,17 @@ class ServiceTestCase(APITestCase):
         response = self.client.get(f"/services/{service.slug}/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["structure_info"]["num_services"], 3)
+
+    def test_su_dont_see_archived_services_count(self):
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        service = make_service(status=ServiceStatus.PUBLISHED, structure=structure)
+        make_service(status=ServiceStatus.PUBLISHED, structure=structure)
+        make_service(status=ServiceStatus.ARCHIVED, structure=structure)
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["structure_info"]["num_services"], 2)
 
     def test_others_see_public_services_count(self):
         user = baker.make("users.User", is_valid=True)
@@ -1373,7 +1395,7 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             categories="cat1",
         )
-        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--other")
+        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--autre")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service.slug)
@@ -1389,7 +1411,7 @@ class ServiceSearchTestCase(APITestCase):
             categories="cat1,cat2",
             subcategories="cat2--sub1",
         )
-        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--other")
+        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--autre")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service.slug)

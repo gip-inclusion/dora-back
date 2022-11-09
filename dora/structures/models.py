@@ -352,9 +352,9 @@ class Structure(ModerationMixin, models.Model):
 
     def get_num_visible_services(self, user):
         if user.is_authenticated and (user.is_staff or self.is_member(user)):
-            return self.services.filter(is_model=False).count()
+            return self.services.active().count()
         else:
-            return self.services.published().filter(is_model=False).count()
+            return self.services.published().count()
 
     def get_num_visible_models(self, user):
         # On ne peut pas utiliser le manager lié (self.services) étant donné qu'il filtre les modèles
