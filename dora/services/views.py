@@ -605,13 +605,15 @@ class SearchResultSerializer(ServiceListSerializer):
     class Meta:
         model = Service
         fields = [
-            "categories_display",
             "name",
             "short_desc",
             "slug",
-            "structure_info",
             "structure",
+            "structure_info",
+            "modification_date",
+            "diffusion_zone_type",
             "distance",
+            "status",
             "location",
         ]
 
