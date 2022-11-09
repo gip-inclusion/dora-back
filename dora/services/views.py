@@ -611,6 +611,7 @@ class SearchResultSerializer(ServiceListSerializer):
             "structure",
             "structure_info",
             "modification_date",
+            "diffusion_zone_type",
             "distance",
             "status",
             "location",
@@ -623,7 +624,7 @@ class SearchResultSerializer(ServiceListSerializer):
         if obj.location_kinds.filter(value="en-presentiel").exists():
             return f"{obj.postal_code}, {obj.city}"
         elif obj.location_kinds.filter(value="a-distance").exists():
-            return "a-distance"
+            return "À distance"
         else:
             return ""
 
