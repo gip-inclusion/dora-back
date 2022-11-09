@@ -38,6 +38,7 @@ from dora.services.models import (
     ServiceSubCategory,
 )
 from dora.services.utils import filter_services_by_city_code
+from dora.stats.models import DeploymentLevel, DeploymentState
 from dora.structures.models import Structure, StructureMember
 
 from .serializers import (
@@ -587,6 +588,12 @@ def options(request):
         "diffusion_zone_type": [
             {"value": c[0], "label": c[1]} for c in AdminDivisionType.choices
         ],
+        "deployment_departments": [
+            s["department_code"]
+            for s in DeploymentState.objects.filter(
+                state__in=[DeploymentLevel.IN_PROGRESS, DeploymentLevel.FINALIZING]
+            ).values()
+        ],
     }
     return Response(result)
 
@@ -598,13 +605,15 @@ class SearchResultSerializer(ServiceListSerializer):
     class Meta:
         model = Service
         fields = [
-            "categories_display",
             "name",
             "short_desc",
             "slug",
-            "structure_info",
             "structure",
+            "structure_info",
+            "modification_date",
+            "diffusion_zone_type",
             "distance",
+            "status",
             "location",
         ]
 
@@ -650,8 +659,8 @@ def _sort_search_results(services, location):
 @api_view()
 @permission_classes([permissions.AllowAny])
 def search(request):
-    category = request.GET.get("cat", "")
-    subcategory = request.GET.get("sub", "")
+    categories = request.GET.get("cat", "")
+    subcategories = request.GET.get("sub", "")
     city_code = request.GET.get("city", "")
     kinds = request.GET.get("kinds", "")
     fee = request.GET.get("fee", "")
@@ -667,30 +676,32 @@ def search(request):
             "subcategories",
         )
     )
-    if category:
-        services = services.filter(categories__value=category)
+    if categories:
+        services = services.filter(categories__value__in=categories.split(","))
 
     if kinds:
         services = services.filter(kinds__value__in=kinds.split(","))
 
-    if subcategory:
-        cat, subcat = subcategory.split("--")
-        if subcat == "autre":
-            # Quand on cherche une sous-catégorie de type 'Autre', on veut
-            # aussi remonter les services sans sous-catégorie
-            all_sister_subcats = ServiceSubCategory.objects.filter(
-                value__startswith=f"{cat}--"
-            )
-            services = services.filter(
-                Q(subcategories__value=subcategory)
-                | (Q(categories__value=cat) & ~Q(subcategories__in=all_sister_subcats))
-            )
-        else:
-            services = services.filter(subcategories__value=subcategory)
+    if subcategories:
+        subcategories_filter = Q()
+        for subcategory in subcategories.split(","):
+            cat, subcat = subcategory.split("--")
+            if subcat == "autre":
+                # Quand on cherche une sous-catégorie de type 'Autre', on veut
+                # aussi remonter les services sans sous-catégorie
+                all_sister_subcats = ServiceSubCategory.objects.filter(
+                    value__startswith=f"{cat}--"
+                )
+                subcategories_filter |= Q(subcategories__value=subcategory) | (
+                    Q(categories__value=cat) & ~Q(subcategories__in=all_sister_subcats)
+                )
+            else:
+                subcategories_filter |= Q(subcategories__value=subcategory)
+
+        services = services.filter(subcategories_filter)
 
     if fee:
-        fee = fee.split(",")
-        services = services.filter(fee_condition__value__in=fee)
+        services = services.filter(fee_condition__value__in=fee.split(","))
 
     geofiltered_services = filter_services_by_city_code(services, city_code)
 
