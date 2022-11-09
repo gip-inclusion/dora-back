@@ -1282,7 +1282,7 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             categories="cat1",
         )
-        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--other")
+        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--autre")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service.slug)
@@ -1298,7 +1298,7 @@ class ServiceSearchTestCase(APITestCase):
             categories="cat1,cat2",
             subcategories="cat2--sub1",
         )
-        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--other")
+        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--autre")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service.slug)

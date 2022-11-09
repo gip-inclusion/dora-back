@@ -675,7 +675,7 @@ def search(request):
 
     if subcategory:
         cat, subcat = subcategory.split("--")
-        if subcat == "other":
+        if subcat == "autre":
             # Quand on cherche une sous-catégorie de type 'Autre', on veut
             # aussi remonter les services sans sous-catégorie
             all_sister_subcats = ServiceSubCategory.objects.filter(
