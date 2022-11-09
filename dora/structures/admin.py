@@ -8,6 +8,7 @@ from dora.services.models import Service
 from .models import (
     Structure,
     StructureMember,
+    StructureNationalLabel,
     StructurePutativeMember,
     StructureSource,
     StructureTypology,
@@ -35,6 +36,7 @@ class StructurePutativeMemberAdmin(admin.ModelAdmin):
         "invited_by_admin",
         ("structure", RelatedOnlyFieldListFilter),
     ]
+
     ordering = ["-creation_date"]
     raw_id_fields = ["user", "structure"]
 
@@ -162,16 +164,14 @@ class StructureAdmin(admin.ModelAdmin):
     ]
     search_fields = ("name", "siret", "code_safir_pe", "city", "department", "slug")
     ordering = ["-modification_date", "department"]
+    date_hierarchy = "modification_date"
     inlines = [
         StructureMemberInline,
         StructurePutativeMemberInline,
         BranchInline,
         ServiceInline,
     ]
-    readonly_fields = (
-        "creation_date",
-        "modification_date",
-    )
+    readonly_fields = ("creation_date", "modification_date", "data_inclusion_id")
     raw_id_fields = ["parent"]
 
 
@@ -180,3 +180,4 @@ admin.site.register(StructureMember, StructureMemberAdmin)
 admin.site.register(StructurePutativeMember, StructurePutativeMemberAdmin)
 admin.site.register(StructureSource, EnumAdmin)
 admin.site.register(StructureTypology, EnumAdmin)
+admin.site.register(StructureNationalLabel, EnumAdmin)

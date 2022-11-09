@@ -13,16 +13,16 @@ class Command(BaseCommand):
     help = "Takes one model and duplicates it into a list of structures"
 
     def add_arguments(self, parser):
-        parser.add_argument("service_slug")
+        parser.add_argument("modele_slug")
         parser.add_argument("structures_slugs", nargs="*")
 
     def handle(self, *args, **options):
-        service_slug = options["service_slug"]
+        modele_slug = options["modele_slug"]
         structures_slugs = options["structures_slugs"]
         try:
-            source = ServiceModel.objects.get(slug=service_slug)
+            source = ServiceModel.objects.get(slug=modele_slug)
         except ServiceModel.DoesNotExist:
-            self.stderr.write(self.style.ERROR(f"Modèle {service_slug} not found"))
+            self.stderr.write(self.style.ERROR(f"Modèle {modele_slug} not found"))
             sys.exit(1)
 
         structures = Structure.objects.filter(slug__in=structures_slugs).exclude(
