@@ -1,17 +1,25 @@
 from django.conf import settings
 from django.template.loader import render_to_string
+from furl import furl
 
 from dora.core.emails import send_mail
 
 
 def send_invitation_email(member, host_fullname):
-
+    structure = member.structure
+    invitation_link = furl(settings.FRONTEND_URL).add(
+        path="/auth/invitation",
+        args={
+            "login_hint": member.user.email,
+            "structure": structure.slug,
+        },
+    )
     params = {
         "recipient_email": member.user.email,
         "recipient_name": member.user.get_short_name(),
         "host_name": host_fullname,
-        "structure_name": member.structure.name,
-        "cta_link": f"{settings.FRONTEND_URL}/auth/rattachement?siret={member.structure.siret}&login_hint={member.user.email}",
+        "structure_name": structure.name,
+        "cta_link": invitation_link,
         "homepage_url": settings.FRONTEND_URL,
     }
     body = render_to_string("invitation.html", params)
