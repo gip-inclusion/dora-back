@@ -1092,7 +1092,7 @@ class ServiceSearchTestCase(APITestCase):
                 value="gratuit-sous-conditions"
             ).first(),
         )
-        response = self.client.get(f"/search/?city={self.city1.code}&fee=gratuit")
+        response = self.client.get(f"/search/?city={self.city1.code}&fees=gratuit")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service1.slug)
@@ -1115,7 +1115,7 @@ class ServiceSearchTestCase(APITestCase):
                 value="gratuit-sous-conditions"
             ).first(),
         )
-        response = self.client.get(f"/search/?city={self.city1.code}&fee=payant")
+        response = self.client.get(f"/search/?city={self.city1.code}&fees=payant")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service2.slug)
@@ -1139,7 +1139,7 @@ class ServiceSearchTestCase(APITestCase):
             ).first(),
         )
         response = self.client.get(
-            f"/search/?city={self.city1.code}&fee=gratuit-sous-conditions"
+            f"/search/?city={self.city1.code}&fees=gratuit-sous-conditions"
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
@@ -1236,7 +1236,7 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             categories="cat1",
         )
-        response = self.client.get(f"/search/?city={self.city1.code}&cat=cat1")
+        response = self.client.get(f"/search/?city={self.city1.code}&cats=cat1")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service.slug)
@@ -1252,7 +1252,7 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             categories="cat2",
         )
-        response = self.client.get(f"/search/?city={self.city1.code}&cat=cat1,cat2")
+        response = self.client.get(f"/search/?city={self.city1.code}&cats=cat1,cat2")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
         response_slugs = sorted([s["slug"] for s in response.data])
@@ -1274,7 +1274,7 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             categories="cat3",
         )
-        response = self.client.get(f"/search/?city={self.city1.code}&cat=cat1,cat2")
+        response = self.client.get(f"/search/?city={self.city1.code}&cats=cat1,cat2")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
         response_slugs = sorted([s["slug"] for s in response.data])
@@ -1287,7 +1287,7 @@ class ServiceSearchTestCase(APITestCase):
             categories="cat1",
         )
 
-        response = self.client.get(f"/search/?city={self.city1.code}&cat=cat2")
+        response = self.client.get(f"/search/?city={self.city1.code}&cats=cat2")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
@@ -1297,7 +1297,7 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             subcategories="cat1--sub1",
         )
-        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--sub1")
+        response = self.client.get(f"/search/?city={self.city1.code}&subs=cat1--sub1")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service.slug)
@@ -1314,7 +1314,7 @@ class ServiceSearchTestCase(APITestCase):
             subcategories="cat1--sub2",
         )
         response = self.client.get(
-            f"/search/?city={self.city1.code}&sub=cat1--sub1,cat1--sub2"
+            f"/search/?city={self.city1.code}&subs=cat1--sub1,cat1--sub2"
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
@@ -1343,7 +1343,7 @@ class ServiceSearchTestCase(APITestCase):
             subcategories="cat2--sub2",
         )
         response = self.client.get(
-            f"/search/?city={self.city1.code}&sub=cat1--sub1,cat1--sub2,cat2--sub1"
+            f"/search/?city={self.city1.code}&subs=cat1--sub1,cat1--sub2,cat2--sub1"
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 3)
@@ -1369,7 +1369,7 @@ class ServiceSearchTestCase(APITestCase):
             subcategories="cat1--sub3",
         )
         response = self.client.get(
-            f"/search/?city={self.city1.code}&sub=cat1--sub1,cat1--sub2"
+            f"/search/?city={self.city1.code}&subs=cat1--sub1,cat1--sub2"
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
@@ -1383,7 +1383,7 @@ class ServiceSearchTestCase(APITestCase):
             subcategories="cat1--sub1",
         )
 
-        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--sub2")
+        response = self.client.get(f"/search/?city={self.city1.code}&subs=cat1--sub2")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
@@ -1395,7 +1395,7 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             categories="cat1",
         )
-        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--autre")
+        response = self.client.get(f"/search/?city={self.city1.code}&subs=cat1--autre")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service.slug)
@@ -1411,7 +1411,7 @@ class ServiceSearchTestCase(APITestCase):
             categories="cat1,cat2",
             subcategories="cat2--sub1",
         )
-        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--autre")
+        response = self.client.get(f"/search/?city={self.city1.code}&subs=cat1--autre")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service.slug)
@@ -1422,7 +1422,7 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_type=AdminDivisionType.COUNTRY,
             categories="cat1",
         )
-        response = self.client.get(f"/search/?city={self.city1.code}&sub=cat1--sub1")
+        response = self.client.get(f"/search/?city={self.city1.code}&subs=cat1--sub1")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
