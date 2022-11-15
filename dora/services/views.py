@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import humanize
 from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
@@ -709,10 +711,18 @@ def search(request):
     city = get_object_or_404(City, pk=city_code)
 
     # Exclude suspended services
+    services_to_display = geofiltered_services.filter(
+        Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
+    ).distinct()
+    cutoff_date = timezone.now() - timedelta(days=30 * 8)
+
     results = _sort_search_results(
-        geofiltered_services.filter(
-            Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
-        ).distinct(),
+        # Display first the services modified after the cutoff date
+        services_to_display.filter(modification_date__gte=cutoff_date),
+        city.geom,
+    ) + _sort_search_results(
+        # Then the older ones
+        services_to_display.filter(modification_date__lte=cutoff_date),
         city.geom,
     )
 
