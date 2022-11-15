@@ -659,11 +659,11 @@ def _sort_search_results(services, location):
 @api_view()
 @permission_classes([permissions.AllowAny])
 def search(request):
-    categories = request.GET.get("cat", "")
-    subcategories = request.GET.get("sub", "")
+    categories = request.GET.get("cats", "")
+    subcategories = request.GET.get("subs", "")
     city_code = request.GET.get("city", "")
     kinds = request.GET.get("kinds", "")
-    fee = request.GET.get("fee", "")
+    fees = request.GET.get("fees", "")
 
     services = (
         Service.objects.published()
@@ -700,8 +700,8 @@ def search(request):
 
         services = services.filter(subcategories_filter)
 
-    if fee:
-        services = services.filter(fee_condition__value__in=fee.split(","))
+    if fees:
+        services = services.filter(fee_condition__value__in=fees.split(","))
 
     geofiltered_services = filter_services_by_city_code(services, city_code)
 
