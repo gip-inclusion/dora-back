@@ -75,8 +75,24 @@ def _is_member_of_structure(structure, user):
         return False
 
 
-def _add_user_to_structure_as_admin(structure, user):
-    StructureMember.objects.create(user=user, structure=structure, is_admin=True)
+def _add_user_to_adminless_structure(structure, user):
+    add_as_admin = True
+    # Si l'utilisateur a été invité (a priori par un superuser), on supprime l'invitation
+    try:
+        pm = StructurePutativeMember.objects.get(
+            user=user,
+            structure=structure,
+        )
+        add_as_admin = pm.is_admin
+        pm.delete()
+    except StructurePutativeMember.DoesNotExist:
+        pass
+
+    # Puis on l'ajoute comme collaborateur
+    # (admin par defaut, sauf s'il a été invité comme utilisateur normal)
+    StructureMember.objects.create(
+        user=user, structure=structure, is_admin=add_as_admin
+    )
     send_moderation_notification(
         structure,
         user,
@@ -144,7 +160,7 @@ def join_structure(request):
     ).exists()
 
     if not structure_has_admin:
-        _add_user_to_structure_as_admin(structure, user)
+        _add_user_to_adminless_structure(structure, user)
     else:
         _add_user_to_structure_or_waitlist(structure, user)
 
