@@ -10,6 +10,8 @@ from dora.users.models import User
 
 
 class UserAdminSerializer(serializers.ModelSerializer):
+    is_on_ic = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -22,6 +24,7 @@ class UserAdminSerializer(serializers.ModelSerializer):
             "is_valid",
             "date_joined",
             "newsletter",
+            "is_on_ic",
         ]
         read_only_fields = [
             "email",
@@ -34,6 +37,9 @@ class UserAdminSerializer(serializers.ModelSerializer):
             "date_joined",
             "newsletter",
         ]
+
+    def get_is_on_ic(self, obj):
+        return obj.ic_id is not None
 
 
 class LogItemSerializer(serializers.ModelSerializer):
