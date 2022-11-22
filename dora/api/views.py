@@ -1,10 +1,10 @@
 import django_filters
-from core.pagination import OptionalPageNumberPagination
 from djangorestframework_camel_case.render import CamelCaseJSONRenderer
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, permissions, viewsets
 from rest_framework.versioning import NamespaceVersioning
 
+from dora.core.pagination import OptionalPageNumberPagination
 from dora.services.models import (
     BeneficiaryAccessMode,
     CoachOrientationMode,
