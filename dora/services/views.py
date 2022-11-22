@@ -624,7 +624,7 @@ class SearchResultSerializer(ServiceListSerializer):
 
     def get_location(self, obj):
         if obj.location_kinds.filter(value="en-presentiel").exists():
-            return f"{obj.postal_code}, {obj.city}"
+            return f"{obj.postal_code} {obj.city}"
         elif obj.location_kinds.filter(value="a-distance").exists():
             return "À distance"
         else:
