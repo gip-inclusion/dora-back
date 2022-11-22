@@ -75,6 +75,7 @@ class User(AbstractBaseUser):
     date_joined = models.DateTimeField("date joined", default=timezone.now)
     newsletter = models.BooleanField(default=False, db_index=True)
 
+    bookmarks = models.ManyToManyField("services.Service", through="services.Bookmark")
     objects = UserManager()
 
     USERNAME_FIELD = "email"

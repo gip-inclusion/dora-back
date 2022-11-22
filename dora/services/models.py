@@ -530,3 +530,17 @@ class ServiceModificationHistoryItem(models.Model):
     class Meta:
         ordering = ["-date"]
         verbose_name = "Historique de modification de service"
+
+
+class Bookmark(models.Model):
+    service = models.ForeignKey("Service", on_delete=models.CASCADE)
+    user = models.ForeignKey("users.User", on_delete=models.CASCADE)
+    creation_date = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["service", "user"],
+                name="%(app_label)s_unique_bookmark",
+            )
+        ]

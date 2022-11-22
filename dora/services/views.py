@@ -43,6 +43,7 @@ from dora.services.utils import filter_services_by_city_code
 from dora.stats.models import DeploymentLevel, DeploymentState
 from dora.structures.models import Structure, StructureMember
 
+from .models import Bookmark
 from .serializers import (
     AnonymousServiceSerializer,
     FeedbackSerializer,
@@ -189,6 +190,20 @@ class ServiceViewSet(
                 ServiceSerializer(last_draft, context={"request": request}).data
             )
         raise Http404
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="toggle-bookmark",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def toggle_bookmark(self, request, slug):
+        user = self.request.user
+        service = self.get_object()
+        bookmark, created = Bookmark.objects.get_or_create(service=service, user=user)
+        if not created:
+            bookmark.delete()
+        return Response(status=204)
 
     @action(
         detail=True,

@@ -1,9 +1,19 @@
 from rest_framework import serializers
 
+from dora.services.models import Bookmark
+from dora.services.serializers import ServiceListSerializer
 from dora.sirene.models import Establishment
 from dora.structures.models import Structure
 from dora.structures.serializers import StructureListSerializer
 from dora.users.models import User
+
+
+class BookmarkListSerializer(serializers.ModelSerializer):
+    service = ServiceListSerializer(read_only=True)
+
+    class Meta:
+        model = Bookmark
+        fields = ["service", "creation_date"]
 
 
 class UserInfoSerializer(serializers.ModelSerializer):
@@ -11,6 +21,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
     short_name = serializers.CharField(source="get_short_name", read_only=True)
     structures = serializers.SerializerMethodField()
     pending_structures = serializers.SerializerMethodField()
+    bookmarks = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -26,6 +37,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "is_bizdev",
             "structures",
             "pending_structures",
+            "bookmarks",
         ]
 
     def get_structures(self, user):
@@ -44,6 +56,13 @@ class UserInfoSerializer(serializers.ModelSerializer):
                 putative_membership__invited_by_admin=False,
             )
         return StructureListSerializer(qs, many=True).data
+
+    def get_bookmarks(self, user):
+        if not user or not user.is_authenticated:
+            qs = Bookmark.objects.none()
+        else:
+            qs = Bookmark.objects.filter(user=user)
+        return BookmarkListSerializer(qs, many=True).data
 
 
 class TokenSerializer(serializers.Serializer):
