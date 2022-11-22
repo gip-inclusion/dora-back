@@ -2,7 +2,7 @@ from rest_framework import pagination
 
 
 class OptionalPageNumberPagination(pagination.PageNumberPagination):
-    # La page désirée peut être obtenu avec `?page=X`.
+    # La page désirée peut être obtenue avec `?page=X`.
     # Si `page_size` est renseigné dans les paramètres de l'URL,
     # le resultat sera paginé, sinon il restera à plat.
 

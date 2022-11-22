@@ -4,6 +4,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, permissions, viewsets
 from rest_framework.versioning import NamespaceVersioning
 
+from dora.core.pagination import OptionalPageNumberPagination
 from dora.services.models import (
     BeneficiaryAccessMode,
     CoachOrientationMode,
@@ -75,6 +76,7 @@ class StructureViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
     renderer_classes = [PrettyCamelCaseJSONRenderer]
     filterset_class = StructureFilter
+    pagination_class = OptionalPageNumberPagination
 
 
 @extend_schema(tags=["Dictionnaires des structures"])
@@ -168,6 +170,7 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
     renderer_classes = [PrettyCamelCaseJSONRenderer]
     filterset_class = ServiceFilter
+    pagination_class = OptionalPageNumberPagination
 
 
 @extend_schema(tags=["Dictionnaires des services"])
