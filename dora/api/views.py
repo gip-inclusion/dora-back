@@ -1,4 +1,5 @@
 import django_filters
+from core.pagination import OptionalPageNumberPagination
 from djangorestframework_camel_case.render import CamelCaseJSONRenderer
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, permissions, viewsets
@@ -75,6 +76,7 @@ class StructureViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
     renderer_classes = [PrettyCamelCaseJSONRenderer]
     filterset_class = StructureFilter
+    pagination_class = OptionalPageNumberPagination
 
 
 @extend_schema(tags=["Dictionnaires des structures"])
@@ -168,6 +170,7 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
     renderer_classes = [PrettyCamelCaseJSONRenderer]
     filterset_class = ServiceFilter
+    pagination_class = OptionalPageNumberPagination
 
 
 @extend_schema(tags=["Dictionnaires des services"])
