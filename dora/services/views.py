@@ -194,15 +194,21 @@ class ServiceViewSet(
     @action(
         detail=True,
         methods=["post"],
-        url_path="toggle-bookmark",
+        url_path="set-bookmark",
         permission_classes=[permissions.IsAuthenticated],
     )
-    def toggle_bookmark(self, request, slug):
+    def set_bookmark(self, request, slug):
         user = self.request.user
         service = self.get_object()
-        bookmark, created = Bookmark.objects.get_or_create(service=service, user=user)
-        if not created:
-            bookmark.delete()
+        wanted_state = self.request.data.get("state")
+        if wanted_state:
+            Bookmark.objects.get_or_create(service=service, user=user)
+        else:
+            try:
+                bookmark = Bookmark.objects.get(service=service, user=user)
+                bookmark.delete()
+            except Bookmark.DoesNotExist:
+                pass
         return Response(status=204)
 
     @action(
