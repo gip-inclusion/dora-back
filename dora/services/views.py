@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import humanize
 from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
@@ -38,6 +40,7 @@ from dora.services.models import (
     ServiceSubCategory,
 )
 from dora.services.utils import filter_services_by_city_code
+from dora.stats.models import DeploymentLevel, DeploymentState
 from dora.structures.models import Structure, StructureMember
 
 from .serializers import (
@@ -587,6 +590,12 @@ def options(request):
         "diffusion_zone_type": [
             {"value": c[0], "label": c[1]} for c in AdminDivisionType.choices
         ],
+        "deployment_departments": [
+            s["department_code"]
+            for s in DeploymentState.objects.filter(
+                state__in=[DeploymentLevel.IN_PROGRESS, DeploymentLevel.FINALIZING]
+            ).values()
+        ],
     }
     return Response(result)
 
@@ -598,13 +607,15 @@ class SearchResultSerializer(ServiceListSerializer):
     class Meta:
         model = Service
         fields = [
-            "categories_display",
             "name",
             "short_desc",
             "slug",
-            "structure_info",
             "structure",
+            "structure_info",
+            "modification_date",
+            "diffusion_zone_type",
             "distance",
+            "status",
             "location",
         ]
 
@@ -613,7 +624,7 @@ class SearchResultSerializer(ServiceListSerializer):
 
     def get_location(self, obj):
         if obj.location_kinds.filter(value="en-presentiel").exists():
-            return f"{obj.postal_code}, {obj.city}"
+            return f"{obj.postal_code} {obj.city}"
         elif obj.location_kinds.filter(value="a-distance").exists():
             return "À distance"
         else:
@@ -650,11 +661,11 @@ def _sort_search_results(services, location):
 @api_view()
 @permission_classes([permissions.AllowAny])
 def search(request):
-    category = request.GET.get("cat", "")
-    subcategory = request.GET.get("sub", "")
+    categories = request.GET.get("cats", "")
+    subcategories = request.GET.get("subs", "")
     city_code = request.GET.get("city", "")
     kinds = request.GET.get("kinds", "")
-    fee = request.GET.get("fee", "")
+    fees = request.GET.get("fees", "")
 
     services = (
         Service.objects.published()
@@ -667,30 +678,32 @@ def search(request):
             "subcategories",
         )
     )
-    if category:
-        services = services.filter(categories__value=category)
+    if categories:
+        services = services.filter(categories__value__in=categories.split(","))
 
     if kinds:
         services = services.filter(kinds__value__in=kinds.split(","))
 
-    if subcategory:
-        cat, subcat = subcategory.split("--")
-        if subcat == "autre":
-            # Quand on cherche une sous-catégorie de type 'Autre', on veut
-            # aussi remonter les services sans sous-catégorie
-            all_sister_subcats = ServiceSubCategory.objects.filter(
-                value__startswith=f"{cat}--"
-            )
-            services = services.filter(
-                Q(subcategories__value=subcategory)
-                | (Q(categories__value=cat) & ~Q(subcategories__in=all_sister_subcats))
-            )
-        else:
-            services = services.filter(subcategories__value=subcategory)
+    if subcategories:
+        subcategories_filter = Q()
+        for subcategory in subcategories.split(","):
+            cat, subcat = subcategory.split("--")
+            if subcat == "autre":
+                # Quand on cherche une sous-catégorie de type 'Autre', on veut
+                # aussi remonter les services sans sous-catégorie
+                all_sister_subcats = ServiceSubCategory.objects.filter(
+                    value__startswith=f"{cat}--"
+                )
+                subcategories_filter |= Q(subcategories__value=subcategory) | (
+                    Q(categories__value=cat) & ~Q(subcategories__in=all_sister_subcats)
+                )
+            else:
+                subcategories_filter |= Q(subcategories__value=subcategory)
 
-    if fee:
-        fee = fee.split(",")
-        services = services.filter(fee_condition__value__in=fee)
+        services = services.filter(subcategories_filter)
+
+    if fees:
+        services = services.filter(fee_condition__value__in=fees.split(","))
 
     geofiltered_services = filter_services_by_city_code(services, city_code)
 
@@ -698,10 +711,18 @@ def search(request):
     city = get_object_or_404(City, pk=city_code)
 
     # Exclude suspended services
+    services_to_display = geofiltered_services.filter(
+        Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
+    ).distinct()
+    cutoff_date = timezone.now() - timedelta(days=30 * 8)
+
     results = _sort_search_results(
-        geofiltered_services.filter(
-            Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
-        ).distinct(),
+        # Display first the services modified after the cutoff date
+        services_to_display.filter(modification_date__gte=cutoff_date),
+        city.geom,
+    ) + _sort_search_results(
+        # Then the older ones
+        services_to_display.filter(modification_date__lte=cutoff_date),
         city.geom,
     )
 

@@ -50,17 +50,33 @@ class TokenSerializer(serializers.Serializer):
     key = serializers.CharField()
 
 
-class SiretSerializer(serializers.Serializer):
-    siret = serializers.CharField()
+class JoinStructureSerializer(serializers.Serializer):
+    siret = serializers.CharField(required=False)
+    structure_slug = serializers.CharField(required=False)
 
-    def validate(self, attrs):
-        siret = attrs.get("siret")
-        try:
-            establishment = Establishment.objects.get(siret=siret)
-            attrs["establishment"] = establishment
-        except Establishment.DoesNotExist:
-            # The SIRET field is hidden on the frontend, so display this error globally
-            # TODO: Ideally it should be the frontend role to display the message anyway
-            raise serializers.ValidationError({"non_field_errors": "SIRET inconnu"})
-
-        return super().validate(attrs)
+    def validate(self, data):
+        siret = data.get("siret")
+        structure_slug = data.get("structure_slug")
+        if siret and structure_slug:
+            raise serializers.ValidationError(
+                "Expecting only one of `siret` and `structure_slug`"
+            )
+        if siret:
+            try:
+                establishment = Establishment.objects.get(siret=siret)
+                data["establishment"] = establishment
+            except Establishment.DoesNotExist:
+                # The field is hidden on the frontend, so display this error globally
+                # TODO: Ideally it should be the frontend role to display the message anyway
+                raise serializers.ValidationError({"non_field_errors": "SIRET inconnu"})
+        else:
+            try:
+                structure = Structure.objects.get(slug=structure_slug)
+                data["structure"] = structure
+            except Structure.DoesNotExist:
+                # The field is hidden on the frontend, so display this error globally
+                # TODO: Ideally it should be the frontend role to display the message anyway
+                raise serializers.ValidationError(
+                    {"non_field_errors": "structure inconnue"}
+                )
+        return super().validate(data)

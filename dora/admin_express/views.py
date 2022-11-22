@@ -43,7 +43,7 @@ def search(request):
     qs = (
         Model.objects.defer("geom")
         .annotate(similarity=TrigramSimilarity("normalized_name", norm_q))
-        .filter(similarity__gt=0.2 if len(q) > 3 else 0)
+        .filter(similarity__gt=0.1 if len(q) > 3 else 0)
         .order_by(*sort_fields)[:10]
     )
 

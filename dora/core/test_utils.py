@@ -38,11 +38,15 @@ def make_service(**kwargs):
     subcategories = (
         kwargs.pop("subcategories").split(",") if "subcategories" in kwargs else []
     )
+    modification_date = (
+        kwargs.pop("modification_date") if "modification_date" in kwargs else None
+    )
+
     service = baker.make(
         "Service",
         structure=structure,
         is_model=False,
-        modification_date=timezone.now(),
+        modification_date=modification_date if modification_date else timezone.now(),
         **kwargs,
     )
     if categories:

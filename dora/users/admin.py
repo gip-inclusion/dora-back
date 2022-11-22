@@ -90,6 +90,7 @@ class UserAdmin(BaseUserAdmin):
                     "last_name",
                     "first_name",
                     "phone_number",
+                    has_migrated_to_ic,
                 )
             },
         ),
@@ -119,7 +120,7 @@ class UserAdmin(BaseUserAdmin):
         ),
     )
     search_fields = ("email", "last_name", "first_name")
-    readonly_fields = ["newsletter"]
+    readonly_fields = ["newsletter", has_migrated_to_ic]
     ordering = ("-date_joined",)
     filter_horizontal = ()
     inlines = [StructureMemberInline]

@@ -103,6 +103,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "siret",
             "has_admin",
             "num_services",
+            "department",
         ]
 
     def get_has_admin(self, structure):
@@ -567,6 +568,7 @@ class StructureSerializerInList(StructureSerializer):
             "city",
             "url",
             "siret",
+            "department",
         ]
 
 
