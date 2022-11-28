@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_mattermost_notification, send_moderation_notification
 from dora.core.pagination import OptionalPageNumberPagination
+from dora.services.enums import ServiceStatus
 from dora.structures.emails import send_invitation_email
 from dora.structures.models import (
     Structure,
@@ -51,6 +52,7 @@ class StructureViewSet(
         user = self.request.user
         only_mine = self.request.query_params.get("mine")  # TODO: deprecate
         only_pending = self.request.query_params.get("pending")
+        only_active = self.request.query_params.get("active")
 
         all_structures = Structure.objects.select_related(
             "typology", "source", "parent"
@@ -72,7 +74,13 @@ class StructureViewSet(
                 .order_by("-modification_date")
                 .distinct()
             )
-
+        elif only_active:
+            qs = (
+                all_structures.filter(services__status=ServiceStatus.PUBLISHED)
+                .order_by("-modification_date")
+                .distinct()
+            )
+            return qs
         else:
             return all_structures.order_by("-modification_date")
 
