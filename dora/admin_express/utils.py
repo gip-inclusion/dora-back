@@ -1,5 +1,7 @@
 from unidecode import unidecode
 
+from dora.admin_express.models import City
+
 CODE_INSEE_PARIS = "75056"
 CODE_INSEE_PARIS_ARRDTS = [
     "75101",
@@ -78,3 +80,10 @@ def main_insee_code_to_arrdts(insee_code):
 
 def normalize_string_for_search(str):
     return unidecode(str).upper().replace("-", " ").replace("’", "'").rstrip()
+
+
+def get_clean_city_name(insee_code):
+    if insee_code:
+        city = City.objects.get_from_code(arrdt_to_main_insee_code(insee_code))
+        if city:
+            return city.name
