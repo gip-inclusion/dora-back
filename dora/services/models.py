@@ -1,6 +1,7 @@
 import logging
 import uuid
 
+from admin_express.utils import get_clean_city_name
 from django.conf import settings
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
@@ -451,6 +452,9 @@ class Service(ModerationMixin, models.Model):
 
     def log_note(self, user, msg):
         LogItem.objects.create(service=self, user=user, message=msg.strip())
+
+    def get_clean_city_name(self):
+        return get_clean_city_name(self.city_code) or self.city
 
 
 class ServiceModelManager(models.Manager):

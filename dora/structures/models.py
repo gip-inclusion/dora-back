@@ -1,6 +1,7 @@
 import uuid
 from typing import Optional
 
+from admin_express.utils import get_clean_city_name
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -372,3 +373,6 @@ class Structure(ModerationMixin, models.Model):
 
     def log_note(self, user, msg):
         LogItem.objects.create(structure=self, user=user, message=msg.strip())
+
+    def get_clean_city_name(self):
+        return get_clean_city_name(self.city_code) or self.city

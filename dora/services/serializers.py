@@ -259,6 +259,8 @@ class ServiceSerializer(serializers.ModelSerializer):
         allow_null=True,
     )
 
+    city = serializers.SerializerMethodField()
+
     class Meta:
         model = Service
 
@@ -379,6 +381,9 @@ class ServiceSerializer(serializers.ModelSerializer):
     def get_department(self, obj):
         code = obj.city_code
         return code_insee_to_code_dept(code)
+
+    def get_city(self, obj):
+        return obj.get_clean_city_name()
 
     def get_can_write(self, obj):
         user = self.context.get("request").user
