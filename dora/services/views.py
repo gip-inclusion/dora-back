@@ -43,6 +43,7 @@ from dora.services.utils import filter_services_by_city_code
 from dora.stats.models import DeploymentLevel, DeploymentState
 from dora.structures.models import Structure, StructureMember
 
+from .models import Bookmark
 from .serializers import (
     AnonymousServiceSerializer,
     FeedbackSerializer,
@@ -189,6 +190,26 @@ class ServiceViewSet(
                 ServiceSerializer(last_draft, context={"request": request}).data
             )
         raise Http404
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="set-bookmark",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def set_bookmark(self, request, slug):
+        user = self.request.user
+        service = self.get_object()
+        wanted_state = self.request.data.get("state")
+        if wanted_state:
+            Bookmark.objects.get_or_create(service=service, user=user)
+        else:
+            try:
+                bookmark = Bookmark.objects.get(service=service, user=user)
+                bookmark.delete()
+            except Bookmark.DoesNotExist:
+                pass
+        return Response(status=204)
 
     @action(
         detail=True,
@@ -678,14 +699,19 @@ def search(request):
             "subcategories",
         )
     )
-    if categories:
-        services = services.filter(categories__value__in=categories.split(","))
 
     if kinds:
         services = services.filter(kinds__value__in=kinds.split(","))
 
+    if fees:
+        services = services.filter(fee_condition__value__in=fees.split(","))
+
+    categories_filter = Q()
+    if categories:
+        categories_filter = Q(categories__value__in=categories.split(","))
+
+    subcategories_filter = Q()
     if subcategories:
-        subcategories_filter = Q()
         for subcategory in subcategories.split(","):
             cat, subcat = subcategory.split("--")
             if subcat == "autre":
@@ -700,10 +726,7 @@ def search(request):
             else:
                 subcategories_filter |= Q(subcategories__value=subcategory)
 
-        services = services.filter(subcategories_filter)
-
-    if fees:
-        services = services.filter(fee_condition__value__in=fees.split(","))
+    services = services.filter(categories_filter | subcategories_filter).distinct()
 
     geofiltered_services = filter_services_by_city_code(services, city_code)
 

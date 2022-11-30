@@ -1426,6 +1426,25 @@ class ServiceSearchTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
+    def test_find_cats_and_subcats_are_independant(self):
+        make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            categories="cat1",
+            subcategories="cat1--sub1",
+        )
+        make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            categories="cat2",
+            subcategories="cat2--sub1",
+        )
+        response = self.client.get(
+            f"/search/?city={self.city1.code}&cats=cat1&subs=cat2--sub1"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+
 
 class ServiceSearchOrderingTestCase(APITestCase):
     def setUp(self):

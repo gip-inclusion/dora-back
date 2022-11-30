@@ -2,7 +2,8 @@ from django.core import mail
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
-from dora.core.test_utils import make_structure
+from dora.core.test_utils import make_service, make_structure
+from dora.services.enums import ServiceStatus
 from dora.structures.models import (
     Structure,
     StructureMember,
@@ -244,6 +245,26 @@ class StructureTestCase(APITestCase):
         self.assertIn(self.my_struct.slug, services_ids)
         self.assertIn(self.my_other_struct.slug, services_ids)
         self.assertNotIn(self.other_struct.slug, services_ids)
+
+
+class StructureSiteMapTestCase(APITestCase):
+    def test_structures_wo_published_services_are_not_listed(self):
+        st = make_structure()
+        make_service(structure=st, status=ServiceStatus.DRAFT)
+        make_service(structure=st, status=ServiceStatus.ARCHIVED)
+
+        response = self.client.get("/structures/?active=1")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_structures_w_published_services_are_listed(self):
+        st = make_structure()
+        make_service(structure=st, status=ServiceStatus.DRAFT)
+        make_service(structure=st, status=ServiceStatus.PUBLISHED)
+
+        response = self.client.get("/structures/?active=1")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
 
 
 class StructureMemberTestCase(APITestCase):
