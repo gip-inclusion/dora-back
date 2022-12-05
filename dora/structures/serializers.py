@@ -47,6 +47,8 @@ class StructureSerializer(serializers.ModelSerializer):
 
     source = serializers.SerializerMethodField()
 
+    city = serializers.SerializerMethodField()
+
     class Meta:
         model = Structure
         fields = [
@@ -329,6 +331,9 @@ class StructureSerializer(serializers.ModelSerializer):
             if obj.source
             else None
         )
+
+    def get_city(self, obj):
+        return obj.get_clean_city_name()
 
 
 class StructureListSerializer(StructureSerializer):
