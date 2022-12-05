@@ -1,7 +1,6 @@
 import uuid
 from typing import Optional
 
-from admin_express.utils import get_clean_city_name
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -11,6 +10,7 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
+from dora.admin_express.utils import get_clean_city_name
 from dora.core.models import EnumModel, LogItem, ModerationMixin, ModerationStatus
 from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import (

@@ -1,7 +1,6 @@
 import logging
 import uuid
 
-from admin_express.utils import get_clean_city_name
 from django.conf import settings
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
@@ -11,6 +10,7 @@ from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
 from dora.admin_express.models import AdminDivisionType
+from dora.admin_express.utils import get_clean_city_name
 from dora.core.models import EnumModel, LogItem, ModerationMixin
 from dora.structures.models import Structure, StructureMember
 
