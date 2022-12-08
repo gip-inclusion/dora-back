@@ -734,7 +734,7 @@ class ServiceTestCase(APITestCase):
             f"/services/{self.my_service.slug}/", {"name": "xxx", "address1": "yyy"}
         )
         hitem = ServiceModificationHistoryItem.objects.all()[0]
-        self.assertEqual(hitem.fields, ["name", "address1"])
+        self.assertEqual(hitem.fields, ["address1", "name"])
 
     def test_editing_log_m2m_change(self):
         self.assertFalse(ServiceModificationHistoryItem.objects.exists())

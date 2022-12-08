@@ -99,8 +99,8 @@ class BranchInline(admin.TabularInline):
     show_change_link = True
     formset = BranchFormSet
     fields = [
-        "siret",
         "name",
+        "siret",
     ]
     extra = 1
     verbose_name = "Antenne"

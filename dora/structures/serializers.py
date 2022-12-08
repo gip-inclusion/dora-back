@@ -52,47 +52,47 @@ class StructureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Structure
         fields = [
-            "siret",
-            "code_safir_pe",
-            "typology",
-            "typology_display",
-            "slug",
-            "name",
-            "short_desc",
-            "url",
-            "full_desc",
-            "phone",
-            "email",
-            "postal_code",
-            "city_code",
-            "city",
-            "department",
+            "accesslibre_url",
             "address1",
             "address2",
             "ape",
-            "longitude",
-            "latitude",
-            "creation_date",
-            "modification_date",
+            "archived_services",
+            "branches",
             "can_write",
+            "city",
+            "city_code",
+            "code_safir_pe",
+            "creation_date",
+            "department",
+            "email",
+            "full_desc",
+            "has_admin",
+            "has_been_edited",
             "is_admin",
             "is_member",
             "is_pending_member",
-            "parent",
-            "branches",
-            "has_admin",
-            "num_services",
-            "services",
-            "archived_services",
-            "num_models",
+            "latitude",
+            "longitude",
             "models",
-            "accesslibre_url",
+            "modification_date",
+            "name",
+            "national_labels",
+            "num_models",
+            "num_services",
             "opening_hours",
             "opening_hours_details",
-            "national_labels",
             "other_labels",
+            "parent",
+            "phone",
+            "postal_code",
+            "services",
+            "short_desc",
+            "siret",
+            "slug",
             "source",
-            "has_been_edited",
+            "typology",
+            "typology_display",
+            "url",
         ]
         lookup_field = "slug"
         read_only_fields = ["has_been_edited"]
@@ -134,36 +134,36 @@ class StructureSerializer(serializers.ModelSerializer):
             class Meta:
                 model = Service
                 fields = [
-                    "category",
-                    "category_display",
-                    "slug",
-                    "name",
-                    "postal_code",
-                    "city",
-                    "department",
-                    "status",
-                    "modification_date",
-                    "categories_display",
-                    "short_desc",
-                    "diffusion_zone_type",
-                    "diffusion_zone_type_display",
-                    "diffusion_zone_details_display",
-                    "model_changed",
-                    "is_available",
-                    "is_cumulative",
-                    "model",
-                    "structure",
-                    "location_kinds",
-                    "location_kinds_display",
-                    "remote_url",
                     "address1",
                     "address2",
-                    "postal_code",
-                    "city_code",
+                    "categories_display",
+                    "category",
+                    "category_display",
                     "city",
+                    "city",
+                    "city_code",
+                    "contact_email",
                     "contact_name",
                     "contact_phone",
-                    "contact_email",
+                    "department",
+                    "diffusion_zone_details_display",
+                    "diffusion_zone_type",
+                    "diffusion_zone_type_display",
+                    "is_available",
+                    "is_cumulative",
+                    "location_kinds",
+                    "location_kinds_display",
+                    "model",
+                    "model_changed",
+                    "modification_date",
+                    "name",
+                    "postal_code",
+                    "postal_code",
+                    "remote_url",
+                    "short_desc",
+                    "slug",
+                    "status",
+                    "structure",
                     "use_inclusion_numerique_scheme",
                 ]
 
@@ -191,23 +191,23 @@ class StructureSerializer(serializers.ModelSerializer):
             class Meta:
                 model = Service
                 fields = [
+                    "categories_display",
                     "category",
                     "category_display",
-                    "slug",
-                    "name",
-                    "postal_code",
                     "city",
                     "department",
-                    "status",
-                    "modification_date",
-                    "categories_display",
-                    "short_desc",
-                    "is_available",
+                    "diffusion_zone_details_display",
                     "diffusion_zone_type",
                     "diffusion_zone_type_display",
-                    "diffusion_zone_details_display",
-                    "model_changed",
+                    "is_available",
                     "model",
+                    "model_changed",
+                    "modification_date",
+                    "name",
+                    "postal_code",
+                    "short_desc",
+                    "slug",
+                    "status",
                     "structure",
                     "use_inclusion_numerique_scheme",
                 ]
@@ -241,14 +241,14 @@ class StructureSerializer(serializers.ModelSerializer):
             class Meta:
                 model = ServiceModel
                 fields = [
-                    "slug",
-                    "name",
+                    "categories_display",
                     "department",
                     "modification_date",
-                    "categories_display",
-                    "short_desc",
-                    "structure",
+                    "name",
                     "num_services",
+                    "short_desc",
+                    "slug",
+                    "structure",
                 ]
 
             def get_num_services(self, obj):
@@ -269,12 +269,12 @@ class StructureSerializer(serializers.ModelSerializer):
             class Meta:
                 model = Structure
                 fields = [
-                    "slug",
-                    "name",
                     "department",
-                    "typology_display",
                     "modification_date",
+                    "name",
                     "num_services",
+                    "slug",
+                    "typology_display",
                 ]
                 lookup_field = "slug"
 
@@ -340,13 +340,13 @@ class StructureListSerializer(StructureSerializer):
     class Meta:
         model = Structure
         fields = [
-            "slug",
-            "siret",
-            "name",
             "department",
-            "typology_display",
             "modification_date",
+            "name",
             "parent",
+            "siret",
+            "slug",
+            "typology_display",
         ]
         lookup_field = "slug"
 
@@ -376,8 +376,8 @@ class StructureMemberSerializer(serializers.ModelSerializer):
         model = StructureMember
         fields = [
             "id",
-            "user",
             "is_admin",
+            "user",
         ]
         validators = []
 
@@ -423,9 +423,9 @@ class StructurePutativeMemberSerializer(serializers.ModelSerializer):
         model = StructurePutativeMember
         fields = [
             "id",
-            "user",
-            "is_admin",
             "invited_by_admin",
+            "is_admin",
+            "user",
         ]
         validators = []
 
