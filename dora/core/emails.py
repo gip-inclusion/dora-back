@@ -25,10 +25,6 @@ def send_mail(
     if not isinstance(to, list):
         to = [to]
 
-    if settings.FAKE_EMAIL_RECIPIENT and not settings.IS_TESTING:
-        subject = f"[TEST pour {', '.join(to)}] {subject}"
-        to = [settings.FAKE_EMAIL_RECIPIENT]
-
     msg = EmailMessage(
         subject,
         body,
