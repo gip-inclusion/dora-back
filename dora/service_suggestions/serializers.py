@@ -28,13 +28,13 @@ class ServiceSuggestionSerializer(serializers.ModelSerializer):
         extra_kwargs = {"contents": {"write_only": True}}
 
         fields = [
-            "id",
-            "name",
-            "siret",
-            "structure_info",
             "contents",
             "creator",
+            "id",
+            "name",
             "service_info",
+            "siret",
+            "structure_info",
         ]
 
     def get_structure_info(self, suggestion):

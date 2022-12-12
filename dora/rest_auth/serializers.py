@@ -26,18 +26,18 @@ class UserInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "last_name",
+            "bookmarks",
+            "email",
             "first_name",
             "full_name",
-            "short_name",
-            "email",
-            "phone_number",
-            "newsletter",
-            "is_staff",
             "is_bizdev",
-            "structures",
+            "is_staff",
+            "last_name",
+            "newsletter",
             "pending_structures",
-            "bookmarks",
+            "phone_number",
+            "short_name",
+            "structures",
         ]
 
     def get_structures(self, user):

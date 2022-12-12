@@ -15,27 +15,27 @@ class UserAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
+            "date_joined",
+            "email",
             "email",
             "first_name",
-            "last_name",
-            "phone_number",
-            "email",
             "is_active",
-            "is_valid",
-            "date_joined",
-            "newsletter",
             "is_on_ic",
+            "is_valid",
+            "last_name",
+            "newsletter",
+            "phone_number",
         ]
         read_only_fields = [
+            "date_joined",
+            "email",
             "email",
             "first_name",
-            "last_name",
-            "phone_number",
-            "email",
             "is_active",
             "is_valid",
-            "date_joined",
+            "last_name",
             "newsletter",
+            "phone_number",
         ]
 
     def get_is_on_ic(self, obj):
@@ -80,8 +80,8 @@ class StructureAdminSerializer(StructureSerializer):
             "longitude",
             "members",
             "models",
-            "moderation_status",
             "moderation_date",
+            "moderation_status",
             "modification_date",
             "name",
             "notes",
@@ -94,8 +94,8 @@ class StructureAdminSerializer(StructureSerializer):
             "siret",
             "slug",
             "source",
-            "typology_display",
             "typology",
+            "typology_display",
             "url",
         ]
         read_only_fields = [
@@ -126,8 +126,8 @@ class StructureAdminSerializer(StructureSerializer):
             "siret",
             "slug",
             "source",
-            "typology_display",
             "typology",
+            "typology_display",
             "url",
         ]
         lookup_field = "slug"
@@ -207,17 +207,17 @@ class StructureAdminListSerializer(StructureAdminSerializer):
     class Meta:
         model = Structure
         fields = [
-            "slug",
-            "name",
             "department",
-            "moderation_status",
             "moderation_date",
+            "moderation_status",
+            "name",
+            "slug",
             "typology_display",
         ]
         read_only_fields = [
-            "slug",
-            "name",
             "department",
+            "name",
+            "slug",
             "typology_display",
         ]
         lookup_field = "slug"
@@ -243,14 +243,14 @@ class ServiceAdminSerializer(ServiceSerializer):
             "department",
             "diffusion_zone_details_display",
             "diffusion_zone_type_display",
+            "fee_condition",
             "fee_details",
             "full_desc",
-            "fee_condition",
             "is_contact_info_public",
             "last_editor",
             "model",
-            "moderation_status",
             "moderation_date",
+            "moderation_status",
             "modification_date",
             "name",
             "notes",
@@ -271,9 +271,9 @@ class ServiceAdminSerializer(ServiceSerializer):
             "department",
             "diffusion_zone_details_display",
             "diffusion_zone_type_display",
+            "fee_condition",
             "fee_details",
             "full_desc",
-            "fee_condition",
             "is_contact_info_public",
             "last_editor",
             "model",
@@ -305,24 +305,24 @@ class ServiceAdminListSerializer(ServiceAdminSerializer):
     class Meta:
         model = Service
         fields = [
-            "name",
-            "slug",
+            "diffusion_zone_details_display",
             "diffusion_zone_type",
             "diffusion_zone_type_display",
-            "diffusion_zone_details_display",
-            "moderation_status",
             "moderation_date",
-            "structure_name",
+            "moderation_status",
+            "name",
+            "slug",
             "structure_dept",
+            "structure_name",
         ]
         read_only_fields = [
-            "name",
-            "slug",
+            "diffusion_zone_details_display",
             "diffusion_zone_type",
             "diffusion_zone_type_display",
-            "diffusion_zone_details_display",
-            "structure_name",
+            "name",
+            "slug",
             "structure_dept",
+            "structure_name",
         ]
 
     def get_structure_name(self, obj):
