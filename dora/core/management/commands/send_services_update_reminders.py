@@ -35,14 +35,19 @@ class Command(BaseCommand):
             creation_date__lte=timezone.now()
             - timedelta(days=settings.NUM_DAYS_BEFORE_DRAFT_SERVICE_NOTIFICATION),
         )
+        self.stdout.write(f"{expired_drafts.count()} brouillons concernés")
 
+        self.stdout.write(
+            f"Vérification des services mis à jour depuis plus de  {settings.NUM_DAYS_BEFORE_ADVISED_SERVICE_UPDATE} jours…"
+        )
         obsolete_services = Service.objects.filter(
             status=ServiceStatus.PUBLISHED,
             modification_date__lte=timezone.now()
             - timedelta(days=settings.NUM_DAYS_BEFORE_ADVISED_SERVICE_UPDATE),
         )
 
-        self.stdout.write(f"{expired_drafts.count()} brouillons concernés")
+        self.stdout.write(f"{obsolete_services.count()} services concernés")
+
         users = defaultdict(lambda: defaultdict(set))
         store_users_to_notify(expired_drafts, users, "draft")
         store_users_to_notify(obsolete_services, users, "to_update")
