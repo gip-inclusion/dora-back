@@ -37,18 +37,20 @@ def send_mail(
     msg.send()
 
 
-def send_draft_reminder_email(recipient_email, recipient_name, structure, drafts):
+def send_services_check_email(
+    recipient_email, recipient_name, structures_to_update, structures_with_drafts
+):
     params = {
         "recipient_email": recipient_email,
         "recipient_name": recipient_name,
-        "drafts": drafts,
-        "structure": structure,
+        "structures_to_update": structures_to_update,
+        "structures_with_drafts": structures_with_drafts,
         "homepage_url": settings.FRONTEND_URL,
     }
-    body = render_to_string("email_drafts.html", params)
+    body = render_to_string("email_services_check.html", params)
     send_mail(
-        "[DORA] Besoin d'aide ?",
+        "Rappel : des mises à jour de votre offre de service sur DORA sont nécessaires",
         recipient_email,
         body,
-        tags=["draft_notif"],
+        tags=["services_check"],
     )
