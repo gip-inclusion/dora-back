@@ -91,6 +91,9 @@ private_api_patterns = [
     path("profile/password/change/", dora.users.views.password_change),
     path("admin-division-search/", dora.admin_express.views.search),
     path("admin-division-reverse-search/", dora.admin_express.views.reverse_search),
+    path(
+        "city-label/<insee_code:insee_code>/", dora.admin_express.views.get_city_label
+    ),
     path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
     path("search-siret/", dora.sirene.views.search_siret),
     path("search-all-sirene/", dora.sirene.views.search_all_sirene),
