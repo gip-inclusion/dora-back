@@ -385,11 +385,19 @@ SIB_ACTIVE = os.environ["SIB_ACTIVE"] == "true"
 SIB_API_KEY = os.environ["SIB_API_KEY"]
 SIB_ONBOARDING_LIST = os.environ["SIB_ONBOARDING_LIST"]
 
+
 ########################
 # DRAFTS NOTIFICATIONS #
 ########################
 
-DRAFT_AGE_NOTIFICATION_DAYS = 7
+NUM_DAYS_BEFORE_DRAFT_SERVICE_NOTIFICATION = 7
+
+######################
+# SERVICES FRESHNESS #
+######################
+
+NUM_DAYS_BEFORE_ADVISED_SERVICE_UPDATE = 30 * 6
+NUM_DAYS_BEFORE_MANDATORY_SERVICE_UPDATE = 30 * 8
 
 ##############################
 # NOTIFICATIONS / MODERATION #
