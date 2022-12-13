@@ -84,7 +84,7 @@ def store_users_to_notify(services, users_to_notify, category):
             pertinent_users.add(service.last_editor)
 
         # Tous les éditeurs
-        for history_items in service.history_item.all():
+        for history_items in service.history_item.exclude(user=None):
             pertinent_users.add(history_items.user)
 
         # Administrateurs
