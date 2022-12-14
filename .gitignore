@@ -1,4 +1,4 @@
-/pg_data
+/staticfiles
 __pycache__
 .DS_Store
 /envs/dev.env

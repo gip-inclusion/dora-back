@@ -16,6 +16,15 @@
   "files.trimTrailingWhitespace": true,
   "python.formatting.provider": "black",
   "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.linting.pylintUseMinimalCheckers": false,
+  "python.linting.pylintArgs": [
+    "--load-plugins",
+    "pylint_django",
+    "--load-plugins",
+    "pylint_django.checkers.migrations",
+    "--django-settings-module=config.settings"
+  ],
   "python.linting.flake8Enabled": true,
   "python.terminal.activateEnvironment": true,
   "editor.detectIndentation": false
