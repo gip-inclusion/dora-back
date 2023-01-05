@@ -21,12 +21,23 @@ class Command(BaseCommand):
             action="store_true",
             help="N'accomplit aucune action, montre juste le nombre de brouillons, d'utilisateurs, et de courriels concernés.",
         )
+        parser.add_argument("--limit", type=int)
 
     def handle(self, *args, **options):
         # if not settings.IS_TESTING and settings.ENVIRONMENT != "production":
         #     return
 
         dry_run = options["dry_run"]
+        limit = options["limit"]
+
+        if dry_run:
+            self.stdout.write(self.style.NOTICE("DRY RUN"))
+        else:
+            self.stdout.write(self.style.WARNING("PRODUCTION RUN"))
+
+        if limit is not None:
+            self.stdout.write(self.style.WARNING(f"Limite d'envoi à {limit} courriels"))
+
         self.stdout.write(
             f"Vérification des brouillons de plus de {settings.NUM_DAYS_BEFORE_DRAFT_SERVICE_NOTIFICATION} jours…"
         )
@@ -53,7 +64,10 @@ class Command(BaseCommand):
         store_users_to_notify(obsolete_services, users, "to_update")
 
         mails_count = 0
-        for user, structures in list(users.items())[:1]:
+        user_list = (
+            list(users.items()) if limit is None else list(users.items())[:limit]
+        )
+        for user, structures in user_list:
             mails_count += 1
 
             if not dry_run:
