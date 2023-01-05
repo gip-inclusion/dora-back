@@ -8,6 +8,19 @@ from dora.services.models import ServiceCategory, ServiceSubCategory
 from dora.services.utils import update_sync_checksum
 
 
+def make_user(structure=None, is_valid=True, is_admin=False, **kwargs):
+    user = baker.make("users.User", is_valid=is_valid, **kwargs)
+    if structure:
+        structure.members.add(
+            user,
+            through_defaults={
+                "is_admin": is_admin,
+            },
+        )
+
+    return user
+
+
 def make_structure(user=None, **kwargs):
     siret = kwargs.pop("siret", None)
     if not siret:

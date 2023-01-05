@@ -82,3 +82,12 @@ def reverse_search(request):
     if result is not None:
         return Response(AdminDivisionSerializer(result).data)
     raise NotFound
+
+
+@api_view()
+@permission_classes([permissions.AllowAny])
+def get_city_label(request, insee_code):
+    city = City.objects.get_from_code(insee_code)
+    if city:
+        return Response(city.name)
+    raise NotFound

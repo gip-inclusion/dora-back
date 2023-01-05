@@ -384,10 +384,6 @@ class Service(ModerationMixin, models.Model):
     sync_checksum = models.CharField(max_length=32, blank=True)
     last_sync_checksum = models.CharField(max_length=32, blank=True)
 
-    last_draft_notification_date = models.DateTimeField(
-        blank=True, null=True, db_index=True
-    )
-
     customizable_choices_set = models.ForeignKey(
         CustomizableChoicesSet,
         verbose_name="Liste de choix",
