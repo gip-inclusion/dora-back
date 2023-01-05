@@ -84,7 +84,7 @@ services restés en brouillon.
       <h2>Vos services à actualiser</h2>
       <p>Tous les 6 mois, afin de garder une visibilité pérenne auprès de vos partenaires, nous vous demandons de
           confirmer les informations renseignées sur vos services.</p>
-      <p>Visualiser directement les services à actualiser sur
+      <p>Visualisez directement les services à actualiser sur
         {% with num_struct=structures_to_update|length %}
           v{{ num_struct|pluralize:"otre,os" }} structure{{ num_struct|pluralize }}&nbsp;:
         {% endwith %}
@@ -92,7 +92,7 @@ services restés en brouillon.
 
       <ul>
       {% for structure in structures_to_update %}
-          <li><a href="{{ structure.get_frontend_url }}/services?update-status=ALL">
+          <li><a href="{{ structure.link }}">
               {{ structure.name }}</a>
           </li>
       {% endfor %}
@@ -114,15 +114,17 @@ services restés en brouillon.
 
       {% if structures_with_drafts %}
         <h2>Vos services en brouillon</h2>
-        <p>Des services en brouillon attendent d'être visibles par vos partenaires&nbsp;!
-          Identifier directement les services&nbsp;en brouillon de
+        <p>Des services en brouillon attendent d'être visibles par vos partenaires&nbsp;!</p>
+        <p>
+          Identifiez directement les services&nbsp;en brouillon de
           {% with num_struct=structures_with_drafts|length %}
            v{{ num_struct|pluralize:"otre,os" }} structure{{ num_struct|pluralize }}&nbsp;:
           {% endwith %}
+        </p>
         <ul>
         {% for structure in structures_with_drafts %}
           <li>
-            <a href="{{ structure.get_frontend_url }}/services?service-status=DRAFT">
+            <a href="{{ structure.link }}">
               {{ structure.name }}
             </a>
           </li>

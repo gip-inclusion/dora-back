@@ -36,7 +36,8 @@ class CheckServicesUpdateTestCase(APITestCase):
             mail.outbox[0].subject,
         )
         self.assertIn(service.structure.slug, mail.outbox[0].body)
-        self.assertIn("service-status=DRAFT", mail.outbox[0].body)
+        self.assertIn("/auth/connexion?next", mail.outbox[0].body)
+        self.assertIn("services%3Fservice-status%3DDRAFT", mail.outbox[0].body)
         self.assertIn(service.creator.email, mail.outbox[0].to)
 
     def test_draft_newer_than_7_days_not_notified(self):
@@ -207,7 +208,8 @@ class CheckServicesUpdateTestCase(APITestCase):
             mail.outbox[0].subject,
         )
         self.assertIn(service.structure.slug, mail.outbox[0].body)
-        self.assertIn("services?update-status=ALL", mail.outbox[0].body)
+        self.assertIn("/auth/connexion?next", mail.outbox[0].body)
+        self.assertIn("services%3Fupdate-status%3DALL", mail.outbox[0].body)
         self.assertIn(service.creator.email, mail.outbox[0].to)
 
     def test_service_less_than_6_months__not_notified(self):
