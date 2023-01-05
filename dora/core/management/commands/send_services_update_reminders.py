@@ -105,6 +105,6 @@ def store_users_to_notify(services, users_to_notify, category):
             if service.structure.is_member(user) and (
                 not user.last_notification_email_sent
                 or user.last_notification_email_sent
-                < timezone.now() - timedelta(days=30)
+                < timezone.now() - timedelta(days=25)
             ):
                 users_to_notify[user][category].add(service.structure)
