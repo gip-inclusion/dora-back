@@ -32,7 +32,7 @@ class CheckServicesUpdateTestCase(APITestCase):
         self.call_command()
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn(
-            "Rappel : des mises à jour de votre offre de service sur DORA sont nécessaires",
+            "Des mises à jour de votre offre de service sur DORA sont nécessaires",
             mail.outbox[0].subject,
         )
         self.assertIn(service.structure.slug, mail.outbox[0].body)
@@ -204,7 +204,7 @@ class CheckServicesUpdateTestCase(APITestCase):
         self.call_command()
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn(
-            "Rappel : des mises à jour de votre offre de service sur DORA sont nécessaires",
+            "Des mises à jour de votre offre de service sur DORA sont nécessaires",
             mail.outbox[0].subject,
         )
         self.assertIn(service.structure.slug, mail.outbox[0].body)

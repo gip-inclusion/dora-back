@@ -71,7 +71,7 @@ def send_services_check_email(
     }
     body = render_to_string("email_services_check.html", params)
     send_mail(
-        "Rappel : des mises à jour de votre offre de service sur DORA sont nécessaires",
+        "Des mises à jour de votre offre de service sur DORA sont nécessaires",
         recipient_email,
         body,
         tags=["services_check"],
