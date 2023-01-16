@@ -297,7 +297,6 @@ class ServiceSerializer(serializers.ModelSerializer):
             "diffusion_zone_type_display",
             "fee_condition",
             "fee_details",
-            "filling_duration",
             "forms",
             "forms_info",
             "full_desc",

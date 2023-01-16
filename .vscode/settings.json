@@ -27,5 +27,6 @@
   ],
   "python.linting.flake8Enabled": true,
   "python.terminal.activateEnvironment": true,
-  "editor.detectIndentation": false
+  "editor.detectIndentation": false,
+  "githubPullRequests.ignoredPullRequestBranches": ["main"]
 }
