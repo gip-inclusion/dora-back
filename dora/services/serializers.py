@@ -17,7 +17,6 @@ from .models import (
     CoachOrientationMode,
     ConcernedPublic,
     Credential,
-    CustomizableChoicesSet,
     LocationKind,
     Requirement,
     Service,
@@ -444,19 +443,6 @@ class ServiceSerializer(serializers.ModelSerializer):
         return None
 
 
-class CustomizableChoicesSetSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CustomizableChoicesSet
-
-        fields = [
-            "access_conditions",
-            "concerned_public",
-            "credentials",
-            "name",
-            "requirements",
-        ]
-
-
 class ServiceModelSerializer(ServiceSerializer):
     num_services = serializers.SerializerMethodField()
     access_conditions = ModelCreatablePrimaryKeyRelatedField(
@@ -485,8 +471,6 @@ class ServiceModelSerializer(ServiceSerializer):
         required=False,
     )
 
-    customizable_choices_set = CustomizableChoicesSetSerializer(read_only=True)
-
     class Meta:
         model = ServiceModel
 
@@ -496,7 +480,6 @@ class ServiceModelSerializer(ServiceSerializer):
             "beneficiaries_access_modes",
             "beneficiaries_access_modes_display",
             "beneficiaries_access_modes_other",
-            "can_update_categories",
             "can_write",
             "categories",
             "categories_display",
@@ -508,7 +491,6 @@ class ServiceModelSerializer(ServiceSerializer):
             "creation_date",
             "credentials",
             "credentials_display",
-            "customizable_choices_set",
             "department",
             "fee_condition",
             "fee_details",
