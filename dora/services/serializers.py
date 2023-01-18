@@ -314,6 +314,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "name",
             "online_form",
             "postal_code",
+            "publication_date",
             "qpv_or_zrr",
             "recurrence",
             "remote_url",
