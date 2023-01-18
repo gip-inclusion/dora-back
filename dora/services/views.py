@@ -224,7 +224,6 @@ class ServiceViewSet(
         return Response(status=201)
 
     def perform_create(self, serializer):
-        duration_to_add = self.request.data.get("duration_to_add") or 0
         pub_date = None
         if serializer.validated_data.get("status") == ServiceStatus.PUBLISHED:
             pub_date = timezone.now()
@@ -232,7 +231,6 @@ class ServiceViewSet(
         service = serializer.save(
             creator=self.request.user,
             last_editor=self.request.user,
-            filling_duration=duration_to_add,
             publication_date=pub_date,
             modification_date=timezone.now(),
         )
@@ -320,22 +318,6 @@ class ServiceViewSet(
             serializer.validated_data.get("status") or status_before_update
         )
 
-        # Gestion de la durée d'édition:
-        # Si le service est toujours un brouillon ou passe au statut publié, on incrémente `filling_duration`
-        filling_duration = serializer.instance.filling_duration
-        if (
-            status_before_update == ServiceStatus.DRAFT
-            and status_after_update == ServiceStatus.PUBLISHED
-        ) or status_after_update == ServiceStatus.DRAFT:
-            # On ne modifie pas `filling_duration` si le service a déjà été publié par le passé
-            has_been_published_one_day = ServiceStatusHistoryItem.objects.filter(
-                service=serializer.instance, new_status=ServiceStatus.PUBLISHED
-            ).exists()
-
-            if not has_been_published_one_day:
-                duration_to_add = self.request.data.get("duration_to_add") or 0
-                filling_duration = (filling_duration or 0) + duration_to_add
-
         # Historique de modifications
         changed_fields = self._log_history(serializer, status_after_update)
 
@@ -347,7 +329,6 @@ class ServiceViewSet(
         # Enregistrement des mises à jour
         service = serializer.save(
             last_editor=self.request.user,
-            filling_duration=filling_duration,
             last_sync_checksum=last_sync_checksum,
             modification_date=timezone.now(),
         )

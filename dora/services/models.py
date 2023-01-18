@@ -130,35 +130,6 @@ class LocationKind(EnumModel):
         verbose_name_plural = "Lieux de déroulement"
 
 
-class CustomizableChoicesSet(models.Model):
-    name = models.CharField(max_length=140)
-
-    creation_date = models.DateTimeField(auto_now_add=True)
-    modification_date = models.DateTimeField(auto_now=True)
-
-    access_conditions = models.ManyToManyField(
-        AccessCondition, verbose_name="Critères d’admission", blank=True
-    )
-    concerned_public = models.ManyToManyField(
-        ConcernedPublic, verbose_name="Publics concernés", blank=True
-    )
-    requirements = models.ManyToManyField(
-        Requirement,
-        verbose_name="Pré-requis ou compétences ?",
-        blank=True,
-    )
-    credentials = models.ManyToManyField(
-        Credential, verbose_name="Justificatifs à fournir ?", blank=True
-    )
-
-    class Meta:
-        verbose_name = "Liste de choix"
-        verbose_name_plural = "Listes de choix"
-
-    def __str__(self):
-        return f"{self.name} (#{self.pk})"
-
-
 class ServiceManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(is_model=False)
@@ -354,10 +325,6 @@ class Service(ModerationMixin, models.Model):
     modification_date = models.DateTimeField(blank=True, null=True)
     publication_date = models.DateTimeField(blank=True, null=True)
 
-    # Temps passé (en seconde) sur le formulaire de création d'un service - avant la *toute* première publication
-    # Plus exactement : temps de contribution cumulé en brouillon + temps de contribution final menant au statut "publié"
-    filling_duration = models.IntegerField(null=True, blank=True, default=None)
-
     creator = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True
     )
@@ -370,10 +337,7 @@ class Service(ModerationMixin, models.Model):
     )
 
     is_model = models.BooleanField(default=False)
-    can_update_categories = models.BooleanField(
-        default=True,
-        verbose_name="En tant que modèle, la mise à jour des thématiques est-elle possible ?",
-    )
+
     model = models.ForeignKey(
         "ServiceModel",
         on_delete=models.SET_NULL,
@@ -383,14 +347,6 @@ class Service(ModerationMixin, models.Model):
     )
     sync_checksum = models.CharField(max_length=32, blank=True)
     last_sync_checksum = models.CharField(max_length=32, blank=True)
-
-    customizable_choices_set = models.ForeignKey(
-        CustomizableChoicesSet,
-        verbose_name="Liste de choix",
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-    )
 
     use_inclusion_numerique_scheme = models.BooleanField(default=False)
 

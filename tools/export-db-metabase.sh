@@ -63,7 +63,6 @@ CREATE TABLE mb_all_service AS
     services_service.model_id,
     ( SELECT st_y((services_service.geom)::geometry) AS st_y) AS latitude,
     ( SELECT st_x((services_service.geom)::geometry) AS st_x) AS longitude,
-    services_service.filling_duration,
     services_service.is_contact_info_public,
     (select services_service.contact_name != '') AS has_contact_name,
     (select services_service.contact_phone != '') AS has_contact_phone,
