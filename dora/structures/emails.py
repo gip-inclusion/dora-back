@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.utils.encoding import iri_to_uri
 from furl import furl
 
 from dora.core.emails import send_mail
@@ -10,7 +11,7 @@ def send_invitation_email(member, host_fullname):
     invitation_link = furl(settings.FRONTEND_URL).add(
         path="/auth/invitation",
         args={
-            "login_hint": member.user.email,
+            "login_hint": iri_to_uri(member.user.email),
             "structure": structure.slug,
         },
     )
