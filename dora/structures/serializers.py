@@ -142,6 +142,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     "city",
                     "city",
                     "city_code",
+                    "coach_orientation_modes",
                     "contact_email",
                     "contact_name",
                     "contact_phone",
