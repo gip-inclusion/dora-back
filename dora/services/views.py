@@ -168,27 +168,6 @@ class ServiceViewSet(
             return ServiceSerializer
         return AnonymousServiceSerializer
 
-    @action(detail=False, methods=["get"], url_path="last-draft")
-    def get_last_draft(self, request):
-        user = request.user
-        last_drafts = (
-            Service.objects.draft()
-            .filter(
-                creator=user,
-            )
-            .order_by("-modification_date")
-        )
-        if not user.is_staff:
-            last_drafts = last_drafts.filter(
-                structure__membership__user__id=user.id,
-            )
-        last_draft = last_drafts.first()
-        if last_draft:
-            return Response(
-                ServiceSerializer(last_draft, context={"request": request}).data
-            )
-        raise Http404
-
     @action(
         detail=True,
         methods=["post"],

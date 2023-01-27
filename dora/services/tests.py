@@ -233,30 +233,6 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["can_write"], False)
 
-    # Last draft
-
-    def test_get_last_draft_returns_only_mine(self):
-        response = self.client.get("/services/last-draft/")
-        self.assertEqual(response.data["slug"], self.my_latest_draft_service.slug)
-
-    def test_get_last_draft_only_if_still_in_struct(self):
-        draft_service = make_service(
-            structure=self.my_struct, status=ServiceStatus.DRAFT, creator=self.me
-        )
-        response = self.client.get("/services/last-draft/")
-        self.assertEqual(response.data["slug"], draft_service.slug)
-        draft_service = Service.objects.get(pk=draft_service.pk)
-        draft_service.structure = make_structure()
-        draft_service.save()
-        response = self.client.get("/services/last-draft/")
-        self.assertEqual(response.data["slug"], self.my_latest_draft_service.slug)
-
-    def test_superuser_get_last_draft_any_struct(self):
-        self.client.force_authenticate(user=self.superuser)
-        service = make_service(status=ServiceStatus.DRAFT, creator=self.superuser)
-        response = self.client.get("/services/last-draft/")
-        self.assertEqual(response.data["slug"], service.slug)
-
     # Superuser
 
     def test_superuser_can_sees_everything(self):
@@ -292,11 +268,6 @@ class ServiceTestCase(APITestCase):
             f"/services/{self.my_service.slug}/", {"name": "xxx"}
         )
         self.assertEqual(response.status_code, 403)
-
-    def test_superuser_last_draft_doesnt_return_others(self):
-        self.client.force_authenticate(user=self.superuser)
-        response = self.client.get("/services/last-draft/")
-        self.assertEqual(response.status_code, 404)
 
     def test_superuser_can_write_field_true(self):
         self.client.force_authenticate(user=self.superuser)
