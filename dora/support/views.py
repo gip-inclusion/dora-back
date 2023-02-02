@@ -64,7 +64,10 @@ class StructureAdminViewSet(
 
     def get_queryset(self):
         moderation = self.request.query_params.get("moderation") in TRUTHY_VALUES
-        all_structures = Structure.objects.select_related("typology").all()
+        # TODO: remove the filter
+        all_structures = Structure.objects.select_related("typology").filter(
+            department=31
+        )
         if moderation:
             return all_structures.exclude(moderation_status=ModerationStatus.VALIDATED)
         return all_structures

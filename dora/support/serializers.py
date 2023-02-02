@@ -62,6 +62,14 @@ class StructureAdminSerializer(StructureSerializer):
     source = serializers.SerializerMethodField()
     notes = serializers.SerializerMethodField()
 
+    notes = serializers.SerializerMethodField()
+    categories = serializers.SerializerMethodField()
+
+    # has_admin = serializers.SerializerMethodField()
+    # has_active_users = serializers.SerializerMethodField()
+    # num_services = serializers.SerializerMethodField()
+    # num_outdated_services = serializers.SerializerMethodField()
+
     class Meta:
         model = Structure
         fields = [
@@ -69,6 +77,7 @@ class StructureAdminSerializer(StructureSerializer):
             "address2",
             "ape",
             "branches",
+            "categories",
             "city",
             "creation_date",
             "creator",
@@ -103,6 +112,7 @@ class StructureAdminSerializer(StructureSerializer):
             "address2",
             "ape",
             "branches",
+            "categories",
             "city",
             "creation_date",
             "creator",
@@ -207,7 +217,10 @@ class StructureAdminListSerializer(StructureAdminSerializer):
     class Meta:
         model = Structure
         fields = [
+            "categories",
             "department",
+            "latitude",
+            "longitude",
             "moderation_date",
             "moderation_status",
             "name",
@@ -215,12 +228,15 @@ class StructureAdminListSerializer(StructureAdminSerializer):
             "typology_display",
         ]
         read_only_fields = [
-            "department",
+            "categories" "department",
             "name",
             "slug",
             "typology_display",
         ]
         lookup_field = "slug"
+
+    def get_categories(self, obj):
+        return obj.services.values_list("categories__value", flat=True).distinct()
 
 
 class ServiceAdminSerializer(ServiceSerializer):
@@ -228,7 +244,6 @@ class ServiceAdminSerializer(ServiceSerializer):
     last_editor = UserAdminSerializer()
     model = serializers.SerializerMethodField()
     structure = StructureAdminSerializer()
-    notes = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
