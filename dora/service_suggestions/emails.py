@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.utils.encoding import iri_to_uri
 
 from dora.core.emails import send_mail
 
@@ -7,7 +8,7 @@ from dora.core.emails import send_mail
 def send_suggestion_validated_new_structure_email(email, structure):
     params = {
         "structure": structure,
-        "cta_link": f"{settings.FRONTEND_URL}/auth/rattachement?siret={structure.siret}&login_hint={email}",
+        "cta_link": f"{settings.FRONTEND_URL}/auth/rattachement?siret={structure.siret}&login_hint={iri_to_uri(email)}",
         "homepage_url": settings.FRONTEND_URL,
     }
     body = render_to_string("new_structure.html", params)

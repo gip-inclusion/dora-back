@@ -17,7 +17,6 @@ from .models import (
     CoachOrientationMode,
     ConcernedPublic,
     Credential,
-    CustomizableChoicesSet,
     LocationKind,
     Requirement,
     Service,
@@ -297,7 +296,6 @@ class ServiceSerializer(serializers.ModelSerializer):
             "diffusion_zone_type_display",
             "fee_condition",
             "fee_details",
-            "filling_duration",
             "forms",
             "forms_info",
             "full_desc",
@@ -316,6 +314,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "name",
             "online_form",
             "postal_code",
+            "publication_date",
             "qpv_or_zrr",
             "recurrence",
             "remote_url",
@@ -445,19 +444,6 @@ class ServiceSerializer(serializers.ModelSerializer):
         return None
 
 
-class CustomizableChoicesSetSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CustomizableChoicesSet
-
-        fields = [
-            "access_conditions",
-            "concerned_public",
-            "credentials",
-            "name",
-            "requirements",
-        ]
-
-
 class ServiceModelSerializer(ServiceSerializer):
     num_services = serializers.SerializerMethodField()
     access_conditions = ModelCreatablePrimaryKeyRelatedField(
@@ -486,8 +472,6 @@ class ServiceModelSerializer(ServiceSerializer):
         required=False,
     )
 
-    customizable_choices_set = CustomizableChoicesSetSerializer(read_only=True)
-
     class Meta:
         model = ServiceModel
 
@@ -497,7 +481,6 @@ class ServiceModelSerializer(ServiceSerializer):
             "beneficiaries_access_modes",
             "beneficiaries_access_modes_display",
             "beneficiaries_access_modes_other",
-            "can_update_categories",
             "can_write",
             "categories",
             "categories_display",
@@ -509,7 +492,6 @@ class ServiceModelSerializer(ServiceSerializer):
             "creation_date",
             "credentials",
             "credentials_display",
-            "customizable_choices_set",
             "department",
             "fee_condition",
             "fee_details",
@@ -590,6 +572,10 @@ class ServiceListSerializer(ServiceSerializer):
             "category",
             "category_display",
             "city",
+            "coach_orientation_modes",
+            "contact_email",
+            "contact_name",
+            "contact_phone",
             "department",
             "diffusion_zone_details_display",
             "diffusion_zone_type",
