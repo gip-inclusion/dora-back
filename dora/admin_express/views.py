@@ -1,4 +1,3 @@
-from core.utils import TRUTHY_VALUES
 from django.contrib.gis.geos import Point
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import Value
@@ -9,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework_gis.fields import GeometrySerializerMethodField
 
 from dora.admin_express.utils import normalize_string_for_search
+from dora.core.utils import TRUTHY_VALUES
 
 from .models import EPCI, AdminDivisionType, City, Department, Region
 
