@@ -61,14 +61,13 @@ class StructureAdminSerializer(StructureSerializer):
     services = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
     notes = serializers.SerializerMethodField()
-
-    notes = serializers.SerializerMethodField()
     categories = serializers.SerializerMethodField()
 
-    # has_admin = serializers.SerializerMethodField()
-    # has_active_users = serializers.SerializerMethodField()
-    # num_services = serializers.SerializerMethodField()
-    # num_outdated_services = serializers.SerializerMethodField()
+    has_admin = serializers.SerializerMethodField()
+    has_putative_admin = serializers.SerializerMethodField()
+    has_active_users = serializers.SerializerMethodField()
+    num_services = serializers.SerializerMethodField()
+    num_outdated_services = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
@@ -106,6 +105,11 @@ class StructureAdminSerializer(StructureSerializer):
             "typology",
             "typology_display",
             "url",
+            "has_admin",
+            "has_putative_admin",
+            "has_active_users",
+            "num_services",
+            "num_outdated_services",
         ]
         read_only_fields = [
             "address1",
@@ -212,6 +216,32 @@ class StructureAdminSerializer(StructureSerializer):
         logs = LogItem.objects.filter(structure=obj).order_by("-date")
         return LogItemSerializer(logs, many=True).data
 
+    def get_has_admin(self, obj):
+        return StructureMember.objects.filter(
+            user__is_active=True, user__is_valid=True, structure=obj, is_admin=True
+        ).exists()
+
+    def get_has_putative_admin(self, obj):
+        return False
+
+    def get_has_active_users(self, obj):
+        return False
+
+    def get_num_services(self, obj):
+        return Service.objects.published().filter(structure=obj).count()
+
+    def get_num_outdated_services(self, obj):
+        return (
+            Service.objects.update_mandatory()
+            .filter(
+                structure=obj,
+            )
+            .count()
+        )
+
+    def get_categories(self, obj):
+        return obj.services.values_list("categories__value", flat=True).distinct()
+
 
 class StructureAdminListSerializer(StructureAdminSerializer):
     class Meta:
@@ -225,18 +255,25 @@ class StructureAdminListSerializer(StructureAdminSerializer):
             "moderation_status",
             "name",
             "slug",
+            "typology",
             "typology_display",
+            "has_admin",
+            "has_putative_admin",
+            "has_active_users",
+            "moderation_date",
+            "moderation_status",
+            "num_services",
+            "num_outdated_services",
+            "short_desc",
         ]
         read_only_fields = [
-            "categories" "department",
+            "categories",
+            "department",
             "name",
             "slug",
             "typology_display",
         ]
         lookup_field = "slug"
-
-    def get_categories(self, obj):
-        return obj.services.values_list("categories__value", flat=True).distinct()
 
 
 class ServiceAdminSerializer(ServiceSerializer):
@@ -244,6 +281,7 @@ class ServiceAdminSerializer(ServiceSerializer):
     last_editor = UserAdminSerializer()
     model = serializers.SerializerMethodField()
     structure = StructureAdminSerializer()
+    notes = serializers.SerializerMethodField()
 
     class Meta:
         model = Service

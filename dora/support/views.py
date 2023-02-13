@@ -63,14 +63,15 @@ class StructureAdminViewSet(
     lookup_field = "slug"
 
     def get_queryset(self):
+        department = self.request.query_params.get("department")
         moderation = self.request.query_params.get("moderation") in TRUTHY_VALUES
-        # TODO: remove the filter
-        all_structures = Structure.objects.select_related("typology").filter(
-            department=31
-        )
+
+        structures = Structure.objects.select_related("typology")
+        if department:
+            structures = structures.filter(department=department)
         if moderation:
-            return all_structures.exclude(moderation_status=ModerationStatus.VALIDATED)
-        return all_structures
+            return structures.exclude(moderation_status=ModerationStatus.VALIDATED)
+        return structures
 
     def get_serializer_class(self):
         if self.action == "list":

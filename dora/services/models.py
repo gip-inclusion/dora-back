@@ -1,11 +1,13 @@
 import logging
 import uuid
+from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.core.cache import cache
 from django.db.models import CharField, Q
+from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
@@ -136,6 +138,20 @@ class ServiceManager(models.Manager):
 
     def published(self):
         return self.filter(status=ServiceStatus.PUBLISHED)
+
+    def update_advised(self):
+        return self.filter(
+            status=ServiceStatus.PUBLISHED,
+            modification_date__lte=timezone.now()
+            - timedelta(days=settings.NUM_DAYS_BEFORE_ADVISED_SERVICE_UPDATE),
+        )
+
+    def update_mandatory(self):
+        return self.filter(
+            status=ServiceStatus.PUBLISHED,
+            modification_date__lte=timezone.now()
+            - timedelta(days=settings.NUM_DAYS_BEFORE_MANDATORY_SERVICE_UPDATE),
+        )
 
     def draft(self):
         return self.filter(status=ServiceStatus.DRAFT)
