@@ -51,11 +51,7 @@ class Command(BaseCommand):
         self.stdout.write(
             f"Vérification des services mis à jour depuis plus de  {settings.NUM_DAYS_BEFORE_ADVISED_SERVICE_UPDATE} jours…"
         )
-        obsolete_services = Service.objects.filter(
-            status=ServiceStatus.PUBLISHED,
-            modification_date__lte=timezone.now()
-            - timedelta(days=settings.NUM_DAYS_BEFORE_ADVISED_SERVICE_UPDATE),
-        )
+        obsolete_services = Service.objects.update_advised()
 
         self.stdout.write(f"{obsolete_services.count()} services concernés")
 

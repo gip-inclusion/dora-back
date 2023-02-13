@@ -62,6 +62,12 @@ class StructureAdminSerializer(StructureSerializer):
     source = serializers.SerializerMethodField()
     notes = serializers.SerializerMethodField()
 
+    # TdB
+    categories = serializers.SerializerMethodField()
+    has_admin = serializers.SerializerMethodField()
+    num_published_services = serializers.SerializerMethodField()
+    num_outdated_services = serializers.SerializerMethodField()
+
     class Meta:
         model = Structure
         fields = [
@@ -69,12 +75,14 @@ class StructureAdminSerializer(StructureSerializer):
             "address2",
             "ape",
             "branches",
+            "categories",
             "city",
             "creation_date",
             "creator",
             "department",
             "email",
             "full_desc",
+            "has_admin",
             "last_editor",
             "latitude",
             "longitude",
@@ -85,6 +93,8 @@ class StructureAdminSerializer(StructureSerializer):
             "modification_date",
             "name",
             "notes",
+            "num_outdated_services",
+            "num_published_services",
             "parent",
             "pending_members",
             "phone",
@@ -103,20 +113,25 @@ class StructureAdminSerializer(StructureSerializer):
             "address2",
             "ape",
             "branches",
+            "categories",
             "city",
             "creation_date",
             "creator",
             "department",
             "email",
             "full_desc",
+            "has_admin",
             "last_editor",
             "latitude",
             "longitude",
             "members",
             "models",
+            "moderation_date",
             "modification_date",
             "name",
             "notes",
+            "num_outdated_services",
+            "num_published_services",
             "parent",
             "pending_members",
             "phone",
@@ -202,23 +217,60 @@ class StructureAdminSerializer(StructureSerializer):
         logs = LogItem.objects.filter(structure=obj).order_by("-date")
         return LogItemSerializer(logs, many=True).data
 
+    def get_has_admin(self, obj):
+        return StructureMember.objects.filter(
+            user__is_active=True, user__is_valid=True, structure=obj, is_admin=True
+        ).exists()
+
+    def get_num_published_services(self, obj):
+        return Service.objects.published().filter(structure=obj).count()
+
+    def get_num_outdated_services(self, obj):
+        return (
+            Service.objects.update_mandatory()
+            .filter(
+                structure=obj,
+            )
+            .count()
+        )
+
+    def get_categories(self, obj):
+        return obj.services.values_list("categories__value", flat=True).distinct()
+
 
 class StructureAdminListSerializer(StructureAdminSerializer):
     class Meta:
         model = Structure
         fields = [
+            "categories",
             "department",
+            "has_admin",
+            "latitude",
+            "longitude",
             "moderation_date",
             "moderation_status",
             "name",
+            "num_published_services",
+            "num_outdated_services",
             "slug",
+            "typology",
             "typology_display",
+            "short_desc",
         ]
         read_only_fields = [
+            "categories",
             "department",
+            "has_admin",
+            "latitude",
+            "longitude",
+            "moderation_date",
             "name",
+            "num_published_services",
+            "num_outdated_services",
             "slug",
+            "typology",
             "typology_display",
+            "short_desc",
         ]
         lookup_field = "slug"
 
@@ -277,6 +329,7 @@ class ServiceAdminSerializer(ServiceSerializer):
             "is_contact_info_public",
             "last_editor",
             "model",
+            "moderation_date",
             "modification_date",
             "name",
             "notes",
