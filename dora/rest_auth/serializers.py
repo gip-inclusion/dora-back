@@ -32,6 +32,8 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "full_name",
             "is_bizdev",
             "is_staff",
+            "is_local_coordinator",
+            "department",
             "last_name",
             "newsletter",
             "pending_structures",

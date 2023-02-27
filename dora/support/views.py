@@ -1,4 +1,5 @@
 from rest_framework import mixins, permissions, serializers, viewsets
+from rest_framework.exceptions import PermissionDenied
 
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
@@ -19,7 +20,11 @@ class StructureAdminPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
         if request.method in [*permissions.SAFE_METHODS, "PATCH"]:
-            return user and user.is_authenticated and user.is_staff
+            return (
+                user
+                and user.is_authenticated
+                and (user.is_staff or (user.is_local_coordinator and user.department))
+            )
         return False
 
 
@@ -63,7 +68,15 @@ class StructureAdminViewSet(
     lookup_field = "slug"
 
     def get_queryset(self):
+        user = self.request.user
         department = self.request.query_params.get("department")
+        if user.is_local_coordinator and department and user.department != department:
+            raise PermissionDenied
+        if user.is_local_coordinator and not user.department:
+            raise PermissionDenied
+        if user.is_local_coordinator:
+            department = user.department
+
         moderation = self.request.query_params.get("moderation") in TRUTHY_VALUES
 
         structures = Structure.objects.select_related("typology")
