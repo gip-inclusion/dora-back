@@ -65,6 +65,7 @@ class StructureAdminSerializer(StructureSerializer):
     # TdB
     categories = serializers.SerializerMethodField()
     has_admin = serializers.SerializerMethodField()
+    num_services = serializers.SerializerMethodField()
     num_published_services = serializers.SerializerMethodField()
     num_outdated_services = serializers.SerializerMethodField()
 
@@ -95,6 +96,7 @@ class StructureAdminSerializer(StructureSerializer):
             "notes",
             "num_outdated_services",
             "num_published_services",
+            "num_services",
             "parent",
             "pending_members",
             "phone",
@@ -132,6 +134,7 @@ class StructureAdminSerializer(StructureSerializer):
             "notes",
             "num_outdated_services",
             "num_published_services",
+            "num_services",
             "parent",
             "pending_members",
             "phone",
@@ -234,6 +237,9 @@ class StructureAdminSerializer(StructureSerializer):
             .count()
         )
 
+    def get_num_services(self, obj):
+        return Service.objects.active().filter(structure=obj).count()
+
     def get_categories(self, obj):
         return obj.services.values_list("categories__value", flat=True).distinct()
 
@@ -252,6 +258,7 @@ class StructureAdminListSerializer(StructureAdminSerializer):
             "name",
             "num_published_services",
             "num_outdated_services",
+            "num_services",
             "siret",
             "slug",
             "typology",
@@ -268,6 +275,7 @@ class StructureAdminListSerializer(StructureAdminSerializer):
             "name",
             "num_published_services",
             "num_outdated_services",
+            "num_services",
             "siret",
             "slug",
             "typology",
