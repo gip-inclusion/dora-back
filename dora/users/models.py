@@ -78,6 +78,7 @@ class User(AbstractBaseUser):
 
     bookmarks = models.ManyToManyField("services.Service", through="services.Bookmark")
     objects = UserManager()
+    extra_infos = models.JSONField(default=dict)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []

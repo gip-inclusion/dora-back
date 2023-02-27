@@ -38,6 +38,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "phone_number",
             "short_name",
             "structures",
+            "extra_infos",
         ]
 
     def get_structures(self, user):
