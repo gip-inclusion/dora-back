@@ -146,9 +146,7 @@ def join_structure(request):
     else:
         structure = data.get("structure")
 
-    structure_has_admin = structure.membership.filter(
-        user__is_valid=True, user__is_active=True, is_admin=True
-    ).exists()
+    structure_has_admin = structure.has_admin()
 
     if _is_member_of_structure(structure, user):
         return Response(

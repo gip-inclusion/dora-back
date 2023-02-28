@@ -221,9 +221,7 @@ class StructureAdminSerializer(StructureSerializer):
         return LogItemSerializer(logs, many=True).data
 
     def get_has_admin(self, obj):
-        return StructureMember.objects.filter(
-            user__is_active=True, user__is_valid=True, structure=obj, is_admin=True
-        ).exists()
+        return obj.has_admin()
 
     def get_num_published_services(self, obj):
         return Service.objects.published().filter(structure=obj).count()

@@ -98,7 +98,7 @@ class StructureSerializer(serializers.ModelSerializer):
         read_only_fields = ["has_been_edited"]
 
     def get_has_admin(self, obj):
-        return obj.membership.filter(is_admin=True).exists()
+        return obj.has_admin()
 
     def get_can_write(self, obj):
         # TODO: DEPRECATED

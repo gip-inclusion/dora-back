@@ -319,6 +319,11 @@ class Structure(ModerationMixin, models.Model):
             structure_id=self.id, user_id=user.id, is_admin=True
         ).exists()
 
+    def has_admin(self):
+        return self.membership.filter(
+            is_admin=True, user__is_valid=True, user__is_active=True
+        ).exists()
+
     def is_pending_member(self, user):
         return StructurePutativeMember.objects.filter(
             structure_id=self.id, user_id=user.id, invited_by_admin=False
