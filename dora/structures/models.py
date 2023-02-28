@@ -223,7 +223,6 @@ class Structure(ModerationMixin, models.Model):
     modification_date = models.DateTimeField(blank=True, null=True)
     has_been_edited = models.BooleanField(default=False)
     quick_start_done = models.BooleanField(default=False)
-
     creator = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
