@@ -73,13 +73,21 @@ class UserAdmin(BaseUserAdmin):
         "get_full_name",
         "is_staff",
         "is_bizdev",
+        "is_local_coordinator",
         "is_active",
         "is_valid",
         "date_joined",
         "newsletter",
         has_migrated_to_ic,
     )
-    list_filter = ("is_staff", "is_bizdev", "is_active", "is_valid", "newsletter")
+    list_filter = (
+        "is_staff",
+        "is_bizdev",
+        "is_local_coordinator",
+        "is_active",
+        "is_valid",
+        "newsletter",
+    )
     fieldsets = (
         (
             None,
@@ -100,6 +108,8 @@ class UserAdmin(BaseUserAdmin):
                 "fields": (
                     "is_staff",
                     "is_bizdev",
+                    "is_local_coordinator",
+                    "department",
                     "is_active",
                     "is_valid",
                     "newsletter",

@@ -71,6 +71,14 @@ class User(AbstractBaseUser):
         default=False,
         help_text="Indique si l’utilisateur a les droits bizdev (valider les contributions…)",
     )
+    is_local_coordinator = models.BooleanField(
+        "coordinateur local",
+        default=False,
+        help_text="Indique si l’utilisateur est un coordinateur local",
+    )
+    department = models.CharField(
+        max_length=3, default="", help_text="Département d'un coordinateur local"
+    )
 
     date_joined = models.DateTimeField("date joined", default=timezone.now)
     last_notification_email_sent = models.DateTimeField(blank=True, null=True)
