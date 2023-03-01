@@ -414,3 +414,4 @@ IC_TOKEN_URL = os.environ.get("IC_TOKEN_URL")
 IC_LOGOUT_URL = os.environ.get("IC_LOGOUT_URL")
 IC_CLIENT_ID = os.environ.get("IC_CLIENT_ID")
 IC_CLIENT_SECRET = os.environ.get("IC_CLIENT_SECRET")
+IC_EXPIRATION_DELAY_DAYS = 15
