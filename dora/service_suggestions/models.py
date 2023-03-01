@@ -173,7 +173,7 @@ class ServiceSuggestion(models.Model):
                     emails_contacted.add(contact_email)
             else:
                 # Pour une structure existante et dont l'administrateur est connu, on envoie un e-mail à ce dernier
-                # - et si pas d'administrateurs, on envoie au 'contact_email'
+                # - et si pas d'administrateurs, on envoie au 'contact_email' et à l'email de la structure
                 structure_admins = StructureMember.objects.filter(
                     structure=structure, is_admin=True
                 )
@@ -184,10 +184,17 @@ class ServiceSuggestion(models.Model):
                     send_suggestion_validated_existing_structure_email(
                         list(emails_contacted), structure, service, contact_email
                     )
-                elif contact_email:
-                    send_suggestion_validated_new_structure_email(
-                        contact_email, structure
-                    )
-                    emails_contacted.add(contact_email)
+                else:
+                    if structure.email:
+                        send_suggestion_validated_new_structure_email(
+                            structure.email, structure
+                        )
+                        emails_contacted.add(structure.email)
+
+                    if contact_email and contact_email not in emails_contacted:
+                        send_suggestion_validated_new_structure_email(
+                            contact_email, structure
+                        )
+                        emails_contacted.add(contact_email)
 
         return service, list(emails_contacted)
