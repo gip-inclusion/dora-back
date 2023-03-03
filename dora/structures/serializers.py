@@ -22,7 +22,12 @@ class StructureSerializer(serializers.ModelSerializer):
     )
     typology_display = serializers.SerializerMethodField()
     parent = serializers.SlugRelatedField(slug_field="slug", read_only=True)
-    can_write = serializers.SerializerMethodField()
+    can_edit_informations = serializers.SerializerMethodField()
+    can_view_members = serializers.SerializerMethodField()
+    can_edit_members = serializers.SerializerMethodField()
+    can_invite_first_admin = serializers.SerializerMethodField()
+    can_edit_services = serializers.SerializerMethodField()
+
     is_member = serializers.SerializerMethodField()
     is_pending_member = serializers.SerializerMethodField()
     is_admin = serializers.SerializerMethodField()
@@ -58,7 +63,11 @@ class StructureSerializer(serializers.ModelSerializer):
             "ape",
             "archived_services",
             "branches",
-            "can_write",
+            "can_edit_informations",
+            "can_edit_members",
+            "can_edit_services",
+            "can_invite_first_admin",
+            "can_view_members",
             "city",
             "city_code",
             "code_safir_pe",
@@ -100,9 +109,25 @@ class StructureSerializer(serializers.ModelSerializer):
     def get_has_admin(self, obj):
         return obj.has_admin()
 
-    def get_can_write(self, obj: Structure):
+    def get_can_edit_informations(self, obj: Structure):
         user = self.context.get("request").user
-        return obj.can_write(user)
+        return obj.can_edit_informations(user)
+
+    def get_can_view_members(self, obj: Structure):
+        user = self.context.get("request").user
+        return obj.can_view_members(user)
+
+    def get_can_edit_members(self, obj: Structure):
+        user = self.context.get("request").user
+        return obj.can_edit_members(user)
+
+    def get_can_edit_services(self, obj: Structure):
+        user = self.context.get("request").user
+        return obj.can_edit_services(user)
+
+    def get_can_invite_first_admin(self, obj: Structure):
+        user = self.context.get("request").user
+        return obj.can_invite_first_admin(user)
 
     def get_is_member(self, obj):
         user = self.context.get("request").user

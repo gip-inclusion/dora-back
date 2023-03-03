@@ -133,35 +133,47 @@ class StructureMemberViewset(viewsets.ModelViewSet):
     permission_classes = [StructureMemberPermission]
 
     def get_queryset(self):
-
-        structure_slug = self.request.query_params.get("structure")
         user = self.request.user
 
-        if self.action in ("list"):
+        # Vérifié par has_permission
+        assert user and user.is_authenticated
+        # get_queryset ne devrait pas être appelé lors d'une creation
+        assert self.action != "create"
+
+        # On ne peut lister les membres que pour une structure donnée
+        if self.action == "list":
+            structure_slug = self.request.query_params.get("structure")
             if structure_slug is None:
-                return StructureMember.objects.none()
-
-            if user.is_authenticated and (user.is_staff or user.is_bizdev):
-                return StructureMember.objects.filter(structure__slug=structure_slug)
-
+                raise exceptions.ValidationError("?structure is required")
             try:
-                StructureMember.objects.get(
-                    user_id=user.id, structure__slug=structure_slug
-                )
-            except StructureMember.DoesNotExist:
-                raise exceptions.PermissionDenied
+                structure = Structure.objects.get(slug=structure_slug)
+            except Structure.DoesNotExist:
+                raise exceptions.NotFound
 
-            return StructureMember.objects.filter(
-                structure__slug=structure_slug, user__is_valid=True
-            )
+            if structure.can_view_members(user):
+                return StructureMember.objects.filter(
+                    structure=structure, user__is_valid=True
+                )
+            raise exceptions.PermissionDenied
+
         else:
-            if user.is_authenticated and (user.is_staff or user.is_bizdev):
+            # Superuser et bizdev ont accès à tous les collaborateurs
+            if user.is_staff or user.is_bizdev:
                 return StructureMember.objects.all()
 
-            structures_belonging = StructureMember.objects.filter(
-                user_id=user.id
-            ).values_list("structure_id", flat=True)
-            return StructureMember.objects.filter(structure_id__in=structures_belonging)
+            # Les coordinateurs ont accès à tous les collaborateurs de
+            # leur département
+            elif user.is_local_coordinator and user.department:
+                return StructureMember.objects.filter(
+                    structure__department=user.department
+                )
+
+            # Les membres des structures ont accès à tous leurs collègues
+            else:
+                user_structures = StructureMember.objects.filter(
+                    user_id=user.id
+                ).values_list("structure_id", flat=True)
+                return StructureMember.objects.filter(structure_id__in=user_structures)
 
 
 class StructurePutativeMemberViewset(viewsets.ModelViewSet):
@@ -170,42 +182,58 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
 
     def get_queryset(self):
 
-        structure_slug = self.request.query_params.get("structure")
         user = self.request.user
 
-        if self.action in ("list", "create"):
-            # Can't list or create without passing ?structure_slug
+        # Vérifié par has_permission
+        assert user and user.is_authenticated
+
+        # get_queryset ne devrait pas être appelé lors d'une creation
+        assert self.action != "create"
+
+        # On ne peut lister les membres que pour une structure donnée
+        if self.action == "list":
+            structure_slug = self.request.query_params.get("structure")
             if structure_slug is None:
                 return StructurePutativeMember.objects.none()
+            try:
+                structure = Structure.objects.get(slug=structure_slug)
+            except Structure.DoesNotExist:
+                raise exceptions.NotFound
 
-            if user.is_authenticated and (user.is_staff or user.is_bizdev):
+            if structure.can_view_members(user):
+                # On ne veut voir que les utilisateurs qui ont été invités
+                # ou qui ont déjà validé leur email
                 return StructurePutativeMember.objects.filter(
                     Q(user__is_valid=True) | Q(invited_by_admin=True),
-                    structure__slug=structure_slug,
+                    structure=structure,
                 )
 
-            try:
-                # Ensure requester is structure admin
-                StructureMember.objects.get(
-                    user_id=user.id, is_admin=True, structure__slug=structure_slug
-                )
-            except StructureMember.DoesNotExist:
+            else:
                 raise exceptions.PermissionDenied
 
-            return StructurePutativeMember.objects.filter(
-                Q(user__is_valid=True) | Q(invited_by_admin=True),
-                structure__slug=structure_slug,
-            )
         else:
-            if user.is_authenticated and (user.is_staff or user.is_bizdev):
-                return StructurePutativeMember.objects.all()
+            # Superuser et bizdev ont accès à tous les collaborateurs
+            if user.is_staff or user.is_bizdev:
+                return StructurePutativeMember.objects.filter(
+                    Q(user__is_valid=True) | Q(invited_by_admin=True),
+                )
 
-            structures_administered = StructureMember.objects.filter(
-                user_id=user.id, is_admin=True
-            ).values_list("structure_id", flat=True)
-            return StructurePutativeMember.objects.filter(
-                structure_id__in=structures_administered
-            )
+            # Les coordinateurs ont accès à tous les collaborateurs de
+            # leur département
+            elif user.is_local_coordinator and user.department:
+                return StructurePutativeMember.objects.filter(
+                    Q(user__is_valid=True) | Q(invited_by_admin=True),
+                    structure__department=user.department,
+                )
+
+            # Les membres des structures ont accès à tous leurs collègues
+            else:
+                user_structures = StructureMember.objects.filter(
+                    user_id=user.id
+                ).values_list("structure_id", flat=True)
+                return StructurePutativeMember.objects.filter(
+                    structure_id__in=user_structures
+                )
 
     @action(
         detail=True,
@@ -218,16 +246,13 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
             member = StructurePutativeMember.objects.get(id=pk)
         except StructurePutativeMember.DoesNotExist:
             raise exceptions.NotFound
-        # Ensure the requester is admin of the structure, or superuser
         structure = member.structure
         request_user = request.user
-        if not request_user.is_staff:
-            try:
-                StructureMember.objects.get(
-                    user_id=request_user.id, is_admin=True, structure_id=structure.id
-                )
-            except StructureMember.DoesNotExist:
-                raise exceptions.PermissionDenied
+        if not (
+            structure.can_edit_members(request.user)
+            or structure.can_invite_first_admin(request_user)
+        ):
+            raise exceptions.PermissionDenied
 
         send_invitation_email(
             member,
@@ -241,6 +266,7 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
         url_path="cancel-invite",
         permission_classes=[permissions.IsAuthenticated],
     )
+    # TODO: pourquoi ce n'est pas juste un DELETE ?
     def cancel_invite(self, request, pk):
         try:
             member = StructurePutativeMember.objects.get(id=pk)
@@ -249,16 +275,13 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
         # Ensure the requester is admin of the structure, or superuser
         structure = member.structure
         request_user = request.user
-        if not request_user.is_staff:
-            try:
-                StructureMember.objects.get(
-                    user_id=request_user.id, is_admin=True, structure_id=structure.id
-                )
-            except StructureMember.DoesNotExist:
-                raise exceptions.PermissionDenied
+        if not (
+            structure.can_edit_members(request.user)
+            or structure.can_invite_first_admin(request_user)
+        ):
+            raise exceptions.PermissionDenied
 
         member.delete()
-
         return Response(status=201)
 
     @action(
@@ -278,13 +301,8 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
         # Ensure the requester is admin of the structure, or superuser
         structure = pm.structure
         request_user = request.user
-        if not request_user.is_staff:
-            try:
-                StructureMember.objects.get(
-                    user_id=request_user.id, is_admin=True, structure_id=structure.id
-                )
-            except StructureMember.DoesNotExist:
-                raise exceptions.PermissionDenied
+        if not structure.can_edit_members(request_user):
+            raise exceptions.PermissionDenied
 
         with transaction.atomic(durable=True):
             membership = StructureMember.objects.create(
@@ -312,13 +330,8 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
         # Ensure the requester is admin of the structure, or superuser
         structure = pm.structure
         request_user = request.user
-        if not request_user.is_staff:
-            try:
-                StructureMember.objects.get(
-                    user_id=request_user.id, is_admin=True, structure_id=structure.id
-                )
-            except StructureMember.DoesNotExist:
-                raise exceptions.PermissionDenied
+        if not structure.can_edit_members(request_user):
+            raise exceptions.PermissionDenied
 
         pm.notify_access_rejected()
         pm.delete()

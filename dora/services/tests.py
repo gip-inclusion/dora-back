@@ -244,6 +244,26 @@ class ServiceTestCase(APITestCase):
         self.assertIn(self.other_service.slug, services_ids)
         self.assertNotIn(self.other_draft_service, services_ids)
 
+    # def test_coordinator_can_sees_everything_in_its_department(self):
+    #     assert False
+    #     self.client.force_authenticate(user=self.coordinator)
+    #     response = self.client.get("/services/")
+    #     services_ids = [s["slug"] for s in response.data]
+    #     self.assertIn(self.my_service.slug, services_ids)
+    #     self.assertNotIn(self.my_draft_service.slug, services_ids)
+    #     self.assertIn(self.other_service.slug, services_ids)
+    #     self.assertNotIn(self.other_draft_service, services_ids)
+
+    # def test_coordinator_cant_sees_everything_outside_its_department(self):
+    #     assert False
+    #     self.client.force_authenticate(user=self.coordinator)
+    #     response = self.client.get("/services/")
+    #     services_ids = [s["slug"] for s in response.data]
+    #     self.assertIn(self.my_service.slug, services_ids)
+    #     self.assertNotIn(self.my_draft_service.slug, services_ids)
+    #     self.assertIn(self.other_service.slug, services_ids)
+    #     self.assertNotIn(self.other_draft_service, services_ids)
+
     def test_bizdev_cant_sees_everything(self):
         self.client.force_authenticate(user=self.bizdev)
         response = self.client.get("/services/")
@@ -261,6 +281,26 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         response = self.client.get(f"/services/{self.my_draft_service.slug}/")
         self.assertEqual(response.data["name"], "xxx")
+
+    # def test_coordinator_can_edit_everything_inside_its_department(self):
+    #     assert False
+    #     self.client.force_authenticate(user=self.superuser)
+    #     response = self.client.patch(
+    #         f"/services/{self.my_draft_service.slug}/", {"name": "xxx"}
+    #     )
+    #     self.assertEqual(response.status_code, 200)
+    #     response = self.client.get(f"/services/{self.my_draft_service.slug}/")
+    #     self.assertEqual(response.data["name"], "xxx")
+
+    # def test_coordinator_cant_edit_outside_its_department(self):
+    #     assert False
+    #     self.client.force_authenticate(user=self.superuser)
+    #     response = self.client.patch(
+    #         f"/services/{self.my_draft_service.slug}/", {"name": "xxx"}
+    #     )
+    #     self.assertEqual(response.status_code, 200)
+    #     response = self.client.get(f"/services/{self.my_draft_service.slug}/")
+    #     self.assertEqual(response.data["name"], "xxx")
 
     def test_bizdev_cant_edit_everything(self):
         self.client.force_authenticate(user=self.bizdev)
@@ -280,6 +320,12 @@ class ServiceTestCase(APITestCase):
         response = self.client.get(f"/services/{self.my_service.slug}/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["can_write"], False)
+
+    # def test_coordinator_can_write_field_true_inside_its_department(self):
+    #     assert False
+
+    # def test_coordinator_can_write_field_false_inside_its_department(self):
+    #     assert False
 
     # Adding
 
@@ -326,6 +372,12 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.status_code, 201)
         slug = response.data["slug"]
         Service.objects.get(slug=slug)
+
+    # def test_coordinator_can_add_to_any_structure_inside_its_department(self):
+    #     assert False
+
+    # def test_coordinator_cant_add_to_any_structure_outside_its_department(self):
+    #     assert False
 
     def test_bizdev_cant_add_to_any_structure(self):
         self.client.force_authenticate(user=self.bizdev)
@@ -420,6 +472,12 @@ class ServiceTestCase(APITestCase):
         self.assertIn(self.other_struct_condition1.id, conds)
         self.assertIn(self.other_struct_condition2.id, conds)
 
+    # def test_coordinator_see_all_choices_inside_its_department(self):
+    #     assert False
+
+    # def test_coordinator_cant_see_choices_outside_its_department(self):
+    #     assert False
+
     def test_bizdev_sees_all_choices(self):
         self.client.force_authenticate(user=self.bizdev)
 
@@ -456,6 +514,9 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(
             response.data["access_conditions"], [self.struct_condition1.id]
         )
+
+    # def test_coordinator_can_add_struct_choice_inside_its_department(self):
+    #     assert False
 
     def test_cant_add_other_structure_choice(self):
         response = self.client.patch(
@@ -796,6 +857,15 @@ class ServiceTestCase(APITestCase):
         response = self.client.get(f"/services/{service.slug}/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["structure_info"]["num_services"], 2)
+
+    # def test_coordinator_see_all_services_count_inside_its_department(self):
+    #     assert False
+
+    # def test_coordinator_see_public_services_count_outside_its_department(self):
+    #     assert False
+
+    # def test_coordinator_dont_see_archived_services_count_inside_its_department(self):
+    #     assert False
 
     def test_others_see_public_services_count(self):
         user = baker.make("users.User", is_valid=True)

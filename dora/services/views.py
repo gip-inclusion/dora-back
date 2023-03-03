@@ -84,6 +84,8 @@ class ServicePermission(permissions.BasePermission):
         if user.is_staff:
             return True
 
+        # TODO local coord ok
+
         # People can only edit their Structures' stuff
         user_structures = Structure.objects.filter(membership__user=user)
         return obj.structure in user_structures

@@ -301,12 +301,34 @@ class Structure(ModerationMixin, models.Model):
             self.department = code_insee_to_code_dept(code)
         return super().save(*args, **kwargs)
 
-    def can_write(self, user):
-        return (
+    def can_edit_informations(self, user: User):
+        return user.is_authenticated and (
+            user.is_staff or self.is_local_coordinator(user) or self.is_admin(user)
+        )
+
+    def can_view_members(self, user: User):
+        return user.is_authenticated and (
             user.is_staff
-            or StructureMember.objects.filter(
-                structure_id=self.id, user_id=user.id, is_admin=True
-            ).exists()
+            or user.is_bizdev
+            or self.is_member(user)
+            or self.is_local_coordinator(user)
+        )
+
+    def can_edit_members(self, user: User):
+        return user.is_authenticated and (user.is_staff or self.is_admin(user))
+
+    def can_edit_services(self, user: User):
+        return user.is_authenticated and (
+            user.is_staff or self.is_member(user) or self.is_local_coordinator(user)
+        )
+
+    def can_invite_first_admin(self, user: User):
+        return (
+            user.is_authenticated
+            and not self.has_admin()
+            and (
+                user.is_staff or self.is_admin(user) or self.is_local_coordinator(user)
+            )
         )
 
     def is_member(self, user):
@@ -318,6 +340,14 @@ class Structure(ModerationMixin, models.Model):
         return StructureMember.objects.filter(
             structure_id=self.id, user_id=user.id, is_admin=True
         ).exists()
+
+    def is_local_coordinator(self, user: User):
+        return (
+            user.is_authenticated
+            and user.is_local_coordinator
+            and user.department
+            and user.department == self.department
+        )
 
     def has_admin(self):
         return self.membership.filter(
