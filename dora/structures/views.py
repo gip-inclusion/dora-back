@@ -157,8 +157,8 @@ class StructureMemberViewset(viewsets.ModelViewSet):
             raise exceptions.PermissionDenied
 
         else:
-            # Superuser et bizdev ont accès à tous les collaborateurs
-            if user.is_staff or user.is_bizdev:
+            # Les superuser ont accès à tous les collaborateurs
+            if user.is_staff:
                 return StructureMember.objects.all()
 
             # Les gestionnaires ont accès à tous les collaborateurs de
@@ -212,8 +212,8 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
                 raise exceptions.PermissionDenied
 
         else:
-            # Superuser et bizdev ont accès à tous les collaborateurs
-            if user.is_staff or user.is_bizdev:
+            # Les superusers ont accès à tous les collaborateurs
+            if user.is_staff:
                 return StructurePutativeMember.objects.filter(
                     Q(user__is_valid=True) | Q(invited_by_admin=True),
                 )

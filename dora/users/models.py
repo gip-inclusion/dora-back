@@ -66,11 +66,6 @@ class User(AbstractBaseUser):
         default=False,
         help_text="Designates whether the user can log into this admin site.",
     )
-    is_bizdev = models.BooleanField(
-        "bizdev status",
-        default=False,
-        help_text="Indique si l’utilisateur a les droits bizdev (valider les contributions…)",
-    )
     is_manager = models.BooleanField(
         "gestionnaire",
         default=False,

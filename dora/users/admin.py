@@ -72,7 +72,6 @@ class UserAdmin(BaseUserAdmin):
         "email",
         "get_full_name",
         "is_staff",
-        "is_bizdev",
         "is_manager",
         "is_active",
         "is_valid",
@@ -82,7 +81,6 @@ class UserAdmin(BaseUserAdmin):
     )
     list_filter = (
         "is_staff",
-        "is_bizdev",
         "is_manager",
         "is_active",
         "is_valid",
@@ -107,7 +105,6 @@ class UserAdmin(BaseUserAdmin):
             {
                 "fields": (
                     "is_staff",
-                    "is_bizdev",
                     "is_manager",
                     "department",
                     "is_active",

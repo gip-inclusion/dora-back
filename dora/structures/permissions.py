@@ -94,10 +94,6 @@ class StructureMemberPermission(permissions.BasePermission):
         elif obj.structure.is_member(user):
             return request.method in permissions.SAFE_METHODS
 
-        # Les bizdev peuvent uniquement voir les collaborateurs
-        elif user.is_bizdev:
-            return request.method in permissions.SAFE_METHODS
-
         # Par défaut, aucun accès aux collaborateurs des autres structures
         else:
             return False
@@ -128,8 +124,8 @@ class StructurePutativeMemberPermission(permissions.BasePermission):
             except Structure.DoesNotExist:
                 raise exceptions.NotFound
 
-            # Les superuser ou bizdev peuvent inviter
-            if user.is_staff or user.is_bizdev:
+            # Les superuser peuvent inviter
+            if user.is_staff:
                 return True
             # Les administrateurs peuvent inviter
             elif structure.is_admin(user):

@@ -308,10 +308,7 @@ class Structure(ModerationMixin, models.Model):
 
     def can_view_members(self, user: User):
         return user.is_authenticated and (
-            user.is_staff
-            or user.is_bizdev
-            or self.is_member(user)
-            or self.is_manager(user)
+            user.is_staff or self.is_member(user) or self.is_manager(user)
         )
 
     def can_edit_members(self, user: User):
