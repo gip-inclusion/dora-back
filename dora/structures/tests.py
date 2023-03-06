@@ -187,7 +187,7 @@ class StructureTestCase(APITestCase):
         response = self.client.get(f"/structures/{self.my_struct.slug}/")
         self.assertEqual(response.data["name"], "xxx")
 
-    # def test_coordinator_can_edit_everything_in_its_dept(self):
+    # def test_manager_can_edit_everything_in_its_dept(self):
     #     assert False
     #     self.client.force_authenticate(user=self.superuser)
     #     response = self.client.patch(
@@ -197,7 +197,7 @@ class StructureTestCase(APITestCase):
     #     response = self.client.get(f"/structures/{self.my_struct.slug}/")
     #     self.assertEqual(response.data["name"], "xxx")
 
-    # def test_coordinator_cant_edit_outside_its_dept(self):
+    # def test_manager_cant_edit_outside_its_dept(self):
     #     assert False
 
     # def test_superuser_can_write_field_true(self):
@@ -206,10 +206,10 @@ class StructureTestCase(APITestCase):
     #     self.assertEqual(response.status_code, 200)
     #     self.assertEqual(response.data["can_write"], True)
 
-    # def test_coordinator_can_write_field_true_inside_its_dept(self):
+    # def test_manager_can_write_field_true_inside_its_dept(self):
     #     assert False
 
-    # def test_coordinator_can_write_field_false_outside_its_dept(self):
+    # def test_manager_can_write_field_false_outside_its_dept(self):
     #     assert False
 
     def test_bizdev_cant_edit_everything(self):
@@ -390,10 +390,10 @@ class StructureMemberTestCase(APITestCase):
         self.assertIn(self.user1.email, emails)
         self.assertIn(self.user2.email, emails)
 
-    # def test_coordinator_can_see_structure_members_in_its_depts(self):
+    # def test_manager_can_see_structure_members_in_its_depts(self):
     #     assert False
 
-    # def test_coordinator_cant_see_structure_members_outside_its_depts(self):
+    # def test_manager_cant_see_structure_members_outside_its_depts(self):
     #     assert False
 
     def test_unaccepted_admin_user_cant_see_structure_members(self):
@@ -450,10 +450,10 @@ class StructureMemberTestCase(APITestCase):
         response = self.client.get(f"/structure-members/{member.id}/")
         self.assertEqual(response.status_code, 200)
 
-    # def test_coordinator_can_see_structure_member_in_its_depts(self):
+    # def test_manager_can_see_structure_member_in_its_depts(self):
     #     assert False
 
-    # def test_coordinator_cant_see_structure_member_outside_its_depts(self):
+    # def test_manager_cant_see_structure_member_outside_its_depts(self):
     #     assert False
 
     def test_unaccepted_admin_user_cant_see_structure_member(self):
@@ -500,7 +500,7 @@ class StructureMemberTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["is_admin"], False)
 
-    # def test_coordinator_cant_change_structure_members_in_its_depts(self):
+    # def test_manager_cant_change_structure_members_in_its_depts(self):
     #     assert False
 
     def test_unaccepted_admin_user_cant_change_structure_members(self):
@@ -601,7 +601,7 @@ class StructureMemberTestCase(APITestCase):
         response = self.client.get(f"/structure-members/{member.id}/")
         self.assertEqual(response.status_code, 404)
 
-    # def test_coordinator_cant_delete_structure_members_in_its_depts(self):
+    # def test_manager_cant_delete_structure_members_in_its_depts(self):
     #     assert False
 
     def test_unaccepted_admin_user_cant_delete_structure_members(self):
@@ -674,14 +674,14 @@ class StructureMemberTestCase(APITestCase):
         self.assertEqual(response.data["user"]["last_name"], "FOO")
         self.assertEqual(response.data["user"]["email"], "FOO@BAR.BUZ")
 
-    # def test_coordinator_can_invite_first_admin_in_its_depts(self):
+    # def test_manager_can_invite_first_admin_in_its_depts(self):
     #     assert False
 
-    # def test_coordinator_can_invite_members_in_its_depts(self):
+    # def test_manager_can_invite_members_in_its_depts(self):
     #     # after the first admin
     #     assert False
 
-    # def test_coordinator_cant_invite_outside_its_depts(self):
+    # def test_manager_cant_invite_outside_its_depts(self):
     #     assert False
 
     def test_unaccepted_admin_user_cant_invite_new_user(self):
@@ -855,7 +855,7 @@ class StructureMemberTestCase(APITestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn("Votre invitation sur DORA", mail.outbox[0].subject)
 
-    # def test_coordinator_can_resend_invite_to_first_invited_admin(self):
+    # def test_manager_can_resend_invite_to_first_invited_admin(self):
     #     assert False
 
     def test_admin_cant_resend_invite_to_valid_member(self):
@@ -1065,7 +1065,7 @@ class StructureMemberTestCase(APITestCase):
         self.assertIn("Invitation acceptée", mail.outbox[0].subject)
         self.assertIn(self.another_struct_user.email, mail.outbox[0].body)
 
-    # def test_coordinator_notified_when_its_invitation_was_accepted(self):
+    # def test_manager_notified_when_its_invitation_was_accepted(self):
     #     assert False
 
     def test_admin_notified_when_new_user_request_access(self):

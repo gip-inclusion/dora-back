@@ -35,9 +35,9 @@ class StructurePermission(permissions.BasePermission):
             if user.is_staff:
                 return True
 
-            # Les coordinateurs peuvent éditer les structures
+            # Les gestionnaires peuvent éditer les structures
             # qu'ils gèrent
-            elif obj.is_local_coordinator(user):
+            elif obj.is_manager(user):
                 return True
 
             # Les administrateurs de structure peuvent éditer leurs
@@ -82,9 +82,9 @@ class StructureMemberPermission(permissions.BasePermission):
         elif obj.structure.is_admin(user):
             return True
 
-        # Les coordinateurs locaux peuvent voir les collaborateurs, et
+        # Les gestionnaires peuvent voir les collaborateurs, et
         # inviter le premier administrateur
-        elif obj.structure.is_local_coordinator(user):
+        elif obj.structure.is_manager(user):
             if request.method == "POST":
                 return not obj.structure.has_admin()
             else:
@@ -134,7 +134,7 @@ class StructurePutativeMemberPermission(permissions.BasePermission):
             # Les administrateurs peuvent inviter
             elif structure.is_admin(user):
                 return True
-            # Les coordinateurs peuvent inviter le premier administrateur
+            # Les gestionnaires peuvent inviter le premier administrateur
             # TODO: ou est-ce qu'on verifie que c'est forcement un admin?
             elif structure.can_invite_first_admin(user):
                 return True

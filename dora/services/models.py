@@ -407,7 +407,7 @@ class Service(ModerationMixin, models.Model):
     def can_write(self, user):
         return user.is_authenticated and (
             user.is_staff
-            or self.structure.is_local_coordinator(user)
+            or self.structure.is_manager(user)
             or self.structure.is_member(user)
         )
 

@@ -161,9 +161,9 @@ class StructureMemberViewset(viewsets.ModelViewSet):
             if user.is_staff or user.is_bizdev:
                 return StructureMember.objects.all()
 
-            # Les coordinateurs ont accès à tous les collaborateurs de
+            # Les gestionnaires ont accès à tous les collaborateurs de
             # leur département
-            elif user.is_local_coordinator and user.department:
+            elif user.is_manager and user.department:
                 return StructureMember.objects.filter(
                     structure__department=user.department
                 )
@@ -218,9 +218,9 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
                     Q(user__is_valid=True) | Q(invited_by_admin=True),
                 )
 
-            # Les coordinateurs ont accès à tous les collaborateurs de
+            # Les gestionnaires ont accès à tous les collaborateurs de
             # leur département
-            elif user.is_local_coordinator and user.department:
+            elif user.is_manager and user.department:
                 return StructurePutativeMember.objects.filter(
                     Q(user__is_valid=True) | Q(invited_by_admin=True),
                     structure__department=user.department,

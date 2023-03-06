@@ -303,7 +303,7 @@ class Structure(ModerationMixin, models.Model):
 
     def can_edit_informations(self, user: User):
         return user.is_authenticated and (
-            user.is_staff or self.is_local_coordinator(user) or self.is_admin(user)
+            user.is_staff or self.is_manager(user) or self.is_admin(user)
         )
 
     def can_view_members(self, user: User):
@@ -311,7 +311,7 @@ class Structure(ModerationMixin, models.Model):
             user.is_staff
             or user.is_bizdev
             or self.is_member(user)
-            or self.is_local_coordinator(user)
+            or self.is_manager(user)
         )
 
     def can_edit_members(self, user: User):
@@ -319,16 +319,14 @@ class Structure(ModerationMixin, models.Model):
 
     def can_edit_services(self, user: User):
         return user.is_authenticated and (
-            user.is_staff or self.is_member(user) or self.is_local_coordinator(user)
+            user.is_staff or self.is_member(user) or self.is_manager(user)
         )
 
     def can_invite_first_admin(self, user: User):
         return (
             user.is_authenticated
             and not self.has_admin()
-            and (
-                user.is_staff or self.is_admin(user) or self.is_local_coordinator(user)
-            )
+            and (user.is_staff or self.is_admin(user) or self.is_manager(user))
         )
 
     def is_member(self, user):
@@ -341,10 +339,10 @@ class Structure(ModerationMixin, models.Model):
             structure_id=self.id, user_id=user.id, is_admin=True
         ).exists()
 
-    def is_local_coordinator(self, user: User):
+    def is_manager(self, user: User):
         return (
             user.is_authenticated
-            and user.is_local_coordinator
+            and user.is_manager
             and user.department
             and user.department == self.department
         )
