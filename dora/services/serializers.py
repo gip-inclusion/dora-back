@@ -397,13 +397,13 @@ class ServiceSerializer(serializers.ModelSerializer):
         )
 
         if "structure" in data:
-            if not user.is_staff and data["structure"].id not in user_structures:
+            if not data["structure"].can_edit_services(user):
                 raise serializers.ValidationError(
-                    {"structure": "Vous n’appartenez pas à cette structure"},
+                    {
+                        "structure": "Vous n’avez pas les droits nécessaires pour modifier ce service"
+                    },
                     "not_member_of_struct",
                 )
-
-        assert structure.id is None or structure.id in user_structures or user.is_staff
 
         if "access_conditions" in data:
             self._validate_custom_choice(

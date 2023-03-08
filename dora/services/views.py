@@ -70,25 +70,20 @@ class ServicePermission(permissions.BasePermission):
         # Authentified user can read and write
         return user and user.is_authenticated
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request, view, service):
         user = request.user
         # Only suggestions can be deleted
-        if request.method == "DELETE" and not obj.status == ServiceStatus.SUGGESTION:
+        if (
+            request.method == "DELETE"
+            and not service.status == ServiceStatus.SUGGESTION
+        ):
             return False
 
         # Anybody can read
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        # Staff can do anything
-        if user.is_staff:
-            return True
-
-        # TODO local coord ok
-
-        # People can only edit their Structures' stuff
-        user_structures = Structure.objects.filter(membership__user=user)
-        return obj.structure in user_structures
+        return service.can_write(user)
 
 
 class ServiceViewSet(
@@ -107,7 +102,6 @@ class ServiceViewSet(
     def get_queryset(self):
         qs = None
         user = self.request.user
-        only_mine = self.request.query_params.get("mine") in TRUTHY_VALUES
         structure_slug = self.request.query_params.get("structure")
         published_only = self.request.query_params.get("published") in TRUTHY_VALUES
 
@@ -130,17 +124,15 @@ class ServiceViewSet(
             )
         )
         qs = None
-        if only_mine:
-            if not user or not user.is_authenticated:
-                qs = Service.objects.none()
-            else:
-                qs = all_services.filter(structure__membership__user=user)
+
         # Everybody can see published services
-        elif not user or not user.is_authenticated:
+        if not user or not user.is_authenticated:
             qs = all_services.filter(status=ServiceStatus.PUBLISHED)
         # Staff can see everything
         elif user.is_staff:
             qs = all_services
+        elif user.is_manager and user.department:
+            qs = all_services.filter(structure__department=user.department)
         else:
             # Authentified users can see everything in their structure
             # plus published services for other structures
@@ -339,8 +331,6 @@ class ModelViewSet(ServiceViewSet):
 
     def get_queryset(self):
         qs = None
-        user = self.request.user
-        only_mine = self.request.query_params.get("mine")
 
         structure_slug = self.request.query_params.get("structure")
 
@@ -363,15 +353,10 @@ class ModelViewSet(ServiceViewSet):
             )
         )
         qs = None
-        if only_mine:
-            if not user or not user.is_authenticated:
-                qs = ServiceModel.objects.none()
-            else:
-                qs = all_models.filter(structure__membership__user=user)
-        # Everybody can see models
-        else:
-            qs = all_models
 
+        # Everybody can see models
+
+        qs = all_models
         if structure_slug:
             qs = qs.filter(structure__slug=structure_slug)
 
@@ -379,7 +364,6 @@ class ModelViewSet(ServiceViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user
-        user_structures = Structure.objects.filter(membership__user=user)
         service_slug = self.request.data.get("service")
         service = None
         # Création d'un modèle à partir d'un service
@@ -389,15 +373,15 @@ class ModelViewSet(ServiceViewSet):
             except Service.DoesNotExist:
                 raise Http404
 
+            # On peut uniquement transformer en modèle un service
+            # d'une de nos structures
+            if not service.structure.can_edit_services(user):
+                raise PermissionDenied
+
             if service.model:
                 raise serializers.ValidationError(
                     "Impossible de copier un service synchronisé"
                 )
-
-            # On peut uniquement transformer en modèle un service
-            # d'une de nos structures
-            if not user.is_staff and service.structure not in user_structures:
-                raise PermissionDenied
 
         structure_slug = self.request.data.get("structure")
         try:
@@ -405,8 +389,7 @@ class ModelViewSet(ServiceViewSet):
         except Structure.DoesNotExist:
             raise Http404
         # On peut uniquement copier vers une structure dont on fait partie
-        user_structures = Structure.objects.filter(membership__user=user)
-        if not (user.is_staff or structure in user_structures):
+        if not structure.can_edit_services(user):
             raise PermissionDenied
 
         model = serializer.save(
@@ -415,7 +398,7 @@ class ModelViewSet(ServiceViewSet):
             is_model=True,
             modification_date=timezone.now(),
         )
-        structure = model.structure
+        assert model.structure == structure
         send_mattermost_notification(
             f":clipboard: Nouveau modèle “{model.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/modeles/{model.slug}"
         )
@@ -509,16 +492,24 @@ def options(request):
 
     def filter_custom_choices(choices):
         user = request.user
-        if not user.is_authenticated:
-            return choices.filter(structure_id=None)
         if user.is_staff:
             return choices
-        user_structures = StructureMember.objects.filter(user=user).values_list(
-            "structure_id", flat=True
-        )
-        return choices.filter(
-            Q(structure_id__in=user_structures) | Q(structure_id=None)
-        )
+
+        filters = Q(structure_id=None)
+
+        if user.is_authenticated:
+            user_structures = StructureMember.objects.filter(user=user).values_list(
+                "structure_id", flat=True
+            )
+            filters |= Q(structure_id__in=user_structures)
+
+            if user.is_manager and user.department:
+                manager_structures = Structure.objects.filter(
+                    department=user.department
+                )
+                filters |= Q(structure__in=manager_structures)
+
+        return choices.filter(filters)
 
     result = {
         "categories": ServiceCategorySerializer(

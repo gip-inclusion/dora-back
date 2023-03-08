@@ -194,7 +194,7 @@ class StructureSerializer(serializers.ModelSerializer):
 
         user = self.context.get("request").user
         qs = obj.services.published()
-        if user.is_authenticated and (user.is_staff or obj.is_member(user)):
+        if obj.can_edit_services(user):
             qs = obj.services.active()
 
         qs = qs.filter(is_model=False)
@@ -239,7 +239,7 @@ class StructureSerializer(serializers.ModelSerializer):
 
         user = self.context.get("request").user
         qs = obj.services.none()
-        if user.is_authenticated and (user.is_staff or obj.is_member(user)):
+        if obj.can_edit_services(user):
             qs = obj.services.archived()
 
         qs = qs.filter(is_model=False)

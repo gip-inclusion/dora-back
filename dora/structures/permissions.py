@@ -21,7 +21,7 @@ class StructurePermission(permissions.BasePermission):
         else:
             return user and user.is_authenticated
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request, view, structure: Structure):
         user = request.user
 
         # Lecture : tout le monde peut voir les structures
@@ -29,25 +29,7 @@ class StructurePermission(permissions.BasePermission):
             return True
 
         # Écriture :
-        else:
-
-            # Les super users peuvent éditer toutes les structures
-            if user.is_staff:
-                return True
-
-            # Les gestionnaires peuvent éditer les structures
-            # qu'ils gèrent
-            elif obj.is_manager(user):
-                return True
-
-            # Les administrateurs de structure peuvent éditer leurs
-            # structures
-            elif obj.is_admin(user):
-                return True
-
-            # Les autres utilisateurs sont rejetés (403)
-            else:
-                return False
+        return structure.can_edit_informations(user)
 
 
 class StructureMemberPermission(permissions.BasePermission):
