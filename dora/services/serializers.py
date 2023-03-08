@@ -106,7 +106,7 @@ class StructureSerializer(serializers.ModelSerializer):
         ]
 
     def get_has_admin(self, structure):
-        return structure.membership.filter(is_admin=True).exists()
+        return structure.has_admin()
 
     def get_num_services(self, structure):
         return structure.get_num_visible_services(self.context["request"].user)

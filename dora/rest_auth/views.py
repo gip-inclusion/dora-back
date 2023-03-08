@@ -38,11 +38,11 @@ def user_info(request):
     serializer.is_valid(raise_exception=True)
     key = serializer.validated_data["key"]
     try:
-        user, _token = TokenAuthentication().authenticate_credentials(key)
+        user, token = TokenAuthentication().authenticate_credentials(key)
     except exceptions.AuthenticationFailed:
         raise Http404
     update_last_login(user)
-    return Response(UserInfoSerializer(user).data, status=200)
+    return Response(UserInfoSerializer(user, context={"token": token}).data, status=200)
 
 
 def _create_structure(establishment, user):
@@ -146,9 +146,7 @@ def join_structure(request):
     else:
         structure = data.get("structure")
 
-    structure_has_admin = structure.membership.filter(
-        user__is_valid=True, user__is_active=True, is_admin=True
-    ).exists()
+    structure_has_admin = structure.has_admin()
 
     if _is_member_of_structure(structure, user):
         return Response(

@@ -28,9 +28,11 @@ class StructurePermission(permissions.BasePermission):
         if user.is_staff:
             return True
 
-        # People can only edit their Structures' stuff
-        user_structures = Structure.objects.filter(membership__user=user)
-        return obj in user_structures
+        # Structure admins can edit their Structures' stuff
+        administered_structures = Structure.objects.filter(
+            membership__user=user, membership__is_admin=True
+        )
+        return obj in administered_structures
 
 
 class StructureMemberPermission(permissions.BasePermission):

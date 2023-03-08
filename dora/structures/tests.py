@@ -27,12 +27,19 @@ class StructureTestCase(APITestCase):
         self.me = baker.make("users.User", is_valid=True)
         self.superuser = baker.make("users.User", is_staff=True, is_valid=True)
         self.bizdev = baker.make("users.User", is_bizdev=True, is_valid=True)
+        # Structure dont je suis administrateur
         self.my_struct = make_structure()
-        self.my_struct.members.add(self.me)
-
+        self.my_struct.members.add(
+            self.me,
+            through_defaults={
+                "is_admin": True,
+            },
+        )
+        # Structure dont je ne suis pas administrateur
         self.my_other_struct = make_structure(creator=None, last_editor=None)
         self.my_other_struct.members.add(self.me)
 
+        # Structure dont je ne suis pas membre
         self.other_struct = make_structure()
         self.client.force_authenticate(user=self.me)
 
@@ -51,13 +58,19 @@ class StructureTestCase(APITestCase):
 
     # Modification
 
-    def test_can_edit_my_structures(self):
+    def test_can_edit_my_administered_structures(self):
         response = self.client.patch(
             f"/structures/{self.my_struct.slug}/", {"name": "xxx"}
         )
         self.assertEqual(response.status_code, 200)
         response = self.client.get(f"/structures/{self.my_struct.slug}/")
         self.assertEqual(response.data["name"], "xxx")
+
+    def test_cant_edit_my_others_structures(self):
+        response = self.client.patch(
+            f"/structures/{self.my_other_struct.slug}/", {"name": "xxx"}
+        )
+        self.assertEqual(response.status_code, 403)
 
     def test_cant_edit_others_structures(self):
         response = self.client.patch(
@@ -66,8 +79,9 @@ class StructureTestCase(APITestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_edit_structures_updates_last_editor(self):
+        self.assertNotEqual(self.my_struct.last_editor, self.me)
         response = self.client.patch(
-            f"/structures/{self.my_other_struct.slug}/", {"name": "xxx"}
+            f"/structures/{self.my_struct.slug}/", {"name": "xxx"}
         )
         self.assertEqual(response.status_code, 200)
         slug = response.data["slug"]
@@ -79,14 +93,19 @@ class StructureTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["can_write"], True)
 
-    def test_can_write_field_false(self):
+    def test_can_write_field_false1(self):
+        response = self.client.get(f"/structures/{self.my_other_struct.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_write"], False)
+
+    def test_can_write_field_false2(self):
         response = self.client.get(f"/structures/{self.other_struct.slug}/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["can_write"], False)
 
     def test_update_validate_accesslibre_url_rejected(self):
         response = self.client.patch(
-            f"/structures/{self.my_other_struct.slug}/",
+            f"/structures/{self.my_struct.slug}/",
             {"accesslibre_url": "https://www.youtube.com"},
         )
         self.assertEqual(
@@ -109,7 +128,7 @@ class StructureTestCase(APITestCase):
 
     def test_update_validate_opening_hours_rejected(self):
         response = self.client.patch(
-            f"/structures/{self.my_other_struct.slug}/",
+            f"/structures/{self.my_struct.slug}/",
             {"opening_hours": "xxx"},
         )
         self.assertEqual(
