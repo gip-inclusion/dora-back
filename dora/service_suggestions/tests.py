@@ -204,7 +204,10 @@ class ServiceSuggestionsTestCase(APITestCase):
 
     def test_mail_send_to_contact_email_if_structure_without_admin(self):
         # ÉTANT DONNÉ une suggestion avec email de contact et avec structure associée mais sans admin
-        baker.make("Structure", siret=DUMMY_SUGGESTION["siret"])
+        baker.make(
+            "Structure",
+            siret=DUMMY_SUGGESTION["siret"],
+        )
         email = "mail@example.com"
         suggestion = baker.make(
             "ServiceSuggestion",
@@ -225,11 +228,74 @@ class ServiceSuggestionsTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 201)
 
+    def test_mail_send_to_contact_email_and_structure_email_if_structure_without_admin(
+        self,
+    ):
+        # ÉTANT DONNÉ une suggestion avec email de contact
+        # et avec structure associée sans admin mais avec une adresse email
+        structure_email = "structure_mail@example.com"
+        baker.make("Structure", siret=DUMMY_SUGGESTION["siret"], email=structure_email)
+        email = "mail@example.com"
+        suggestion = baker.make(
+            "ServiceSuggestion",
+            siret=DUMMY_SUGGESTION["siret"],
+            contents={"contact_email": email},
+        )
+        user = baker.make("users.User", is_valid=True, is_bizdev=True)
+        self.client.force_authenticate(user=user)
+
+        # QUAND je valide cette suggestion
+        response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
+
+        # ALORS la personne en contact est contacté
+        # ET le mail générique de la structure aussi
+        self.assertEqual(
+            sorted(response.data["emails_contacted"]), sorted([email, structure_email])
+        )
+        self.assertIn(
+            "[DORA] Des acteurs de l’insertion sont intéressés par vos services !",
+            mail.outbox[0].subject,
+        )
+        self.assertIn(
+            "[DORA] Des acteurs de l’insertion sont intéressés par vos services !",
+            mail.outbox[1].subject,
+        )
+        self.assertEqual(response.status_code, 201)
+
+    def test_mail_send_to_structure_email_if_structure_without_admin(
+        self,
+    ):
+        # ÉTANT DONNÉ une suggestion avec email de contact
+        # et avec structure associée sans admin mais avec une adresse email
+        structure_email = "structure_mail@example.com"
+        baker.make("Structure", siret=DUMMY_SUGGESTION["siret"], email=structure_email)
+        suggestion = baker.make(
+            "ServiceSuggestion",
+            siret=DUMMY_SUGGESTION["siret"],
+        )
+        user = baker.make("users.User", is_valid=True, is_bizdev=True)
+        self.client.force_authenticate(user=user)
+
+        # QUAND je valide cette suggestion
+        response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
+
+        # ALORS le mail générique de la structure aussi
+        self.assertEqual(response.data["emails_contacted"], [structure_email])
+        self.assertIn(
+            "[DORA] Des acteurs de l’insertion sont intéressés par vos services !",
+            mail.outbox[0].subject,
+        )
+        self.assertEqual(response.status_code, 201)
+
     def test_mail_send_to_structure_admin(self):
         # ÉTANT DONNÉ une structure avec un administrateur
         admin_mail = "admin@example.com"
         admin_user = baker.make("users.User", is_valid=True, email=admin_mail)
-        structure = baker.make("Structure", siret=DUMMY_SUGGESTION["siret"])
+        structure = baker.make(
+            "Structure",
+            siret=DUMMY_SUGGESTION["siret"],
+            email="structure_email@example.com",
+        )
         baker.make(StructureMember, structure=structure, user=admin_user, is_admin=True)
 
         # et une suggestion de service pour cette structure mais sans email de contact
@@ -257,7 +323,11 @@ class ServiceSuggestionsTestCase(APITestCase):
         admin_user = baker.make("users.User", is_valid=True, email=admin_mail)
         admin_mail_2 = "admin2@example.com"
         admin_user_2 = baker.make("users.User", is_valid=True, email=admin_mail_2)
-        structure = baker.make("Structure", siret=DUMMY_SUGGESTION["siret"])
+        structure = baker.make(
+            "Structure",
+            siret=DUMMY_SUGGESTION["siret"],
+            email="structure_email@example.com",
+        )
 
         baker.make(StructureMember, structure=structure, user=admin_user, is_admin=True)
         baker.make(
@@ -291,7 +361,11 @@ class ServiceSuggestionsTestCase(APITestCase):
         admin_mail = "admin@example.com"
         contact_mail = "mail@example.com"
         admin_user = baker.make("users.User", is_valid=True, email=admin_mail)
-        structure = baker.make("Structure", siret=DUMMY_SUGGESTION["siret"])
+        structure = baker.make(
+            "Structure",
+            siret=DUMMY_SUGGESTION["siret"],
+            email="structure_email@example.com",
+        )
         baker.make(StructureMember, structure=structure, user=admin_user, is_admin=True)
 
         # et une suggestion de service pour cette structure mais avec email de contact différent
