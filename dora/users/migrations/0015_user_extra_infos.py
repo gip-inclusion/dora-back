@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="user",
-            name="extra_infos",
+            name="onboarding_actions_accomplished",
             field=models.JSONField(default=dict),
         ),
     ]

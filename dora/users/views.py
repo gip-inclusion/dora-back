@@ -18,7 +18,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "last_name",
             "newsletter",
             "phone_number",
-            "extra_infos",
+            "onboarding_actions_accomplished",
         ]
         read_only_fields = ["email"]
 
