@@ -38,11 +38,11 @@ def user_info(request):
     serializer.is_valid(raise_exception=True)
     key = serializer.validated_data["key"]
     try:
-        user, _token = TokenAuthentication().authenticate_credentials(key)
+        user, token = TokenAuthentication().authenticate_credentials(key)
     except exceptions.AuthenticationFailed:
         raise Http404
     update_last_login(user)
-    return Response(UserInfoSerializer(user).data, status=200)
+    return Response(UserInfoSerializer(user, context={"token": token}).data, status=200)
 
 
 def _create_structure(establishment, user):
