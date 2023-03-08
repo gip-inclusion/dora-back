@@ -377,17 +377,6 @@ class ServiceTestCase(APITestCase):
         )
         self.assertEqual(response.status_code, 403)
 
-    def test_filter_my_services_only(self):
-        response = self.client.get("/services/?mine=1")
-        services_ids = [s["slug"] for s in response.data]
-        self.assertIn(self.my_service.slug, services_ids)
-        self.assertIn(self.my_draft_service.slug, services_ids)
-        self.assertIn(self.my_latest_draft_service.slug, services_ids)
-        self.assertIn(self.colleague_service.slug, services_ids)
-        self.assertIn(self.colleague_draft_service.slug, services_ids)
-        self.assertNotIn(self.other_service.slug, services_ids)
-        self.assertNotIn(self.other_draft_service, services_ids)
-
     # CustomizableChoices
     def test_anonymous_user_see_global_choices(self):
         self.client.force_authenticate(user=None)

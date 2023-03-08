@@ -241,7 +241,7 @@ class ServiceSuggestionsTestCase(APITestCase):
             siret=DUMMY_SUGGESTION["siret"],
             contents={"contact_email": email},
         )
-        user = baker.make("users.User", is_valid=True, is_bizdev=True)
+        user = baker.make("users.User", is_valid=True, is_staff=True)
         self.client.force_authenticate(user=user)
 
         # QUAND je valide cette suggestion
@@ -273,7 +273,7 @@ class ServiceSuggestionsTestCase(APITestCase):
             "ServiceSuggestion",
             siret=DUMMY_SUGGESTION["siret"],
         )
-        user = baker.make("users.User", is_valid=True, is_bizdev=True)
+        user = baker.make("users.User", is_valid=True, is_staff=True)
         self.client.force_authenticate(user=user)
 
         # QUAND je valide cette suggestion
