@@ -191,7 +191,7 @@ class ServiceSuggestion(models.Model):
                         )
                         emails_contacted.add(structure.email)
 
-                    if contact_email and contact_email not in emails_contacted:
+                    if contact_email and contact_email != structure.email:
                         send_suggestion_validated_new_structure_email(
                             contact_email, structure
                         )
