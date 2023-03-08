@@ -68,7 +68,6 @@ class StructureSerializer(serializers.ModelSerializer):
             "full_desc",
             "has_admin",
             "has_been_edited",
-            "quick_start_done",
             "is_admin",
             "is_member",
             "is_pending_member",
