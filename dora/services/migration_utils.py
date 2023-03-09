@@ -155,6 +155,8 @@ def update_category_value_and_label(ServiceCategory, old_value, new_value, new_l
     old_category.label = new_label
     old_category.save()
 
+    # TODO: migrate subcategories to the new value
+
 
 def replace_subcategory(ServiceSubCategory, Service, from_value, to_value):
     """
