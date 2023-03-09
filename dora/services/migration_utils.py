@@ -142,6 +142,20 @@ def update_subcategory_value_and_label(
     old_subcategory.save()
 
 
+def update_category_value_and_label(ServiceCategory, old_value, new_value, new_label):
+    old_category = get_category_by_value(ServiceCategory, old_value)
+    if old_category is None:
+        raise ValidationError(f"Aucune thématique trouvée avec la value: '{old_value}'")
+
+    new_category = get_category_by_value(ServiceCategory, new_value)
+    if new_category is not None:
+        raise ValidationError(f"La value '{new_value}' est déjà utilisée")
+
+    old_category.value = new_value
+    old_category.label = new_label
+    old_category.save()
+
+
 def replace_subcategory(ServiceSubCategory, Service, from_value, to_value):
     """
     Met à jour tous les services en :
