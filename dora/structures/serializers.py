@@ -273,6 +273,8 @@ class StructureSerializer(serializers.ModelSerializer):
                     "modification_date",
                     "name",
                     "num_services",
+                    "postal_code",
+                    "city",
                     "slug",
                     "typology_display",
                 ]
