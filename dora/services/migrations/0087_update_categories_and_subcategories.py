@@ -35,13 +35,6 @@ def migrate_services_options(apps, schema_editor):
         new_label="Accompagnement social et professionnel personnalisé",
     )
 
-    # Création d‘activité
-    create_subcategory(
-        ServiceSubCategory,
-        value="creation-activite--developper-son-entreprise",
-        label="Développer son entreprise",
-    )
-
     # Difficultes financières => Gestion financière
     difficultes_financiere = "difficultes-financieres"
     gestion_financiere = "gestion-financiere"
@@ -54,7 +47,7 @@ def migrate_services_options(apps, schema_editor):
     )
     update_subcategory_value_and_label(
         ServiceSubCategory,
-        f"{difficultes_financiere}--utilisation-compte-bancaire"
+        f"{difficultes_financiere}--utilisation-compte-bancaire",
         f"{gestion_financiere}--utilisation-compte-bancaire",
         "Création et utilisation d‘un compte bancaire",
     )
