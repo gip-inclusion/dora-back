@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
 
         # Ajout de Collectif Emploi
         StructureNationalLabel.objects.get_or_create(
-            value="collectif-emploi", label="Collectif Emploi"
+            value="collectif-emploi", defaults={"label": "Collectif Emploi"}
         )
 
         # Mise à jour de CAP emploi
