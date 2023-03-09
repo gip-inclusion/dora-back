@@ -36,36 +36,36 @@ def migrate_services_options(apps, schema_editor):
     )
 
     # Difficultes financières => Gestion financière
-    difficultes_financiere = "difficultes-financieres"
+    difficultes_financieres = "difficultes-financieres"
     gestion_financiere = "gestion-financiere"
 
     update_category_value_and_label(
         ServiceCategory,
-        old_value=difficultes_financiere,
+        old_value=difficultes_financieres,
         new_value=gestion_financiere,
         new_label="Gestion financière",
     )
     update_subcategory_value_and_label(
         ServiceSubCategory,
-        f"{difficultes_financiere}--utilisation-compte-bancaire",
+        f"{difficultes_financieres}--utilisation-compte-bancaire",
         f"{gestion_financiere}--utilisation-compte-bancaire",
         "Création et utilisation d‘un compte bancaire",
     )
     update_subcategory_value_and_label(
         ServiceSubCategory,
-        f"{difficultes_financiere}--gerer-budget",
+        f"{difficultes_financieres}--gerer-budget",
         f"{gestion_financiere}--gerer-budget",
         "Apprendre à gérer son budget",
     )
     update_subcategory_value_and_label(
         ServiceSubCategory,
-        f"{difficultes_financiere}--prevention-surendettement",
+        f"{difficultes_financieres}--prevention-surendettement",
         f"{gestion_financiere}--prevention-et-gestion-surendettement",
         "Prévention et gestion du surendettement",
     )
     update_subcategory_value_and_label(
         ServiceSubCategory,
-        f"{difficultes_financiere}--accompagnement-difficultes-financieres",
+        f"{difficultes_financieres}--accompagnement-difficultes-financieres",
         f"{gestion_financiere}--accompagnement-difficultes-financieres",
         "Accompagnement aux personnes en difficultés financières",
     )
