@@ -16,15 +16,16 @@ class Migration(migrations.Migration):
         StructureNationalLabel = apps.get_model("structures", "StructureNationalLabel")
 
         # Ajout de Collectif Emploi
-        StructureNationalLabel.objects.create(
-            value="collectif-emploi", label="Collectif emploi"
+        StructureNationalLabel.objects.get_or_create(
+            value="collectif-emploi", defaults={"label": "Collectif Emploi"}
         )
 
         # Mise à jour de CAP emploi
         cap_emploi = StructureNationalLabel.objects.filter(value="cheops").first()
-        cap_emploi.value = "cap-emploi-cheops"
-        cap_emploi.label = "CAP Emploi - Réseau CHEOPS"
-        cap_emploi.save()
+        if cap_emploi:
+            cap_emploi.value = "cap-emploi-cheops"
+            cap_emploi.label = "CAP Emploi - Réseau CHEOPS"
+            cap_emploi.save()
 
     operations = [
         migrations.RunPython(
