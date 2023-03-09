@@ -305,7 +305,7 @@ class Structure(ModerationMixin, models.Model):
         return (
             user.is_staff
             or StructureMember.objects.filter(
-                structure_id=self.id, user_id=user.id
+                structure_id=self.id, user_id=user.id, is_admin=True
             ).exists()
         )
 
@@ -317,6 +317,11 @@ class Structure(ModerationMixin, models.Model):
     def is_admin(self, user):
         return StructureMember.objects.filter(
             structure_id=self.id, user_id=user.id, is_admin=True
+        ).exists()
+
+    def has_admin(self):
+        return self.membership.filter(
+            is_admin=True, user__is_valid=True, user__is_active=True
         ).exists()
 
     def is_pending_member(self, user):
