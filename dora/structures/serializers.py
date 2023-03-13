@@ -95,7 +95,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "url",
         ]
         lookup_field = "slug"
-        read_only_fields = ["has_been_edited"]
+        read_only_fields = ["has_been_edited", "department"]
 
     def get_has_admin(self, obj):
         return obj.has_admin()

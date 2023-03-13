@@ -296,9 +296,8 @@ class Structure(ModerationMixin, models.Model):
             self.slug = make_unique_slug(self, self.name)
         if self.parent and not self.branch_id:
             self.branch_id = self._make_unique_branch_id()
-        if not self.department and self.city_code:
-            code = self.city_code
-            self.department = code_insee_to_code_dept(code)
+        if self.city_code:
+            self.department = code_insee_to_code_dept(self.city_code)
         return super().save(*args, **kwargs)
 
     def can_write(self, user):

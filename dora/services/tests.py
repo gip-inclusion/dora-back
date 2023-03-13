@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.gis.geos import MultiPolygon, Point
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -21,6 +22,7 @@ from dora.services.migration_utils import (
     replace_subcategory,
     unlink_services_from_category,
     unlink_services_from_subcategory,
+    update_category_value_and_label,
     update_subcategory_value_and_label,
 )
 from dora.services.utils import SYNC_CUSTOM_M2M_FIELDS, SYNC_FIELDS, SYNC_M2M_FIELDS
@@ -40,6 +42,14 @@ from .models import (
 )
 
 DUMMY_SERVICE = {"name": "Mon service"}
+
+
+class disabled_is_testing_flag(object):
+    def __enter__(self):
+        settings.IS_TESTING = False
+
+    def __exit__(self, *args):
+        settings.IS_TESTING = True
 
 
 class ServiceTestCase(APITestCase):
@@ -2358,21 +2368,26 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         self.assertEqual(subcategory.label, label)
 
     def test_update_subcategory_value_and_label_non_existing(self):
-        # ÉTANT DONNÉ un besoin non existant
-        # QUAND je le modifie
-        try:
-            update_subcategory_value_and_label(
-                ServiceSubCategory,
-                old_value="value",
-                new_value="whatever",
-                new_label="new label",
-            )
-        except Exception as e:
-            err = e
+        # Lors des tests, certaines catégories peuvent ne pas exister et casser les migrations…
+        # Du coup, les `ValidationError` dans `update_subcategory_value_and_label` sont désactivées
+        # Toutefois, il est nécessaire de les ré-activer dans le cadre de ce test
+        with disabled_is_testing_flag() as _:
 
-        # ALORS j'obtiens une erreur
-        self.assertTrue(isinstance(err, ValidationError))
-        self.assertTrue("Aucun besoin trouvé" in err.message)
+            # ÉTANT DONNÉ un besoin non existant
+            # QUAND je le modifie
+            try:
+                update_subcategory_value_and_label(
+                    ServiceSubCategory,
+                    old_value="value",
+                    new_value="whatever",
+                    new_label="new label",
+                )
+            except Exception as e:
+                err = e
+
+            # ALORS j'obtiens une erreur
+            self.assertTrue(isinstance(err, ValidationError))
+            self.assertTrue("Aucun besoin trouvé" in err.message)
 
     def test_update_subcategory_value_and_label_value_already_used(self):
         old_value = "old_value"
@@ -2421,6 +2436,31 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         self.assertEqual(subcategory.count(), 1)
         self.assertEqual(subcategory.first().value, new_value)
         self.assertEqual(subcategory.first().label, new_label)
+
+    def test_update_category_value_and_label_value(self):
+        old_value = "old_value"
+        new_value = "new_value"
+        new_label = "new_label"
+
+        # ÉTANT DONNÉ une thématique existante
+        baker.make("ServiceCategory", value=old_value, label="Label_1")
+        self.assertEqual(ServiceCategory.objects.filter(value=old_value).count(), 1)
+
+        # QUAND je la modifie
+        update_category_value_and_label(
+            ServiceCategory,
+            old_value=old_value,
+            new_value=new_value,
+            new_label=new_label,
+        )
+
+        # ALORS la thématique est correctement modifiée
+        self.assertEqual(ServiceCategory.objects.filter(value=old_value).count(), 0)
+
+        category = ServiceCategory.objects.filter(value=new_value)
+        self.assertEqual(category.count(), 1)
+        self.assertEqual(category.first().value, new_value)
+        self.assertEqual(category.first().label, new_label)
 
     def test_unlink_services_from_category(self):
         # ÉTANT DONNÉ un service existant lié à deux thématiques

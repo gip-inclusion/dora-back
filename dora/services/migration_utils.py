@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 
 
@@ -131,6 +132,12 @@ def update_subcategory_value_and_label(
 ):
     old_subcategory = get_subcategory_by_value(ServiceSubCategory, old_value)
     if old_subcategory is None:
+
+        # Certains besoins ont été créés via une autre méthode qu'une migration (par le back-office)
+        # Du coup, certaines catégories peuvent ne pas exister et casser les migrations lors des tests…
+        if settings.IS_TESTING:
+            return
+
         raise ValidationError(f"Aucun besoin trouvé avec la value: '{old_value}'")
 
     new_subcategory = get_subcategory_by_value(ServiceSubCategory, new_value)
@@ -140,6 +147,22 @@ def update_subcategory_value_and_label(
     old_subcategory.value = new_value
     old_subcategory.label = new_label
     old_subcategory.save()
+
+
+def update_category_value_and_label(ServiceCategory, old_value, new_value, new_label):
+    old_category = get_category_by_value(ServiceCategory, old_value)
+    if old_category is None:
+        raise ValidationError(f"Aucune thématique trouvée avec la value: '{old_value}'")
+
+    new_category = get_category_by_value(ServiceCategory, new_value)
+    if new_category is not None:
+        raise ValidationError(f"La value '{new_value}' est déjà utilisée")
+
+    old_category.value = new_value
+    old_category.label = new_label
+    old_category.save()
+
+    # TODO: migrate subcategories to the new value
 
 
 def replace_subcategory(ServiceSubCategory, Service, from_value, to_value):
