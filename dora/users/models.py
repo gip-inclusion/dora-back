@@ -72,7 +72,7 @@ class User(AbstractBaseUser):
         help_text="Indique si l’utilisateur est un gestionnaire (de département)",
     )
     department = models.CharField(
-        max_length=3, default="", help_text="Département d'un gestionnaire"
+        max_length=3, default="", blank=True, help_text="Département d'un gestionnaire"
     )
 
     date_joined = models.DateTimeField("date joined", default=timezone.now)
