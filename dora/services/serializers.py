@@ -2,7 +2,7 @@ import logging
 
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
-from rest_framework import serializers
+from rest_framework import exceptions, serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 
 from dora.admin_express.models import EPCI, City, Department, Region
@@ -398,12 +398,7 @@ class ServiceSerializer(serializers.ModelSerializer):
 
         if "structure" in data:
             if not data["structure"].can_edit_services(user):
-                raise serializers.ValidationError(
-                    {
-                        "structure": "Vous n’avez pas les droits nécessaires pour modifier ce service"
-                    },
-                    "not_member_of_struct",
-                )
+                raise exceptions.PermissionDenied()
 
         if "access_conditions" in data:
             self._validate_custom_choice(

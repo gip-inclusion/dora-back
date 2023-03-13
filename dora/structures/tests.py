@@ -10,6 +10,7 @@ from dora.structures.models import (
     StructurePutativeMember,
     StructureSource,
 )
+from dora.users.models import User
 
 DUMMY_STRUCTURE = {
     "siret": "12345678901234",
@@ -26,6 +27,9 @@ class StructureTestCase(APITestCase):
     def setUp(self):
         self.me = baker.make("users.User", is_valid=True)
         self.superuser = baker.make("users.User", is_staff=True, is_valid=True)
+        self.manager = baker.make(
+            "users.User", is_valid=True, is_manager=True, department="31"
+        )
         # Structure dont je suis administrateur
         self.my_struct = make_structure()
         self.my_struct.members.add(
@@ -40,10 +44,16 @@ class StructureTestCase(APITestCase):
 
         # Structure dont je ne suis pas membre
         self.other_struct = make_structure()
+
+        # Structure dans le departement 31 (pour tester les gestionnaires de territoire)
+        self.struct_31 = make_structure(department="31")
+
+        # Structure dans un autre departement (pour tester les gestionnaires de territoire)
+        self.struct_44 = make_structure(department="44")
+
         self.client.force_authenticate(user=self.me)
 
     # Visibility
-
     def test_can_see_my_struct(self):
         response = self.client.get("/structures/")
         structures_ids = [s["slug"] for s in response.data]
@@ -87,20 +97,29 @@ class StructureTestCase(APITestCase):
         s = Structure.objects.get(slug=slug)
         self.assertEqual(s.last_editor, self.me)
 
-    # def test_can_write_field_true(self):
-    #     response = self.client.get(f"/structures/{self.my_struct.slug}/")
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(response.data["can_write"], True)
+    def test_permissions_fields_ok_on_my_administered_structs(self):
+        response = self.client.get(f"/structures/{self.my_struct.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_edit_informations"], True)
+        self.assertEqual(response.data["can_view_members"], True)
+        self.assertEqual(response.data["can_edit_members"], True)
+        self.assertEqual(response.data["can_edit_services"], True)
 
-    # def test_can_write_field_false1(self):
-    #     response = self.client.get(f"/structures/{self.my_other_struct.slug}/")
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(response.data["can_write"], False)
+    def test_permissions_fields_ok_on_my_other_structs(self):
+        response = self.client.get(f"/structures/{self.my_other_struct.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_edit_informations"], False)
+        self.assertEqual(response.data["can_view_members"], True)
+        self.assertEqual(response.data["can_edit_members"], False)
+        self.assertEqual(response.data["can_edit_services"], True)
 
-    # def test_can_write_field_false2(self):
-    #     response = self.client.get(f"/structures/{self.other_struct.slug}/")
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(response.data["can_write"], False)
+    def test_permissions_fields_ok_on_others_structs(self):
+        response = self.client.get(f"/structures/{self.other_struct.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_edit_informations"], False)
+        self.assertEqual(response.data["can_view_members"], False)
+        self.assertEqual(response.data["can_edit_members"], False)
+        self.assertEqual(response.data["can_edit_services"], False)
 
     def test_update_validate_accesslibre_url_rejected(self):
         response = self.client.patch(
@@ -186,30 +205,61 @@ class StructureTestCase(APITestCase):
         response = self.client.get(f"/structures/{self.my_struct.slug}/")
         self.assertEqual(response.data["name"], "xxx")
 
-    # def test_manager_can_edit_everything_in_its_dept(self):
-    #     assert False
-    #     self.client.force_authenticate(user=self.superuser)
-    #     response = self.client.patch(
-    #         f"/structures/{self.my_struct.slug}/", {"name": "xxx"}
-    #     )
-    #     self.assertEqual(response.status_code, 200)
-    #     response = self.client.get(f"/structures/{self.my_struct.slug}/")
-    #     self.assertEqual(response.data["name"], "xxx")
+    def test_manager_can_edit_everything_in_its_dept(self):
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.patch(
+            f"/structures/{self.struct_31.slug}/", {"name": "xxx"}
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(f"/structures/{self.struct_31.slug}/")
+        self.assertEqual(response.data["name"], "xxx")
 
-    # def test_manager_cant_edit_outside_its_dept(self):
-    #     assert False
+    def test_manager_cant_edit_outside_its_dept(self):
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.patch(
+            f"/structures/{self.struct_44.slug}/", {"name": "xxx"}
+        )
+        self.assertEqual(response.status_code, 403)
 
-    # def test_superuser_can_write_field_true(self):
-    #     self.client.force_authenticate(user=self.superuser)
-    #     response = self.client.get(f"/structures/{self.my_struct.slug}/")
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(response.data["can_write"], True)
+    def test_permissions_fields_ok_for_superuser(self):
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.get(f"/structures/{self.other_struct.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_edit_informations"], True)
+        self.assertEqual(response.data["can_view_members"], True)
+        self.assertEqual(response.data["can_edit_members"], True)
+        self.assertEqual(response.data["can_edit_services"], True)
+        self.assertEqual(response.data["can_invite_first_admin"], True)
 
-    # def test_manager_can_write_field_true_inside_its_dept(self):
-    #     assert False
+    def test_permissions_fields_ok_for_anonymous_user(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.get(f"/structures/{self.my_struct.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_edit_informations"], False)
+        self.assertEqual(response.data["can_view_members"], False)
+        self.assertEqual(response.data["can_edit_members"], False)
+        self.assertEqual(response.data["can_edit_services"], False)
+        self.assertEqual(response.data["can_invite_first_admin"], False)
 
-    # def test_manager_can_write_field_false_outside_its_dept(self):
-    #     assert False
+    def test_permissions_fields_ok_manager_inside_its_depts(self):
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.get(f"/structures/{self.struct_31.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_edit_informations"], True)
+        self.assertEqual(response.data["can_view_members"], True)
+        self.assertEqual(response.data["can_edit_members"], False)
+        self.assertEqual(response.data["can_edit_services"], True)
+        self.assertEqual(response.data["can_invite_first_admin"], True)
+
+    def test_permissions_fields_ok_manager_outside_its_depts(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.get(f"/structures/{self.struct_44.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_edit_informations"], False)
+        self.assertEqual(response.data["can_view_members"], False)
+        self.assertEqual(response.data["can_edit_members"], False)
+        self.assertEqual(response.data["can_edit_services"], False)
+        self.assertEqual(response.data["can_invite_first_admin"], False)
 
     # Adding
 
@@ -300,7 +350,9 @@ class StructureMemberTestCase(APITestCase):
         self.another_struct_user = baker.make("users.User", is_valid=True)
         self.unaccepted_admin = baker.make("users.User", is_valid=True)
         self.superuser = baker.make("users.User", is_staff=True, is_valid=True)
-
+        self.manager = baker.make(
+            "users.User", is_manager=True, is_valid=True, department="31"
+        )
         self.my_struct = make_structure()
         self.my_struct.members.add(
             self.me,
@@ -334,6 +386,26 @@ class StructureMemberTestCase(APITestCase):
         self.other_struct = make_structure()
         self.other_struct.members.add(
             self.another_struct_user,
+            through_defaults={
+                "is_admin": True,
+            },
+        )
+
+        # Structure dans le departement 31 (pour tester les gestionnaires de territoire)
+        self.struct_31 = make_structure(department="31")
+        self.struct_31.members.add(
+            self.me,
+            through_defaults={
+                "is_admin": True,
+            },
+        )
+
+        self.struct_31_2 = make_structure(department="31")
+
+        # Structure dans un autre departement (pour tester les gestionnaires de territoire)
+        self.struct_44 = make_structure(department="44")
+        self.struct_44.members.add(
+            self.me,
             through_defaults={
                 "is_admin": True,
             },
@@ -375,11 +447,21 @@ class StructureMemberTestCase(APITestCase):
         self.assertIn(self.user1.email, emails)
         self.assertIn(self.user2.email, emails)
 
-    # def test_manager_can_see_structure_members_in_its_depts(self):
-    #     assert False
+    def test_manager_can_see_structure_members_in_its_depts(self):
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.get(
+            f"/structure-members/?structure={self.struct_31.slug}"
+        )
+        self.assertEqual(response.status_code, 200)
+        emails = [m["user"]["email"] for m in response.data]
+        self.assertIn(self.me.email, emails)
 
-    # def test_manager_cant_see_structure_members_outside_its_depts(self):
-    #     assert False
+    def test_manager_cant_see_structure_members_outside_its_depts(self):
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.get(
+            f"/structure-members/?structure={self.struct_44.slug}"
+        )
+        self.assertEqual(response.status_code, 403)
 
     def test_unaccepted_admin_user_cant_see_structure_members(self):
         self.client.force_authenticate(user=self.unaccepted_admin)
@@ -424,11 +506,17 @@ class StructureMemberTestCase(APITestCase):
         response = self.client.get(f"/structure-members/{member.id}/")
         self.assertEqual(response.status_code, 200)
 
-    # def test_manager_can_see_structure_member_in_its_depts(self):
-    #     assert False
+    def test_manager_can_see_structure_member_in_its_depts(self):
+        self.client.force_authenticate(user=self.manager)
+        member = self.me.membership.get(structure=self.struct_31)
+        response = self.client.get(f"/structure-members/{member.id}/")
+        self.assertEqual(response.status_code, 200)
 
-    # def test_manager_cant_see_structure_member_outside_its_depts(self):
-    #     assert False
+    def test_manager_cant_see_structure_member_outside_its_depts(self):
+        self.client.force_authenticate(user=self.manager)
+        member = self.me.membership.get(structure=self.struct_44)
+        response = self.client.get(f"/structure-members/{member.id}/")
+        self.assertEqual(response.status_code, 404)
 
     def test_unaccepted_admin_user_cant_see_structure_member(self):
         self.client.force_authenticate(user=self.unaccepted_admin)
@@ -468,8 +556,15 @@ class StructureMemberTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["is_admin"], False)
 
-    # def test_manager_cant_change_structure_members_in_its_depts(self):
-    #     assert False
+    def test_manager_cant_change_structure_members_in_its_depts(self):
+        self.client.force_authenticate(user=self.manager)
+        member = self.me.membership.get(structure=self.struct_31)
+        self.assertTrue(member.is_admin)
+        response = self.client.patch(
+            f"/structure-members/{member.id}/",
+            {"is_admin": False},
+        )
+        self.assertEqual(response.status_code, 403)
 
     def test_unaccepted_admin_user_cant_change_structure_members(self):
         self.client.force_authenticate(user=self.unaccepted_admin)
@@ -559,8 +654,13 @@ class StructureMemberTestCase(APITestCase):
         response = self.client.get(f"/structure-members/{member.id}/")
         self.assertEqual(response.status_code, 404)
 
-    # def test_manager_cant_delete_structure_members_in_its_depts(self):
-    #     assert False
+    def test_manager_cant_delete_structure_members_in_its_depts(self):
+        self.client.force_authenticate(user=self.manager)
+        member = self.me.membership.get(structure=self.struct_31)
+        response = self.client.delete(
+            f"/structure-members/{member.id}/",
+        )
+        self.assertEqual(response.status_code, 403)
 
     def test_unaccepted_admin_user_cant_delete_structure_members(self):
         self.client.force_authenticate(user=self.unaccepted_admin)
@@ -624,15 +724,78 @@ class StructureMemberTestCase(APITestCase):
         self.assertEqual(response.data["user"]["last_name"], "FOO")
         self.assertEqual(response.data["user"]["email"], "FOO@BAR.BUZ")
 
-    # def test_manager_can_invite_first_admin_in_its_depts(self):
-    #     assert False
+    def test_manager_can_invite_first_admin_in_its_depts(self):
+        self.client.force_authenticate(user=self.manager)
+        struct_31 = make_structure(department="31")
 
-    # def test_manager_can_invite_members_in_its_depts(self):
-    #     # after the first admin
-    #     assert False
+        response = self.client.post(
+            f"/structure-putative-members/?structure={struct_31.slug}",
+            {
+                "is_admin": True,
+                "user": {
+                    "last_name": "FOO",
+                    "first_name": "FIZZ",
+                    "email": "FOO@BAR.BUZ",
+                },
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["is_admin"], True)
+        self.assertEqual(response.data["user"]["first_name"], "FIZZ")
+        self.assertEqual(response.data["user"]["last_name"], "FOO")
+        self.assertEqual(response.data["user"]["email"], "FOO@BAR.BUZ")
 
-    # def test_manager_cant_invite_outside_its_depts(self):
-    #     assert False
+    def test_manager_cant_invite_non_admin(self):
+        self.client.force_authenticate(user=self.manager)
+        struct_31 = make_structure(department="31")
+
+        response = self.client.post(
+            f"/structure-putative-members/?structure={struct_31.slug}",
+            {
+                "is_admin": False,
+                "user": {
+                    "last_name": "FOO",
+                    "first_name": "FIZZ",
+                    "email": "FOO@BAR.BUZ",
+                },
+            },
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_manager_cant_invite_once_theres_an_admin(self):
+        self.client.force_authenticate(user=self.manager)
+        struct_31 = make_structure(department="31")
+        struct_31.members.add(
+            baker.make("users.User", is_valid=True),
+            through_defaults={
+                "is_admin": True,
+            },
+        )
+
+        response = self.client.post(
+            f"/structure-putative-members/?structure={struct_31.slug}",
+            {
+                "is_admin": False,
+            },
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_manager_cant_invite_first_admin_outside_its_depts(self):
+        self.client.force_authenticate(user=self.manager)
+        struct_44 = make_structure(department="44")
+
+        response = self.client.post(
+            f"/structure-putative-members/?structure={struct_44.slug}",
+            {
+                "is_admin": False,
+                "user": {
+                    "last_name": "FOO",
+                    "first_name": "FIZZ",
+                    "email": "FOO@BAR.BUZ",
+                },
+            },
+        )
+        self.assertEqual(response.status_code, 403)
 
     def test_unaccepted_admin_user_cant_invite_new_user(self):
         self.client.force_authenticate(user=self.unaccepted_admin)
@@ -784,8 +947,19 @@ class StructureMemberTestCase(APITestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn("Votre invitation sur DORA", mail.outbox[0].subject)
 
-    # def test_manager_can_resend_invite_to_first_invited_admin(self):
-    #     assert False
+    def test_manager_can_resend_invite_to_first_invited_admin(self):
+        self.client.force_authenticate(user=self.manager)
+        struct_31 = make_structure(department="31")
+        user = baker.make("users.User", is_valid=True)
+        pm = StructurePutativeMember.objects.create(
+            user=user, structure=struct_31, invited_by_admin=True
+        )
+        response = self.client.post(
+            f"/structure-putative-members/{pm.id}/resend-invite/",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Votre invitation sur DORA", mail.outbox[0].subject)
 
     def test_admin_cant_resend_invite_to_valid_member(self):
         self.client.force_authenticate(user=self.me)
@@ -983,8 +1157,42 @@ class StructureMemberTestCase(APITestCase):
         self.assertIn("Invitation acceptée", mail.outbox[0].subject)
         self.assertIn(self.another_struct_user.email, mail.outbox[0].body)
 
-    # def test_manager_notified_when_its_invitation_was_accepted(self):
-    #     assert False
+    def test_manager_notified_when_its_invitation_was_accepted(self):
+        # TODO: not implemented yet
+        struct_31 = make_structure(department="31")
+        baker.make("Establishment", siret=struct_31.siret)
+
+        # Invitation
+        self.client.force_authenticate(user=self.manager)
+
+        response = self.client.post(
+            f"/structure-putative-members/?structure={struct_31.slug}",
+            {
+                "is_admin": True,
+                "user": {
+                    "last_name": "FOO",
+                    "email": "invited_admin@example.com",
+                },
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(mail.outbox), 1)
+
+        # Reset
+        mail.outbox = []
+        invited_admin = User.objects.get(email="invited_admin@example.com")
+        # Acceptation
+        self.client.force_authenticate(user=invited_admin)
+        response = self.client.post(
+            "/auth/join-structure/",
+            {
+                "siret": struct_31.siret,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertGreater(len(mail.outbox), 0)
+        self.assertIn("Invitation acceptée", mail.outbox[0].subject)
+        self.assertIn("invited_admin@example.com", mail.outbox[0].body)
 
     def test_admin_notified_when_new_user_request_access(self):
         baker.make("Establishment", siret=self.my_struct.siret)

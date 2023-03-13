@@ -90,6 +90,33 @@ class ServiceTestCase(APITestCase):
             "AccessCondition",
             structure=make_structure(),
         )
+
+        self.manager = baker.make(
+            "users.User", is_manager=True, is_valid=True, department="31"
+        )
+        self.struct_31 = make_structure(department="31")
+        self.service_31 = make_service(
+            structure=self.struct_31, status=ServiceStatus.PUBLISHED
+        )
+        self.draft_31 = make_service(
+            structure=self.struct_31, status=ServiceStatus.DRAFT
+        )
+
+        self.struct_31_condition1 = baker.make(
+            "AccessCondition", structure=self.struct_31
+        )
+        self.struct_31_condition2 = baker.make(
+            "AccessCondition", structure=self.struct_31
+        )
+
+        self.struct_44 = make_structure(department="44")
+        self.service_44 = make_service(
+            structure=self.struct_44, status=ServiceStatus.PUBLISHED
+        )
+        self.draft_44 = make_service(
+            structure=self.struct_44, status=ServiceStatus.DRAFT
+        )
+
         self.client.force_authenticate(user=self.me)
 
     # Visibility
@@ -251,27 +278,30 @@ class ServiceTestCase(APITestCase):
         self.assertIn(self.my_service.slug, services_ids)
         self.assertIn(self.my_draft_service.slug, services_ids)
         self.assertIn(self.other_service.slug, services_ids)
+        self.assertIn(self.other_draft_service.slug, services_ids)
+
+    def test_manager_can_sees_everything_in_its_department(self):
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.get("/services/")
+        services_ids = [s["slug"] for s in response.data]
+        self.assertIn(self.service_31.slug, services_ids)
+        self.assertIn(self.draft_31.slug, services_ids)
+
+    def test_manager_cant_sees_published_services_outside_its_department(self):
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.get("/services/")
+        services_ids = [s["slug"] for s in response.data]
+        self.assertIn(self.service_44.slug, services_ids)
+        self.assertIn(self.my_service.slug, services_ids)
+        self.assertIn(self.other_service.slug, services_ids)
+
+    def test_manager_cant_sees_drafts_outside_its_department(self):
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.get("/services/")
+        services_ids = [s["slug"] for s in response.data]
+        self.assertNotIn(self.draft_44.slug, services_ids)
+        self.assertNotIn(self.my_draft_service.slug, services_ids)
         self.assertNotIn(self.other_draft_service, services_ids)
-
-    # def test_manager_can_sees_everything_in_its_department(self):
-    #     assert False
-    #     self.client.force_authenticate(user=self.manager)
-    #     response = self.client.get("/services/")
-    #     services_ids = [s["slug"] for s in response.data]
-    #     self.assertIn(self.my_service.slug, services_ids)
-    #     self.assertNotIn(self.my_draft_service.slug, services_ids)
-    #     self.assertIn(self.other_service.slug, services_ids)
-    #     self.assertNotIn(self.other_draft_service, services_ids)
-
-    # def test_manager_cant_sees_everything_outside_its_department(self):
-    #     assert False
-    #     self.client.force_authenticate(user=self.manager)
-    #     response = self.client.get("/services/")
-    #     services_ids = [s["slug"] for s in response.data]
-    #     self.assertIn(self.my_service.slug, services_ids)
-    #     self.assertNotIn(self.my_draft_service.slug, services_ids)
-    #     self.assertIn(self.other_service.slug, services_ids)
-    #     self.assertNotIn(self.other_draft_service, services_ids)
 
     def test_superuser_can_edit_everything(self):
         self.client.force_authenticate(user=self.superuser)
@@ -282,25 +312,28 @@ class ServiceTestCase(APITestCase):
         response = self.client.get(f"/services/{self.my_draft_service.slug}/")
         self.assertEqual(response.data["name"], "xxx")
 
-    # def test_manager_can_edit_everything_inside_its_department(self):
-    #     assert False
-    #     self.client.force_authenticate(user=self.superuser)
-    #     response = self.client.patch(
-    #         f"/services/{self.my_draft_service.slug}/", {"name": "xxx"}
-    #     )
-    #     self.assertEqual(response.status_code, 200)
-    #     response = self.client.get(f"/services/{self.my_draft_service.slug}/")
-    #     self.assertEqual(response.data["name"], "xxx")
+    def test_manager_can_edit_everything_inside_its_department(self):
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.patch(
+            f"/services/{self.service_31.slug}/", {"name": "xxx"}
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(f"/services/{self.service_31.slug}/")
+        self.assertEqual(response.data["name"], "xxx")
 
-    # def test_manager_cant_edit_outside_its_department(self):
-    #     assert False
-    #     self.client.force_authenticate(user=self.superuser)
-    #     response = self.client.patch(
-    #         f"/services/{self.my_draft_service.slug}/", {"name": "xxx"}
-    #     )
-    #     self.assertEqual(response.status_code, 200)
-    #     response = self.client.get(f"/services/{self.my_draft_service.slug}/")
-    #     self.assertEqual(response.data["name"], "xxx")
+        response = self.client.patch(
+            f"/services/{self.draft_31.slug}/", {"name": "xxx"}
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(f"/services/{self.draft_31.slug}/")
+        self.assertEqual(response.data["name"], "xxx")
+
+    def test_manager_cant_edit_outside_its_department(self):
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.patch(
+            f"/services/{self.service_44.slug}/", {"name": "xxx"}
+        )
+        self.assertEqual(response.status_code, 403)
 
     def test_superuser_can_write_field_true(self):
         self.client.force_authenticate(user=self.superuser)
@@ -308,11 +341,17 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["can_write"], True)
 
-    # def test_manager_can_write_field_true_inside_its_department(self):
-    #     assert False
+    def test_manager_can_write_field_true_inside_its_department(self):
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.get(f"/services/{self.service_31.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_write"], True)
 
-    # def test_manager_can_write_field_false_inside_its_department(self):
-    #     assert False
+    def test_manager_can_write_field_false_outside_its_department(self):
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.get(f"/services/{self.service_44.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_write"], False)
 
     # Adding
 
@@ -333,8 +372,7 @@ class ServiceTestCase(APITestCase):
             "/services/",
             DUMMY_SERVICE,
         )
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["structure"][0]["code"], "not_member_of_struct")
+        self.assertEqual(response.status_code, 403)
 
     def test_add_service_check_structure(self):
         DUMMY_SERVICE["structure"] = baker.make(
@@ -344,8 +382,7 @@ class ServiceTestCase(APITestCase):
             "/services/",
             DUMMY_SERVICE,
         )
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["structure"][0]["code"], "not_member_of_struct")
+        self.assertEqual(response.status_code, 403)
 
     def test_super_user_can_add_to_any_structure(self):
         self.client.force_authenticate(user=self.superuser)
@@ -360,11 +397,29 @@ class ServiceTestCase(APITestCase):
         slug = response.data["slug"]
         Service.objects.get(slug=slug)
 
-    # def test_manager_can_add_to_any_structure_inside_its_department(self):
-    #     assert False
+    def test_manager_can_add_to_any_structure_inside_its_department(self):
+        self.client.force_authenticate(user=self.manager)
+        slug = make_structure(department="31").slug
+        Structure.objects.get(slug=slug)
+        DUMMY_SERVICE["structure"] = slug
+        response = self.client.post(
+            "/services/",
+            DUMMY_SERVICE,
+        )
+        self.assertEqual(response.status_code, 201)
+        slug = response.data["slug"]
+        Service.objects.get(slug=slug)
 
-    # def test_manager_cant_add_to_any_structure_outside_its_department(self):
-    #     assert False
+    def test_manager_cant_add_to_any_structure_outside_its_department(self):
+        self.client.force_authenticate(user=self.manager)
+        slug = make_structure(department="44").slug
+        Structure.objects.get(slug=slug)
+        DUMMY_SERVICE["structure"] = slug
+        response = self.client.post(
+            "/services/",
+            DUMMY_SERVICE,
+        )
+        self.assertEqual(response.status_code, 403)
 
     def test_adding_service_populates_creator_last_editor(self):
         DUMMY_SERVICE["structure"] = self.my_struct.slug
@@ -436,11 +491,31 @@ class ServiceTestCase(APITestCase):
         self.assertIn(self.other_struct_condition1.id, conds)
         self.assertIn(self.other_struct_condition2.id, conds)
 
-    # def test_manager_see_all_choices_inside_its_department(self):
-    #     assert False
+    def test_manager_see_all_choices_inside_its_department(self):
+        self.client.force_authenticate(user=self.manager)
 
-    # def test_manager_cant_see_choices_outside_its_department(self):
-    #     assert False
+        response = self.client.get(
+            "/services-options/",
+        )
+        conds = [d["value"] for d in response.data["access_conditions"]]
+
+        self.assertIn(self.global_condition1.id, conds)
+        self.assertIn(self.global_condition2.id, conds)
+        self.assertIn(self.struct_31_condition1.id, conds)
+        self.assertIn(self.struct_31_condition2.id, conds)
+
+    def test_manager_cant_see_choices_outside_its_department(self):
+        self.client.force_authenticate(user=self.manager)
+
+        response = self.client.get(
+            "/services-options/",
+        )
+        conds = [d["value"] for d in response.data["access_conditions"]]
+
+        self.assertNotIn(self.struct_condition1.id, conds)
+        self.assertNotIn(self.struct_condition2.id, conds)
+        self.assertNotIn(self.other_struct_condition1.id, conds)
+        self.assertNotIn(self.other_struct_condition2.id, conds)
 
     def test_can_add_global_choice(self):
         response = self.client.patch(
@@ -464,8 +539,17 @@ class ServiceTestCase(APITestCase):
             response.data["access_conditions"], [self.struct_condition1.id]
         )
 
-    # def test_manager_can_add_struct_choice_inside_its_department(self):
-    #     assert False
+    def test_manager_can_add_struct_choice_inside_its_department(self):
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.patch(
+            f"/services/{self.service_31.slug}/",
+            {"access_conditions": [self.struct_31_condition1.id]},
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(f"/services/{self.service_31.slug}/")
+        self.assertEqual(
+            response.data["access_conditions"], [self.struct_31_condition1.id]
+        )
 
     def test_cant_add_other_structure_choice(self):
         response = self.client.patch(
@@ -807,14 +891,38 @@ class ServiceTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["structure_info"]["num_services"], 2)
 
-    # def test_manager_see_all_services_count_inside_its_department(self):
-    #     assert False
+    def test_manager_see_all_services_count_inside_its_department(self):
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user, department="31")
+        service = make_service(status=ServiceStatus.PUBLISHED, structure=structure)
+        make_service(status=ServiceStatus.PUBLISHED, structure=structure)
+        make_service(status=ServiceStatus.DRAFT, structure=structure)
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["structure_info"]["num_services"], 3)
 
-    # def test_manager_see_public_services_count_outside_its_department(self):
-    #     assert False
+    def test_manager_see_public_services_count_outside_its_department(self):
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user, department="44")
+        service = make_service(status=ServiceStatus.PUBLISHED, structure=structure)
+        make_service(status=ServiceStatus.PUBLISHED, structure=structure)
+        make_service(status=ServiceStatus.DRAFT, structure=structure)
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["structure_info"]["num_services"], 2)
 
-    # def test_manager_dont_see_archived_services_count_inside_its_department(self):
-    #     assert False
+    def test_manager_dont_see_archived_services_count_inside_its_department(self):
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user, department="31")
+        service = make_service(status=ServiceStatus.PUBLISHED, structure=structure)
+        make_service(status=ServiceStatus.PUBLISHED, structure=structure)
+        make_service(status=ServiceStatus.ARCHIVED, structure=structure)
+        self.client.force_authenticate(user=self.manager)
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["structure_info"]["num_services"], 2)
 
     def test_others_see_public_services_count(self):
         user = baker.make("users.User", is_valid=True)
@@ -1757,7 +1865,7 @@ class ServiceModelTestCase(APITestCase):
 
     def test_superuser_can_create_model_from_others_service(self):
         user = baker.make("users.User", is_valid=True, is_staff=True)
-        struct = make_structure(user)
+        struct = make_structure()
         service = make_service(status=ServiceStatus.PUBLISHED)
         self.client.force_authenticate(user=user)
         response = self.client.post(
@@ -1765,6 +1873,42 @@ class ServiceModelTestCase(APITestCase):
             {"structure": struct.slug, "service": service.slug, **DUMMY_SERVICE},
         )
         self.assertEqual(response.status_code, 201)
+
+    def test_manager_can_create_model_from_service_in_its_dept(self):
+        user = baker.make("users.User", is_valid=True, is_manager=True, department="31")
+        struct_src = make_structure(department="31")
+        struct_dest = make_structure(department="31")
+        service = make_service(status=ServiceStatus.PUBLISHED, structure=struct_src)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/models/",
+            {"structure": struct_dest.slug, "service": service.slug, **DUMMY_SERVICE},
+        )
+        self.assertEqual(response.status_code, 201)
+
+    def test_manager_cant_create_model_from_service_outside_its_dept(self):
+        user = baker.make("users.User", is_valid=True, is_manager=True, department="31")
+        struct_src = make_structure(department="44")
+        struct_dest = make_structure(department="31")
+        service = make_service(status=ServiceStatus.PUBLISHED, structure=struct_src)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/models/",
+            {"structure": struct_dest.slug, "service": service.slug, **DUMMY_SERVICE},
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_manager_cant_create_model_in_struct_outside_its_dept(self):
+        user = baker.make("users.User", is_valid=True, is_manager=True, department="31")
+        struct_src = make_structure(department="31")
+        struct_dest = make_structure(department="44")
+        service = make_service(status=ServiceStatus.PUBLISHED, structure=struct_src)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/models/",
+            {"structure": struct_dest.slug, "service": service.slug, **DUMMY_SERVICE},
+        )
+        self.assertEqual(response.status_code, 403)
 
     # History logging
     def test_editing_log_change(self):
@@ -1864,8 +2008,7 @@ class ServiceInstantiationTestCase(APITestCase):
             "/services/",
             {"structure": dest_struct.slug, "model": model.slug, **DUMMY_SERVICE},
         )
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual("not_member_of_struct", response.data["structure"][0]["code"])
+        self.assertEqual(response.status_code, 403)
 
 
 class ServiceSyncTestCase(APITestCase):

@@ -307,7 +307,7 @@ class Structure(ModerationMixin, models.Model):
 
     def can_view_members(self, user: User):
         return user.is_authenticated and (
-            user.is_staff or self.is_member(user) or self.is_manager(user)
+            user.is_staff or self.is_manager(user) or self.is_member(user)
         )
 
     def can_edit_members(self, user: User):
@@ -315,7 +315,7 @@ class Structure(ModerationMixin, models.Model):
 
     def can_edit_services(self, user: User):
         return user.is_authenticated and (
-            user.is_staff or self.is_member(user) or self.is_manager(user)
+            user.is_staff or self.is_manager(user) or self.is_member(user)
         )
 
     def can_invite_first_admin(self, user: User):
@@ -381,7 +381,9 @@ class Structure(ModerationMixin, models.Model):
         self.save(update_fields=["email", "phone", "url"])
 
     def get_num_visible_services(self, user):
-        if user.is_authenticated and (user.is_staff or self.is_member(user)):
+        if user.is_authenticated and (
+            user.is_staff or self.is_manager(user) or self.is_member(user)
+        ):
             return self.services.active().count()
         else:
             return self.services.published().count()

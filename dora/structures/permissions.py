@@ -70,7 +70,7 @@ class StructureMemberPermission(permissions.BasePermission):
             if request.method == "POST":
                 return not obj.structure.has_admin()
             else:
-                return True
+                return request.method in permissions.SAFE_METHODS
 
         # Les collaborateurs d'une structure peuvent **voir** leurs collègues
         elif obj.structure.is_member(user):
@@ -113,9 +113,8 @@ class StructurePutativeMemberPermission(permissions.BasePermission):
             elif structure.is_admin(user):
                 return True
             # Les gestionnaires peuvent inviter le premier administrateur
-            # TODO: ou est-ce qu'on verifie que c'est forcement un admin?
-            elif structure.can_invite_first_admin(user):
-                return True
+            elif structure.is_manager(user) and not structure.has_admin():
+                return request.data.get("is_admin") is True
             # Les autres catégories d'utilisateur ne peuvent pas inviter
             else:
                 return False

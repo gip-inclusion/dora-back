@@ -132,7 +132,10 @@ class ServiceViewSet(
         elif user.is_staff:
             qs = all_services
         elif user.is_manager and user.department:
-            qs = all_services.filter(structure__department=user.department)
+            qs = all_services.filter(
+                Q(status=ServiceStatus.PUBLISHED)
+                | Q(structure__department=user.department)
+            )
         else:
             # Authentified users can see everything in their structure
             # plus published services for other structures
