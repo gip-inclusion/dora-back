@@ -133,8 +133,8 @@ def update_subcategory_value_and_label(
     old_subcategory = get_subcategory_by_value(ServiceSubCategory, old_value)
     if old_subcategory is None:
 
-        # Certains besoins ont été crées via une autre méthode qu'une migration (par le back-office)
-        # Du coup, certaines catégories peuvent ne pas exister et casser les migrations..
+        # Certains besoins ont été créés via une autre méthode qu'une migration (par le back-office)
+        # Du coup, certaines catégories peuvent ne pas exister et casser les migrations lors des tests…
         if settings.IS_TESTING:
             return
 
