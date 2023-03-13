@@ -41,6 +41,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "phone_number",
             "short_name",
             "structures",
+            "onboarding_actions_accomplished",
             "token_expiration",
         ]
 
