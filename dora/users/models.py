@@ -81,6 +81,7 @@ class User(AbstractBaseUser):
 
     bookmarks = models.ManyToManyField("services.Service", through="services.Bookmark")
     objects = UserManager()
+    onboarding_actions_accomplished = models.JSONField(default=dict)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
