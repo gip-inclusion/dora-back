@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("users", "0015_rename_user_is_local_coordinator_user_is_manager_and_more"),
+        ("users", "0016_rename_user_is_local_coordinator_user_is_manager_and_more"),
     ]
 
     operations = [
