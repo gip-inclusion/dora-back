@@ -158,7 +158,7 @@ class ServiceTestCase(APITestCase):
             status=ServiceStatus.DRAFT,
         )
         response = self.client.get(f"/services/{service.slug}/")
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 401)
 
     def test_cant_see_draft_if_not_accepted_by_admin(self):
         self.client.force_authenticate(user=self.unaccepted_user)
@@ -167,7 +167,7 @@ class ServiceTestCase(APITestCase):
             status=ServiceStatus.DRAFT,
         )
         response = self.client.get(f"/services/{service.slug}/")
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 403)
 
     # Modification
 

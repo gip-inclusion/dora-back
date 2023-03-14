@@ -460,7 +460,7 @@ class ServiceSuggestionsTestCase(APITestCase):
             "Service", structure=structure, status=ServiceStatus.SUGGESTION
         )
         response = self.client.get(f"/services/{service.slug}/")
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 401)
 
     def test_user_cant_see_suggested_service(self):
         structure = make_structure()
@@ -470,7 +470,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         user = baker.make("users.User", is_valid=True)
         self.client.force_authenticate(user=user)
         response = self.client.get(f"/services/{service.slug}/")
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 403)
 
     # STRUCTURE MODERATION
     def test_member_can_delete(self):

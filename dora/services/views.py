@@ -70,7 +70,7 @@ class ServicePermission(permissions.BasePermission):
         # Authentified user can read and write
         return user and user.is_authenticated
 
-    def has_object_permission(self, request, view, service):
+    def has_object_permission(self, request, view, service: Service):
         user = request.user
         # Only suggestions can be deleted
         if (
@@ -79,11 +79,16 @@ class ServicePermission(permissions.BasePermission):
         ):
             return False
 
-        # Anybody can read
-        if request.method in permissions.SAFE_METHODS:
+        # Seuls les utilisateurs pouvant modifier les brouillons peuvent les voir
+        if service.status != ServiceStatus.PUBLISHED:
+            return service.can_write(user)
+
+        # Tout le monde peut voir les services publiés
+        elif request.method in permissions.SAFE_METHODS:
             return True
 
-        return service.can_write(user)
+        else:
+            return service.can_write(user)
 
 
 class ServiceViewSet(
@@ -125,30 +130,37 @@ class ServiceViewSet(
         )
         qs = None
 
-        # Everybody can see published services
-        if not user or not user.is_authenticated:
-            qs = all_services.filter(status=ServiceStatus.PUBLISHED)
-        # Staff can see everything
-        elif user.is_staff:
-            qs = all_services
-        elif user.is_manager and user.department:
-            qs = all_services.filter(
-                Q(status=ServiceStatus.PUBLISHED)
-                | Q(structure__department=user.department)
-            )
+        if self.action == "retrieve":
+            # Retourne tout, laisse has_object_permission décider des droits
+            # ce qui permet de renvoyer un 401 ou un 403 plutot qu'un 404
+            # pour les brouillons
+            return all_services
         else:
-            # Authentified users can see everything in their structure
-            # plus published services for other structures
-            qs = all_services.filter(
-                Q(status=ServiceStatus.PUBLISHED) | Q(structure__membership__user=user)
-            )
-        if structure_slug:
-            qs = qs.filter(structure__slug=structure_slug)
+            # Everybody can see published services
+            if not user or not user.is_authenticated:
+                qs = all_services.filter(status=ServiceStatus.PUBLISHED)
+            # Staff can see everything
+            elif user.is_staff:
+                qs = all_services
+            elif user.is_manager and user.department:
+                qs = all_services.filter(
+                    Q(status=ServiceStatus.PUBLISHED)
+                    | Q(structure__department=user.department)
+                )
+            else:
+                # Authentified users can see everything in their structure
+                # plus published services for other structures
+                qs = all_services.filter(
+                    Q(status=ServiceStatus.PUBLISHED)
+                    | Q(structure__membership__user=user)
+                )
+            if structure_slug:
+                qs = qs.filter(structure__slug=structure_slug)
 
-        if published_only:
-            qs = qs.filter(status=ServiceStatus.PUBLISHED)
+            if published_only:
+                qs = qs.filter(status=ServiceStatus.PUBLISHED)
 
-        return qs.order_by("-modification_date").distinct()
+            return qs.order_by("-modification_date").distinct()
 
     def get_serializer_class(self):
         if self.action == "list":
