@@ -113,7 +113,9 @@ CREATE TABLE mb_user AS
  SELECT users_user.id,
     users_user.is_valid,
     users_user.is_staff,
-    users_user.is_bizdev,
+    -- TODO: deprecated
+    (select FALSE) as is_bizdev,
+    --
     users_user.last_login,
     users_user.date_joined,
     users_user.newsletter,
