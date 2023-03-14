@@ -1083,7 +1083,6 @@ class StructureMemberTestCase(APITestCase):
         self.assertEqual(response.data["is_admin"], True)
 
     def test_user_can_accept_invitation(self):
-
         # Invitation
         admin = baker.make("users.User", is_valid=True)
         structure = make_structure()

@@ -2524,7 +2524,6 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         # Du coup, les `ValidationError` dans `update_subcategory_value_and_label` sont désactivées
         # Toutefois, il est nécessaire de les ré-activer dans le cadre de ce test
         with disabled_is_testing_flag() as _:
-
             # ÉTANT DONNÉ un besoin non existant
             # QUAND je le modifie
             try:

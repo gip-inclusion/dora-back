@@ -181,7 +181,6 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
     permission_classes = [StructurePutativeMemberPermission]
 
     def get_queryset(self):
-
         user = self.request.user
 
         # Vérifié par has_permission
@@ -350,7 +349,6 @@ def siret_was_claimed(request, siret):
 @api_view()
 @permission_classes([permissions.AllowAny])
 def options(request):
-
     result = {
         "typologies": [
             {"value": c.value, "label": c.label}

@@ -6,7 +6,6 @@ import dora.structures.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("structures", "0014_structure_department"),
     ]

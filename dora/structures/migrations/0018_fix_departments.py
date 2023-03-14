@@ -20,7 +20,6 @@ def revert_fix(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("structures", "0017_alter_structure_department"),
     ]

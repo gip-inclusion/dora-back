@@ -208,7 +208,6 @@ def rename_enums(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0048_alter_servicemodificationhistoryitem_options"),
     ]

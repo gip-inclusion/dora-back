@@ -22,7 +22,6 @@ class ServiceCategories(models.TextChoices):
 
 
 class ServiceSubCategories(models.TextChoices):
-
     CR_ELABORATE = "CR-EL", "Élaborer son projet"
     CR_IDEA = "CR-ID", "De l’idée au projet"
     CR_START = "CR-ST", "Démarrer son activité"
@@ -223,7 +222,6 @@ def reverse_migrate(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0044_auto_20220308_1630"),
     ]

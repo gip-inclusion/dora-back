@@ -13,7 +13,6 @@ def set_default_log_history_status(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0062_add_status_to_log_history"),
     ]

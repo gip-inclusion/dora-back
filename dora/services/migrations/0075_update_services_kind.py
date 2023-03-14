@@ -14,7 +14,6 @@ def migrate_services_kind(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0074_alter_service_can_update_categories"),
     ]

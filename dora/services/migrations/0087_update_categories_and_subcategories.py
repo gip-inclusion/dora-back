@@ -208,7 +208,6 @@ def migrate_services_options(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0086_remove_service_can_update_categories_and_more"),
     ]

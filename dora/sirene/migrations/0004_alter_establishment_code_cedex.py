@@ -12,7 +12,6 @@ def strip_cedex(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("sirene", "0003_establishment_is_social"),
     ]

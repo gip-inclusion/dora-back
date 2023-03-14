@@ -131,7 +131,6 @@ def reverse_migrate_typologies(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("structures", "0034_auto_20220308_1146"),
     ]

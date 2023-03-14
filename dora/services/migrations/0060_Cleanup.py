@@ -26,7 +26,6 @@ def cleanup_concerned_public(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0059_service_last_draft_notification_date"),
     ]

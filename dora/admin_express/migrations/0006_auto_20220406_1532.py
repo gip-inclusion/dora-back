@@ -9,7 +9,6 @@ def normalize_admin_division_name(apps, _):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("admin_express", "0005_auto_20220207_1209"),
     ]

@@ -1,11 +1,11 @@
 -r ./base.txt
 
-django-environ==0.9.0
-pre-commit==2.20.0
-black[d]==22.10.0
-isort==5.12.0
+black[d]==23.1.0
+django-environ==0.10.0
+django-querycount==0.8.3
+django-silk==5.0.3
 flake8==6.0.0
-ggshield==1.14.1
-django-silk==5.0.2
-django-querycount==0.7.0
 freezegun==1.2.2
+ggshield==1.14.4
+isort==5.12.0
+pre-commit==3.1.1

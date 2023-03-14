@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("structures", "0050_alter_structure_address1_alter_structure_city_and_more"),
     ]

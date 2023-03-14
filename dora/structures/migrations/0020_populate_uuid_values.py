@@ -13,7 +13,6 @@ def gen_uuid(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("structures", "0019_structuremember_add_uuid"),
     ]

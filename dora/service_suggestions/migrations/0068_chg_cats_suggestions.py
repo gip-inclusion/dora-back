@@ -84,7 +84,6 @@ def migrate_cats_subcats(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("service_suggestions", "0003_rename_ids"),
     ]

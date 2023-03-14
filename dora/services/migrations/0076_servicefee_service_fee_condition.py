@@ -15,7 +15,6 @@ def add_fee_conditions(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0075_update_services_kind"),
     ]

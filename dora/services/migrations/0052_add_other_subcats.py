@@ -8,14 +8,12 @@ def add_other_subcats(apps, schema_editor):
     ServiceSubCategory = apps.get_model("services", "ServiceSubCategory")
 
     for category in ServiceCategory.objects.all():
-
         ServiceSubCategory.objects.get_or_create(
             value=f"{category.value}--autre", defaults={"label": "Autre"}
         )
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0051_service_last_sync_checksum_service_sync_checksum_and_more"),
     ]

@@ -9,7 +9,6 @@ def add_fee_conditions(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0080_service_use_inclusion_numerique_scheme"),
     ]
