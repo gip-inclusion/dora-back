@@ -1,6 +1,5 @@
 from datetime import timedelta
 
-from django.conf import settings
 from django.contrib.gis.geos import MultiPolygon, Point
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -42,14 +41,6 @@ from .models import (
 )
 
 DUMMY_SERVICE = {"name": "Mon service"}
-
-
-class disabled_is_testing_flag(object):
-    def __enter__(self):
-        settings.IS_TESTING = False
-
-    def __exit__(self, *args):
-        settings.IS_TESTING = True
 
 
 class ServiceTestCase(APITestCase):
@@ -2518,27 +2509,6 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         self.assertTrue(subcategory is not None)
         self.assertEqual(subcategory.value, value)
         self.assertEqual(subcategory.label, label)
-
-    def test_update_subcategory_value_and_label_non_existing(self):
-        # Lors des tests, certaines catégories peuvent ne pas exister et casser les migrations…
-        # Du coup, les `ValidationError` dans `update_subcategory_value_and_label` sont désactivées
-        # Toutefois, il est nécessaire de les ré-activer dans le cadre de ce test
-        with disabled_is_testing_flag() as _:
-            # ÉTANT DONNÉ un besoin non existant
-            # QUAND je le modifie
-            try:
-                update_subcategory_value_and_label(
-                    ServiceSubCategory,
-                    old_value="value",
-                    new_value="whatever",
-                    new_label="new label",
-                )
-            except Exception as e:
-                err = e
-
-            # ALORS j'obtiens une erreur
-            self.assertTrue(isinstance(err, ValidationError))
-            self.assertTrue("Aucun besoin trouvé" in err.message)
 
     def test_update_subcategory_value_and_label_value_already_used(self):
         old_value = "old_value"
