@@ -109,7 +109,6 @@ class ServiceAdmin(admin.GISModelAdmin):
 
 
 class ServiceModelAdmin(admin.ModelAdmin):
-
     search_fields = (
         "name",
         "structure__name",

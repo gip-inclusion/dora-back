@@ -6,7 +6,6 @@ import dora.structures.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("structures", "0011_auto_20210920_1130"),
     ]

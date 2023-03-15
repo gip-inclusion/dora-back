@@ -6,7 +6,6 @@ import dora.core.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("structures", "0046_init_moderation_status"),
     ]

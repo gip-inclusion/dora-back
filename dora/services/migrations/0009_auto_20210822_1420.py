@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("structures", "0009_alter_structure_email"),
         ("services", "0008_auto_20210821_0936"),

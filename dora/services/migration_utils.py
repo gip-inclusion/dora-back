@@ -1,5 +1,8 @@
-from django.conf import settings
+import logging
+
 from django.core.exceptions import ValidationError
+
+logger = logging.getLogger(__name__)
 
 
 def extract_subcategories(service):
@@ -132,13 +135,10 @@ def update_subcategory_value_and_label(
 ):
     old_subcategory = get_subcategory_by_value(ServiceSubCategory, old_value)
     if old_subcategory is None:
-
-        # Certains besoins ont été créés via une autre méthode qu'une migration (par le back-office)
-        # Du coup, certaines catégories peuvent ne pas exister et casser les migrations lors des tests…
-        if settings.IS_TESTING:
-            return
-
-        raise ValidationError(f"Aucun besoin trouvé avec la value: '{old_value}'")
+        logger.warning(
+            f"Modification du besoin '{old_value}' vers '{new_value}' va être ignorée car '{old_value}' n‘existe pas"
+        )
+        return
 
     new_subcategory = get_subcategory_by_value(ServiceSubCategory, new_value)
     if new_subcategory is not None:

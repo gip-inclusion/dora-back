@@ -21,7 +21,6 @@ def add_subcategories(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0082_new_subcategories"),
     ]

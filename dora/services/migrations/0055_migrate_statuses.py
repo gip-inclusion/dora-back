@@ -20,7 +20,6 @@ def migrate_statuses(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0054_service_status_and_more"),
     ]

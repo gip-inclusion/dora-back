@@ -31,8 +31,8 @@ class Command(BaseCommand):
         email.send(fail_silently=False)
 
     def handle(self, *args, **options):
-        with (
-            tempfile.NamedTemporaryFile(suffix=".csv", mode="w", newline="")
+        with tempfile.NamedTemporaryFile(
+            suffix=".csv", mode="w", newline=""
         ) as tmp_file:
             self.csv_writer = csv.writer(tmp_file, delimiter=",")
             self.csv_writer.writerow(
@@ -161,7 +161,6 @@ class Command(BaseCommand):
             s.coach_orientation_modes.filter(value="telephoner").exists()
             and not s.contact_phone
         ):
-
             self.display_error(
                 "modalities",
                 s,

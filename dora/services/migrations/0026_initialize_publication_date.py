@@ -12,7 +12,6 @@ def init_pub_date(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0025_service_publication_date"),
     ]
