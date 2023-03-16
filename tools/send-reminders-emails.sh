@@ -6,4 +6,4 @@ if [ "$ENVIRONMENT" != "production" ];then
   exit 0;
 fi
 
-python /app/manage.py send_services_update_reminders -n
+python /app/manage.py send_services_update_reminders
