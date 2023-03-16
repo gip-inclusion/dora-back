@@ -2,7 +2,7 @@
   "jobs": [
     { "command": "17 08-19 * * * tools/export-db-metabase.sh", "size": "S" },
     {
-      "command": "*/10 * 8-15 * * [ \"$(date '+%u')\" = \"2\" ] && tools/send-reminders-emails.sh",
+      "command": "*/10 * 8-16 * * [ $(date +%u) = 4 ] && tools/send-reminders-emails.sh",
       "size": "S"
     }
   ]
