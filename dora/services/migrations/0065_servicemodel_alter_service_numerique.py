@@ -198,7 +198,6 @@ def migrate_services_options(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0064_servicemodel_alter_service_creation_activite"),
     ]

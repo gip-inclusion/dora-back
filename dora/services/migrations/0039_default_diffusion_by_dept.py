@@ -34,7 +34,6 @@ def noop(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0038_alter_service_diffusion_zone_type"),
     ]

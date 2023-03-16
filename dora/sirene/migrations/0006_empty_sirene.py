@@ -9,7 +9,6 @@ def clear_siren(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("sirene", "0005_alter_establishment_code_cedex"),
     ]

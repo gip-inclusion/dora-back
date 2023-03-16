@@ -23,7 +23,6 @@ def add_token_expiration(apps, _):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("rest_auth", "0002_auto_20210914_1657"),
     ]

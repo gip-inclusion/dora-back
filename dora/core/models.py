@@ -24,7 +24,6 @@ class ModerationStatus(models.TextChoices):
 
 
 class ModerationMixin(models.Model):
-
     moderation_status = models.CharField(
         max_length=30,
         choices=ModerationStatus.choices,

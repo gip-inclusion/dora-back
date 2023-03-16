@@ -100,57 +100,57 @@ def make_service_in_dept(dept, **kwargs):
     return make_service(structure=structure, status=ServiceStatus.PUBLISHED)
 
 
-class CoordinatorTestCase(APITestCase):
+class ManagerTestCase(APITestCase):
     def setUp(self):
-        self.coordinator = baker.make(
+        self.manager = baker.make(
             "users.User",
             is_valid=True,
             is_staff=False,
-            is_local_coordinator=True,
+            is_manager=True,
             department=31,
         )
 
     def test_coord_can_see_structures_in_his_dept(self):
         structure = make_structure(department=31)
-        self.client.force_authenticate(user=self.coordinator)
+        self.client.force_authenticate(user=self.manager)
         response = self.client.get("/structures-admin/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data[0]["slug"], structure.slug)
 
     def test_coord_cant_see_structures_outside_his_dept(self):
         make_structure(department=12)
-        self.client.force_authenticate(user=self.coordinator)
+        self.client.force_authenticate(user=self.manager)
         response = self.client.get("/structures-admin/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
     def test_coord_without_dept_cant_see_structures(self):
-        coordinator = baker.make(
-            "users.User", is_valid=True, is_staff=False, is_local_coordinator=True
+        manager = baker.make(
+            "users.User", is_valid=True, is_staff=False, is_manager=True
         )
         make_structure(department=31)
-        self.client.force_authenticate(user=coordinator)
+        self.client.force_authenticate(user=manager)
         response = self.client.get("/structures-admin/")
         self.assertEqual(response.status_code, 403)
 
     def test_coord_can_see_specific_structure_in_his_dept(self):
         structure = make_structure(department=31)
-        self.client.force_authenticate(user=self.coordinator)
+        self.client.force_authenticate(user=self.manager)
         response = self.client.get(f"/structures-admin/{structure.slug}/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["slug"], structure.slug)
 
     def test_coord_cant_see_specific_structure_outside_his_dept(self):
         structure = make_structure(department=12)
-        self.client.force_authenticate(user=self.coordinator)
+        self.client.force_authenticate(user=self.manager)
         response = self.client.get(f"/structures-admin/{structure.slug}/")
         self.assertEqual(response.status_code, 404)
 
     def test_coord_without_dept_cant_see_specific_structure(self):
-        coordinator = baker.make(
-            "users.User", is_valid=True, is_staff=False, is_local_coordinator=True
+        manager = baker.make(
+            "users.User", is_valid=True, is_staff=False, is_manager=True
         )
         structure = make_structure(department=31)
-        self.client.force_authenticate(user=coordinator)
+        self.client.force_authenticate(user=manager)
         response = self.client.get(f"/structures-admin/{structure.slug}/")
         self.assertEqual(response.status_code, 403)

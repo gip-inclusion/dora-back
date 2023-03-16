@@ -21,7 +21,6 @@ def convert_history(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core", "0002_initial"),
         ("services", "0070_init_moderation_status"),

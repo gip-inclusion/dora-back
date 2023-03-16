@@ -50,7 +50,6 @@ def migrate_categories(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0077_migrate_fee"),
     ]

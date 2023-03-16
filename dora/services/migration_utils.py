@@ -1,4 +1,8 @@
+import logging
+
 from django.core.exceptions import ValidationError
+
+logger = logging.getLogger(__name__)
 
 
 def extract_subcategories(service):
@@ -131,7 +135,10 @@ def update_subcategory_value_and_label(
 ):
     old_subcategory = get_subcategory_by_value(ServiceSubCategory, old_value)
     if old_subcategory is None:
-        raise ValidationError(f"Aucun besoin trouvé avec la value: '{old_value}'")
+        logger.warning(
+            f"Modification du besoin '{old_value}' vers '{new_value}' va être ignorée car '{old_value}' n‘existe pas"
+        )
+        return
 
     new_subcategory = get_subcategory_by_value(ServiceSubCategory, new_value)
     if new_subcategory is not None:
@@ -140,6 +147,22 @@ def update_subcategory_value_and_label(
     old_subcategory.value = new_value
     old_subcategory.label = new_label
     old_subcategory.save()
+
+
+def update_category_value_and_label(ServiceCategory, old_value, new_value, new_label):
+    old_category = get_category_by_value(ServiceCategory, old_value)
+    if old_category is None:
+        raise ValidationError(f"Aucune thématique trouvée avec la value: '{old_value}'")
+
+    new_category = get_category_by_value(ServiceCategory, new_value)
+    if new_category is not None:
+        raise ValidationError(f"La value '{new_value}' est déjà utilisée")
+
+    old_category.value = new_value
+    old_category.label = new_label
+    old_category.save()
+
+    # TODO: migrate subcategories to the new value
 
 
 def replace_subcategory(ServiceSubCategory, Service, from_value, to_value):

@@ -32,8 +32,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "email",
             "first_name",
             "full_name",
-            "is_bizdev",
-            "is_local_coordinator",
+            "is_manager",
             "is_staff",
             "last_name",
             "newsletter",
@@ -41,6 +40,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "phone_number",
             "short_name",
             "structures",
+            "onboarding_actions_accomplished",
             "token_expiration",
         ]
 

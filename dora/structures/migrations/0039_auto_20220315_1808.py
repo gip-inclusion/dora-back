@@ -6,7 +6,6 @@ import dora.core.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("structures", "0038_auto_20220315_1602"),
     ]

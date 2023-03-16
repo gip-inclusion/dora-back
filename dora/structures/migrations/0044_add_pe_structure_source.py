@@ -9,7 +9,6 @@ def add_source(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("structures", "0043_structure_geocoding_score"),
     ]

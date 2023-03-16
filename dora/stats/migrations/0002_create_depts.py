@@ -19,7 +19,6 @@ def delete_depts(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("stats", "0001_initial"),
     ]

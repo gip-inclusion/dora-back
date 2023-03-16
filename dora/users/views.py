@@ -18,6 +18,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "last_name",
             "newsletter",
             "phone_number",
+            "onboarding_actions_accomplished",
         ]
         read_only_fields = ["email"]
 
@@ -47,7 +48,6 @@ class PasswordChangeSerializer(serializers.Serializer):
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def password_change(request):
-
     serializer = PasswordChangeSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     current_password = serializer.validated_data["current_password"]

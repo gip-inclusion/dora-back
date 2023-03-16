@@ -23,7 +23,6 @@ def init_moderation_status(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core", "0002_initial"),
         ("services", "0069_service_moderation_date_service_moderation_status_and_more"),

@@ -124,7 +124,6 @@ class Command(BaseCommand):
 
                     parent = data.get("parent_structure")
                     if parent:
-
                         branch, created = Structure.objects.get_or_create(
                             name=data["name"], parent=parent
                         )
