@@ -135,10 +135,8 @@ def update_subcategory_value_and_label(
 ):
     old_subcategory = get_subcategory_by_value(ServiceSubCategory, old_value)
 
-    """
-    Certains besoins ayant été créés via le back-office, certaines migrations peuvent échouées depuis une BDD vide…
-    Pour éviter cela, on quitte la méthode prématurément sans renvoyer d'erreur
-    """
+    # Certains besoins ayant été créés via le back-office, certaines migrations peuvent échouer depuis une BDD vide…
+    # Pour éviter cela, on quitte la méthode prématurément sans renvoyer d'erreur
     if old_subcategory is None:
         return
 
