@@ -134,10 +134,12 @@ def update_subcategory_value_and_label(
     ServiceSubCategory, old_value, new_value, new_label
 ):
     old_subcategory = get_subcategory_by_value(ServiceSubCategory, old_value)
+
+    """
+    Certains besoins ayant été créés via le back-office, certaines migrations peuvent échouées depuis une BDD vide…
+    Pour éviter, on quitte la méthode prématurément sans renvoyer d'erreur
+    """
     if old_subcategory is None:
-        logger.warning(
-            f"Modification du besoin '{old_value}' vers '{new_value}' va être ignorée car '{old_value}' n‘existe pas"
-        )
         return
 
     new_subcategory = get_subcategory_by_value(ServiceSubCategory, new_value)
