@@ -91,6 +91,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "opening_hours",
             "opening_hours_details",
             "other_labels",
+            "quick_start_done",
             "parent",
             "phone",
             "postal_code",
