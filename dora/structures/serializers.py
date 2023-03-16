@@ -232,6 +232,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     "postal_code",
                     "short_desc",
                     "slug",
+                    "location_kinds",
                     "status",
                     "structure",
                     "use_inclusion_numerique_scheme",
