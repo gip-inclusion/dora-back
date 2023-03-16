@@ -137,7 +137,7 @@ def update_subcategory_value_and_label(
 
     """
     Certains besoins ayant été créés via le back-office, certaines migrations peuvent échouées depuis une BDD vide…
-    Pour éviter, on quitte la méthode prématurément sans renvoyer d'erreur
+    Pour éviter cela, on quitte la méthode prématurément sans renvoyer d'erreur
     """
     if old_subcategory is None:
         return
