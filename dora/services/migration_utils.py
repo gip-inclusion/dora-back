@@ -151,8 +151,11 @@ def update_subcategory_value_and_label(
 
 def update_category_value_and_label(ServiceCategory, old_value, new_value, new_label):
     old_category = get_category_by_value(ServiceCategory, old_value)
+
+    # Certaines thématiques ayant été créées via le back-office, certaines migrations peuvent échouer depuis une BDD vide…
+    # Pour éviter cela, on quitte la méthode prématurément sans renvoyer d'erreur
     if old_category is None:
-        raise ValidationError(f"Aucune thématique trouvée avec la value: '{old_value}'")
+        return
 
     new_category = get_category_by_value(ServiceCategory, new_value)
     if new_category is not None:
