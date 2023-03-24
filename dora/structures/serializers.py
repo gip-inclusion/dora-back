@@ -94,6 +94,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "parent",
             "phone",
             "postal_code",
+            "quick_start_done",
             "services",
             "short_desc",
             "siret",
