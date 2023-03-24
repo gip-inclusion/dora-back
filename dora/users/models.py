@@ -80,7 +80,6 @@ class User(AbstractBaseUser):
     newsletter = models.BooleanField(default=False, db_index=True)
 
     bookmarks = models.ManyToManyField("services.Service", through="services.Bookmark")
-    onboarding_actions_accomplished = models.JSONField(default=dict)
 
     objects = UserManager()
 
