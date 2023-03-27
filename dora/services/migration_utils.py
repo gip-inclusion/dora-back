@@ -149,10 +149,20 @@ def update_subcategory_value_and_label(
     old_subcategory.save()
 
 
-def update_category_value_and_label(ServiceCategory, old_value, new_value, new_label):
+def update_category_value_and_label(
+    ServiceCategory,
+    ServiceSubCategory,
+    old_value,
+    new_value,
+    new_label,
+    migrate_subcategories=True,
+):
     old_category = get_category_by_value(ServiceCategory, old_value)
+
+    # Certaines thématiques ayant été créées via le back-office, certaines migrations peuvent échouer depuis une BDD vide…
+    # Pour éviter cela, on quitte la méthode prématurément sans renvoyer d'erreur
     if old_category is None:
-        raise ValidationError(f"Aucune thématique trouvée avec la value: '{old_value}'")
+        return
 
     new_category = get_category_by_value(ServiceCategory, new_value)
     if new_category is not None:
@@ -162,7 +172,15 @@ def update_category_value_and_label(ServiceCategory, old_value, new_value, new_l
     old_category.label = new_label
     old_category.save()
 
-    # TODO: migrate subcategories to the new value
+    # Migration des besoins associés
+    if migrate_subcategories:
+        for subcategory in ServiceSubCategory.objects.filter(
+            value__startswith=f"{old_value}--"
+        ).all():
+            subcategory.value = subcategory.value.replace(
+                f"{old_value}--", f"{new_value}--"
+            )
+            subcategory.save()
 
 
 def replace_subcategory(ServiceSubCategory, Service, from_value, to_value):

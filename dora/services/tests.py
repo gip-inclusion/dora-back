@@ -2570,6 +2570,42 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         # QUAND je la modifie
         update_category_value_and_label(
             ServiceCategory,
+            ServiceSubCategory,
+            old_value=old_value,
+            new_value=new_value,
+            new_label=new_label,
+            migrate_subcategories=False,
+        )
+
+        # ALORS la thématique est correctement modifiée
+        self.assertEqual(ServiceCategory.objects.filter(value=old_value).count(), 0)
+
+        category = ServiceCategory.objects.filter(value=new_value)
+        self.assertEqual(category.count(), 1)
+        self.assertEqual(category.first().value, new_value)
+        self.assertEqual(category.first().label, new_label)
+
+    def test_update_category_value_and_label_value_with_subcategories(self):
+        old_value = "old_value"
+        new_value = "new_value"
+        new_label = "new_label"
+
+        # ÉTANT DONNÉ une thématique existante
+        baker.make("ServiceCategory", value=old_value, label="Label_1")
+        self.assertEqual(ServiceCategory.objects.filter(value=old_value).count(), 1)
+
+        # ET deux besoins associés
+        old_subcategory_value_1 = f"{old_value}--subcategory_1"
+        old_subcategory_value_2 = f"{old_value}--subcategory_2"
+        new_subcategory_value_1 = f"{new_value}--subcategory_1"
+        new_subcategory_value_2 = f"{new_value}--subcategory_2"
+        baker.make("ServiceSubCategory", value=old_subcategory_value_1)
+        baker.make("ServiceSubCategory", value=old_subcategory_value_2)
+
+        # QUAND je la modifie
+        update_category_value_and_label(
+            ServiceCategory,
+            ServiceSubCategory,
             old_value=old_value,
             new_value=new_value,
             new_label=new_label,
@@ -2582,6 +2618,20 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         self.assertEqual(category.count(), 1)
         self.assertEqual(category.first().value, new_value)
         self.assertEqual(category.first().label, new_label)
+
+        # ET les besoins aussi
+        self.assertEqual(
+            ServiceSubCategory.objects.filter(value=old_subcategory_value_1).count(), 0
+        )
+        self.assertEqual(
+            ServiceSubCategory.objects.filter(value=old_subcategory_value_2).count(), 0
+        )
+        self.assertEqual(
+            ServiceSubCategory.objects.filter(value=new_subcategory_value_1).count(), 1
+        )
+        self.assertEqual(
+            ServiceSubCategory.objects.filter(value=new_subcategory_value_2).count(), 1
+        )
 
     def test_unlink_services_from_category(self):
         # ÉTANT DONNÉ un service existant lié à deux thématiques
