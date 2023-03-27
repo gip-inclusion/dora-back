@@ -220,11 +220,13 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # User uploaded files
 # https://django-storages.readthedocs.io/en/latest/backends/azure.html
-DEFAULT_FILE_STORAGE = "storages.backends.azure_storage.AzureStorage"
-AZURE_ACCOUNT_NAME = os.environ["AZURE_ACCOUNT_NAME"]
-AZURE_ACCOUNT_KEY = os.environ["AZURE_ACCOUNT_KEY"]
-AZURE_CONTAINER = os.environ["AZURE_CONTAINER"]
-AZURE_URL_EXPIRATION_SECS = 24 * 3600
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+AWS_S3_ENDPOINT_URL = os.environ["AWS_S3_ENDPOINT_URL"]
+AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
+AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
+AWS_STORAGE_BUCKET_NAME = os.environ["AWS_STORAGE_BUCKET_NAME"]
+AWS_QUERYSTRING_EXPIRE = 24 * 3600  # secondes
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
