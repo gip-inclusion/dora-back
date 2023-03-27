@@ -94,6 +94,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "parent",
             "phone",
             "postal_code",
+            "quick_start_done",
             "services",
             "short_desc",
             "siret",
@@ -225,6 +226,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     "diffusion_zone_type",
                     "diffusion_zone_type_display",
                     "is_available",
+                    "location_kinds",
                     "model",
                     "model_changed",
                     "modification_date",
@@ -294,10 +296,12 @@ class StructureSerializer(serializers.ModelSerializer):
             class Meta:
                 model = Structure
                 fields = [
+                    "city",
                     "department",
                     "modification_date",
                     "name",
                     "num_services",
+                    "postal_code",
                     "slug",
                     "typology_display",
                 ]
