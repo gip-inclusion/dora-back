@@ -22,7 +22,6 @@ from dora.services.migration_utils import (
     unlink_services_from_category,
     unlink_services_from_subcategory,
     update_category_value_and_label,
-    update_category_value_and_label_with_subcategories,
     update_subcategory_value_and_label,
 )
 from dora.services.utils import SYNC_CUSTOM_M2M_FIELDS, SYNC_FIELDS, SYNC_M2M_FIELDS
@@ -2571,9 +2570,11 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         # QUAND je la modifie
         update_category_value_and_label(
             ServiceCategory,
+            ServiceSubCategory,
             old_value=old_value,
             new_value=new_value,
             new_label=new_label,
+            migrate_subcategories=False,
         )
 
         # ALORS la thématique est correctement modifiée
@@ -2602,7 +2603,7 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         baker.make("ServiceSubCategory", value=old_subcategory_value_2)
 
         # QUAND je la modifie
-        update_category_value_and_label_with_subcategories(
+        update_category_value_and_label(
             ServiceCategory,
             ServiceSubCategory,
             old_value=old_value,

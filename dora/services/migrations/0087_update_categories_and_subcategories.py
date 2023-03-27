@@ -30,9 +30,11 @@ def migrate_services_options(apps, schema_editor):
     # Acco. global individualisé => Accompagnement social et professionnel personnalisé
     update_category_value_and_label(
         ServiceCategory,
+        ServiceSubCategory,
         old_value="acc-global-indiv",
         new_value="accompagnement-social-et-professionnel-personnalise",
         new_label="Accompagnement social et professionnel personnalisé",
+        migrate_subcategories=False,
     )
 
     # Difficultes financières => Gestion financière
@@ -41,9 +43,11 @@ def migrate_services_options(apps, schema_editor):
 
     update_category_value_and_label(
         ServiceCategory,
+        ServiceSubCategory,
         old_value=difficultes_financieres,
         new_value=gestion_financiere,
         new_label="Gestion financière",
+        migrate_subcategories=False,
     )
     update_subcategory_value_and_label(
         ServiceSubCategory,

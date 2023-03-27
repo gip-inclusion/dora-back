@@ -149,9 +149,14 @@ def update_subcategory_value_and_label(
     old_subcategory.save()
 
 
-# Ne pas utiliser directement dans les migrations => Préférer `update_category_value_and_label_with_subcategories` qui migre aussi les besoins
-# MAIS ne pas supprimer car cela casserait des migrations existantes
-def update_category_value_and_label(ServiceCategory, old_value, new_value, new_label):
+def update_category_value_and_label(
+    ServiceCategory,
+    ServiceSubCategory,
+    old_value,
+    new_value,
+    new_label,
+    migrate_subcategories=True,
+):
     old_category = get_category_by_value(ServiceCategory, old_value)
 
     # Certaines thématiques ayant été créées via le back-office, certaines migrations peuvent échouer depuis une BDD vide…
@@ -167,19 +172,15 @@ def update_category_value_and_label(ServiceCategory, old_value, new_value, new_l
     old_category.label = new_label
     old_category.save()
 
-
-def update_category_value_and_label_with_subcategories(
-    ServiceCategory, ServiceSubCategory, old_value, new_value, new_label
-):
-    update_category_value_and_label(ServiceCategory, old_value, new_value, new_label)
-
-    for subcategory in ServiceSubCategory.objects.filter(
-        value__startswith=f"{old_value}--"
-    ).all():
-        subcategory.value = subcategory.value.replace(
-            f"{old_value}--", f"{new_value}--"
-        )
-        subcategory.save()
+    # Migration des besoins associés
+    if migrate_subcategories:
+        for subcategory in ServiceSubCategory.objects.filter(
+            value__startswith=f"{old_value}--"
+        ).all():
+            subcategory.value = subcategory.value.replace(
+                f"{old_value}--", f"{new_value}--"
+            )
+            subcategory.save()
 
 
 def replace_subcategory(ServiceSubCategory, Service, from_value, to_value):

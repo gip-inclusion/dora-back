@@ -2,9 +2,7 @@
 
 from django.db import migrations
 
-from dora.services.migration_utils import (
-    update_category_value_and_label_with_subcategories,
-)
+from dora.services.migration_utils import update_category_value_and_label
 
 
 def migrate_services_options(apps, schema_editor):
@@ -18,35 +16,35 @@ def migrate_services_options(apps, schema_editor):
     #   - acces-aux-droits => acces-aux-droits-et-citoyennete
     #   - equipement-alimentation => equipement-et-alimentation
 
-    update_category_value_and_label_with_subcategories(
+    update_category_value_and_label(
         ServiceCategory,
         ServiceSubCategory,
         "equipement-alimentation",
         "equipement-et-alimentation",
         "Équipement et alimentation",
     )
-    update_category_value_and_label_with_subcategories(
+    update_category_value_and_label(
         ServiceCategory,
         ServiceSubCategory,
         "acces-aux-droits",
         "acces-aux-droits-et-citoyennete",
         "Accès aux droits & citoyenneté",
     )
-    update_category_value_and_label_with_subcategories(
+    update_category_value_and_label(
         ServiceCategory,
         ServiceSubCategory,
         "emploi-choisir-metier",
         "choisir-un-metier",
         "Emploi - Choisir un métier",
     )
-    update_category_value_and_label_with_subcategories(
+    update_category_value_and_label(
         ServiceCategory,
         ServiceSubCategory,
         "emploi-preparer-sa-candidature",
         "preparer-sa-candidature",
         "Emploi - Préparer sa candidature",
     )
-    update_category_value_and_label_with_subcategories(
+    update_category_value_and_label(
         ServiceCategory,
         ServiceSubCategory,
         "emploi-trouver-emploi",
