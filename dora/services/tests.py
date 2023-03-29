@@ -294,6 +294,15 @@ class ServiceTestCase(APITestCase):
         self.assertNotIn(self.my_draft_service.slug, services_ids)
         self.assertNotIn(self.other_draft_service, services_ids)
 
+    def test_manager_can_see_its_drafs_outside_its_department(self):
+        self.client.force_authenticate(user=self.manager)
+        struct_44 = make_structure(self.manager, department="44")
+        draft_44 = make_service(structure=struct_44, status=ServiceStatus.DRAFT)
+
+        response = self.client.get(f"/services/{draft_44.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["name"], draft_44.name)
+
     def test_superuser_can_edit_everything(self):
         self.client.force_authenticate(user=self.superuser)
         response = self.client.patch(

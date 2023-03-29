@@ -135,6 +135,7 @@ class ServiceViewSet(
             qs = all_services.filter(
                 Q(status=ServiceStatus.PUBLISHED)
                 | Q(structure__department=user.department)
+                | Q(structure__membership__user=user)
             )
         else:
             # Authentified users can see everything in their structure
