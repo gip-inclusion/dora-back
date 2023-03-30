@@ -222,6 +222,7 @@ class Structure(ModerationMixin, models.Model):
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(blank=True, null=True)
     has_been_edited = models.BooleanField(default=False)
+    quick_start_done = models.BooleanField(default=False)
     creator = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -296,17 +297,33 @@ class Structure(ModerationMixin, models.Model):
             self.slug = make_unique_slug(self, self.name)
         if self.parent and not self.branch_id:
             self.branch_id = self._make_unique_branch_id()
-        if not self.department and self.city_code:
-            code = self.city_code
-            self.department = code_insee_to_code_dept(code)
+        if self.city_code:
+            self.department = code_insee_to_code_dept(self.city_code)
         return super().save(*args, **kwargs)
 
-    def can_write(self, user):
+    def can_edit_informations(self, user: User):
+        return user.is_authenticated and (
+            user.is_staff or self.is_manager(user) or self.is_admin(user)
+        )
+
+    def can_view_members(self, user: User):
+        return user.is_authenticated and (
+            user.is_staff or self.is_manager(user) or self.is_member(user)
+        )
+
+    def can_edit_members(self, user: User):
+        return user.is_authenticated and (user.is_staff or self.is_admin(user))
+
+    def can_edit_services(self, user: User):
+        return user.is_authenticated and (
+            user.is_staff or self.is_manager(user) or self.is_member(user)
+        )
+
+    def can_invite_first_admin(self, user: User):
         return (
-            user.is_staff
-            or StructureMember.objects.filter(
-                structure_id=self.id, user_id=user.id, is_admin=True
-            ).exists()
+            user.is_authenticated
+            and not self.has_admin()
+            and (user.is_staff or self.is_admin(user) or self.is_manager(user))
         )
 
     def is_member(self, user):
@@ -318,6 +335,14 @@ class Structure(ModerationMixin, models.Model):
         return StructureMember.objects.filter(
             structure_id=self.id, user_id=user.id, is_admin=True
         ).exists()
+
+    def is_manager(self, user: User):
+        return (
+            user.is_authenticated
+            and user.is_manager
+            and user.department
+            and user.department == self.department
+        )
 
     def has_admin(self):
         return self.membership.filter(
@@ -357,7 +382,9 @@ class Structure(ModerationMixin, models.Model):
         self.save(update_fields=["email", "phone", "url"])
 
     def get_num_visible_services(self, user):
-        if user.is_authenticated and (user.is_staff or self.is_member(user)):
+        if user.is_authenticated and (
+            user.is_staff or self.is_manager(user) or self.is_member(user)
+        ):
             return self.services.active().count()
         else:
             return self.services.published().count()

@@ -14,7 +14,7 @@ from django.utils.text import slugify
 from dora.admin_express.models import AdminDivisionType
 from dora.admin_express.utils import get_clean_city_name
 from dora.core.models import EnumModel, LogItem, ModerationMixin
-from dora.structures.models import Structure, StructureMember
+from dora.structures.models import Structure
 
 from .enums import ServiceStatus
 
@@ -405,11 +405,10 @@ class Service(ModerationMixin, models.Model):
         return super().save(*args, **kwargs)
 
     def can_write(self, user):
-        return (
+        return user.is_authenticated and (
             user.is_staff
-            or StructureMember.objects.filter(
-                structure_id=self.structure_id, user_id=user.id
-            ).exists()
+            or self.structure.is_manager(user)
+            or self.structure.is_member(user)
         )
 
     def get_frontend_url(self):

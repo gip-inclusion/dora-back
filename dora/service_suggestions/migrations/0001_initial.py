@@ -10,7 +10,6 @@ import dora.core.validators
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [

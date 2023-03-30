@@ -2,7 +2,7 @@ import logging
 
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
-from rest_framework import serializers
+from rest_framework import exceptions, serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 
 from dora.admin_express.models import EPCI, City, Department, Region
@@ -397,13 +397,8 @@ class ServiceSerializer(serializers.ModelSerializer):
         )
 
         if "structure" in data:
-            if not user.is_staff and data["structure"].id not in user_structures:
-                raise serializers.ValidationError(
-                    {"structure": "Vous n’appartenez pas à cette structure"},
-                    "not_member_of_struct",
-                )
-
-        assert structure.id is None or structure.id in user_structures or user.is_staff
+            if not data["structure"].can_edit_services(user):
+                raise exceptions.PermissionDenied()
 
         if "access_conditions" in data:
             self._validate_custom_choice(

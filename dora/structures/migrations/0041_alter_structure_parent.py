@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("structures", "0040_merge_0038_rename_ids_0039_auto_20220315_1808"),
     ]

@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("structures", "0038_rename_ids"),
         ("structures", "0039_auto_20220315_1808"),

@@ -6,7 +6,6 @@ import dora.core.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("structures", "0041_alter_structure_parent"),
     ]

@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0068_alter_customizablechoicesset_credentials_and_more"),
     ]

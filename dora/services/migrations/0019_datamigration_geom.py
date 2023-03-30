@@ -13,7 +13,6 @@ def to_point(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0018_service_geom"),
     ]

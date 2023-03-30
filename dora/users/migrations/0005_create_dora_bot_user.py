@@ -17,7 +17,6 @@ def create_bot_user(apps, _schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("users", "0004_alter_user_is_valid"),
     ]

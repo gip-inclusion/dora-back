@@ -66,18 +66,13 @@ class User(AbstractBaseUser):
         default=False,
         help_text="Designates whether the user can log into this admin site.",
     )
-    is_bizdev = models.BooleanField(
-        "bizdev status",
+    is_manager = models.BooleanField(
+        "gestionnaire",
         default=False,
-        help_text="Indique si l’utilisateur a les droits bizdev (valider les contributions…)",
-    )
-    is_local_coordinator = models.BooleanField(
-        "coordinateur local",
-        default=False,
-        help_text="Indique si l’utilisateur est un coordinateur local",
+        help_text="Indique si l’utilisateur est un gestionnaire (de département)",
     )
     department = models.CharField(
-        max_length=3, default="", help_text="Département d'un coordinateur local"
+        max_length=3, default="", blank=True, help_text="Département d'un gestionnaire"
     )
 
     date_joined = models.DateTimeField("date joined", default=timezone.now)
@@ -85,6 +80,7 @@ class User(AbstractBaseUser):
     newsletter = models.BooleanField(default=False, db_index=True)
 
     bookmarks = models.ManyToManyField("services.Service", through="services.Bookmark")
+
     objects = UserManager()
 
     USERNAME_FIELD = "email"

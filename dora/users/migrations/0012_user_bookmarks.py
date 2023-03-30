@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("services", "0084_bookmark_bookmark_services_unique_bookmark"),
         ("users", "0011_user_ic_id"),

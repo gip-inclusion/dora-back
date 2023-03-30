@@ -1,100 +1,126 @@
-from rest_framework import permissions
+from rest_framework import exceptions, permissions
 
-from dora.structures.models import Structure, StructureMember
+from dora.structures.models import Structure
 
 
 class StructurePermission(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
 
-        # Nobody can delete a structure
+        # Personne ne peut supprimer une structure
         if request.method == "DELETE":
             return False
 
-        # Anybody can read
-        if request.method in permissions.SAFE_METHODS:
+        # Tout le monde peut **voir** les structures
+        elif request.method in permissions.SAFE_METHODS:
             return True
 
-        # Authentified user can read and write
-        return user and user.is_authenticated
+        # Les utilisateurs connectés peuvent potentiellement
+        # créer ou modifier des structures
+        # (`has_object_permission` déterminera par la suite lesquelles)
+        else:
+            return user and user.is_authenticated
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request, view, structure: Structure):
         user = request.user
-        # Anybody can read
+
+        # Lecture : tout le monde peut voir les structures
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        # Staff can do anything
-        if user.is_staff:
-            return True
-
-        # Structure admins can edit their Structures' stuff
-        administered_structures = Structure.objects.filter(
-            membership__user=user, membership__is_admin=True
-        )
-        return obj in administered_structures
+        # Écriture :
+        return structure.can_edit_informations(user)
 
 
 class StructureMemberPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
-        if not user and user.is_authenticated:
+
+        # Les utilisateurs non connectés ne peuvent jamais
+        # voir les autres utilisateurs
+        if not (user and user.is_authenticated):
             return False
 
-        if request.method in permissions.SAFE_METHODS:
+        # L'API ne permet pas de créer des `Member` directement
+        # (il faut passer par un PutativeMember)
+        elif request.method == "POST":
+            return False
+
+        # Les utilisateurs connectés peuvent voir ou éditer certains autres utilisateurs
+        # (`has_object_permission` determinera par la suite lesquels)
+        else:
             return True
-
-        # You can't create a Member via the API (must be a Putative Member)
-        if request.method == "POST":
-            return False
-
-        return True
 
     def has_object_permission(self, request, view, obj):
         user = request.user
 
-        # Staff can do anything
+        assert user and user.is_authenticated  # Vérifié par has_permission
+
+        # Les superusers ont tous les droits
         if user.is_staff:
             return True
 
-        # Struct admin can only edit their Structures' stuff
-        if obj.structure in Structure.objects.filter(
-            membership__user=user, membership__is_admin=True
-        ):
+        # Les administrateurs de structure ont tous les droits sur leurs collaborateurs
+        elif obj.structure.is_admin(user):
             return True
 
-        # People can only see their Structures' stuff
-        if obj.structure in Structure.objects.filter(membership__user=user):
+        # Les gestionnaires peuvent voir les collaborateurs, et
+        # inviter le premier administrateur
+        elif obj.structure.is_manager(user):
+            if request.method == "POST":
+                return not obj.structure.has_admin()
+            else:
+                return request.method in permissions.SAFE_METHODS
+
+        # Les collaborateurs d'une structure peuvent **voir** leurs collègues
+        elif obj.structure.is_member(user):
             return request.method in permissions.SAFE_METHODS
 
-        # bizdevs can read only
-        if user.is_bizdev:
-            return request.method in permissions.SAFE_METHODS
-
-        return False
+        # Par défaut, aucun accès aux collaborateurs des autres structures
+        else:
+            return False
 
 
 class StructurePutativeMemberPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
-        if not user and user.is_authenticated:
+
+        # Les utilisateurs non connectés ne peuvent jamais
+        # voir, ni éditer de membres potentiels
+        if not (user and user.is_authenticated):
             return False
 
-        if request.method in permissions.SAFE_METHODS:
+        # Les utilisateurs connectés peuvent **voir** certains autres utilisateurs
+        # (`has_object_permission` determinera par la suite lesquels)
+        elif request.method in permissions.SAFE_METHODS:
             return True
 
-        if request.method == "POST":
+        # droit de création
+        elif request.method == "POST":
+            # Il est nécessaire de préciser la structure
             structure_slug = request.query_params.get("structure")
             if not structure_slug:
                 return False
-            # Check that we are staff, bizdev or admin of this structure
-            if user.is_staff or user.is_bizdev:
-                return True
             try:
-                StructureMember.objects.get(
-                    user_id=user.id, is_admin=True, structure__slug=structure_slug
-                )
+                structure = Structure.objects.get(slug=structure_slug)
+            except Structure.DoesNotExist:
+                raise exceptions.NotFound
+
+            # Les superuser peuvent inviter
+            if user.is_staff:
                 return True
-            except StructureMember.DoesNotExist:
+            # Les administrateurs peuvent inviter
+            elif structure.is_admin(user):
+                return True
+            # Les gestionnaires peuvent inviter le premier administrateur
+            elif structure.is_manager(user) and not structure.has_admin():
+                return request.data.get("is_admin") is True
+            # Les autres catégories d'utilisateur ne peuvent pas inviter
+            else:
                 return False
-        return False
+        # impossible de modifier un utilisateur potentiel
+        # Note: pour annuler une invitation on passe pour l'instant par
+        # StructurePutativeMemberViewset.cancel_invite
+        # et non pas par un DELETE (ce qui n'est pas forcement une bonne idée)
+        else:
+            return False

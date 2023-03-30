@@ -6,7 +6,6 @@ import dora.structures.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("structures", "0006_structure_typology"),
     ]

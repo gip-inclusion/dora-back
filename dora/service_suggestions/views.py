@@ -18,22 +18,16 @@ class ServiceSuggestionPermission(permissions.BasePermission):
         if request.method == "POST":
             return True
         else:
-            # Only bizdevs or staff can do anything else
-            return request.user.is_authenticated and (
-                request.user.is_bizdev or request.user.is_staff
-            )
+            # Only staff can do anything else
+            return request.user.is_authenticated and request.user.is_staff
 
     def has_object_permission(self, request, view, obj):
-        return request.user.is_authenticated and (
-            request.user.is_bizdev or request.user.is_staff
-        )
+        return request.user.is_authenticated and request.user.is_staff
 
 
 class ServiceSuggestionValidationPermission(permissions.BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and (
-            request.user.is_bizdev or request.user.is_staff
-        )
+        return request.user.is_authenticated and request.user.is_staff
 
 
 class ServiceSuggestionViewSet(

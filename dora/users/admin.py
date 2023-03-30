@@ -72,22 +72,13 @@ class UserAdmin(BaseUserAdmin):
         "email",
         "get_full_name",
         "is_staff",
-        "is_bizdev",
-        "is_local_coordinator",
+        "is_manager",
         "is_active",
         "is_valid",
         "date_joined",
-        "newsletter",
         has_migrated_to_ic,
     )
-    list_filter = (
-        "is_staff",
-        "is_bizdev",
-        "is_local_coordinator",
-        "is_active",
-        "is_valid",
-        "newsletter",
-    )
+    list_filter = ("is_staff", "is_manager", "is_active", "is_valid", "department")
     fieldsets = (
         (
             None,
@@ -107,12 +98,10 @@ class UserAdmin(BaseUserAdmin):
             {
                 "fields": (
                     "is_staff",
-                    "is_bizdev",
-                    "is_local_coordinator",
+                    "is_manager",
                     "department",
                     "is_active",
                     "is_valid",
-                    "newsletter",
                 )
             },
         ),
@@ -130,7 +119,7 @@ class UserAdmin(BaseUserAdmin):
         ),
     )
     search_fields = ("email", "last_name", "first_name")
-    readonly_fields = ["newsletter", has_migrated_to_ic]
+    readonly_fields = [has_migrated_to_ic]
     ordering = ("-date_joined",)
     filter_horizontal = ()
     inlines = [StructureMemberInline]

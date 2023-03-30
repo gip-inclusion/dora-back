@@ -21,7 +21,6 @@ def migrate_subcats(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("service_suggestions", "0068_chg_cats_suggestions")]
 
     operations = [

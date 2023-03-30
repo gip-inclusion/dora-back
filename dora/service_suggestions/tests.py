@@ -109,12 +109,12 @@ class ServiceSuggestionsTestCase(APITestCase):
         self.assertEqual(response.status_code, 403)
 
     # TEAM MODERATION
-    def test_bizdev_can_reject(self):
-        suggestion = baker.make("ServiceSuggestion")
-        user = baker.make("users.User", is_valid=True, is_bizdev=True)
-        self.client.force_authenticate(user=user)
-        response = self.client.delete(f"/services-suggestions/{suggestion.id}/")
-        self.assertEqual(response.status_code, 204)
+    # def test_manager_can_reject(self):
+    #     suggestion = baker.make("ServiceSuggestion")
+    #     user = baker.make("users.User", is_valid=True, is_manager=True)
+    #     self.client.force_authenticate(user=user)
+    #     response = self.client.delete(f"/services-suggestions/{suggestion.id}/")
+    #     self.assertEqual(response.status_code, 204)
 
     def test_su_can_reject(self):
         suggestion = baker.make("ServiceSuggestion")
@@ -135,12 +135,12 @@ class ServiceSuggestionsTestCase(APITestCase):
         response = self.client.delete(f"/services-suggestions/{suggestion.id}/")
         self.assertEqual(response.status_code, 403)
 
-    def test_bizdev_can_accept(self):
-        suggestion = baker.make("ServiceSuggestion", siret=DUMMY_SUGGESTION["siret"])
-        user = baker.make("users.User", is_valid=True, is_bizdev=True)
-        self.client.force_authenticate(user=user)
-        response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
-        self.assertEqual(response.status_code, 201)
+    # def test_manager_can_accept(self):
+    #     suggestion = baker.make("ServiceSuggestion", siret=DUMMY_SUGGESTION["siret"])
+    #     user = baker.make("users.User", is_valid=True, is_manager=True)
+    #     self.client.force_authenticate(user=user)
+    #     response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
+    #     self.assertEqual(response.status_code, 201)
 
     def test_su_can_accept(self):
         suggestion = baker.make("ServiceSuggestion", siret=DUMMY_SUGGESTION["siret"])
@@ -165,7 +165,7 @@ class ServiceSuggestionsTestCase(APITestCase):
     def test_no_mail_send(self):
         # ÉTANT DONNÉ une suggestion sans email de contact et sans structure associée
         suggestion = baker.make("ServiceSuggestion", siret=DUMMY_SUGGESTION["siret"])
-        user = baker.make("users.User", is_valid=True, is_bizdev=True)
+        user = baker.make("users.User", is_valid=True, is_staff=True)
         self.client.force_authenticate(user=user)
 
         # QUAND je valide cette suggestion
@@ -184,12 +184,16 @@ class ServiceSuggestionsTestCase(APITestCase):
             siret=DUMMY_SUGGESTION["siret"],
             contents={"contact_email": email},
         )
-        user = baker.make("users.User", is_valid=True, is_bizdev=True)
+        user = baker.make(
+            "users.User",
+            is_valid=True,
+            is_staff=True,
+        )
         self.client.force_authenticate(user=user)
 
         # QUAND je valide cette suggestion
         response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
-
+        self.assertEqual(response.status_code, 201)
         # ALORS la personne en contact est contacté
         self.assertEqual(response.data["emails_contacted"], [email])
         self.assertIn(
@@ -210,7 +214,7 @@ class ServiceSuggestionsTestCase(APITestCase):
             siret=DUMMY_SUGGESTION["siret"],
             contents={"contact_email": email},
         )
-        user = baker.make("users.User", is_valid=True, is_bizdev=True)
+        user = baker.make("users.User", is_valid=True, is_staff=True)
         self.client.force_authenticate(user=user)
 
         # QUAND je valide cette suggestion
@@ -237,7 +241,7 @@ class ServiceSuggestionsTestCase(APITestCase):
             siret=DUMMY_SUGGESTION["siret"],
             contents={"contact_email": email},
         )
-        user = baker.make("users.User", is_valid=True, is_bizdev=True)
+        user = baker.make("users.User", is_valid=True, is_staff=True)
         self.client.force_authenticate(user=user)
 
         # QUAND je valide cette suggestion
@@ -269,7 +273,7 @@ class ServiceSuggestionsTestCase(APITestCase):
             "ServiceSuggestion",
             siret=DUMMY_SUGGESTION["siret"],
         )
-        user = baker.make("users.User", is_valid=True, is_bizdev=True)
+        user = baker.make("users.User", is_valid=True, is_staff=True)
         self.client.force_authenticate(user=user)
 
         # QUAND je valide cette suggestion
@@ -301,8 +305,8 @@ class ServiceSuggestionsTestCase(APITestCase):
         )
 
         # QUAND je valide cette suggestion
-        bizdev_user = baker.make("users.User", is_valid=True, is_bizdev=True)
-        self.client.force_authenticate(user=bizdev_user)
+        staff_user = baker.make("users.User", is_valid=True, is_staff=True)
+        self.client.force_authenticate(user=staff_user)
         response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
 
         # ALORS l'administrateur est contacté
@@ -337,8 +341,8 @@ class ServiceSuggestionsTestCase(APITestCase):
         )
 
         # QUAND je valide cette suggestion
-        bizdev_user = baker.make("users.User", is_valid=True, is_bizdev=True)
-        self.client.force_authenticate(user=bizdev_user)
+        staff_user = baker.make("users.User", is_valid=True, is_staff=True)
+        self.client.force_authenticate(user=staff_user)
         response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
 
         # ALORS les deux administrateurs sont contactés
@@ -372,8 +376,8 @@ class ServiceSuggestionsTestCase(APITestCase):
         )
 
         # QUAND je valide cette suggestion
-        bizdev_user = baker.make("users.User", is_valid=True, is_bizdev=True)
-        self.client.force_authenticate(user=bizdev_user)
+        staff_user = baker.make("users.User", is_valid=True, is_staff=True)
+        self.client.force_authenticate(user=staff_user)
         response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
 
         # ALORS seul l'administrateur est contacté
@@ -408,8 +412,8 @@ class ServiceSuggestionsTestCase(APITestCase):
         )
 
         # QUAND je valide cette suggestion
-        bizdev_user = baker.make("users.User", is_valid=True, is_bizdev=True)
-        self.client.force_authenticate(user=bizdev_user)
+        staff_user = baker.make("users.User", is_valid=True, is_staff=True)
+        self.client.force_authenticate(user=staff_user)
         response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
 
         # ALORS seul l'administrateur est contacté

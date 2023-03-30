@@ -22,7 +22,12 @@ class StructureSerializer(serializers.ModelSerializer):
     )
     typology_display = serializers.SerializerMethodField()
     parent = serializers.SlugRelatedField(slug_field="slug", read_only=True)
-    can_write = serializers.SerializerMethodField()
+    can_edit_informations = serializers.SerializerMethodField()
+    can_view_members = serializers.SerializerMethodField()
+    can_edit_members = serializers.SerializerMethodField()
+    can_invite_first_admin = serializers.SerializerMethodField()
+    can_edit_services = serializers.SerializerMethodField()
+
     is_member = serializers.SerializerMethodField()
     is_pending_member = serializers.SerializerMethodField()
     is_admin = serializers.SerializerMethodField()
@@ -58,7 +63,11 @@ class StructureSerializer(serializers.ModelSerializer):
             "ape",
             "archived_services",
             "branches",
-            "can_write",
+            "can_edit_informations",
+            "can_edit_members",
+            "can_edit_services",
+            "can_invite_first_admin",
+            "can_view_members",
             "city",
             "city_code",
             "code_safir_pe",
@@ -85,6 +94,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "parent",
             "phone",
             "postal_code",
+            "quick_start_done",
             "services",
             "short_desc",
             "siret",
@@ -95,14 +105,30 @@ class StructureSerializer(serializers.ModelSerializer):
             "url",
         ]
         lookup_field = "slug"
-        read_only_fields = ["has_been_edited"]
+        read_only_fields = ["has_been_edited", "department"]
 
     def get_has_admin(self, obj):
         return obj.has_admin()
 
-    def get_can_write(self, obj: Structure):
+    def get_can_edit_informations(self, obj: Structure):
         user = self.context.get("request").user
-        return obj.can_write(user)
+        return obj.can_edit_informations(user)
+
+    def get_can_view_members(self, obj: Structure):
+        user = self.context.get("request").user
+        return obj.can_view_members(user)
+
+    def get_can_edit_members(self, obj: Structure):
+        user = self.context.get("request").user
+        return obj.can_edit_members(user)
+
+    def get_can_edit_services(self, obj: Structure):
+        user = self.context.get("request").user
+        return obj.can_edit_services(user)
+
+    def get_can_invite_first_admin(self, obj: Structure):
+        user = self.context.get("request").user
+        return obj.can_invite_first_admin(user)
 
     def get_is_member(self, obj):
         user = self.context.get("request").user
@@ -169,7 +195,7 @@ class StructureSerializer(serializers.ModelSerializer):
 
         user = self.context.get("request").user
         qs = obj.services.published()
-        if user.is_authenticated and (user.is_staff or obj.is_member(user)):
+        if obj.can_edit_services(user):
             qs = obj.services.active()
 
         qs = qs.filter(is_model=False)
@@ -200,6 +226,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     "diffusion_zone_type",
                     "diffusion_zone_type_display",
                     "is_available",
+                    "location_kinds",
                     "model",
                     "model_changed",
                     "modification_date",
@@ -214,7 +241,7 @@ class StructureSerializer(serializers.ModelSerializer):
 
         user = self.context.get("request").user
         qs = obj.services.none()
-        if user.is_authenticated and (user.is_staff or obj.is_member(user)):
+        if obj.can_edit_services(user):
             qs = obj.services.archived()
 
         qs = qs.filter(is_model=False)
@@ -269,10 +296,12 @@ class StructureSerializer(serializers.ModelSerializer):
             class Meta:
                 model = Structure
                 fields = [
+                    "city",
                     "department",
                     "modification_date",
                     "name",
                     "num_services",
+                    "postal_code",
                     "slug",
                     "typology_display",
                 ]
