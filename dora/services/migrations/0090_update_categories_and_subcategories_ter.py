@@ -10,6 +10,19 @@ def migrate_services_options(apps, schema_editor):
 
     update_subcategory_value_and_label(
         ServiceSubCategory,
+        "creation-activite--definir-son-projet-de-creation-d-entreprise",
+        "creation-activite--definir-son-projet-de-creation-dentreprise",
+        "Définir son projet de création d’entreprise",
+    )
+    update_subcategory_value_and_label(
+        ServiceSubCategory,
+        "creation-activite--structurer-son-projet-de-creation-d-entreprise",
+        "creation-activite--structurer-son-projet-de-creation-dentreprise",
+        "Structurer son projet de création d’entreprise",
+    )
+
+    update_subcategory_value_and_label(
+        ServiceSubCategory,
         "mobilite--accompagnement-parcours-mobilite",
         "mobilite--etre-accompagne-dans-son-parcours-mobilite",
         "Être accompagné(e) dans son parcours mobilité",
@@ -17,13 +30,13 @@ def migrate_services_options(apps, schema_editor):
     update_subcategory_value_and_label(
         ServiceSubCategory,
         "mobilite--preparer-permis",
-        "mobilite--preparer-son-permis-de-conduire-se-reentrainer-a-laconduite",
+        "mobilite--preparer-son-permis-de-conduire-se-reentrainer-a-la-conduite",
         "Préparer son permis de conduire, se réentraîner à la conduite",
     )
     update_subcategory_value_and_label(
         ServiceSubCategory,
-        "choisir-un-metier--decouvrir-un-metier-ou-un-secteur-dactivite",
         "choisir-un-metier--decouvrir-un-metier-ou-un-secteur-d-activite",
+        "choisir-un-metier--decouvrir-un-metier-ou-un-secteur-dactivite",
         "Découvrir un métier ou un secteur d’activité",
     )
     update_subcategory_value_and_label(
@@ -35,8 +48,20 @@ def migrate_services_options(apps, schema_editor):
     update_subcategory_value_and_label(
         ServiceSubCategory,
         "mobilite--entretenir-vehicule",
-        "mobilite--entretenir-ou-reparer-son-vehicule",
+        "mobilite--entretenir-reparer-son-vehicule",
         "Entretenir ou réparer son véhicule",
+    )
+    update_subcategory_value_and_label(
+        ServiceSubCategory,
+        "mobilite--aides-a-la-reprise-d-emploi-ou-a-la-formation",
+        "mobilite--aides-a-la-reprise-demploi-ou-a-la-formation",
+        "Aides à la reprise d‘emploi ou à la formation",
+    )
+    update_subcategory_value_and_label(
+        ServiceSubCategory,
+        "mobilite--louer-un-vehicule-voiture-velo-scooter",
+        "mobilite--louer-un-vehicule",
+        "Louer un véhicule (voiture, vélo, scooter…)",
     )
     update_subcategory_value_and_label(
         ServiceSubCategory,
@@ -83,7 +108,7 @@ def migrate_services_options(apps, schema_editor):
     update_subcategory_value_and_label(
         ServiceSubCategory,
         "handicap--retour-maintien-emploi",
-        "handicap--favoriser-le-retour-et-le-maintien-dans-l-emploi",
+        "handicap--favoriser-le-retour-et-le-maintien-dans-lemploi",
         "Favoriser le retour et le maintien dans l’emploi",
     )
     update_subcategory_value_and_label(
@@ -107,7 +132,7 @@ def migrate_services_options(apps, schema_editor):
     update_subcategory_value_and_label(
         ServiceSubCategory,
         "famille--garde-enfants",
-        "famille--garde-d-enfants",
+        "famille--garde-denfants",
         "Garde d'enfants",
     )
     update_subcategory_value_and_label(
@@ -149,13 +174,25 @@ def migrate_services_options(apps, schema_editor):
     update_subcategory_value_and_label(
         ServiceSubCategory,
         "sante--soin-prevention-maladie",
-        "sante--se-soigner-et-prévenir-la-maladie",
+        "sante--se-soigner-et-prevenir-la-maladie",
+        "Se soigner et prévenir la maladie",
+    )
+    update_subcategory_value_and_label(
+        ServiceSubCategory,
+        "sante--diagnostic-et-accompagnement-a-l-employabilite",
+        "sante--diagnostic-et-accompagnement-a-lemployabilite",
         "Se soigner et prévenir la maladie",
     )
     update_subcategory_value_and_label(
         ServiceSubCategory,
         "gestion-financiere--gerer-budget",
         "gestion-financiere--apprendre-a-gerer-son-budget",
+        "Apprendre à gérer son budget",
+    )
+    update_subcategory_value_and_label(
+        ServiceSubCategory,
+        "gestion-financiere--beneficier-d-aides-financieres",
+        "gestion-financiere--beneficier-daides-financieres",
         "Apprendre à gérer son budget",
     )
     update_subcategory_value_and_label(
@@ -185,7 +222,7 @@ def migrate_services_options(apps, schema_editor):
     update_subcategory_value_and_label(
         ServiceSubCategory,
         "sante--addiction",
-        "sante--faire-face-a-une-situation-d-addiction",
+        "sante--faire-face-a-une-situation-daddiction",
         "Faire face à une situation d’addiction",
     )
     update_subcategory_value_and_label(
@@ -214,14 +251,20 @@ def migrate_services_options(apps, schema_editor):
     )
     update_subcategory_value_and_label(
         ServiceSubCategory,
-        "logement-hebergement--adapter-logement",
         "logement-hebergement--besoin-d-adapter-mon-logement",
+        "logement-hebergement--besoin-dadapter-mon-logement",
         "Besoin d’adapter mon logement",
     )
     update_subcategory_value_and_label(
         ServiceSubCategory,
+        "logement-hebergement--mal-loge-sans-logis",
+        "logement-hebergement--mal-loges-sans-logis",
+        "Mal logé/sans logis",
+    )
+    update_subcategory_value_and_label(
+        ServiceSubCategory,
         "gestion-financiere--utilisation-compte-bancaire",
-        "gestion-financiere--creation-et-utilisation-d-un-compte-bancaire",
+        "gestion-financiere--creation-et-utilisation-dun-compte-bancaire",
         "Création et utilisation d‘un compte bancaire",
     )
     update_subcategory_value_and_label(
@@ -241,6 +284,12 @@ def migrate_services_options(apps, schema_editor):
         "handicap--adapter-logement",
         "handicap--adapter-son-logement",
         "Adapter son logement",
+    )
+    update_subcategory_value_and_label(
+        ServiceSubCategory,
+        "logement-hebergement--adapter-logement",
+        "logement-hebergement--besoin-dadapter-mon-logement",
+        "Besoin d’adapter mon logement",
     )
 
 
