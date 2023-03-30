@@ -10,19 +10,6 @@ def migrate_services_options(apps, schema_editor):
 
     update_subcategory_value_and_label(
         ServiceSubCategory,
-        "creation-activite--definir-son-projet-de-creation-d-entreprise",
-        "creation-activite--definir-son-projet-de-creation-dentreprise",
-        "Définir son projet de création d’entreprise",
-    )
-    update_subcategory_value_and_label(
-        ServiceSubCategory,
-        "creation-activite--structurer-son-projet-de-creation-d-entreprise",
-        "creation-activite--structurer-son-projet-de-creation-dentreprise",
-        "Structurer son projet de création d’entreprise",
-    )
-
-    update_subcategory_value_and_label(
-        ServiceSubCategory,
         "mobilite--accompagnement-parcours-mobilite",
         "mobilite--etre-accompagne-dans-son-parcours-mobilite",
         "Être accompagné(e) dans son parcours mobilité",
@@ -33,12 +20,7 @@ def migrate_services_options(apps, schema_editor):
         "mobilite--preparer-son-permis-de-conduire-se-reentrainer-a-la-conduite",
         "Préparer son permis de conduire, se réentraîner à la conduite",
     )
-    update_subcategory_value_and_label(
-        ServiceSubCategory,
-        "choisir-un-metier--decouvrir-un-metier-ou-un-secteur-d-activite",
-        "choisir-un-metier--decouvrir-un-metier-ou-un-secteur-dactivite",
-        "Découvrir un métier ou un secteur d’activité",
-    )
+
     update_subcategory_value_and_label(
         ServiceSubCategory,
         "preparer-sa-candidature--realiser-un-cv-etou-une-lettre-de-motivation",
@@ -251,7 +233,7 @@ def migrate_services_options(apps, schema_editor):
     )
     update_subcategory_value_and_label(
         ServiceSubCategory,
-        "logement-hebergement--besoin-d-adapter-mon-logement",
+        "logement-hebergement--adapter-logement",
         "logement-hebergement--besoin-dadapter-mon-logement",
         "Besoin d’adapter mon logement",
     )
