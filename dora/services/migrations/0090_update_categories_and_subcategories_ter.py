@@ -175,7 +175,7 @@ def migrate_services_options(apps, schema_editor):
         ServiceSubCategory,
         "gestion-financiere--beneficier-d-aides-financieres",
         "gestion-financiere--beneficier-daides-financieres",
-        "Apprendre à gérer son budget",
+        "Bénéficier d‘aides financières",
     )
     update_subcategory_value_and_label(
         ServiceSubCategory,
