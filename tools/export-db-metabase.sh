@@ -20,7 +20,6 @@ psql $SRC_DB_URL -c "ALTER TABLE mb_structure ADD PRIMARY KEY (id)"
 
 pg_dump $DATABASE_URL -O -t mb_structure -c | psql $DEST_DB_URL
 
-
 # mb_all_service
 psql $SRC_DB_URL -c "DROP TABLE IF EXISTS mb_all_service CASCADE"
 psql $SRC_DB_URL -c "
@@ -69,8 +68,18 @@ CREATE TABLE mb_all_service AS
     (select services_service.contact_name != '') AS has_contact_name,
     (select services_service.contact_phone != '') AS has_contact_phone,
     (select services_service.contact_email != '') AS has_contact_email,
-    (select concat('https://dora.fabrique.social.gouv.fr/services/', slug)) as dora_url
-   FROM services_service"
+    (select concat('https://dora.fabrique.social.gouv.fr/services/', slug)) as dora_url,
+    CASE
+      WHEN month_diff >= 8 THEN 'REQUIRED'
+      WHEN month_diff >= 6 THEN 'NEEDED'
+      ELSE 'NOT_NEEDED'
+    END as update_status
+ FROM
+        (
+   		    SELECT *,
+   		    (SELECT date_part ('year', f) * 12 + date_part ('month', f) FROM age(now(), services_service.modification_date) f) AS month_diff
+            FROM services_service
+   	    ) services_service"
 psql $SRC_DB_URL -c "ALTER TABLE mb_all_service ADD PRIMARY KEY (id)"
 
 
