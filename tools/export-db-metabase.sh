@@ -70,16 +70,11 @@ CREATE TABLE mb_all_service AS
     (select services_service.contact_email != '') AS has_contact_email,
     (select concat('https://dora.fabrique.social.gouv.fr/services/', slug)) as dora_url,
     CASE
-      WHEN month_diff >= 8 THEN 'REQUIRED'
-      WHEN month_diff >= 6 THEN 'NEEDED'
+      WHEN services_service.modification_date + '8 months'  <= now() AND services_service.status = 'PUBLISHED' THEN 'REQUIRED'
+			WHEN services_service.modification_date + '6 months'  <= now() AND services_service.status = 'PUBLISHED' THEN 'NEEDED'
       ELSE 'NOT_NEEDED'
     END as update_status
- FROM
-        (
-   		    SELECT *,
-   		    (SELECT date_part ('year', f) * 12 + date_part ('month', f) FROM age(now(), services_service.modification_date) f) AS month_diff
-            FROM services_service
-   	    ) services_service"
+ FROM services_service"
 psql $SRC_DB_URL -c "ALTER TABLE mb_all_service ADD PRIMARY KEY (id)"
 
 
