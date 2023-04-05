@@ -14,7 +14,7 @@ psql $SRC_DB_URL -c "DROP TABLE IF EXISTS mb_structure"
 psql $SRC_DB_URL -c "
 CREATE TABLE mb_structure AS
 SELECT *,
-   (select concat('https://dora.fabrique.social.gouv.fr/structures/', slug)) as dora_url
+   (select concat('https://dora.inclusion.beta.gouv.fr/structures/', slug)) as dora_url
    FROM structures_structure"
 psql $SRC_DB_URL -c "ALTER TABLE mb_structure ADD PRIMARY KEY (id)"
 
