@@ -63,16 +63,16 @@ CREATE TABLE mb_all_service AS
     services_service.model_id,
     services_service.use_inclusion_numerique_scheme,
     --
-    ( SELECT st_y((services_service.geom)::geometry) AS st_y) AS latitude,
-    ( SELECT st_x((services_service.geom)::geometry) AS st_x) AS longitude,
-    (select services_service.contact_name != '') AS has_contact_name,
-    (select services_service.contact_phone != '') AS has_contact_phone,
-    (select services_service.contact_email != '') AS has_contact_email,
+    (SELECT st_y((services_service.geom)::geometry) AS st_y) AS latitude,
+    (SELECT st_x((services_service.geom)::geometry) AS st_x) AS longitude,
+    (SELECT services_service.contact_name != '') AS has_contact_name,
+    (SELECT services_service.contact_phone != '') AS has_contact_phone,
+    (SELECT services_service.contact_email != '') AS has_contact_email,
     (select concat('https://dora.fabrique.social.gouv.fr/services/', slug)) as dora_url,
     CASE
-      WHEN services_service.modification_date + '8 months'  <= now() AND services_service.status = 'PUBLISHED' THEN 'REQUIRED'
-			WHEN services_service.modification_date + '6 months'  <= now() AND services_service.status = 'PUBLISHED' THEN 'NEEDED'
-      ELSE 'NOT_NEEDED'
+        WHEN services_service.modification_date + '8 months'  <= now() AND services_service.status = 'PUBLISHED' THEN 'REQUIRED'
+	    WHEN services_service.modification_date + '6 months'  <= now() AND services_service.status = 'PUBLISHED' THEN 'NEEDED'
+        ELSE 'NOT_NEEDED'
     END as update_status
  FROM services_service"
 psql $SRC_DB_URL -c "ALTER TABLE mb_all_service ADD PRIMARY KEY (id)"
