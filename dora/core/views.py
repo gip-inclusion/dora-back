@@ -78,7 +78,6 @@ def inclusion_connect_get_login_info(request):
         "redirect_uri": redirect_uri,
         "login_hint": login_hint,
     }
-
     return Response(
         {
             "url": furl(settings.IC_AUTH_URL).add(query).url,
