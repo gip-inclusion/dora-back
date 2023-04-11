@@ -78,6 +78,7 @@ def inclusion_connect_get_login_info(request):
         "redirect_uri": redirect_uri,
         "login_hint": login_hint,
     }
+
     return Response(
         {
             "url": furl(settings.IC_AUTH_URL).add(query).url,
@@ -99,6 +100,23 @@ def inclusion_connect_get_logout_info(request):
     return Response(
         {
             "url": furl(settings.IC_LOGOUT_URL).add(query).url,
+        }
+    )
+
+
+@api_view(["POST"])
+@permission_classes([permissions.AllowAny])
+def inclusion_connect_update_info(request):
+    referrer_uri = request.data.get("referrer_uri")
+
+    query = {
+        "from": "dora",
+        "referrer": {settings.IC_CLIENT_ID},
+        "referrer_uri": referrer_uri,
+    }
+    return Response(
+        {
+            "url": furl(settings.IC_ACCOUNT_URL).add(query).url,
         }
     )
 
