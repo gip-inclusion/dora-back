@@ -60,7 +60,7 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ["DJANGO_DEBUG"] == "true"
-PROFILE = False
+PROFILE = True
 
 # DJANGO_ADMINS=Name1:email1,Name2:email2
 ADMINS = (
@@ -325,7 +325,7 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_SSL_REDIRECT = True
 
-PUBLIC_API_VERSIONS = ["1"]
+PUBLIC_API_VERSIONS = ["1", "2"]
 
 CSP_EXCLUDE_URL_PREFIXES = tuple(
     [
@@ -344,10 +344,7 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "",
     "VERSION": None,
     "CAMELIZE_NAMES": False,
-    "POSTPROCESSING_HOOKS": [
-        "drf_spectacular.hooks.postprocess_schema_enums",
-        "drf_spectacular.contrib.djangorestframework_camel_case.camelize_serializer_fields",
-    ],
+    "POSTPROCESSING_HOOKS": [],
     "SORT_OPERATIONS": False,
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_NO_READ_ONLY_REQUIRED": True,
