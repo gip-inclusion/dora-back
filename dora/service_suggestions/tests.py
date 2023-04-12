@@ -161,6 +161,48 @@ class ServiceSuggestionsTestCase(APITestCase):
         response = self.client.post(f"/services-suggestions/{suggestion.id}/validate/")
         self.assertEqual(response.status_code, 403)
 
+    def test_remove_missing_subcategories(self):
+        # ÉTANT DONNÉ une suggestion avec un besoin inexistant et un existant
+        existing_subcategory = "existing_subcategory"
+        missing_subcategory = "missing_subcategory"
+
+        baker.make("ServiceSubCategory", value=existing_subcategory)
+        suggestion = baker.make(
+            "ServiceSuggestion",
+            siret=DUMMY_SUGGESTION["siret"],
+            contents={"subcategories": [existing_subcategory, missing_subcategory]},
+        )
+
+        # QUAND je convertis la suggestion en service
+        service, _ = suggestion.convert_to_service()
+
+        # ALORS seul le besoin existant a été conservé
+        subcategories = list(service.subcategories.values_list("value", flat=True))
+
+        self.assertEqual(len(subcategories), 1)
+        self.assertEqual(subcategories, [existing_subcategory])
+
+    def test_remove_missing_categories(self):
+        # ÉTANT DONNÉ une suggestion avec un besoin inexistant et un existant
+        existing_category = "existing_category"
+        missing_category = "missing_category"
+
+        baker.make("ServiceCategory", value=existing_category)
+        suggestion = baker.make(
+            "ServiceSuggestion",
+            siret=DUMMY_SUGGESTION["siret"],
+            contents={"categories": [existing_category, missing_category]},
+        )
+
+        # QUAND je convertis la suggestion en service
+        service, _ = suggestion.convert_to_service()
+
+        # ALORS seul le besoin existant a été conservé
+        categories = list(service.categories.values_list("value", flat=True))
+
+        self.assertEqual(len(categories), 1)
+        self.assertEqual(categories, [existing_category])
+
     # Corrects mails contacted when validate
     def test_no_mail_send(self):
         # ÉTANT DONNÉ une suggestion sans email de contact et sans structure associée
