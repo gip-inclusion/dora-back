@@ -183,7 +183,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         self.assertEqual(subcategories, [existing_subcategory])
 
     def test_remove_missing_categories(self):
-        # ÉTANT DONNÉ une suggestion avec un besoin inexistant et un existant
+        # ÉTANT DONNÉ une suggestion avec une thématique  inexistante et une existante
         existing_category = "existing_category"
         missing_category = "missing_category"
 
@@ -197,7 +197,7 @@ class ServiceSuggestionsTestCase(APITestCase):
         # QUAND je convertis la suggestion en service
         service, _ = suggestion.convert_to_service()
 
-        # ALORS seul le besoin existant a été conservé
+        # ALORS seule la thématique existante a été conservée
         categories = list(service.categories.values_list("value", flat=True))
 
         self.assertEqual(len(categories), 1)
