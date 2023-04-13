@@ -105,7 +105,7 @@ def inclusion_connect_get_logout_info(request):
 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
-def inclusion_connect_update_info(request):
+def inclusion_connect_get_update_info(request):
     referrer_uri = request.data.get("referrer_uri")
 
     query = {
