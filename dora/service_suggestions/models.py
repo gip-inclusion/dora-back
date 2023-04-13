@@ -72,11 +72,7 @@ class ServiceSuggestion(models.Model):
 
     def convert_to_service(self, send_notification_mail=False, user=None):
         def values_to_objects(Model, values):
-            if Model in [ServiceSubCategory, ServiceCategory]:
-                # On ignore les thématiques et les besoins qui n'existeraient plus
-                models = [Model.objects.filter(value=v).first() for v in values]
-                return [m for m in models if m]
-            return [Model.objects.get(value=v) for v in values]
+            return Model.objects.filter(value__in=values)
 
         is_new_structure = False
         try:
