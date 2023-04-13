@@ -23,7 +23,6 @@ class UserInfoSerializer(serializers.ModelSerializer):
     pending_structures = serializers.SerializerMethodField()
     bookmarks = serializers.SerializerMethodField()
     token_expiration = serializers.SerializerMethodField()
-    is_inclusion_connect_user = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -42,7 +41,6 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "short_name",
             "structures",
             "token_expiration",
-            "is_inclusion_connect_user",
         ]
 
     def get_structures(self, user):
@@ -73,9 +71,6 @@ class UserInfoSerializer(serializers.ModelSerializer):
         token = self.context.get("token")
         if token:
             return token.expiration
-
-    def get_is_inclusion_connect_user(self, user):
-        return user.ic_id is not None
 
 
 class TokenSerializer(serializers.Serializer):
