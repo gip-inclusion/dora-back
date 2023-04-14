@@ -14,12 +14,11 @@ psql $SRC_DB_URL -c "DROP TABLE IF EXISTS mb_structure"
 psql $SRC_DB_URL -c "
 CREATE TABLE mb_structure AS
 SELECT *,
-   (select concat('https://dora.fabrique.social.gouv.fr/structures/', slug)) as dora_url
+   (select concat('https://dora.inclusion.beta.gouv.fr/structures/', slug)) as dora_url
    FROM structures_structure"
 psql $SRC_DB_URL -c "ALTER TABLE mb_structure ADD PRIMARY KEY (id)"
 
 pg_dump $DATABASE_URL -O -t mb_structure -c | psql $DEST_DB_URL
-
 
 # mb_all_service
 psql $SRC_DB_URL -c "DROP TABLE IF EXISTS mb_all_service CASCADE"
@@ -64,13 +63,18 @@ CREATE TABLE mb_all_service AS
     services_service.model_id,
     services_service.use_inclusion_numerique_scheme,
     --
-    ( SELECT st_y((services_service.geom)::geometry) AS st_y) AS latitude,
-    ( SELECT st_x((services_service.geom)::geometry) AS st_x) AS longitude,
-    (select services_service.contact_name != '') AS has_contact_name,
-    (select services_service.contact_phone != '') AS has_contact_phone,
-    (select services_service.contact_email != '') AS has_contact_email,
-    (select concat('https://dora.fabrique.social.gouv.fr/services/', slug)) as dora_url
-   FROM services_service"
+    (SELECT st_y((services_service.geom)::geometry) AS st_y) AS latitude,
+    (SELECT st_x((services_service.geom)::geometry) AS st_x) AS longitude,
+    (SELECT services_service.contact_name != '') AS has_contact_name,
+    (SELECT services_service.contact_phone != '') AS has_contact_phone,
+    (SELECT services_service.contact_email != '') AS has_contact_email,
+    (SELECT concat('https://dora.inclusion.beta.gouv.fr/services/', slug)) as dora_url,
+    CASE
+        WHEN services_service.modification_date + '240 days'  <= now() AND services_service.status = 'PUBLISHED' THEN 'REQUIRED'
+        WHEN services_service.modification_date + '180 days'  <= now() AND services_service.status = 'PUBLISHED' THEN 'NEEDED'
+        ELSE 'NOT_NEEDED'
+    END as update_status
+ FROM services_service"
 psql $SRC_DB_URL -c "ALTER TABLE mb_all_service ADD PRIMARY KEY (id)"
 
 

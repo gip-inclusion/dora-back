@@ -72,7 +72,7 @@ class ServiceSuggestion(models.Model):
 
     def convert_to_service(self, send_notification_mail=False, user=None):
         def values_to_objects(Model, values):
-            return [Model.objects.get(value=v) for v in values]
+            return Model.objects.filter(value__in=values)
 
         is_new_structure = False
         try:
