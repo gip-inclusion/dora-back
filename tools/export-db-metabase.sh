@@ -70,8 +70,8 @@ CREATE TABLE mb_all_service AS
     (SELECT services_service.contact_email != '') AS has_contact_email,
     (SELECT concat('https://dora.inclusion.beta.gouv.fr/services/', slug)) as dora_url,
     CASE
-        WHEN services_service.modification_date + '8 months'  <= now() AND services_service.status = 'PUBLISHED' THEN 'REQUIRED'
-        WHEN services_service.modification_date + '6 months'  <= now() AND services_service.status = 'PUBLISHED' THEN 'NEEDED'
+        WHEN services_service.modification_date + '240 days'  <= now() AND services_service.status = 'PUBLISHED' THEN 'REQUIRED'
+        WHEN services_service.modification_date + '180 days'  <= now() AND services_service.status = 'PUBLISHED' THEN 'NEEDED'
         ELSE 'NOT_NEEDED'
     END as update_status
  FROM services_service"

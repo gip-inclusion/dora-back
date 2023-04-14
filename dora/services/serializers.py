@@ -1,13 +1,15 @@
 import logging
+from datetime import timedelta
 
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
+from django.utils import timezone
 from rest_framework import exceptions, serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 
 from dora.admin_express.models import EPCI, City, Department, Region
 from dora.core.utils import code_insee_to_code_dept
-from dora.services.enums import ServiceStatus
+from dora.services.enums import ServiceStatus, ServiceUpdateStatus
 from dora.structures.models import Structure, StructureMember
 
 from .models import (
@@ -259,6 +261,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     )
 
     city = serializers.SerializerMethodField()
+    update_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
@@ -329,6 +332,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "subcategories",
             "subcategories_display",
             "suspension_date",
+            "update_status",
             "use_inclusion_numerique_scheme",
         ]
         lookup_field = "slug"
@@ -437,6 +441,18 @@ class ServiceSerializer(serializers.ModelSerializer):
         if object.model:
             return object.model.sync_checksum != object.last_sync_checksum
         return None
+
+    def get_update_status(self, object):
+        if object.status != ServiceStatus.PUBLISHED:
+            return ServiceUpdateStatus.NOT_NEEDED
+
+        diff = timezone.now() - object.modification_date
+        if diff >= timedelta(days=240):
+            return ServiceUpdateStatus.REQUIRED
+        elif diff >= timedelta(days=180):
+            return ServiceUpdateStatus.NEEDED
+
+        return ServiceUpdateStatus.NOT_NEEDED
 
 
 class ServiceModelSerializer(ServiceSerializer):
