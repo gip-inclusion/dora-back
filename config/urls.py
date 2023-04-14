@@ -128,6 +128,10 @@ private_api_patterns = [
         dora.core.views.inclusion_connect_get_logout_info,
     ),
     path(
+        "inclusion-connect-get-update-info/",
+        dora.core.views.inclusion_connect_get_update_info,
+    ),
+    path(
         "inclusion-connect-authenticate/",
         dora.core.views.inclusion_connect_authenticate,
     ),
