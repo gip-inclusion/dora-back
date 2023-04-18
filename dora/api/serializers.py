@@ -45,7 +45,6 @@ class StructureSerializer(serializers.ModelSerializer):
     site_web = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
     telephone = serializers.SerializerMethodField()
-    thematiques = serializers.SerializerMethodField()
     typologie = serializers.SerializerMethodField()
 
     class Meta:
@@ -76,7 +75,6 @@ class StructureSerializer(serializers.ModelSerializer):
             "site_web",
             "source",
             "telephone",
-            "thematiques",
             "typologie",
         ]
 
@@ -159,12 +157,6 @@ class StructureSerializer(serializers.ModelSerializer):
 
     def get_telephone(self, obj):
         return obj.phone or None
-
-    def get_thematiques(self, obj) -> [str]:
-        cats = set()
-        for service in obj.published_services:
-            cats |= set(c.value for c in service.subcategories.all())
-        return sorted(list(cats))
 
     def get_typologie(self, obj):
         return obj.typology.value if obj.typology else None

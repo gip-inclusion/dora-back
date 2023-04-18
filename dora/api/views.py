@@ -1,5 +1,4 @@
 import django_filters
-from django.db.models import Prefetch
 from djangorestframework_camel_case.render import CamelCaseJSONRenderer
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, permissions, viewsets
@@ -7,7 +6,6 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.versioning import NamespaceVersioning
 
 from dora.core.pagination import OptionalPageNumberPagination
-from dora.services.enums import ServiceStatus
 from dora.services.models import (
     BeneficiaryAccessMode,
     CoachOrientationMode,
@@ -63,15 +61,7 @@ class StructureViewSet(viewsets.ReadOnlyModelViewSet):
     versioning_class = NamespaceVersioning
     queryset = (
         Structure.objects.select_related("typology", "source")
-        .prefetch_related(
-            "national_labels",
-            Prefetch(
-                "services",
-                queryset=Service.objects.filter(status=ServiceStatus.PUBLISHED),
-                to_attr="published_services",
-            ),
-            "published_services__subcategories",
-        )
+        .prefetch_related("national_labels")
         .all()
     )
     permission_classes = [permissions.AllowAny]
