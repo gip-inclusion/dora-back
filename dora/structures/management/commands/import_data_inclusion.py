@@ -4,6 +4,7 @@ import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+from django.utils.text import Truncator
 from furl import furl
 
 from dora.core import utils
@@ -21,6 +22,12 @@ from dora.users.models import User
 # Documentation DI : https://data-inclusion-api-prod.osc-secnum-fr1.scalingo.io/api/v0/docs
 
 BASE_URL = furl(settings.DATA_INCLUSION_URL)
+
+
+def clean_field(value, max_length, default_value):
+    if not value:
+        return default_value
+    return Truncator(value).chars(max_length)
 
 
 class Command(BaseCommand):
@@ -105,9 +112,6 @@ class Command(BaseCommand):
                 # Les doublons sont attendus -- itou a une unicité sur le couple (siret, typologie) par exemple
                 # alors que Dora a pour l'instant une unicité stricte sur le siret (hors antennes).
                 continue
-            if s["structure_parente"]:
-                # Les antennes ne sont pas gérées pour l'instant
-                continue
             try:
                 establishment = Establishment.objects.get(siret=s["siret"])
             except Establishment.DoesNotExist:
@@ -133,19 +137,21 @@ class Command(BaseCommand):
                 structure = Structure.objects.create(
                     data_inclusion_id=s["id"],
                     siret=s["siret"],
-                    name=s["nom"] or establishment.name,
-                    address1=s["adresse"] or establishment.address1,
-                    address2=s["complement_adresse"] or "",
+                    name=clean_field(s["nom"], 255, establishment.name),
+                    address1=clean_field(s["adresse"], 255, establishment.address1),
+                    address2=clean_field(
+                        s["complement_adresse"], 255, establishment.address2
+                    ),
                     city_code=s["code_insee"] or establishment.city_code,
                     postal_code=s["code_postal"] or establishment.postal_code,
-                    city=s["commune"] or establishment.city,
+                    city=clean_field(s["commune"], 255, establishment.city),
                     latitude=s["latitude"] or establishment.latitude,
                     longitude=s["longitude"] or establishment.longitude,
-                    email=s["courriel"] or "",
+                    email=clean_field(s["courriel"], 254, ""),
                     phone=utils.normalize_phone_number(s["telephone"] or ""),
-                    url=s["site_web"] or "",
+                    url=clean_field(s["site_web"], 200, ""),
                     full_desc=s["presentation_detail"] or "",
-                    short_desc=s["presentation_resume"] or "",
+                    short_desc=clean_field(s["presentation_resume"], 280, ""),
                     typology=typology,
                     accesslibre_url=s["accessibilite"],
                     ape=establishment.ape,
@@ -153,12 +159,8 @@ class Command(BaseCommand):
                     creator=bot_user,
                     last_editor=bot_user,
                     modification_date=timezone.now(),
-                    # Champs non gérés pour l'instant
-                    # opening_hours=s["horaires_ouverture"],
-                    # other_labels=",".join(s["labels_autres"]),
-                    # parent=s['structure_parente'],
                 )
-                for label in s["labels_nationaux"]:
+                for label in s["labels_nationaux"] or []:
                     new_label, _created = StructureNationalLabel.objects.get_or_create(
                         value=label
                     )
