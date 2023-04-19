@@ -37,7 +37,6 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "last_name",
             "newsletter",
             "pending_structures",
-            "phone_number",
             "short_name",
             "structures",
             "token_expiration",

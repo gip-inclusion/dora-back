@@ -102,8 +102,6 @@ spectacular_patterns = [
 private_api_patterns = [
     path("auth/", include("dora.rest_auth.urls")),
     path("search/", dora.services.views.search),
-    path("profile/change/", dora.users.views.update_profile),
-    path("profile/password/change/", dora.users.views.password_change),
     path("admin-division-search/", dora.admin_express.views.search),
     path("admin-division-reverse-search/", dora.admin_express.views.reverse_search),
     path(
