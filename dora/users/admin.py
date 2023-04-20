@@ -88,7 +88,6 @@ class UserAdmin(BaseUserAdmin):
                     "password",
                     "last_name",
                     "first_name",
-                    "phone_number",
                     has_migrated_to_ic,
                 )
             },

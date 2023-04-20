@@ -24,7 +24,6 @@ class UserAdminSerializer(serializers.ModelSerializer):
             "is_valid",
             "last_name",
             "newsletter",
-            "phone_number",
         ]
         read_only_fields = [
             "date_joined",
@@ -35,7 +34,6 @@ class UserAdminSerializer(serializers.ModelSerializer):
             "is_valid",
             "last_name",
             "newsletter",
-            "phone_number",
         ]
 
     def get_is_on_ic(self, obj):
