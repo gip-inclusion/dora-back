@@ -101,10 +101,6 @@ class PublicAPIStructureTestCase(APITestCase):
                 "site_web": "https://www.asso-gonzalez.net/",
                 "source": "solidagregateur",
                 "telephone": "0102030405",
-                "thematiques": [
-                    "equipement-et-alimentation--acces-a-du-materiel-informatique",
-                    "numerique--acceder-a-du-materiel",
-                ],
                 "typologie": "ASSO",
             },
         )
