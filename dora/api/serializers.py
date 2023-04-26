@@ -223,7 +223,8 @@ class ServiceSerializer(serializers.ModelSerializer):
         return str(obj.structure_id)
 
     def get_thematiques(self, obj):
-        return [scat.value for scat in obj.subcategories.all()]
+        scats = [scat.value for scat in obj.subcategories.all()]
+        return [scat for scat in scats if not scat.endswith("--autre")]
 
     def get_types(self, obj):
         return [k.value for k in obj.kinds.all()]
@@ -346,7 +347,7 @@ class LocationKindSerializerV1(serializers.ModelSerializer):
 
 class ServiceSerializerV1(serializers.ModelSerializer):
     categories = ServiceCategorySerializerV1(read_only=True, many=True)
-    subcategories = ServiceSubCategorySerializerV1(read_only=True, many=True)
+    subcategories = serializers.SerializerMethodField()
     kinds = ServiceKindSerializerV1(read_only=True, many=True)
     access_conditions = serializers.SerializerMethodField()
     concerned_public = serializers.SerializerMethodField()
@@ -358,7 +359,6 @@ class ServiceSerializerV1(serializers.ModelSerializer):
     )
     requirements = serializers.SerializerMethodField()
     credentials = serializers.SerializerMethodField()
-    # forms = serializers.SerializerMethodField()
     location_kinds = LocationKindSerializerV1(read_only=True, many=True)
     longitude = serializers.SerializerMethodField()
     latitude = serializers.SerializerMethodField()
@@ -463,16 +463,6 @@ class ServiceSerializerV1(serializers.ModelSerializer):
     def get_credentials(self, obj) -> list[str]:
         return [item.name for item in obj.credentials.all()]
 
-    # @extend_schema_field(
-    #     StringListField(
-    #         label="Partagez les documents à compléter",
-    #         help_text="",
-    #     )
-    # )
-    # def get_forms(self, obj) -> list[str]:
-    #     forms = [default_storage.url(form) for form in obj.forms]
-    #     return forms
-
     @extend_schema_field(
         serializers.FloatField(
             label="",
@@ -490,3 +480,7 @@ class ServiceSerializerV1(serializers.ModelSerializer):
     )
     def get_latitude(self, obj) -> float:
         return obj.geom.y if obj.geom else None
+
+    def get_subcategories(self, obj):
+        scats = obj.subcategories.exclude(value__endswith=("--autre"))
+        return [{"value": scat.value, "label": scat.label} for scat in scats]

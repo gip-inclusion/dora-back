@@ -159,3 +159,40 @@ class PublicAPIServiceTestCase(APITestCase):
                 "profils": None,
             },
         )
+
+    def test_subcategories_other_excluded(self):
+        # Example adapté de la doc data·inclusion :
+        # https://www.data.inclusion.beta.gouv.fr/schemas-de-donnees-de-loffre/schema-des-structures-et-services-dinsertion
+        structure = make_structure()
+        service = make_service(
+            structure=structure,
+            name="TISF",
+            short_desc="Accompagnement des familles à domicile",
+            fee_details="",
+            status=ServiceStatus.PUBLISHED,
+        )
+        service.subcategories.add(
+            ServiceSubCategory.objects.get(value="numerique--acceder-a-du-materiel")
+        )
+        service.subcategories.add(
+            ServiceSubCategory.objects.get(value="numerique--autre")
+        )
+
+        response = self.client.get(f"/api/v2/services/{service.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertDictEqual(
+            json.loads(response.content),
+            {
+                "id": str(service.id),
+                "structure_id": str(structure.id),
+                "source": None,
+                "nom": "TISF",
+                "presentation_resume": "Accompagnement des familles à domicile",
+                "types": [],
+                "thematiques": ["numerique--acceder-a-du-materiel"],
+                "prise_rdv": None,
+                "frais": None,
+                "frais_autres": None,
+                "profils": None,
+            },
+        )
