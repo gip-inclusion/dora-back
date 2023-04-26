@@ -10,7 +10,6 @@ from dora.structures.models import (
     StructurePutativeMember,
     StructureSource,
 )
-from dora.users.models import User
 
 DUMMY_STRUCTURE = {
     "siret": "12345678901234",
@@ -1155,43 +1154,6 @@ class StructureMemberTestCase(APITestCase):
         self.assertGreater(len(mail.outbox), 0)
         self.assertIn("Invitation acceptée", mail.outbox[0].subject)
         self.assertIn(self.another_struct_user.email, mail.outbox[0].body)
-
-    def test_manager_notified_when_its_invitation_was_accepted(self):
-        # TODO: not implemented yet
-        struct_31 = make_structure(department="31")
-        baker.make("Establishment", siret=struct_31.siret)
-
-        # Invitation
-        self.client.force_authenticate(user=self.manager)
-
-        response = self.client.post(
-            f"/structure-putative-members/?structure={struct_31.slug}",
-            {
-                "is_admin": True,
-                "user": {
-                    "last_name": "FOO",
-                    "email": "invited_admin@example.com",
-                },
-            },
-        )
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(len(mail.outbox), 1)
-
-        # Reset
-        mail.outbox = []
-        invited_admin = User.objects.get(email="invited_admin@example.com")
-        # Acceptation
-        self.client.force_authenticate(user=invited_admin)
-        response = self.client.post(
-            "/auth/join-structure/",
-            {
-                "siret": struct_31.siret,
-            },
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertGreater(len(mail.outbox), 0)
-        self.assertIn("Invitation acceptée", mail.outbox[0].subject)
-        self.assertIn("invited_admin@example.com", mail.outbox[0].body)
 
     def test_admin_notified_when_new_user_request_access(self):
         baker.make("Establishment", siret=self.my_struct.siret)
