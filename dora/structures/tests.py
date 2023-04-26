@@ -314,7 +314,7 @@ class StructureTestCase(APITestCase):
 
     # get_my_services
     def test_filter_my_services_only(self):
-        response = self.client.get("/structures/?mine=1")
+        response = self.client.get("/structures/?managed=1")
         services_ids = [s["slug"] for s in response.data]
         self.assertIn(self.my_struct.slug, services_ids)
         self.assertIn(self.my_other_struct.slug, services_ids)
