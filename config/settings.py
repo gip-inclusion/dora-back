@@ -325,7 +325,7 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_SSL_REDIRECT = True
 
-PUBLIC_API_VERSIONS = ["1"]
+PUBLIC_API_VERSIONS = ["1", "2"]
 
 CSP_EXCLUDE_URL_PREFIXES = tuple(
     [
@@ -344,10 +344,7 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "",
     "VERSION": None,
     "CAMELIZE_NAMES": False,
-    "POSTPROCESSING_HOOKS": [
-        "drf_spectacular.hooks.postprocess_schema_enums",
-        "drf_spectacular.contrib.djangorestframework_camel_case.camelize_serializer_fields",
-    ],
+    "POSTPROCESSING_HOOKS": [],
     "SORT_OPERATIONS": False,
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_NO_READ_ONLY_REQUIRED": True,
@@ -414,6 +411,7 @@ IC_ISSUER_ID = os.environ.get("IC_ISSUER_ID")
 IC_AUTH_URL = os.environ.get("IC_AUTH_URL")
 IC_TOKEN_URL = os.environ.get("IC_TOKEN_URL")
 IC_LOGOUT_URL = os.environ.get("IC_LOGOUT_URL")
+IC_ACCOUNT_URL = os.environ.get("IC_ACCOUNT_URL")
 IC_CLIENT_ID = os.environ.get("IC_CLIENT_ID")
 IC_CLIENT_SECRET = os.environ.get("IC_CLIENT_SECRET")
 IC_EXPIRATION_DELAY_DAYS = 15

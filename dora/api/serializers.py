@@ -15,24 +15,243 @@ from dora.services.models import (
 )
 from dora.structures.models import Structure, StructureSource, StructureTypology
 
+############
+# V2
+############
 
-class StructureTypologySerializer(serializers.ModelSerializer):
+
+class StructureSerializer(serializers.ModelSerializer):
+    accessibilite = serializers.SerializerMethodField()
+    adresse = serializers.SerializerMethodField()
+    antenne = serializers.SerializerMethodField()
+    code_insee = serializers.SerializerMethodField()
+    code_postal = serializers.SerializerMethodField()
+    commune = serializers.SerializerMethodField()
+    complement_adresse = serializers.SerializerMethodField()
+    courriel = serializers.SerializerMethodField()
+    date_maj = serializers.SerializerMethodField()
+    horaires_ouverture = serializers.SerializerMethodField()
+    id = serializers.SerializerMethodField()
+    labels_autres = serializers.SerializerMethodField()
+    labels_nationaux = serializers.SerializerMethodField()
+    latitude = serializers.SerializerMethodField()
+    lien_source = serializers.SerializerMethodField()
+    longitude = serializers.SerializerMethodField()
+    nom = serializers.SerializerMethodField()
+    presentation_detail = serializers.SerializerMethodField()
+    presentation_resume = serializers.SerializerMethodField()
+    rna = serializers.SerializerMethodField()
+    siret = serializers.SerializerMethodField()
+    site_web = serializers.SerializerMethodField()
+    source = serializers.SerializerMethodField()
+    telephone = serializers.SerializerMethodField()
+    typologie = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Structure
+
+        fields = [
+            "accessibilite",
+            "adresse",
+            "antenne",
+            "code_insee",
+            "code_postal",
+            "commune",
+            "complement_adresse",
+            "courriel",
+            "date_maj",
+            "horaires_ouverture",
+            "id",
+            "labels_autres",
+            "labels_nationaux",
+            "latitude",
+            "lien_source",
+            "longitude",
+            "nom",
+            "presentation_detail",
+            "presentation_resume",
+            "rna",
+            "siret",
+            "site_web",
+            "source",
+            "telephone",
+            "typologie",
+        ]
+
+    def get_accessibilite(self, obj):
+        return obj.accesslibre_url or None
+
+    def get_adresse(self, obj):
+        return obj.address1 or None
+
+    def get_antenne(self, obj) -> bool:
+        return obj.parent_id is not None
+
+    def get_code_insee(self, obj):
+        return obj.city_code or None
+
+    def get_code_postal(self, obj):
+        return obj.postal_code or None
+
+    def get_commune(self, obj):
+        return obj.city or None
+
+    def get_complement_adresse(self, obj):
+        return obj.address2 or None
+
+    def get_courriel(self, obj):
+        return obj.email or None
+
+    def get_date_maj(self, obj):
+        return obj.modification_date or None
+
+    def get_horaires_ouverture(self, obj) -> str:
+        oh = obj.opening_hours
+        dets = obj.opening_hours_details
+        if oh:
+            if dets:
+                return f'{oh}; "{dets}"'
+            return oh
+        elif dets:
+            return f'"{dets}"'
+        return None
+
+    def get_id(self, obj):
+        return str(obj.id)
+
+    def get_labels_autres(self, obj):
+        return obj.other_labels.split(",") if obj.other_labels else []
+
+    def get_labels_nationaux(self, obj):
+        return [label.value for label in obj.national_labels.all()]
+
+    def get_latitude(self, obj):
+        return obj.latitude
+
+    def get_lien_source(self, obj) -> str:
+        return f"{settings.FRONTEND_URL}/structures/{obj.slug}"
+
+    def get_longitude(self, obj):
+        return obj.longitude
+
+    def get_nom(self, obj):
+        return obj.name or None
+
+    def get_presentation_detail(self, obj):
+        return obj.full_desc or None
+
+    def get_presentation_resume(self, obj):
+        return obj.short_desc or None
+
+    def get_rna(self, obj):
+        return None
+
+    def get_siret(self, obj):
+        return obj.siret or None
+
+    def get_site_web(self, obj):
+        return obj.url or None
+
+    def get_source(self, obj):
+        return obj.source.value if obj.source else None
+
+    def get_telephone(self, obj):
+        return obj.phone or None
+
+    def get_typologie(self, obj):
+        return obj.typology.value if obj.typology else None
+
+
+class ServiceSerializer(serializers.ModelSerializer):
+    frais = serializers.SerializerMethodField()
+    frais_autres = serializers.SerializerMethodField()
+    id = serializers.SerializerMethodField()
+    nom = serializers.SerializerMethodField()
+    presentation_resume = serializers.SerializerMethodField()
+    prise_rdv = serializers.SerializerMethodField()
+    profils = serializers.SerializerMethodField()
+    source = serializers.SerializerMethodField()
+    structure_id = serializers.SerializerMethodField()
+    thematiques = serializers.SerializerMethodField()
+    types = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Service
+
+        fields = [
+            "frais",
+            "frais_autres",
+            "id",
+            "nom",
+            "presentation_resume",
+            "prise_rdv",
+            "profils",
+            "source",
+            "structure_id",
+            "thematiques",
+            "types",
+        ]
+
+    def get_frais(self, obj):
+        return obj.fee_condition.value if obj.fee_condition else None
+
+    def get_frais_autres(self, obj):
+        return obj.fee_details or None
+
+    def get_id(self, obj):
+        return str(obj.id)
+
+    def get_nom(self, obj):
+        return obj.name
+
+    def get_presentation_resume(self, obj):
+        return obj.short_desc or None
+
+    def get_prise_rdv(self, obj):
+        # TODO: pas encore supporté sur DORA
+        return None
+
+    def get_profils(self, obj):
+        # TODO: mapping DORA à faire
+        return None
+
+    def get_source(self, obj):
+        # TODO: on n'a pas de notion de source pour les services dans DORA
+        return None
+
+    def get_structure_id(self, obj):
+        return str(obj.structure_id)
+
+    def get_thematiques(self, obj):
+        scats = [scat.value for scat in obj.subcategories.all()]
+        return [scat for scat in scats if not scat.endswith("--autre")]
+
+    def get_types(self, obj):
+        return [k.value for k in obj.kinds.all()]
+
+
+############
+# V1
+############
+
+
+class StructureTypologySerializerV1(serializers.ModelSerializer):
     class Meta:
         model = StructureTypology
         fields = ["value", "label"]
         read_only_fields = ["value", "label"]
 
 
-class StructureSourceSerializer(serializers.ModelSerializer):
+class StructureSourceSerializerV1(serializers.ModelSerializer):
     class Meta:
         model = StructureSource
         fields = ["value", "label"]
         read_only_fields = ["value", "label"]
 
 
-class StructureSerializer(serializers.ModelSerializer):
-    typology = StructureTypologySerializer(read_only=True)
-    source = StructureSourceSerializer(read_only=True)
+class StructureSerializerV1(serializers.ModelSerializer):
+    typology = StructureTypologySerializerV1(read_only=True)
+    source = StructureSourceSerializerV1(read_only=True)
     creation_date = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
     modification_date = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
     link_on_source = serializers.SerializerMethodField()
@@ -84,62 +303,63 @@ class StringListField(serializers.ListField):
     child = serializers.CharField()
 
 
-class ServiceCategorySerializer(serializers.ModelSerializer):
+class ServiceCategorySerializerV1(serializers.ModelSerializer):
     class Meta:
         model = ServiceCategory
         fields = ["value", "label"]
         read_only_fields = ["value", "label"]
 
 
-class ServiceSubCategorySerializer(serializers.ModelSerializer):
+class ServiceSubCategorySerializerV1(serializers.ModelSerializer):
     class Meta:
         model = ServiceSubCategory
         fields = ["value", "label"]
         read_only_fields = ["value", "label"]
 
 
-class ServiceKindSerializer(serializers.ModelSerializer):
+class ServiceKindSerializerV1(serializers.ModelSerializer):
     class Meta:
         model = ServiceKind
         fields = ["value", "label"]
         read_only_fields = ["value", "label"]
 
 
-class BeneficiaryAccessModeSerializer(serializers.ModelSerializer):
+class BeneficiaryAccessModeSerializerV1(serializers.ModelSerializer):
     class Meta:
         model = BeneficiaryAccessMode
         fields = ["value", "label"]
         read_only_fields = ["value", "label"]
 
 
-class CoachOrientationModeSerializer(serializers.ModelSerializer):
+class CoachOrientationModeSerializerV1(serializers.ModelSerializer):
     class Meta:
         model = CoachOrientationMode
         fields = ["value", "label"]
         read_only_fields = ["value", "label"]
 
 
-class LocationKindSerializer(serializers.ModelSerializer):
+class LocationKindSerializerV1(serializers.ModelSerializer):
     class Meta:
         model = LocationKind
         fields = ["value", "label"]
         read_only_fields = ["value", "label"]
 
 
-class ServiceSerializer(serializers.ModelSerializer):
-    categories = ServiceCategorySerializer(read_only=True, many=True)
-    subcategories = ServiceSubCategorySerializer(read_only=True, many=True)
-    kinds = ServiceKindSerializer(read_only=True, many=True)
+class ServiceSerializerV1(serializers.ModelSerializer):
+    categories = ServiceCategorySerializerV1(read_only=True, many=True)
+    subcategories = serializers.SerializerMethodField()
+    kinds = ServiceKindSerializerV1(read_only=True, many=True)
     access_conditions = serializers.SerializerMethodField()
     concerned_public = serializers.SerializerMethodField()
-    beneficiaries_access_modes = BeneficiaryAccessModeSerializer(
+    beneficiaries_access_modes = BeneficiaryAccessModeSerializerV1(
         read_only=True, many=True
     )
-    coach_orientation_modes = CoachOrientationModeSerializer(read_only=True, many=True)
+    coach_orientation_modes = CoachOrientationModeSerializerV1(
+        read_only=True, many=True
+    )
     requirements = serializers.SerializerMethodField()
     credentials = serializers.SerializerMethodField()
-    # forms = serializers.SerializerMethodField()
-    location_kinds = LocationKindSerializer(read_only=True, many=True)
+    location_kinds = LocationKindSerializerV1(read_only=True, many=True)
     longitude = serializers.SerializerMethodField()
     latitude = serializers.SerializerMethodField()
     diffusion_zone_type = serializers.CharField(
@@ -243,16 +463,6 @@ class ServiceSerializer(serializers.ModelSerializer):
     def get_credentials(self, obj) -> list[str]:
         return [item.name for item in obj.credentials.all()]
 
-    # @extend_schema_field(
-    #     StringListField(
-    #         label="Partagez les documents à compléter",
-    #         help_text="",
-    #     )
-    # )
-    # def get_forms(self, obj) -> list[str]:
-    #     forms = [default_storage.url(form) for form in obj.forms]
-    #     return forms
-
     @extend_schema_field(
         serializers.FloatField(
             label="",
@@ -270,3 +480,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     )
     def get_latitude(self, obj) -> float:
         return obj.geom.y if obj.geom else None
+
+    def get_subcategories(self, obj):
+        scats = obj.subcategories.exclude(value__endswith=("--autre"))
+        return [{"value": scat.value, "label": scat.label} for scat in scats]

@@ -26,7 +26,16 @@ class UtilsTestCase(unittest.TestCase):
             ("01-02-03 04.05", "0102030405"),
             ("0102030405 - 0203040506", "0102030405"),
             ("3509", "3509"),
+            ("01 02 03 04 05", "0102030405"),
+            ("a01c02-03 04 05", "0102030405"),
+            ("+33 01 02 03 04 05", "0102030405"),
+            ("+33 (0)1 02 03 04 05", "0102030405"),
+            ("+33 1 02 03 04 05", "0102030405"),
+            ("+33 1 +33 03 33 05", "0133033305"),
         ]
 
-        for input, expected in cases:
-            self.assertEqual(utils.normalize_phone_number(input), expected)
+        for input_number, expected_number in cases:
+            self.assertEqual(
+                expected_number,
+                utils.normalize_phone_number(input_number),
+            )

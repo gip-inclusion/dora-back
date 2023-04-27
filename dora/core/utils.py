@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Tuple
 
 import sib_api_v3_sdk
@@ -20,7 +21,13 @@ def normalize_description(desc: str, limit: int) -> Tuple[str, str]:
 
 
 def normalize_phone_number(phone: str) -> str:
-    return "".join([c for c in phone if c.isdigit()])[:10]
+    has_intl_prefix = phone.strip().startswith("+")
+    phone = "".join([c for c in phone if c.isdigit()])
+    if has_intl_prefix:
+        phone = re.sub("^330", "0", phone)
+        phone = re.sub("^33", "0", phone)
+
+    return phone[:10]
 
 
 def code_insee_to_code_dept(code_insee):

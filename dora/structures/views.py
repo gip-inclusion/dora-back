@@ -50,21 +50,30 @@ class StructureViewSet(
 
     def get_queryset(self):
         user = self.request.user
-        only_mine = self.request.query_params.get("mine")  # TODO: deprecate
+        only_managed = self.request.query_params.get("managed")
         only_pending = self.request.query_params.get("pending")
         only_active = self.request.query_params.get("active")
 
         all_structures = Structure.objects.select_related(
             "typology", "source", "parent"
         ).all()
-        if only_mine:
+        if only_managed:
             if not user or not user.is_authenticated:
                 return Structure.objects.none()
-            return (
-                all_structures.filter(membership__user=user)
-                .order_by("-modification_date")
-                .distinct()
-            )
+            if user.is_staff:
+                return all_structures.order_by("-modification_date").distinct()
+            elif user.is_manager and user.department:
+                return (
+                    all_structures.filter(department=user.department)
+                    .order_by("-modification_date")
+                    .distinct()
+                )
+            else:
+                return (
+                    all_structures.filter(membership__user=user)
+                    .order_by("-modification_date")
+                    .distinct()
+                )
         elif only_pending:
             if not user or not user.is_authenticated:
                 return Structure.objects.none()

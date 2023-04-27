@@ -46,7 +46,6 @@ class User(AbstractBaseUser):
     )
     last_name = models.CharField("Nom de famille", max_length=140, blank=True)
     first_name = models.CharField("Prénom", max_length=140, blank=True)
-    phone_number = models.CharField(max_length=10, blank=True)
 
     is_active = models.BooleanField(
         "active",

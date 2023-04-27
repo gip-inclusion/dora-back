@@ -2327,6 +2327,104 @@ class ServiceStatusChangeTestCase(APITestCase):
         )
 
 
+class ServiceUpdateStatusTestCase(APITestCase):
+    def test_draft_service_update_status_as_not_needed(self):
+        # ÉTANT DONNÉ un service en brouillon, modifié il y a un an
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        service = make_service(
+            status=ServiceStatus.DRAFT,
+            modification_date=timezone.now() - timedelta(days=12 * 30),
+            structure=structure,
+        )
+        self.client.force_authenticate(user=user)
+
+        # QUAND je récupère ce service
+        response = self.client.get(f"/services/{service.slug}/")
+
+        # ALORS son statut d'actualisation est "NOT_NEEDED"
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["update_status"], "NOT_NEEDED")
+
+    def test_archived_service_update_status(self):
+        # ÉTANT DONNÉ un service en archivé, modifié il y a un an
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        service = make_service(
+            status=ServiceStatus.ARCHIVED,
+            modification_date=timezone.now() - timedelta(days=12 * 30),
+            structure=structure,
+        )
+        self.client.force_authenticate(user=user)
+
+        # QUAND je récupère ce service
+        response = self.client.get(f"/services/{service.slug}/")
+
+        # ALORS son statut d'actualisation est "NOT_NEEDED"
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["update_status"], "NOT_NEEDED")
+
+    def test_suggestion_service_update_status(self):
+        # ÉTANT DONNÉ un service suggéré, modifié il y a un an
+        user = baker.make("users.User", is_valid=True)
+        structure = make_structure(user)
+        service = make_service(
+            status=ServiceStatus.SUGGESTION,
+            modification_date=timezone.now() - timedelta(days=12 * 30),
+            structure=structure,
+        )
+        self.client.force_authenticate(user=user)
+
+        # QUAND je récupère ce service
+        response = self.client.get(f"/services/{service.slug}/")
+
+        # ALORS son statut d'actualisation est "NOT_NEEDED"
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["update_status"], "NOT_NEEDED")
+
+    def test_published_service_update_status_required(self):
+        # ÉTANT DONNÉ un service suggéré, modifié il y a 9 mois
+        service = make_service(
+            status=ServiceStatus.PUBLISHED,
+            modification_date=timezone.now() - timedelta(days=9 * 30),
+        )
+
+        # QUAND je récupère ce service
+        response = self.client.get(f"/services/{service.slug}/")
+
+        # ALORS son statut d'actualisation est "REQUIRED"
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["update_status"], "REQUIRED")
+
+    def test_published_service_update_status_needed(self):
+        # ÉTANT DONNÉ un service suggéré, modifié il y a 7 mois
+        service = make_service(
+            status=ServiceStatus.PUBLISHED,
+            modification_date=timezone.now() - timedelta(days=7 * 30),
+        )
+
+        # QUAND je récupère ce service
+        response = self.client.get(f"/services/{service.slug}/")
+
+        # ALORS son statut d'actualisation est "NEEDED"
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["update_status"], "NEEDED")
+
+    def test_published_service_update_status_not_needed(self):
+        # ÉTANT DONNÉ un service suggéré, modifié il y a 9 mois
+        service = make_service(
+            status=ServiceStatus.PUBLISHED,
+            modification_date=timezone.now() - timedelta(days=1 * 30),
+        )
+
+        # QUAND je récupère ce service
+        response = self.client.get(f"/services/{service.slug}/")
+
+        # ALORS son statut d'actualisation est "NOT_NEEDED"
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["update_status"], "NOT_NEEDED")
+
+
 class ServiceMigrationUtilsTestCase(APITestCase):
     def test_delete_category(self):
         # ÉTANT DONNÉ une thématique

@@ -51,44 +51,57 @@ router.register(
     basename="service-admin",
 )
 
-
 register_converter(InseeCodeConverter, "insee_code")
 register_converter(SiretConverter, "siret")
 
-
 public_api_patterns = [
-    path("api/v1/", include("dora.api.urls", namespace="v1")),
+    path("api/v1/", include("dora.api.urls_v1", namespace="v1")),
+    path("api/v2/", include("dora.api.urls", namespace="v2")),
 ]
 
+V1_CUSTOM_SETTINGS = {
+    "POSTPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.postprocess_schema_enums",
+        "drf_spectacular.contrib.djangorestframework_camel_case.camelize_serializer_fields",
+    ],
+}
 spectacular_patterns = [
-    *[
-        path(
-            f"api/v{version}/schema/",
-            SpectacularAPIView.as_view(
-                urlconf=public_api_patterns, api_version=f"v{version}"
-            ),
-            name=f"schema-v{version}",
-        )
-        for version in settings.PUBLIC_API_VERSIONS
-    ],
-    *[
-        path(
-            f"api/v{version}/schema/doc/",
-            SpectacularRedocView.as_view(
-                url_name=f"schema-v{version}",
-                versioning_class=NamespaceVersioning,
-            ),
-            name=f"api-doc-v{version}",
-        )
-        for version in settings.PUBLIC_API_VERSIONS
-    ],
+    path(
+        "api/v1/schema/",
+        SpectacularAPIView.as_view(
+            urlconf=public_api_patterns,
+            api_version="v1",
+            custom_settings=V1_CUSTOM_SETTINGS,
+        ),
+        name="schema-v1",
+    ),
+    path(
+        "api/v2/schema/",
+        SpectacularAPIView.as_view(urlconf=public_api_patterns, api_version="v2"),
+        name="schema-v2",
+    ),
+    # Doc
+    path(
+        "api/v1/schema/doc/",
+        SpectacularRedocView.as_view(
+            url_name="schema-v1",
+            versioning_class=NamespaceVersioning,
+        ),
+        name="api-doc-v1",
+    ),
+    path(
+        "api/v2/schema/doc/",
+        SpectacularRedocView.as_view(
+            url_name="schema-v2",
+            versioning_class=NamespaceVersioning,
+        ),
+        name="api-doc-v2",
+    ),
 ]
 
 private_api_patterns = [
     path("auth/", include("dora.rest_auth.urls")),
     path("search/", dora.services.views.search),
-    path("profile/change/", dora.users.views.update_profile),
-    path("profile/password/change/", dora.users.views.password_change),
     path("admin-division-search/", dora.admin_express.views.search),
     path("admin-division-reverse-search/", dora.admin_express.views.reverse_search),
     path(
@@ -113,13 +126,16 @@ private_api_patterns = [
         dora.core.views.inclusion_connect_get_logout_info,
     ),
     path(
+        "inclusion-connect-get-update-info/",
+        dora.core.views.inclusion_connect_get_update_info,
+    ),
+    path(
         "inclusion-connect-authenticate/",
         dora.core.views.inclusion_connect_authenticate,
     ),
     path("admin-stats/", dora.support.views.stats),
     path("", include(router.urls)),
 ]
-
 
 urlpatterns = [*private_api_patterns, *public_api_patterns, *spectacular_patterns]
 

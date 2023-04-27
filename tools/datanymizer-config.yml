@@ -26,10 +26,6 @@ tables:
         template:
           format: "!disabled"
 
-      phone_number:
-        phone:
-          format: "9^########"
-
   - name: services_service
     rules:
       contact_name:
