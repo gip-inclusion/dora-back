@@ -152,6 +152,7 @@ class StructureAdmin(admin.ModelAdmin):
         "typology",
         "city_code",
         "city",
+        "creation_date",
         "modification_date",
         "last_editor",
     ]
@@ -161,10 +162,11 @@ class StructureAdmin(admin.ModelAdmin):
         "source",
         "typology",
         "department",
+        "creation_date",
+        "modification_date",
     ]
     search_fields = ("name", "siret", "code_safir_pe", "city", "department", "slug")
     ordering = ["-modification_date", "department"]
-    date_hierarchy = "modification_date"
     inlines = [
         StructureMemberInline,
         StructurePutativeMemberInline,
