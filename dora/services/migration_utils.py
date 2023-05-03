@@ -149,6 +149,18 @@ def update_subcategory_value_and_label(
     old_subcategory.save()
 
 
+def rename_subcategory(ServiceSubCategory, value, new_label):
+    subcategory = get_subcategory_by_value(ServiceSubCategory, value)
+
+    # Certains besoins ayant été créés via le back-office, certaines migrations peuvent échouer depuis une BDD vide…
+    # Pour éviter cela, on quitte la méthode prématurément sans renvoyer d'erreur
+    if subcategory is None:
+        return
+
+    subcategory.label = new_label
+    subcategory.save()
+
+
 def update_category_value_and_label(
     ServiceCategory,
     ServiceSubCategory,
