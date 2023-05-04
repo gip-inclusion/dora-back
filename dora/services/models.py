@@ -132,6 +132,11 @@ class LocationKind(EnumModel):
         verbose_name_plural = "Lieux de déroulement"
 
 
+class ServiceSource(EnumModel):
+    class Meta:
+        verbose_name = "Source"
+
+
 class ServiceManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(is_model=False)
@@ -206,6 +211,7 @@ class Service(ModerationMixin, models.Model):
         ConcernedPublic, verbose_name="Publics concernés", blank=True
     )
     is_cumulative = models.BooleanField(verbose_name="Solution cumulable", default=True)
+    # TODO: deprecated?
     has_fee = models.BooleanField(
         verbose_name="Frais à charge pour le bénéficiaire", default=False
     )
@@ -236,6 +242,7 @@ class Service(ModerationMixin, models.Model):
         verbose_name="Comment orienter un bénéficiaire en tant qu’accompagnateur",
         blank=True,
     )
+
     coach_orientation_modes_other = CharField(
         verbose_name="Autre", max_length=280, blank=True
     )
@@ -365,6 +372,11 @@ class Service(ModerationMixin, models.Model):
     last_sync_checksum = models.CharField(max_length=32, blank=True)
 
     use_inclusion_numerique_scheme = models.BooleanField(default=False)
+
+    source = models.ForeignKey(
+        ServiceSource, null=True, blank=True, on_delete=models.PROTECT
+    )
+    data_inclusion_id = models.TextField(blank=True, db_index=True)
 
     objects = ServiceManager()
 

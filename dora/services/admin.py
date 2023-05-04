@@ -86,13 +86,7 @@ class ServiceAdmin(admin.GISModelAdmin):
         "last_editor",
         "status",
     ]
-    list_filter = [
-        "status",
-        "moderation_status",
-        "is_draft",
-        "is_suggestion",
-        ("structure", RelatedOnlyFieldListFilter),
-    ]
+    list_filter = ["status", "moderation_status", "is_draft", "is_suggestion", "source"]
     filter_horizontal = [
         "categories",
         "subcategories",

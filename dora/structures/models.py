@@ -241,7 +241,7 @@ class Structure(ModerationMixin, models.Model):
     source = models.ForeignKey(
         StructureSource, null=True, blank=True, on_delete=models.PROTECT
     )
-    data_inclusion_id = models.TextField(blank=True)
+    data_inclusion_id = models.TextField(blank=True, db_index=True)
 
     members = models.ManyToManyField(User, through=StructureMember)
 
