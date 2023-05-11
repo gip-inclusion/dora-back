@@ -181,6 +181,7 @@ class StructureSerializer(serializers.ModelSerializer):
                     "location_kinds_display",
                     "model",
                     "model_changed",
+                    "model_name",
                     "modification_date",
                     "name",
                     "postal_code",
