@@ -127,7 +127,8 @@ def inclusion_connect_authenticate(request):
     state = request.data.get("state")
     frontend_state = request.data.get("frontend_state")
     stored_state = cache.get(f"oidc-state-{state}")
-    assert stored_state["state"] == state == frontend_state
+    if stored_state["state"] == state == frontend_state:
+        raise APIException("État oidc inconsistent")
 
     stored_nonce = stored_state["nonce"]
     stored_redirect_uri = stored_state["redirect_uri"]
@@ -215,4 +216,4 @@ def inclusion_connect_authenticate(request):
         return Response({"token": token.key, "valid_user": True})
     except requests.exceptions.RequestException as e:
         logging.exception(e)
-        return APIException("Erreur de communication avec le fournisseur d'identité")
+        raise APIException("Erreur de communication avec le fournisseur d'identité")
