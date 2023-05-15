@@ -314,6 +314,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "location_kinds_display",
             "model",
             "model_changed",
+            "model_name",
             "modification_date",
             "name",
             "online_form",
@@ -445,8 +446,6 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     def get_model_name(self, object):
         if object.model:
-            print(object.model)
-            print(dir(object.model))
             return object.model.name
         return None
 
