@@ -120,7 +120,7 @@ class StructureSerializer(serializers.ModelSerializer):
         return str(obj.id)
 
     def get_labels_autres(self, obj):
-        return obj.other_labels.split(",") if obj.other_labels else []
+        return obj.other_labels
 
     def get_labels_nationaux(self, obj):
         return [label.value for label in obj.national_labels.all()]

@@ -2,6 +2,7 @@ import uuid
 from typing import Optional
 
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CharField, Q
@@ -217,8 +218,11 @@ class Structure(ModerationMixin, models.Model):
     )
     opening_hours_details = models.CharField(max_length=255, blank=True, null=True)
     national_labels = models.ManyToManyField(StructureNationalLabel, blank=True)
-    other_labels = models.CharField(max_length=255, blank=True)
-
+    other_labels = ArrayField(
+        models.TextField(),
+        blank=True,
+        default=list,
+    )
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(blank=True, null=True)
     has_been_edited = models.BooleanField(default=False)

@@ -53,7 +53,9 @@ class PublicAPIStructureTestCase(APITestCase):
             parent=parent,
             opening_hours='Mo-Fr 10:00-20:00 "sur rendez-vous"; PH off',
             accesslibre_url="https://acceslibre.beta.gouv.fr/app/29-lampaul-plouarzel/a/bibliotheque-mediatheque/erp/mediatheque-13/",
-            other_labels="Nièvre médiation numérique",
+            other_labels=[
+                "Nièvre médiation numérique",
+            ],
         )
         struct.modification_date = "2022-04-28T16:53:11Z"
         struct.national_labels.add(
