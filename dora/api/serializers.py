@@ -94,7 +94,7 @@ class StructureSerializer(serializers.ModelSerializer):
         return obj.postal_code or None
 
     def get_commune(self, obj):
-        return obj.get_clean_city_name()
+        return obj.city
 
     def get_complement_adresse(self, obj):
         return obj.address2 or None
@@ -258,7 +258,6 @@ class StructureSerializerV1(serializers.ModelSerializer):
     services = serializers.HyperlinkedRelatedField(
         many=True, read_only=True, view_name="service-detail"
     )
-    city = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
@@ -298,9 +297,6 @@ class StructureSerializerV1(serializers.ModelSerializer):
 
     def get_link_on_source(self, obj) -> str:
         return f"{settings.FRONTEND_URL}/structures/{obj.slug}"
-
-    def get_city(self, obj):
-        return obj.get_clean_city_name()
 
 
 class StringListField(serializers.ListField):
@@ -375,7 +371,6 @@ class ServiceSerializerV1(serializers.ModelSerializer):
     creation_date = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
     modification_date = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
     publication_date = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
-    city = serializers.SerializerMethodField()
 
     link_on_source = serializers.SerializerMethodField()
 
@@ -489,6 +484,3 @@ class ServiceSerializerV1(serializers.ModelSerializer):
     def get_subcategories(self, obj):
         scats = obj.subcategories.exclude(value__endswith=("--autre"))
         return [{"value": scat.value, "label": scat.label} for scat in scats]
-
-    def get_city(self, obj):
-        return obj.get_clean_city_name()

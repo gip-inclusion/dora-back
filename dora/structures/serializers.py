@@ -52,8 +52,6 @@ class StructureSerializer(serializers.ModelSerializer):
 
     source = serializers.SerializerMethodField()
 
-    city = serializers.SerializerMethodField()
-
     class Meta:
         model = Structure
         fields = [
@@ -105,7 +103,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "url",
         ]
         lookup_field = "slug"
-        read_only_fields = ["has_been_edited", "department"]
+        read_only_fields = ["has_been_edited", "city", "department"]
 
     def get_has_admin(self, obj):
         return obj.has_admin()
@@ -164,7 +162,6 @@ class StructureSerializer(serializers.ModelSerializer):
                     "categories_display",
                     "category",
                     "category_display",
-                    "city",
                     "city",
                     "city_code",
                     "coach_orientation_modes",
@@ -362,9 +359,6 @@ class StructureSerializer(serializers.ModelSerializer):
             if obj.source
             else None
         )
-
-    def get_city(self, obj):
-        return obj.get_clean_city_name()
 
 
 class StructureListSerializer(StructureSerializer):

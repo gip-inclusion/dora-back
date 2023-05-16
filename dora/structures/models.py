@@ -196,9 +196,11 @@ class Structure(ModerationMixin, models.Model):
     address1 = models.CharField(max_length=255, blank=True)
     address2 = models.CharField(max_length=255, blank=True)
     postal_code = models.CharField(max_length=5, blank=True)
-    city = models.CharField(max_length=255, blank=True)
     city_code = models.CharField(max_length=5, blank=True)
+    # lecture seule
+    city = models.CharField(max_length=255, blank=True)
     department = models.CharField(max_length=3, blank=True)
+    #
     longitude = models.FloatField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)
     # valeur indiquant la pertinence des valeurs lat/lon issues d'un géocodage
@@ -303,6 +305,7 @@ class Structure(ModerationMixin, models.Model):
             self.branch_id = self._make_unique_branch_id()
         if self.city_code:
             self.department = code_insee_to_code_dept(self.city_code)
+            self.city = get_clean_city_name(self.city_code)
         return super().save(*args, **kwargs)
 
     def can_edit_informations(self, user: User):
@@ -409,6 +412,3 @@ class Structure(ModerationMixin, models.Model):
 
     def log_note(self, user, msg):
         LogItem.objects.create(structure=self, user=user, message=msg.strip())
-
-    def get_clean_city_name(self):
-        return get_clean_city_name(self.city_code) or self.city

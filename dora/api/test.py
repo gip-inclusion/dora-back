@@ -19,6 +19,7 @@ class PublicAPIStructureTestCase(APITestCase):
         baker.make("structures.StructureSource", value="solidagregateur")
         baker.make("structures.StructureNationalLabel", value="MOBIN")
         baker.make("structures.StructureNationalLabel", value="AFPA")
+        baker.make("City", name="Robinboeuf CEDEX", code="09890")
 
     def test_api_response(self):
         response = self.client.get("/api/v2/structures/")
@@ -36,7 +37,7 @@ class PublicAPIStructureTestCase(APITestCase):
             siret="60487647500499",
             # rna="W123456789",
             name="MOBILETTE",
-            city="Robinboeuf CEDEX",
+            # city="Robinboeuf CEDEX",
             postal_code="09891",
             city_code="09890",
             address1="RUE DE LECLERCQ",
