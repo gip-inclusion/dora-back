@@ -423,13 +423,30 @@ class ModelViewSet(ServiceViewSet):
             last_editor=self.request.user,
             modification_date=timezone.now(),
         )
-        model.sync_checksum = update_sync_checksum(model)
+        sync_checksum = update_sync_checksum(model)
+        model.sync_checksum = sync_checksum
         model.save()
+
         if changed_fields:
             model.log_note(
                 self.request.user,
                 f"Modèle modifié ({' / '.join(changed_fields)})",
             )
+
+            if self.request.data.get("update_all_services", "") in TRUTHY_VALUES:
+                # 1 - Get all services using this model
+                services = Service.objects.filter(model_id=model.id)
+
+                for service in services:
+                    # Mise à jour des `changed_fields`
+                    for field in changed_fields:
+                        setattr(service, field, getattr(model, field))
+
+                    # Enregistrement des mises à jour
+                    service.last_editor = self.request.user
+                    service.last_sync_checksum = sync_checksum
+                    service.modification_date = timezone.now()
+                    service.save()
 
 
 @api_view()
