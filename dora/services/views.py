@@ -37,7 +37,7 @@ from dora.services.models import (
     ServiceStatusHistoryItem,
     ServiceSubCategory,
 )
-from dora.services.utils import filter_services_by_city_code
+from dora.services.utils import SYNC_FIELDS, filter_services_by_city_code
 from dora.stats.models import DeploymentLevel, DeploymentState
 from dora.structures.models import Structure, StructureMember
 
@@ -50,6 +50,18 @@ from .serializers import (
     ServiceSerializer,
 )
 from .utils import update_sync_checksum
+
+
+class StructureAdminPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        if request.method in ["POST"]:
+            return (
+                user
+                and user.is_authenticated
+                and (user.is_staff or (user.is_manager and user.department))
+            )
+        return False
 
 
 class ServicePermission(permissions.BasePermission):
@@ -327,6 +339,30 @@ class ServiceViewSet(
             self._send_service_modified_notification(
                 service, self.request.user, changed_fields
             )
+
+    @action(
+        detail=False,  # Bonne valeur ?
+        methods=["POST"],
+        url_path="update-from-model",
+        permission_classes=[StructureAdminPermission],
+    )
+    def update_services_from_model(self, request):
+        service_slugs = self.request.data.get("services")
+
+        for service_slug in service_slugs:
+            service = Service.objects.get(slug=service_slug)
+            model = service.model
+
+            # Mise à jour des `SYNC_FIELDS`
+            for field in SYNC_FIELDS:
+                setattr(service, field, getattr(model, field))
+
+            service.last_editor = self.request.user
+            service.last_sync_checksum = model.sync_checksum
+            service.modification_date = timezone.now()
+            service.save()
+
+        return Response("ok", status=200)
 
 
 class ModelViewSet(ServiceViewSet):
