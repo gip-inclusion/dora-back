@@ -341,7 +341,8 @@ class ServiceViewSet(
             )
 
     @action(
-        detail=False,  # Bonne valeur ?
+        # Bonne valeur ?
+        detail=False,
         methods=["POST"],
         url_path="update-from-model",
         permission_classes=[StructureAdminPermission],
@@ -470,15 +471,12 @@ class ModelViewSet(ServiceViewSet):
             )
 
             if self.request.data.get("update_all_services", "") in TRUTHY_VALUES:
-                # 1 - Get all services using this model
                 services = Service.objects.filter(model_id=model.id)
 
                 for service in services:
-                    # Mise à jour des `changed_fields`
                     for field in changed_fields:
                         setattr(service, field, getattr(model, field))
 
-                    # Enregistrement des mises à jour
                     service.last_editor = self.request.user
                     service.last_sync_checksum = sync_checksum
                     service.modification_date = timezone.now()
