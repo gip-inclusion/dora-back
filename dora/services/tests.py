@@ -1973,6 +1973,103 @@ class ServiceModelTestCase(APITestCase):
         self.assertEqual(hitem.user, user)
         self.assertEqual(hitem.status, "")
 
+    def test_update_model_and_update_all_linked_services(self):
+        service_name = "Nom du service"
+        new_model_name = "Nouveau nom du modèle"
+
+        # ÉTANT DONNÉ un modèle lié à un service
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        model = make_model(structure=struct, name="Nom du modèle")
+        service = make_service(
+            model=model,
+            structure=struct,
+            name=service_name,
+            status=ServiceStatus.PUBLISHED,
+        )
+
+        # QUAND je mets à jour le modèle en demandant la mise à jour des services associés
+        self.client.force_authenticate(user=user)
+        response = self.client.patch(
+            f"/models/{model.slug}/",
+            {"name": new_model_name, "update_all_services": "true"},
+        )
+        self.assertEqual(response.status_code, 200)
+        service.refresh_from_db()
+
+        # ALORS le service est mise à jour avec le nouveau nom du modèle
+        self.assertEqual(service.name, new_model_name)
+
+    def test_update_model_and_update_only_linked_services(self):
+        service_name_1 = "Nom du service 1"
+        service_name_2 = "Nom du service 2"
+        new_model_name = "Nouveau nom du modèle"
+
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+
+        # ÉTANT DONNÉ un service lié à un modèle
+        model = make_model(structure=struct, name="Nom du modèle")
+        service_1 = make_service(
+            model=model,
+            structure=struct,
+            name=service_name_1,
+            status=ServiceStatus.PUBLISHED,
+        )
+        # ET un service non-lié à un modèle
+        service_2 = make_service(
+            model=None,
+            structure=struct,
+            name=service_name_2,
+            status=ServiceStatus.PUBLISHED,
+        )
+
+        # QUAND je mets à jour le modèle en demandant la mise à jour des services associés
+        self.client.force_authenticate(user=user)
+        response = self.client.patch(
+            f"/models/{model.slug}/",
+            {"name": new_model_name, "update_all_services": "true"},
+        )
+        self.assertEqual(response.status_code, 200)
+        service_1.refresh_from_db()
+        service_2.refresh_from_db()
+
+        # ALORS seul le service associé au modèle est associé
+        self.assertEqual(service_1.name, new_model_name)
+        self.assertEqual(service_2.name, service_name_2)
+
+    def test_update_service_from_model(self):
+        service_name = "Nom du service"
+        service_slug = "nom-du-service"
+        model_name = "Nouveau nom du modèle"
+
+        # ÉTANT DONNÉ un modèle lié à un service
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        model = make_model(structure=struct, name=model_name)
+        service = make_service(
+            model=model,
+            structure=struct,
+            slug=service_slug,
+            name=service_name,
+            status=ServiceStatus.PUBLISHED,
+        )
+        self.assertEqual(service.name, service_name)
+
+        # QUAND je demande la mise à jour du service via son modèle
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/services/update-from-model/",
+            {
+                "services": [service_slug],
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        service.refresh_from_db()
+
+        # ALORS le service a été mis à jour
+        self.assertEqual(service.name, model_name)
+
 
 class ServiceInstantiationTestCase(APITestCase):
     def test_cant_instantiate_a_service(self):
