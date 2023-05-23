@@ -87,3 +87,4 @@ def get_clean_city_name(insee_code):
         city = City.objects.get_from_code(arrdt_to_main_insee_code(insee_code))
         if city:
             return city.name
+    return ""

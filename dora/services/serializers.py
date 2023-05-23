@@ -106,6 +106,10 @@ class StructureSerializer(serializers.ModelSerializer):
             "slug",
             "url",
         ]
+        read_only_fields = [
+            "city",
+            "department",
+        ]
 
     def get_has_admin(self, structure):
         return structure.has_admin()
@@ -261,7 +265,6 @@ class ServiceSerializer(serializers.ModelSerializer):
         allow_null=True,
     )
 
-    city = serializers.SerializerMethodField()
     update_status = serializers.SerializerMethodField()
 
     class Meta:
@@ -337,6 +340,9 @@ class ServiceSerializer(serializers.ModelSerializer):
             "update_status",
             "use_inclusion_numerique_scheme",
         ]
+        read_only_fields = [
+            "city",
+        ]
         lookup_field = "slug"
 
     def get_category(self, obj):
@@ -386,9 +392,6 @@ class ServiceSerializer(serializers.ModelSerializer):
     def get_department(self, obj):
         code = obj.city_code
         return code_insee_to_code_dept(code)
-
-    def get_city(self, obj):
-        return obj.get_clean_city_name()
 
     def get_can_write(self, obj):
         user = self.context.get("request").user
@@ -575,6 +578,7 @@ class StructureSerializerInList(StructureSerializer):
             "slug",
             "url",
         ]
+        read_only_fields = ["city", "department"]
 
 
 class ServiceListSerializer(ServiceSerializer):
@@ -609,6 +613,9 @@ class ServiceListSerializer(ServiceSerializer):
             "structure",
             "structure_info",
             "use_inclusion_numerique_scheme",
+        ]
+        read_only_fields = [
+            "city",
         ]
         lookup_field = "slug"
 

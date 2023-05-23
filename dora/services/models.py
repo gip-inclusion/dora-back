@@ -298,7 +298,9 @@ class Service(ModerationMixin, models.Model):
     )
     postal_code = models.CharField(verbose_name="Code postal", max_length=5, blank=True)
     city_code = models.CharField(verbose_name="Code INSEE", max_length=5, blank=True)
+    # lecture seule
     city = models.CharField(verbose_name="Ville", max_length=255, blank=True)
+    #
     geom = models.PointField(
         srid=4326, geography=True, spatial_index=True, null=True, blank=True
     )
@@ -414,6 +416,7 @@ class Service(ModerationMixin, models.Model):
     def save(self, user=None, *args, **kwargs):
         if not self.slug:
             self.slug = make_unique_slug(self, self.structure.slug, self.name)
+        self.city = get_clean_city_name(self.city_code)
         return super().save(*args, **kwargs)
 
     def can_write(self, user):
@@ -431,9 +434,6 @@ class Service(ModerationMixin, models.Model):
 
     def log_note(self, user, msg):
         LogItem.objects.create(service=self, user=user, message=msg.strip())
-
-    def get_clean_city_name(self):
-        return get_clean_city_name(self.city_code) or self.city
 
 
 class ServiceModelManager(models.Manager):

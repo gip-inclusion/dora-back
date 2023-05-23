@@ -2,6 +2,7 @@ import uuid
 from typing import Optional
 
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CharField, Q
@@ -195,9 +196,11 @@ class Structure(ModerationMixin, models.Model):
     address1 = models.CharField(max_length=255, blank=True)
     address2 = models.CharField(max_length=255, blank=True)
     postal_code = models.CharField(max_length=5, blank=True)
-    city = models.CharField(max_length=255, blank=True)
     city_code = models.CharField(max_length=5, blank=True)
+    # lecture seule
+    city = models.CharField(max_length=255, blank=True)
     department = models.CharField(max_length=3, blank=True)
+    #
     longitude = models.FloatField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)
     # valeur indiquant la pertinence des valeurs lat/lon issues d'un géocodage
@@ -217,8 +220,11 @@ class Structure(ModerationMixin, models.Model):
     )
     opening_hours_details = models.CharField(max_length=255, blank=True, null=True)
     national_labels = models.ManyToManyField(StructureNationalLabel, blank=True)
-    other_labels = models.CharField(max_length=255, blank=True)
-
+    other_labels = ArrayField(
+        models.TextField(),
+        blank=True,
+        default=list,
+    )
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(blank=True, null=True)
     has_been_edited = models.BooleanField(default=False)
@@ -299,6 +305,7 @@ class Structure(ModerationMixin, models.Model):
             self.branch_id = self._make_unique_branch_id()
         if self.city_code:
             self.department = code_insee_to_code_dept(self.city_code)
+            self.city = get_clean_city_name(self.city_code)
         return super().save(*args, **kwargs)
 
     def can_edit_informations(self, user: User):
@@ -405,6 +412,3 @@ class Structure(ModerationMixin, models.Model):
 
     def log_note(self, user, msg):
         LogItem.objects.create(structure=self, user=user, message=msg.strip())
-
-    def get_clean_city_name(self):
-        return get_clean_city_name(self.city_code) or self.city
