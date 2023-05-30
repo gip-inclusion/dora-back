@@ -37,7 +37,10 @@ from dora.services.models import (
     ServiceStatusHistoryItem,
     ServiceSubCategory,
 )
-from dora.services.utils import SYNC_FIELDS, filter_services_by_city_code
+from dora.services.utils import (
+    filter_services_by_city_code,
+    synchronize_service_from_model,
+)
 from dora.stats.models import DeploymentLevel, DeploymentState
 from dora.structures.models import Structure, StructureMember
 
@@ -343,9 +346,7 @@ class ServiceViewSet(
             user = self.request.user
 
             if user.is_staff or service.can_write(user):
-                # Mise à jour des `SYNC_FIELDS`
-                for field in SYNC_FIELDS:
-                    setattr(service, field, getattr(model, field))
+                synchronize_service_from_model(service, model)
 
                 service.last_editor = self.request.user
                 service.last_sync_checksum = model.sync_checksum
