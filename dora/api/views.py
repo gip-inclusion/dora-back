@@ -73,7 +73,7 @@ class StructureViewSet(viewsets.ReadOnlyModelViewSet):
             .all()
         )
         structures = structures.exclude(
-            Q(membership=None) & Q(source__value__startswith="di-") & Q(services=None)
+            Q(membership=None) & Q(source__value__startswith="di-")
         )
         return structures.order_by("pk")
 
@@ -132,9 +132,7 @@ class StructureViewSetV1(viewsets.ReadOnlyModelViewSet):
         structures = Structure.objects.select_related("typology", "source").all()
         if self.request.GET.get("di") in TRUTHY_VALUES:
             structures = structures.exclude(
-                Q(membership=None)
-                & Q(source__value__startswith="di-")
-                & Q(services=None)
+                Q(membership=None) & Q(source__value__startswith="di-")
             )
         return structures.order_by("pk")
 
