@@ -2064,11 +2064,46 @@ class ServiceModelTestCase(APITestCase):
                 "services": [service_slug],
             },
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204)
         service.refresh_from_db()
 
         # ALORS le service a été mis à jour
         self.assertEqual(service.name, model_name)
+
+    def test_reject_update_service_from_model(self):
+        service_name = "Nom du service"
+        service_slug = "nom-du-service"
+        model_name = "Nouveau nom du modèle"
+        model_slug = "nouveau-nom-du-modele"
+
+        # ÉTANT DONNÉ un modèle lié à un service
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        model = make_model(structure=struct, name=model_name, slug=model_slug)
+        service = make_service(
+            model=model,
+            structure=struct,
+            slug=service_slug,
+            name=service_name,
+            status=ServiceStatus.PUBLISHED,
+        )
+        self.assertEqual(service.name, service_name)
+
+        # QUAND je demande la mise à jour du service via son modèle
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/services/reject-update-from-model/",
+            {
+                "data": [{"model_slug": model_slug, "service_slug": service_slug}],
+            },
+        )
+        self.assertEqual(response.status_code, 204)
+        service.refresh_from_db()
+
+        # ALORS le service n'a été mis à jour
+        self.assertNotEqual(service.name, model_name)
+        # mais son checksum a été mis à jour
+        self.assertEqual(service.last_sync_checksum, model.sync_checksum)
 
 
 class ServiceInstantiationTestCase(APITestCase):

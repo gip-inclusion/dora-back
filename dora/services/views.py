@@ -345,7 +345,7 @@ class ServiceViewSet(
             model = service.model
             user = self.request.user
 
-            if user.is_staff or service.can_write(user):
+            if service.can_write(user):
                 synchronize_service_from_model(service, model)
 
                 service.last_editor = self.request.user
@@ -353,7 +353,32 @@ class ServiceViewSet(
                 service.modification_date = timezone.now()
                 service.save()
 
-        return Response("ok", status=200)
+        return Response(status=204)
+
+    @action(
+        detail=False,
+        methods=["POST"],
+        url_path="reject-update-from-model",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def reject_update_services_from_model(self, request):
+        data = self.request.data.get("data")
+
+        for row in data:
+            model_slug = row.get("model_slug", None)
+            service_slug = row.get("service_slug", None)
+
+            if model_slug and service_slug:
+                service = Service.objects.get(slug=service_slug)
+                model = ServiceModel.objects.get(slug=model_slug)
+                user = self.request.user
+
+                if service.can_write(user):
+                    service.model = model
+                    service.last_sync_checksum = model.sync_checksum
+                    service.save()
+
+        return Response(status=204)
 
 
 class ModelViewSet(ServiceViewSet):
@@ -464,12 +489,24 @@ class ModelViewSet(ServiceViewSet):
                 services = Service.objects.filter(model_id=model.id)
 
                 for service in services:
-                    for field in changed_fields:
-                        setattr(service, field, getattr(model, field))
+                    synchronize_service_from_model(service, model)
+
+                    service.log_note(self.request.user, "Service modifiée")
+
+                    ServiceModificationHistoryItem.objects.create(
+                        service=service,
+                        user=self.request.user,
+                        fields=changed_fields,
+                        status=service.status,
+                    )
 
                     service.last_editor = self.request.user
                     service.last_sync_checksum = sync_checksum
                     service.modification_date = timezone.now()
+
+                    # On ne vérifie pas les droits sur les services liés au modèle,
+                    # en partant du principe que s'il peut modifier le modèle
+                    # alors il peut modifier les services liés
                     service.save()
 
 
