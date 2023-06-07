@@ -1,7 +1,6 @@
 import json
 import logging
 import time
-from datetime import timedelta
 
 import jwt
 import requests
@@ -9,7 +8,6 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.files.storage import default_storage
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.text import get_valid_filename
 from furl import furl
@@ -208,11 +206,7 @@ def inclusion_connect_authenticate(request):
                 user = User.objects.create(**user_dict)
 
         update_last_login(user)
-        token, _created = Token.objects.get_or_create(
-            user=user,
-            expiration=timezone.now()
-            + timedelta(days=settings.IC_EXPIRATION_DELAY_DAYS),
-        )
+        token, _created = Token.objects.get_or_create(user=user)
         return Response({"token": token.key, "valid_user": True})
     except requests.exceptions.RequestException as e:
         logging.exception(e)
