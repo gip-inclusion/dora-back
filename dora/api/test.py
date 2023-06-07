@@ -19,6 +19,7 @@ class PublicAPIStructureTestCase(APITestCase):
         baker.make("structures.StructureSource", value="solidagregateur")
         baker.make("structures.StructureNationalLabel", value="MOBIN")
         baker.make("structures.StructureNationalLabel", value="AFPA")
+        baker.make("City", name="Robinboeuf CEDEX", code="09890")
 
     def test_api_response(self):
         response = self.client.get("/api/v2/structures/")
@@ -36,7 +37,7 @@ class PublicAPIStructureTestCase(APITestCase):
             siret="60487647500499",
             # rna="W123456789",
             name="MOBILETTE",
-            city="Robinboeuf CEDEX",
+            # city="Robinboeuf CEDEX",
             postal_code="09891",
             city_code="09890",
             address1="RUE DE LECLERCQ",
@@ -53,7 +54,9 @@ class PublicAPIStructureTestCase(APITestCase):
             parent=parent,
             opening_hours='Mo-Fr 10:00-20:00 "sur rendez-vous"; PH off',
             accesslibre_url="https://acceslibre.beta.gouv.fr/app/29-lampaul-plouarzel/a/bibliotheque-mediatheque/erp/mediatheque-13/",
-            other_labels="Nièvre médiation numérique",
+            other_labels=[
+                "Nièvre médiation numérique",
+            ],
         )
         struct.modification_date = "2022-04-28T16:53:11Z"
         struct.national_labels.add(

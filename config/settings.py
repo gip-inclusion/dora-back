@@ -62,6 +62,9 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = os.environ["DJANGO_DEBUG"] == "true"
 PROFILE = False
 
+if DEBUG:
+    DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
 # DJANGO_ADMINS=Name1:email1,Name2:email2
 ADMINS = (
     [u.split(":") for u in os.environ["DJANGO_ADMINS"].split(",")]

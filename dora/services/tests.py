@@ -18,6 +18,7 @@ from dora.services.migration_utils import (
     delete_subcategory,
     get_category_by_value,
     get_subcategory_by_value,
+    rename_subcategory,
     replace_subcategory,
     unlink_services_from_category,
     unlink_services_from_subcategory,
@@ -2663,6 +2664,26 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         subcategory = ServiceSubCategory.objects.filter(value=new_value)
         self.assertEqual(subcategory.count(), 1)
         self.assertEqual(subcategory.first().value, new_value)
+        self.assertEqual(subcategory.first().label, new_label)
+
+    def test_rename_subcategory(self):
+        value = "value"
+        new_label = "new_label"
+
+        # ÉTANT DONNÉ un besoin existant
+        baker.make("ServiceSubCategory", value=value, label="Label_1")
+
+        # QUAND je modifie son nom
+        rename_subcategory(
+            ServiceSubCategory,
+            value=value,
+            new_label=new_label,
+        )
+
+        # ALORS le besoin est correctement renommé
+        subcategory = ServiceSubCategory.objects.filter(value=value)
+        self.assertEqual(subcategory.count(), 1)
+        self.assertEqual(subcategory.first().value, value)
         self.assertEqual(subcategory.first().label, new_label)
 
     def test_update_category_value_and_label_value(self):

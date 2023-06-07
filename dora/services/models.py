@@ -132,6 +132,11 @@ class LocationKind(EnumModel):
         verbose_name_plural = "Lieux de déroulement"
 
 
+class ServiceSource(EnumModel):
+    class Meta:
+        verbose_name = "Source"
+
+
 class ServiceManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(is_model=False)
@@ -206,6 +211,7 @@ class Service(ModerationMixin, models.Model):
         ConcernedPublic, verbose_name="Publics concernés", blank=True
     )
     is_cumulative = models.BooleanField(verbose_name="Solution cumulable", default=True)
+    # TODO: deprecated?
     has_fee = models.BooleanField(
         verbose_name="Frais à charge pour le bénéficiaire", default=False
     )
@@ -236,6 +242,7 @@ class Service(ModerationMixin, models.Model):
         verbose_name="Comment orienter un bénéficiaire en tant qu’accompagnateur",
         blank=True,
     )
+
     coach_orientation_modes_other = CharField(
         verbose_name="Autre", max_length=280, blank=True
     )
@@ -291,7 +298,9 @@ class Service(ModerationMixin, models.Model):
     )
     postal_code = models.CharField(verbose_name="Code postal", max_length=5, blank=True)
     city_code = models.CharField(verbose_name="Code INSEE", max_length=5, blank=True)
+    # lecture seule
     city = models.CharField(verbose_name="Ville", max_length=255, blank=True)
+    #
     geom = models.PointField(
         srid=4326, geography=True, spatial_index=True, null=True, blank=True
     )
@@ -366,6 +375,11 @@ class Service(ModerationMixin, models.Model):
 
     use_inclusion_numerique_scheme = models.BooleanField(default=False)
 
+    source = models.ForeignKey(
+        ServiceSource, null=True, blank=True, on_delete=models.PROTECT
+    )
+    data_inclusion_id = models.TextField(blank=True, db_index=True)
+
     objects = ServiceManager()
 
     class Meta:
@@ -402,6 +416,7 @@ class Service(ModerationMixin, models.Model):
     def save(self, user=None, *args, **kwargs):
         if not self.slug:
             self.slug = make_unique_slug(self, self.structure.slug, self.name)
+        self.city = get_clean_city_name(self.city_code)
         return super().save(*args, **kwargs)
 
     def can_write(self, user):
@@ -419,9 +434,6 @@ class Service(ModerationMixin, models.Model):
 
     def log_note(self, user, msg):
         LogItem.objects.create(service=self, user=user, message=msg.strip())
-
-    def get_clean_city_name(self):
-        return get_clean_city_name(self.city_code) or self.city
 
 
 class ServiceModelManager(models.Manager):
