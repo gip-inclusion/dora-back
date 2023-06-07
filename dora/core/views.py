@@ -127,7 +127,7 @@ def inclusion_connect_authenticate(request):
     state = request.data.get("state")
     frontend_state = request.data.get("frontend_state")
     stored_state = cache.get(f"oidc-state-{state}")
-    if not (stored_state["state"] == state == frontend_state):
+    if not (stored_state and (stored_state["state"] == state == frontend_state)):
         raise APIException("État oidc inconsistent")
 
     stored_nonce = stored_state["nonce"]
