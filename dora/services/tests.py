@@ -2070,6 +2070,119 @@ class ServiceModelTestCase(APITestCase):
         # ALORS le service a été mis à jour
         self.assertEqual(service.name, model_name)
 
+    def test_update_service_from_model_m2m(self):
+        service_name = "Nom du service"
+        service_slug = "nom-du-service"
+        model_name = "Nouveau nom du modèle"
+        model_slug = "nouveau-nom-du-modele"
+        user = baker.make("users.User", is_valid=True)
+
+        # ÉTANT DONNÉ un service lié à un modèle avec des champs custom et M2M
+        struct = make_structure(user)
+        global_condition1 = baker.make("AccessCondition", structure=None)
+        struct_condition1 = baker.make("AccessCondition", structure=struct)
+
+        model = make_model(
+            structure=struct,
+            name=model_name,
+            slug=model_slug,
+        )
+        # SYNC_CUSTOM_M2M_FIELDS
+        model.access_conditions.add(global_condition1)
+        model.access_conditions.add(struct_condition1)
+
+        # SYNC_M2M_FIELDS
+        model.categories.add(ServiceCategory.objects.get(value="numerique"))
+        model.subcategories.add(
+            ServiceSubCategory.objects.get(value="numerique--acceder-a-du-materiel")
+        )
+        model.refresh_from_db()
+
+        service = make_service(
+            model=model,
+            structure=struct,
+            slug=service_slug,
+            name=service_name,
+            status=ServiceStatus.PUBLISHED,
+        )
+
+        self.assertNotEqual(
+            sorted(service.access_conditions.values_list("id", flat=True)),
+            sorted(model.access_conditions.values_list("id", flat=True)),
+        )
+        self.assertNotEqual(
+            sorted(service.categories.values_list("value", flat=True)),
+            sorted(model.categories.values_list("value", flat=True)),
+        )
+        self.assertNotEqual(
+            sorted(service.subcategories.values_list("value", flat=True)),
+            sorted(model.subcategories.values_list("value", flat=True)),
+        )
+
+        # QUAND je demande la mise à jour du service via son modèle
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/services/update-from-model/",
+            {
+                "services": [service_slug],
+            },
+        )
+        service.refresh_from_db()
+
+        # ALORS les champs custom et M2M ont été mis à jour
+        self.assertEqual(response.status_code, 204)
+
+        self.assertEqual(
+            sorted(service.access_conditions.values_list("id", flat=True)),
+            sorted(model.access_conditions.values_list("id", flat=True)),
+        )
+        self.assertEqual(
+            sorted(service.categories.values_list("value", flat=True)),
+            sorted(model.categories.values_list("value", flat=True)),
+        )
+        self.assertEqual(
+            sorted(service.subcategories.values_list("value", flat=True)),
+            sorted(model.subcategories.values_list("value", flat=True)),
+        )
+
+    def test_update_service_from_model_wrong_permission(self):
+        service_name = "Nom du service"
+        service_slug = "nom-du-service"
+        model_name = "Nouveau nom du modèle"
+
+        # ÉTANT DONNÉ un modèle lié à un service
+        user = baker.make("users.User", is_valid=True)
+
+        struct = make_structure(user)
+        model = make_model(structure=struct, name=model_name)
+        service = make_service(
+            model=model,
+            structure=struct,
+            slug=service_slug,
+            name=service_name,
+            status=ServiceStatus.PUBLISHED,
+        )
+        self.assertEqual(service.name, service_name)
+
+        # ET un utilisateur n'appartenant pas à la structure
+        user2 = baker.make("users.User", is_valid=True)
+
+        # QUAND je demande la mise à jour du service via son modèle avec un utilisateur n'appartenant pas à la structure
+        self.client.force_authenticate(user=user2)
+        response = self.client.post(
+            "/services/update-from-model/",
+            {
+                "services": [service_slug],
+            },
+        )
+
+        # ALORS je ne suis pas autorisé à faire la mise à jour
+        self.assertEqual(response.status_code, 403)
+
+        # ET le service n'a pas été mis à jour
+        service.refresh_from_db()
+        self.assertNotEqual(service.name, model_name)
+
     def test_reject_update_service_from_model(self):
         service_name = "Nom du service"
         service_slug = "nom-du-service"
@@ -2089,7 +2202,7 @@ class ServiceModelTestCase(APITestCase):
         )
         self.assertEqual(service.name, service_name)
 
-        # QUAND je demande la mise à jour du service via son modèle
+        # QUAND je refuse la mise à jour du service via son modèle
         self.client.force_authenticate(user=user)
         response = self.client.post(
             "/services/reject-update-from-model/",

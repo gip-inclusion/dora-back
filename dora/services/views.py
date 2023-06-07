@@ -340,18 +340,21 @@ class ServiceViewSet(
     def update_services_from_model(self, request):
         service_slugs = self.request.data.get("services")
 
-        for service_slug in service_slugs:
-            service = Service.objects.get(slug=service_slug)
-            model = service.model
-            user = self.request.user
+        user = self.request.user
+        services = Service.objects.filter(slug__in=service_slugs)
 
-            if service.can_write(user):
-                synchronize_service_from_model(service, model)
+        # Vérification des permissions
+        for service in services:
+            if not service.can_write(user):
+                raise PermissionDenied
 
-                service.last_editor = self.request.user
-                service.last_sync_checksum = model.sync_checksum
-                service.modification_date = timezone.now()
-                service.save()
+        for service in services:
+            synchronize_service_from_model(service, service.model)
+
+            service.last_editor = self.request.user
+            service.last_sync_checksum = service.model.sync_checksum
+            service.modification_date = timezone.now()
+            service.save()
 
         return Response(status=204)
 
