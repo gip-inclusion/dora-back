@@ -1,4 +1,5 @@
 import django_filters
+from django.db.models import Q
 from djangorestframework_camel_case.render import CamelCaseJSONRenderer
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, permissions, viewsets
@@ -6,6 +7,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.versioning import NamespaceVersioning
 
 from dora.core.pagination import OptionalPageNumberPagination
+from dora.core.utils import TRUTHY_VALUES
 from dora.services.models import (
     BeneficiaryAccessMode,
     CoachOrientationMode,
@@ -59,15 +61,21 @@ class PrettyJSONRenderer(JSONRenderer):
 
 class StructureViewSet(viewsets.ReadOnlyModelViewSet):
     versioning_class = NamespaceVersioning
-    queryset = (
-        Structure.objects.select_related("typology", "source")
-        .prefetch_related("national_labels")
-        .all()
-    )
     permission_classes = [permissions.AllowAny]
     serializer_class = StructureSerializer
     renderer_classes = [PrettyJSONRenderer]
     pagination_class = OptionalPageNumberPagination
+
+    def get_queryset(self):
+        structures = (
+            Structure.objects.select_related("typology", "source")
+            .prefetch_related("national_labels")
+            .all()
+        )
+        structures = structures.exclude(
+            Q(membership=None) & Q(source__value__startswith="di-") & Q(services=None)
+        )
+        return structures.order_by("pk")
 
 
 class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
@@ -114,12 +122,21 @@ class StructureFilterV1(django_filters.FilterSet):
 )
 class StructureViewSetV1(viewsets.ReadOnlyModelViewSet):
     versioning_class = NamespaceVersioning
-    queryset = Structure.objects.select_related("typology", "source").all()
     serializer_class = StructureSerializerV1
     permission_classes = [permissions.AllowAny]
     renderer_classes = [PrettyCamelCaseJSONRenderer]
     filterset_class = StructureFilterV1
     pagination_class = OptionalPageNumberPagination
+
+    def get_queryset(self):
+        structures = Structure.objects.select_related("typology", "source").all()
+        if self.request.GET.get("di") in TRUTHY_VALUES:
+            structures = structures.exclude(
+                Q(membership=None)
+                & Q(source__value__startswith="di-")
+                & Q(services=None)
+            )
+        return structures.order_by("pk")
 
 
 @extend_schema(tags=["Dictionnaires des structures"])
