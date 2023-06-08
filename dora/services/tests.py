@@ -2096,7 +2096,6 @@ class ServiceModelTestCase(APITestCase):
         model.subcategories.add(
             ServiceSubCategory.objects.get(value="numerique--acceder-a-du-materiel")
         )
-        model.refresh_from_db()
 
         service = make_service(
             model=model,

@@ -366,6 +366,7 @@ class ServiceViewSet(
     )
     def reject_update_services_from_model(self, request):
         data = self.request.data.get("data")
+        user = self.request.user
 
         for row in data:
             model_slug = row.get("model_slug", None)
@@ -374,10 +375,8 @@ class ServiceViewSet(
             if model_slug and service_slug:
                 service = Service.objects.get(slug=service_slug)
                 model = ServiceModel.objects.get(slug=model_slug)
-                user = self.request.user
 
-                if service.can_write(user):
-                    service.model = model
+                if model and service and service.can_write(user):
                     service.last_sync_checksum = model.sync_checksum
                     service.save()
 
@@ -494,7 +493,10 @@ class ModelViewSet(ServiceViewSet):
                 for service in services:
                     synchronize_service_from_model(service, model)
 
-                    service.log_note(self.request.user, "Service modifiée")
+                    service.log_note(
+                        self.request.user,
+                        f"Service modifié automatiquement suite à la mise à jour de son modèle ({' / '.join(changed_fields)})",
+                    )
 
                     ServiceModificationHistoryItem.objects.create(
                         service=service,
