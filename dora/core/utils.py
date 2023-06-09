@@ -21,6 +21,8 @@ def normalize_description(desc: str, limit: int) -> Tuple[str, str]:
 
 
 def normalize_phone_number(phone: str) -> str:
+    if not phone:
+        return phone
     has_intl_prefix = phone.strip().startswith("+")
     phone = "".join([c for c in phone if c.isdigit()])
     if has_intl_prefix:
