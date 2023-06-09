@@ -8,13 +8,15 @@ from django.utils import timezone
 from django.utils.text import Truncator
 from furl import furl
 
-from dora.admin_express.models import AdminDivisionType
+from dora.admin_express.models import AdminDivisionType, City
 from dora.core import utils
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
-from dora.core.utils import normalize_description
+from dora.core.utils import code_insee_to_code_dept, normalize_description
 from dora.services.enums import ServiceStatus
 from dora.services.models import (
+    BeneficiaryAccessMode,
+    CoachOrientationMode,
     ConcernedPublic,
     Credential,
     LocationKind,
@@ -148,12 +150,12 @@ class Command(BaseCommand):
             if not s["siret"]:
                 continue
             STRUCTURES_INDEX[s["id"]] = s["siret"]
+
             matched_structures = Structure.objects.filter(siret=s["siret"])
             if matched_structures.exists():
-                # la structure existe déjà; on ne la traite pas, mais on récupère l'id data·inclusion
-                # si nécessaire
+                # la structure existe déjà; on ne la traite pas, mais on enregistre son id data·inclusion
                 parent = matched_structures.filter(
-                    parent=None, data_inclusion_id=None
+                    parent=None, data_inclusion_id="", data_inclusion_source=""
                 ).first()
                 if parent:
                     self.stdout.write(
@@ -162,6 +164,7 @@ class Command(BaseCommand):
                         )
                     )
                     parent.data_inclusion_id = s["id"]
+                    parent.data_inclusion_source = s["source"]
                     parent.save()
                 continue
             try:
@@ -186,31 +189,22 @@ class Command(BaseCommand):
                             f"d'administration"
                         )
                     )
-                structure = Structure.objects.create(
-                    data_inclusion_id=s["id"],
-                    siret=s["siret"],
-                    name=clean_field(s["nom"], 255, establishment.name),
-                    address1=clean_field(s["adresse"], 255, establishment.address1),
-                    address2=clean_field(
-                        s["complement_adresse"], 255, establishment.address2
-                    ),
-                    city_code=s["code_insee"] or establishment.city_code,
-                    postal_code=s["code_postal"] or establishment.postal_code,
-                    latitude=s["latitude"] or establishment.latitude,
-                    longitude=s["longitude"] or establishment.longitude,
-                    email=clean_field(s["courriel"], 254, ""),
-                    phone=utils.normalize_phone_number(s["telephone"] or ""),
-                    url=clean_field(s["site_web"], 200, ""),
-                    full_desc=s["presentation_detail"] or "",
-                    short_desc=clean_field(s["presentation_resume"], 280, ""),
-                    typology=typology,
-                    accesslibre_url=s["accessibilite"],
-                    ape=establishment.ape,
-                    source=source,
-                    creator=bot_user,
-                    last_editor=bot_user,
-                    modification_date=timezone.now(),
-                )
+
+                structure = Structure.objects.create_from_establishment(establishment)
+                structure.creator = bot_user
+                structure.last_editor = bot_user
+                structure.source = source
+                structure.data_inclusion_id = s["id"]
+                structure.data_inclusion_source = s["source"]
+                structure.email = clean_field(s["courriel"], 254, "")
+                structure.phone = utils.normalize_phone_number(s["telephone"] or "")
+                structure.url = clean_field(s["site_web"], 200, "")
+                structure.full_desc = s["presentation_detail"] or ""
+                structure.short_desc = clean_field(s["presentation_resume"], 280, "")
+                structure.typology = typology
+                structure.accesslibre_url = s["accessibilite"]
+                structure.save()
+
                 for label in s["labels_nationaux"] or []:
                     new_label, _created = StructureNationalLabel.objects.get_or_create(
                         value=label
@@ -258,13 +252,15 @@ class Command(BaseCommand):
             )
         num_imported = 0
         for s in services:
-            if Service.objects.filter(data_inclusion_id=s["id"]).exists():
+            if Service.objects.filter(
+                data_inclusion_id=s["id"],
+                data_inclusion_source=s["source"],
+            ).exists():
                 continue
             siret = STRUCTURES_INDEX.get(s["structure_id"])
             if not siret:
                 self.style.ERROR(f"Impossible de trouver le siret correspondant à {s}")
                 continue
-
             structures = Structure.objects.filter(siret=siret)
             if not structures:
                 self.stdout.write(
@@ -282,6 +278,7 @@ class Command(BaseCommand):
             try:
                 service = Service.objects.create(
                     data_inclusion_id=s["id"],
+                    data_inclusion_source=s["source"],
                     structure=structure,
                     name=s["nom"],
                     short_desc=s["presentation_resume"] or "",
@@ -295,7 +292,7 @@ class Command(BaseCommand):
                     address2=s["complement_adresse"] or "",
                     recurrence=s["recurrence"] or "",
                     suspension_date=s["date_suspension"],
-                    contact_phone=s["telephone"] or "",
+                    contact_phone=utils.normalize_phone_number(s["telephone"]) or "",
                     contact_email=s["courriel"] or "",
                     is_contact_info_public=s["contact_public"] is True,
                     diffusion_zone_type=s["zone_diffusion_type"] or "",
@@ -353,6 +350,7 @@ class Command(BaseCommand):
                 self.stderr.write(s)
                 self.stderr.write(self.style.ERROR(e))
                 continue
+
         self.stdout.write(self.style.SUCCESS(f"{num_imported} services importés"))
 
     def _values_to_objects(self, Model, values):
@@ -370,27 +368,34 @@ class Command(BaseCommand):
             service.short_desc = (
                 f"{service.structure.name} propose des services : {short_desc}"
             )
-        if not service.address1 or not service.postal_code or not service.city_code:
-            service.address1 = service.structure.address1
-            service.address2 = service.structure.address2
-            service.postal_code = service.structure.postal_code
-            service.city_code = service.structure.city_code
-            service.city = service.structure.city
-        if not service.geom:
-            lon = service.structure.longitude
-            lat = service.structure.latitude
-            if lon and lat:
-                service.geom = Point(lon, lat, srid=4326)
-        if not service.contact_email:
-            service.contact_email = service.structure.email
-        if not service.contact_phone:
-            service.contact_phone = service.structure.phone
-        if not service.location_kinds:
-            service.location_kinds.set(
-                self._values_to_objects(LocationKind, "en-presentiel")
-            )
-        if service.structure.department and (
-            not service.diffusion_zone_type or not service.diffusion_zone_details
-        ):
+
+        if service.geom and not service.city_code:
+            try:
+                city = City.objects.get(geom__covers=service.geom)
+            except City.DoesNotExist:
+                self.stderr.write(self.style.ERROR("Impossible de déterminer la ville"))
+            else:
+                if city.code[:2] != service.postal_code[
+                    :2
+                ] and not service.postal_code.startswith("20"):
+                    self.stderr.write(
+                        self.style.ERROR("Ville inconsistente avec le code postal")
+                    )
+                else:
+                    service.city_code = city.code
+
+        if not service.diffusion_zone_type or not service.diffusion_zone_details:
             service.diffusion_zone_type = AdminDivisionType.DEPARTMENT
-            service.diffusion_zone_details = service.structure.department
+            if service.city_code:
+                service.diffusion_zone_details = code_insee_to_code_dept(
+                    service.city_code
+                )
+
+        service.beneficiaries_access_modes.add(
+            BeneficiaryAccessMode.objects.get(value="telephoner"),
+            BeneficiaryAccessMode.objects.get(value="se-presenter"),
+        )
+        service.coach_orientation_modes.add(
+            CoachOrientationMode.objects.get(value="telephoner"),
+            CoachOrientationMode.objects.get(value="envoyer-courriel"),
+        )
