@@ -477,8 +477,8 @@ class ModelViewSet(ServiceViewSet):
             last_editor=self.request.user,
             modification_date=timezone.now(),
         )
-        sync_checksum = update_sync_checksum(model)
-        model.sync_checksum = sync_checksum
+
+        model.sync_checksum = update_sync_checksum(model)
         model.save()
 
         if changed_fields:
@@ -506,7 +506,7 @@ class ModelViewSet(ServiceViewSet):
                     )
 
                     service.last_editor = self.request.user
-                    service.last_sync_checksum = sync_checksum
+                    service.last_sync_checksum = model.sync_checksum
                     service.modification_date = timezone.now()
 
                     # On ne vérifie pas les droits sur les services liés au modèle,
