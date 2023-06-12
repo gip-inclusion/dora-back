@@ -373,8 +373,8 @@ class ServiceViewSet(
             service_slug = row.get("service_slug", None)
 
             if model_slug and service_slug:
-                service = Service.objects.get(slug=service_slug)
-                model = ServiceModel.objects.get(slug=model_slug)
+                service = Service.objects.filter(slug=service_slug).first()
+                model = ServiceModel.objects.filter(slug=model_slug).first()
 
                 if model and service and service.can_write(user):
                     service.last_sync_checksum = model.sync_checksum
