@@ -1,4 +1,7 @@
+import json
+
 import humanize
+import requests
 from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
@@ -6,6 +9,7 @@ from django.db.models import Case, IntegerField, Q, Value, When
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from furl import furl
 from rest_framework import mixins, permissions, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
@@ -634,6 +638,83 @@ def _sort_search_results(services, location):
     return list(services_on_site) + list(services_remote)
 
 
+def get_pages(url):
+    page = 1
+    while True:
+        paginated_url = url.copy().add({"page": page})
+        print(f"Chargement de {paginated_url}")
+        response = requests.get(
+            paginated_url,
+            params={},
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Authorization": f"Bearer {settings.DATA_INCLUSION_API_KEY}",
+            },
+        )
+        if response.status_code != 200:
+            print(
+                f"Erreur dans la récupération des données\n{url}: {response.status_code}"
+            )
+            return
+
+        result = json.loads(response.content)["items"]
+        if len(result):
+            yield result
+            page += 1
+        else:
+            return
+
+
+@api_view()
+@permission_classes([permissions.AllowAny])
+def service_di(request, di_id):
+    print(di_id)
+    source_di, di_service_id = di_id.split("--")
+    print(di_id, source_di, di_service_id)
+    url = (
+        furl(settings.DATA_INCLUSION_URL)
+        .copy()
+        .add(
+            path=f"services/{source_di}/{di_service_id}/",
+        )
+    )
+    response = requests.get(
+        url,
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {settings.DATA_INCLUSION_API_KEY}",
+        },
+    )
+    print(response.status_code, response)
+    if response.status_code != 200:
+        print(f"Erreur dans la récupération des données\n{url}: {response.status_code}")
+        return
+
+    di = json.loads(response.content)
+    return Response(
+        {
+            "name": di["nom"],
+            "structureInfo": {
+                "name": di["structure"]["nom"],
+            },
+            "subcategories": [],
+            "concerned_public_display": [],
+            "access_conditions_display": [],
+            "requirements_display": [],
+            "coach_orientation_modes_display": [],
+            "beneficiaries_access_modes_display": [],
+            "forms_info": [],
+            "credentials_display": [],
+            "shortDesc": di["presentation_resume"],
+            "fullDesc": di["presentation_detail"],
+            "kinds": di["types"],
+            "kinds_display": di["types"] or [],
+        }
+    )
+
+
 @api_view()
 @permission_classes([permissions.AllowAny])
 def search(request):
@@ -642,6 +723,46 @@ def search(request):
     city_code = request.GET.get("city", "")
     kinds = request.GET.get("kinds", "")
     fees = request.GET.get("fees", "")
+
+    url = furl(settings.DATA_INCLUSION_URL).add(
+        path="search/services/",
+        args={"code_insee": city_code, "thematiques": subcategories},
+    )
+
+    di_results = []
+    for results in get_pages(url):
+        for result in results:
+            # TODO exclude suspended services
+            import pprint
+
+            pprint.pprint(result)
+            # if result["source"] != "dora":
+            location = ""
+            if result["modes_accueil"]:
+                if "en-presentiel" in result["modes_accueil"]:
+                    location = f"{result['code_postal']} {result['commune']}"
+                elif "a-distance" in result["modes_accueil"]:
+                    location = "À distance"
+            else:
+                location = f"{result['code_postal']} {result['commune']}"
+
+            di_results.append(
+                {
+                    "name": result["nom"],
+                    "short_desc": result["presentation_resume"],
+                    "slug": f"{result['source']}--{result['id']}",
+                    "structure": "",
+                    "structure_info": {"name": result["structure_id"]},
+                    "modification_date": result["date_maj"],
+                    "diffusion_zone_type": result["zone_diffusion_type"],
+                    "distance": result["distance"] or 0,
+                    "status": ServiceStatus.PUBLISHED,
+                    "location": location,
+                    "source": result["source"],
+                    "id": result["id"],
+                    "type": "di",
+                }
+            )
 
     services = (
         Service.objects.published()
@@ -699,7 +820,14 @@ def search(request):
         city.geom,
     )
 
-    serializer = SearchResultSerializer(
+    dora_results = SearchResultSerializer(
         results, many=True, context={"request": request}
-    )
-    return Response(serializer.data)
+    ).data
+    all_results = [*dora_results, *di_results]
+    decorated = [
+        (res, res["distance"] if res["distance"] is not None else 9999)
+        for res in all_results
+    ]
+    decorated.sort(key=lambda res: res[1])
+    sorted_results = [result for result, distance in decorated]
+    return Response(sorted_results)
