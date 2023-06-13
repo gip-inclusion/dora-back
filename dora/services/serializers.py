@@ -250,6 +250,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     has_already_been_unpublished = serializers.SerializerMethodField()
 
     model_changed = serializers.SerializerMethodField()
+    model_name = serializers.SerializerMethodField()
     model = serializers.SlugRelatedField(
         queryset=ServiceModel.objects.all(),
         slug_field="slug",
@@ -316,6 +317,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "location_kinds_display",
             "model",
             "model_changed",
+            "model_name",
             "modification_date",
             "name",
             "online_form",
@@ -443,6 +445,11 @@ class ServiceSerializer(serializers.ModelSerializer):
     def get_model_changed(self, object):
         if object.model:
             return object.model.sync_checksum != object.last_sync_checksum
+        return None
+
+    def get_model_name(self, object):
+        if object.model:
+            return object.model.name
         return None
 
     def get_update_status(self, object):
