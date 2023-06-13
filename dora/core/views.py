@@ -206,7 +206,9 @@ def inclusion_connect_authenticate(request):
                 user = User.objects.create(**user_dict)
 
         update_last_login(user)
-        token, _created = Token.objects.get_or_create(user=user)
+        token = Token.objects.filter(user=user).first()
+        if not token:
+            token = Token.objects.create(user=user)
         return Response({"token": token.key, "valid_user": True})
     except requests.exceptions.RequestException as e:
         logging.exception(e)
