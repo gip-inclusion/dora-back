@@ -86,7 +86,7 @@ class ServiceAdmin(admin.GISModelAdmin):
         "last_editor",
         "status",
     ]
-    list_filter = ["status", "moderation_status", "is_draft", "is_suggestion", "source"]
+    list_filter = ["status", "moderation_status", "source"]
     filter_horizontal = [
         "categories",
         "subcategories",
@@ -98,7 +98,12 @@ class ServiceAdmin(admin.GISModelAdmin):
     inlines = [ServiceStatusHistoryItemInline, ServiceModificationHistoryItemInline]
     ordering = ["-modification_date"]
     save_as = True
-    readonly_fields = ("creation_date", "status")
+    readonly_fields = (
+        "creation_date",
+        "status",
+        "data_inclusion_id",
+        "data_inclusion_source",
+    )
     raw_id_fields = ["structure", "model", "creator", "last_editor"]
 
 

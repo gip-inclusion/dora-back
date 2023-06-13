@@ -26,6 +26,7 @@ SYNC_FIELDS = [
     "suspension_date",
 ]
 
+# Many to many fields
 SYNC_M2M_FIELDS = [
     "kinds",
     "categories",
@@ -34,6 +35,7 @@ SYNC_M2M_FIELDS = [
     "coach_orientation_modes",
 ]
 
+# Custom Many to many fields
 SYNC_CUSTOM_M2M_FIELDS = [
     "access_conditions",
     "concerned_public",
@@ -92,6 +94,21 @@ def instantiate_model(model, structure, user):
         )
 
     service.save()
+    return service
+
+
+def synchronize_service_from_model(service, model):
+    for field in SYNC_FIELDS:
+        setattr(service, field, getattr(model, field))
+
+    for field in SYNC_M2M_FIELDS:
+        getattr(service, field).set(getattr(model, field).all())
+
+    for field in SYNC_CUSTOM_M2M_FIELDS:
+        _duplicate_customizable_choices(
+            getattr(service, field), getattr(model, field).all(), service.structure
+        )
+
     return service
 
 
