@@ -18,7 +18,6 @@ class Token(DRFToken):
         verbose_name="User",
     )
     created = models.DateTimeField("Created", auto_now_add=True)
-    expiration = models.DateTimeField("Created", null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.key:
