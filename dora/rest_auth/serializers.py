@@ -22,7 +22,6 @@ class UserInfoSerializer(serializers.ModelSerializer):
     structures = serializers.SerializerMethodField()
     pending_structures = serializers.SerializerMethodField()
     bookmarks = serializers.SerializerMethodField()
-    token_expiration = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -39,7 +38,6 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "pending_structures",
             "short_name",
             "structures",
-            "token_expiration",
         ]
 
     def get_structures(self, user):
@@ -65,11 +63,6 @@ class UserInfoSerializer(serializers.ModelSerializer):
         else:
             qs = Bookmark.objects.filter(user=user).order_by("-creation_date")
         return BookmarkListSerializer(qs, many=True).data
-
-    def get_token_expiration(self, user):
-        token = self.context.get("token")
-        if token:
-            return token.expiration
 
 
 class TokenSerializer(serializers.Serializer):
