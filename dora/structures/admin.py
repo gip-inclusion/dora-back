@@ -165,7 +165,15 @@ class StructureAdmin(admin.ModelAdmin):
         "creation_date",
         "modification_date",
     ]
-    search_fields = ("name", "siret", "code_safir_pe", "city", "department", "slug")
+    search_fields = (
+        "name",
+        "siret",
+        "code_safir_pe",
+        "city",
+        "department",
+        "slug",
+        "data_inclusion_id",
+    )
     ordering = ["-modification_date", "department"]
     inlines = [
         StructureMemberInline,

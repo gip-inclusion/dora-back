@@ -71,11 +71,7 @@ class ServiceStatusHistoryItemAdmin(admin.ModelAdmin):
 
 
 class ServiceAdmin(admin.GISModelAdmin):
-    search_fields = (
-        "name",
-        "structure__name",
-        "slug",
-    )
+    search_fields = ("name", "structure__name", "slug", "data_inclusion_id")
     list_display = [
         "name",
         "slug",
