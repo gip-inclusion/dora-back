@@ -45,6 +45,7 @@ class StructureSerializer(serializers.ModelSerializer):
     site_web = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
     telephone = serializers.SerializerMethodField()
+    thematiques = serializers.SerializerMethodField()
     typologie = serializers.SerializerMethodField()
 
     class Meta:
@@ -75,6 +76,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "site_web",
             "source",
             "telephone",
+            "thematiques",
             "typologie",
         ]
 
@@ -94,7 +96,7 @@ class StructureSerializer(serializers.ModelSerializer):
         return obj.postal_code or None
 
     def get_commune(self, obj):
-        return obj.city
+        return obj.city or None
 
     def get_complement_adresse(self, obj):
         return obj.address2 or None
@@ -129,7 +131,7 @@ class StructureSerializer(serializers.ModelSerializer):
         return obj.latitude
 
     def get_lien_source(self, obj) -> str:
-        return f"{settings.FRONTEND_URL}/structures/{obj.slug}"
+        return obj.get_frontend_url()
 
     def get_longitude(self, obj):
         return obj.longitude
@@ -158,48 +160,104 @@ class StructureSerializer(serializers.ModelSerializer):
     def get_telephone(self, obj):
         return obj.phone or None
 
+    def get_thematiques(self, obj):
+        # Les thématiques sont portées par les services
+        return None
+
     def get_typologie(self, obj):
         return obj.typology.value if obj.typology else None
 
 
 class ServiceSerializer(serializers.ModelSerializer):
-    frais = serializers.SerializerMethodField()
-    frais_autres = serializers.SerializerMethodField()
     id = serializers.SerializerMethodField()
+    structure_id = serializers.SerializerMethodField()
+    source = serializers.SerializerMethodField()
     nom = serializers.SerializerMethodField()
     presentation_resume = serializers.SerializerMethodField()
-    prise_rdv = serializers.SerializerMethodField()
-    profils = serializers.SerializerMethodField()
-    source = serializers.SerializerMethodField()
-    structure_id = serializers.SerializerMethodField()
-    thematiques = serializers.SerializerMethodField()
+    presentation_detail = serializers.SerializerMethodField()
     types = serializers.SerializerMethodField()
+    thematiques = serializers.SerializerMethodField()
+    prise_rdv = serializers.SerializerMethodField()
+    frais = serializers.SerializerMethodField()
+    frais_autres = serializers.SerializerMethodField()
+    profils = serializers.SerializerMethodField()
+    pre_requis = serializers.SerializerMethodField()
+    cumulable = serializers.SerializerMethodField()
+    justificatifs = serializers.SerializerMethodField()
+    formulaire_en_ligne = serializers.SerializerMethodField()
+    commune = serializers.SerializerMethodField()
+    code_postal = serializers.SerializerMethodField()
+    code_insee = serializers.SerializerMethodField()
+    adresse = serializers.SerializerMethodField()
+    complement_adresse = serializers.SerializerMethodField()
+    longitude = serializers.SerializerMethodField()
+    latitude = serializers.SerializerMethodField()
+    recurrence = serializers.SerializerMethodField()
+    date_creation = serializers.SerializerMethodField()
+    date_maj = serializers.SerializerMethodField()
+    date_suspension = serializers.SerializerMethodField()
+    lien_source = serializers.SerializerMethodField()
+    telephone = serializers.SerializerMethodField()
+    courriel = serializers.SerializerMethodField()
+    contact_nom = serializers.SerializerMethodField()
+    contact_prenom = serializers.SerializerMethodField()
+    contact_public = serializers.SerializerMethodField()
+    modes_accueil = serializers.SerializerMethodField()
+    zone_diffusion_type = serializers.SerializerMethodField()
+    zone_diffusion_code = serializers.SerializerMethodField()
+    zone_diffusion_nom = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
 
         fields = [
-            "frais",
+            "adresse",
+            "code_insee",
+            "code_postal",
+            "commune",
+            "complement_adresse",
+            "contact_nom",
+            "contact_prenom",
+            "contact_public",
+            "courriel",
+            "cumulable",
+            "date_creation",
+            "date_maj",
+            "date_suspension",
+            "formulaire_en_ligne",
             "frais_autres",
+            "frais",
             "id",
+            "justificatifs",
+            "latitude",
+            "lien_source",
+            "longitude",
+            "modes_accueil",
             "nom",
+            "pre_requis",
+            "presentation_detail",
             "presentation_resume",
             "prise_rdv",
             "profils",
+            "recurrence",
             "source",
             "structure_id",
+            "telephone",
             "thematiques",
             "types",
+            "zone_diffusion_code",
+            "zone_diffusion_nom",
+            "zone_diffusion_type",
         ]
-
-    def get_frais(self, obj):
-        return obj.fee_condition.value if obj.fee_condition else None
-
-    def get_frais_autres(self, obj):
-        return obj.fee_details or None
 
     def get_id(self, obj):
         return str(obj.id)
+
+    def get_structure_id(self, obj):
+        return str(obj.structure_id)
+
+    def get_source(self, obj):
+        return obj.source.value if obj.source else None
 
     def get_nom(self, obj):
         return obj.name
@@ -207,27 +265,115 @@ class ServiceSerializer(serializers.ModelSerializer):
     def get_presentation_resume(self, obj):
         return obj.short_desc or None
 
-    def get_prise_rdv(self, obj):
-        # TODO: pas encore supporté sur DORA
-        return None
+    def get_presentation_detail(self, obj):
+        return obj.full_desc or None
 
-    def get_profils(self, obj):
-        # TODO: mapping DORA à faire
-        return None
-
-    def get_source(self, obj):
-        # TODO: on n'a pas de notion de source pour les services dans DORA
-        return None
-
-    def get_structure_id(self, obj):
-        return str(obj.structure_id)
+    def get_types(self, obj):
+        return [k.value for k in obj.kinds.all()]
 
     def get_thematiques(self, obj):
         scats = [scat.value for scat in obj.subcategories.all()]
         return [scat for scat in scats if not scat.endswith("--autre")]
 
-    def get_types(self, obj):
-        return [k.value for k in obj.kinds.all()]
+    def get_prise_rdv(self, obj):
+        # TODO: pas encore supporté sur DORA
+        return None
+
+    def get_frais(self, obj):
+        return obj.fee_condition.value if obj.fee_condition else None
+
+    def get_frais_autres(self, obj):
+        return obj.fee_details or None
+
+    def get_profils(self, obj):
+        # TODO: mapping DORA à faire
+        return [c.name for c in obj.concerned_public.all()]
+
+    def get_pre_requis(self, obj):
+        # TODO: mapping DORA à faire
+        return [c.name for c in obj.requirements.all()]
+
+    def get_cumulable(self, obj):
+        return obj.is_cumulative
+
+    def get_justificatifs(self, obj):
+        # TODO: mapping DORA à faire
+        return [c.name for c in obj.credentials.all()]
+
+    def get_formulaire_en_ligne(self, obj):
+        return obj.online_form if obj.online_form else None
+
+    def get_commune(self, obj):
+        return obj.city if obj.city else None
+
+    def get_code_postal(self, obj):
+        return obj.postal_code if obj.postal_code else None
+
+    def get_code_insee(self, obj):
+        return obj.city_code if obj.city_code else None
+
+    def get_adresse(self, obj):
+        return obj.address1 if obj.address1 else None
+
+    def get_complement_adresse(self, obj):
+        return obj.address2 if obj.address2 else None
+
+    def get_longitude(self, obj):
+        return obj.geom.x if obj.geom else None
+
+    def get_latitude(self, obj):
+        return obj.geom.y if obj.geom else None
+
+    def get_recurrence(self, obj):
+        return obj.recurrence if obj.recurrence else None
+
+    def get_date_creation(self, obj):
+        return obj.publication_date if obj.publication_date else None
+
+    def get_date_maj(self, obj):
+        return obj.modification_date or None
+
+    def get_date_suspension(self, obj):
+        return obj.suspension_date if obj.suspension_date else None
+
+    def get_lien_source(self, obj):
+        return obj.get_frontend_url()
+
+    def get_telephone(self, obj):
+        return None
+
+    def get_courriel(self, obj):
+        return None
+
+    def get_contact_nom(self, obj):
+        return None
+
+    def get_contact_prenom(self, obj):
+        return None
+
+    def get_contact_public(self, obj):
+        return obj.is_contact_info_public
+
+    def get_modes_accueil(self, obj):
+        return [k.value for k in obj.location_kinds.all()]
+
+    def get_zone_diffusion_type(self, obj):
+        if obj.diffusion_zone_type == "city":
+            return "commune"
+        if obj.diffusion_zone_type == "epci":
+            return "epci"
+        if obj.diffusion_zone_type == "department":
+            return "departement"
+        if obj.diffusion_zone_type == "region":
+            return "region"
+        if obj.diffusion_zone_type == "country":
+            return None
+
+    def get_zone_diffusion_code(self, obj):
+        return obj.diffusion_zone_details
+
+    def get_zone_diffusion_nom(self, obj):
+        return obj.get_diffusion_zone_details_display()
 
 
 ############

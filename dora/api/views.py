@@ -84,6 +84,7 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
         Service.objects.published()
         .select_related("structure", "fee_condition")
         .prefetch_related("subcategories", "kinds")
+        .order_by("pk")
     )
     serializer_class = ServiceSerializer
     permission_classes = [permissions.AllowAny]
