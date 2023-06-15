@@ -821,28 +821,28 @@ def search(request):
             pprint.pprint(result)
             # if result["source"] != "dora":
             location = ""
-            if result["modes_accueil"]:
-                if "en-presentiel" in result["modes_accueil"]:
-                    location = f"{result['code_postal']} {result['commune']}"
-                elif "a-distance" in result["modes_accueil"]:
+            if result["service"]["modes_accueil"]:
+                if "en-presentiel" in result["service"]["modes_accueil"]:
+                    location = f"{result['service']['code_postal']} {result['service']['commune']}"
+                elif "a-distance" in result["service"]["modes_accueil"]:
                     location = "À distance"
             else:
-                location = f"{result['code_postal']} {result['commune']}"
+                location = f"""{result["service"]['code_postal']} {result["service"]['commune']}"""
 
             di_results.append(
                 {
-                    "name": result["nom"],
-                    "short_desc": result["presentation_resume"],
-                    "slug": f"{result['source']}--{result['id']}",
+                    "name": result["service"]["nom"],
+                    "short_desc": result["service"]["presentation_resume"],
+                    "slug": f"{result['service']['source']}--{result['service']['id']}",
                     "structure": "",
-                    "structure_info": {"name": result["structure_id"]},
-                    "modification_date": result["date_maj"],
-                    "diffusion_zone_type": result["zone_diffusion_type"],
+                    "structure_info": {"name": result["service"]["structure"]["nom"]},
+                    "modification_date": result["service"]["date_maj"],
+                    "diffusion_zone_type": result["service"]["zone_diffusion_type"],
                     "distance": result["distance"] or 0,
                     "status": ServiceStatus.PUBLISHED,
                     "location": location,
-                    "source": result["source"],
-                    "id": result["id"],
+                    "source": result["service"]["source"],
+                    "id": result["service"]["id"],
                     "type": "di",
                 }
             )
