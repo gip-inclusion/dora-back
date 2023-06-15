@@ -54,7 +54,6 @@ CREATE TABLE mb_all_service AS
     services_service.structure_id,
     services_service.slug,
     services_service.online_form,
-    services_service.geom,
     services_service.publication_date,
     services_service.diffusion_zone_details,
     services_service.diffusion_zone_type,
@@ -68,9 +67,7 @@ CREATE TABLE mb_all_service AS
     services_service.moderation_status,
     services_service.fee_condition_id,
     services_service.use_inclusion_numerique_scheme,
-    services_service.data_inclusion_id,
     services_service.source_id,
-    services_service.data_inclusion_source,
     -- TODO: deprecated
     (select services_service.status!='PUBLISHED') AS is_draft,
     (select services_service.status='SUGGESTION') AS is_suggestion,
