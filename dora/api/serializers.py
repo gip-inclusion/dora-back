@@ -45,6 +45,7 @@ class StructureSerializer(serializers.ModelSerializer):
     site_web = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
     telephone = serializers.SerializerMethodField()
+    thematiques = serializers.SerializerMethodField()
     typologie = serializers.SerializerMethodField()
 
     class Meta:
@@ -75,6 +76,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "site_web",
             "source",
             "telephone",
+            "thematiques",
             "typologie",
         ]
 
@@ -157,6 +159,10 @@ class StructureSerializer(serializers.ModelSerializer):
 
     def get_telephone(self, obj):
         return obj.phone or None
+
+    def get_thematiques(self, obj):
+        # Les thématiques sont portées par les services
+        return None
 
     def get_typologie(self, obj):
         return obj.typology.value if obj.typology else None
@@ -274,25 +280,25 @@ class ServiceSerializer(serializers.ModelSerializer):
         return None
 
     def get_frais(self, obj):
-        return [obj.fee_condition.value] if obj.fee_condition else []
+        return obj.fee_condition.value if obj.fee_condition else None
 
     def get_frais_autres(self, obj):
         return obj.fee_details or None
 
     def get_profils(self, obj):
         # TODO: mapping DORA à faire
-        return None
+        return [c.name for c in obj.concerned_public.all()]
 
     def get_pre_requis(self, obj):
         # TODO: mapping DORA à faire
-        return None
+        return [c.name for c in obj.requirements.all()]
 
     def get_cumulable(self, obj):
         return obj.is_cumulative
 
     def get_justificatifs(self, obj):
         # TODO: mapping DORA à faire
-        return None
+        return [c.name for c in obj.credentials.all()]
 
     def get_formulaire_en_ligne(self, obj):
         return obj.online_form if obj.online_form else None
@@ -307,7 +313,6 @@ class ServiceSerializer(serializers.ModelSerializer):
         return obj.city_code if obj.city_code else None
 
     def get_adresse(self, obj):
-        print(obj.address1)
         return obj.address1 if obj.address1 else None
 
     def get_complement_adresse(self, obj):
@@ -350,15 +355,13 @@ class ServiceSerializer(serializers.ModelSerializer):
         return obj.is_contact_info_public
 
     def get_modes_accueil(self, obj):
-        result = [k.value for k in obj.location_kinds.all()]
-        print(result)
-        return result
+        return [k.value for k in obj.location_kinds.all()]
 
     def get_zone_diffusion_type(self, obj):
         if obj.diffusion_zone_type == "city":
             return "commune"
         if obj.diffusion_zone_type == "epci":
-            return None
+            return "epci"
         if obj.diffusion_zone_type == "department":
             return "departement"
         if obj.diffusion_zone_type == "region":
