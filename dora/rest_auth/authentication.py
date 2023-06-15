@@ -1,5 +1,3 @@
-from django.db.models import Q
-from django.utils import timezone
 from rest_framework import exceptions
 from rest_framework.authentication import TokenAuthentication as DRFTokenAuthentication
 
@@ -12,11 +10,7 @@ class TokenAuthentication(DRFTokenAuthentication):
     def authenticate_credentials(self, key):
         model = self.get_model()
 
-        token = (
-            model.objects.select_related("user")
-            .filter(Q(expiration=None) | Q(expiration__gte=timezone.now()), key=key)
-            .first()
-        )
+        token = model.objects.select_related("user").filter(key=key).first()
         if not token:
             raise exceptions.AuthenticationFailed("Token invalide.")
 

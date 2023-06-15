@@ -37,7 +37,10 @@ from dora.services.models import (
     ServiceStatusHistoryItem,
     ServiceSubCategory,
 )
-from dora.services.utils import filter_services_by_city_code
+from dora.services.utils import (
+    filter_services_by_city_code,
+    synchronize_service_from_model,
+)
 from dora.stats.models import DeploymentLevel, DeploymentState
 from dora.structures.models import Structure, StructureMember
 
@@ -328,6 +331,57 @@ class ServiceViewSet(
                 service, self.request.user, changed_fields
             )
 
+    @action(
+        detail=False,
+        methods=["POST"],
+        url_path="update-from-model",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def update_services_from_model(self, request):
+        service_slugs = self.request.data.get("services")
+
+        user = self.request.user
+        services = Service.objects.filter(slug__in=service_slugs)
+
+        # Vérification des permissions
+        for service in services:
+            if not service.can_write(user):
+                raise PermissionDenied
+
+        for service in services:
+            synchronize_service_from_model(service, service.model)
+
+            service.last_editor = self.request.user
+            service.last_sync_checksum = service.model.sync_checksum
+            service.modification_date = timezone.now()
+            service.save()
+
+        return Response(status=204)
+
+    @action(
+        detail=False,
+        methods=["POST"],
+        url_path="reject-update-from-model",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def reject_update_services_from_model(self, request):
+        data = self.request.data.get("data")
+        user = self.request.user
+
+        for row in data:
+            model_slug = row.get("model_slug", None)
+            service_slug = row.get("service_slug", None)
+
+            if model_slug and service_slug:
+                service = Service.objects.filter(slug=service_slug).first()
+                model = ServiceModel.objects.filter(slug=model_slug).first()
+
+                if model and service and service.can_write(user):
+                    service.last_sync_checksum = model.sync_checksum
+                    service.save()
+
+        return Response(status=204)
+
 
 class ModelViewSet(ServiceViewSet):
     def get_serializer_class(self):
@@ -423,13 +477,42 @@ class ModelViewSet(ServiceViewSet):
             last_editor=self.request.user,
             modification_date=timezone.now(),
         )
+
         model.sync_checksum = update_sync_checksum(model)
         model.save()
+
         if changed_fields:
             model.log_note(
                 self.request.user,
                 f"Modèle modifié ({' / '.join(changed_fields)})",
             )
+
+            if self.request.data.get("update_all_services", "") in TRUTHY_VALUES:
+                services = Service.objects.filter(model_id=model.id)
+
+                for service in services:
+                    synchronize_service_from_model(service, model)
+
+                    service.log_note(
+                        self.request.user,
+                        f"Service modifié automatiquement suite à la mise à jour de son modèle ({' / '.join(changed_fields)})",
+                    )
+
+                    ServiceModificationHistoryItem.objects.create(
+                        service=service,
+                        user=self.request.user,
+                        fields=changed_fields,
+                        status=service.status,
+                    )
+
+                    service.last_editor = self.request.user
+                    service.last_sync_checksum = model.sync_checksum
+                    service.modification_date = timezone.now()
+
+                    # On ne vérifie pas les droits sur les services liés au modèle,
+                    # en partant du principe que s'il peut modifier le modèle
+                    # alors il peut modifier les services liés
+                    service.save()
 
 
 @api_view()

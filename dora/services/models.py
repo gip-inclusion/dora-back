@@ -341,10 +341,6 @@ class Service(ModerationMixin, models.Model):
         null=True,
         blank=True,
     )
-    # TODO: to clean
-    is_draft = models.BooleanField(default=True)
-    # TODO: to clean
-    is_suggestion = models.BooleanField(default=False)
 
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(blank=True, null=True)
@@ -379,6 +375,7 @@ class Service(ModerationMixin, models.Model):
         ServiceSource, null=True, blank=True, on_delete=models.PROTECT
     )
     data_inclusion_id = models.TextField(blank=True, db_index=True)
+    data_inclusion_source = models.TextField(blank=True, db_index=True)
 
     objects = ServiceManager()
 

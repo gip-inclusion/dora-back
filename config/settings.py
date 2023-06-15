@@ -62,7 +62,7 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = os.environ["DJANGO_DEBUG"] == "true"
 PROFILE = False
 
-if DEBUG:
+if ENVIRONMENT != "production":
     DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
 # DJANGO_ADMINS=Name1:email1,Name2:email2
@@ -417,4 +417,3 @@ IC_LOGOUT_URL = os.environ.get("IC_LOGOUT_URL")
 IC_ACCOUNT_URL = os.environ.get("IC_ACCOUNT_URL")
 IC_CLIENT_ID = os.environ.get("IC_CLIENT_ID")
 IC_CLIENT_SECRET = os.environ.get("IC_CLIENT_SECRET")
-IC_EXPIRATION_DELAY_DAYS = 15
