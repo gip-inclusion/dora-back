@@ -311,6 +311,9 @@ PE_CLIENT_SECRET = os.environ["PE_CLIENT_SECRET"]
 DATA_INCLUSION_URL = os.environ["DATA_INCLUSION_URL"]
 DATA_INCLUSION_API_KEY = os.environ.get("DATA_INCLUSION_API_KEY")
 
+# Data inclusion user account
+DATA_INCLUSION_EMAIL = "data.inclusion@beta.gouv.fr"
+
 
 ################
 # SECURITY     #

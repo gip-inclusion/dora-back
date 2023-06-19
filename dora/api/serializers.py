@@ -291,14 +291,14 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     def get_pre_requis(self, obj):
         # TODO: mapping DORA à faire
-        return [c.name for c in obj.requirements.all()]
+        return ",".join([c.name for c in obj.requirements.all()])
 
     def get_cumulable(self, obj):
         return obj.is_cumulative
 
     def get_justificatifs(self, obj):
         # TODO: mapping DORA à faire
-        return [c.name for c in obj.credentials.all()]
+        return ",".join([c.name for c in obj.credentials.all()])
 
     def get_formulaire_en_ligne(self, obj):
         return obj.online_form if obj.online_form else None
@@ -340,15 +340,19 @@ class ServiceSerializer(serializers.ModelSerializer):
         return obj.get_frontend_url()
 
     def get_telephone(self, obj):
-        return None
+        assert self.context.get("request").user.email == settings.DATA_INCLUSION_EMAIL
+        return obj.contact_phone
 
     def get_courriel(self, obj):
-        return None
+        assert self.context.get("request").user.email == settings.DATA_INCLUSION_EMAIL
+        return obj.contact_email
 
     def get_contact_nom(self, obj):
-        return None
+        assert self.context.get("request").user.email == settings.DATA_INCLUSION_EMAIL
+        return obj.contact_name
 
     def get_contact_prenom(self, obj):
+        assert self.context.get("request").user.email == settings.DATA_INCLUSION_EMAIL
         return None
 
     def get_contact_public(self, obj):
