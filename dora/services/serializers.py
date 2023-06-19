@@ -353,7 +353,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         return _get_diffusion_zone_type_display(obj)
 
     def get_diffusion_zone_details_display(self, obj):
-        return obj.get_diffusion_zone_details_display(obj)
+        return obj.get_diffusion_zone_details_display()
 
     def get_access_conditions_display(self, obj):
         return [item.name for item in obj.access_conditions.all()]
@@ -601,7 +601,7 @@ class ServiceListSerializer(ServiceSerializer):
         return _get_diffusion_zone_type_display(obj)
 
     def get_diffusion_zone_details_display(self, obj):
-        return obj.get_diffusion_zone_details_display(obj)
+        return obj.get_diffusion_zone_details_display()
 
 
 class FeedbackSerializer(serializers.Serializer):

@@ -1,4 +1,5 @@
 import django_filters
+from django.conf import settings
 from django.db.models import Q
 from djangorestframework_camel_case.render import CamelCaseJSONRenderer
 from drf_spectacular.utils import extend_schema
@@ -52,6 +53,24 @@ class PrettyCamelCaseJSONRenderer(CamelCaseJSONRenderer):
 ############
 
 
+class APIPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        return (
+            user.is_authenticated
+            and user.email == settings.DATA_INCLUSION_EMAIL
+            and request.method in permissions.SAFE_METHODS
+        )
+
+    def has_object_permission(self, request, view, service):
+        user = request.user
+        return (
+            user.is_authenticated
+            and user.email == settings.DATA_INCLUSION_EMAIL
+            and request.method in permissions.SAFE_METHODS
+        )
+
+
 class PrettyJSONRenderer(JSONRenderer):
     def render(self, data, media_type=None, renderer_context=None):
         renderer_context = renderer_context or {}
@@ -61,7 +80,7 @@ class PrettyJSONRenderer(JSONRenderer):
 
 class StructureViewSet(viewsets.ReadOnlyModelViewSet):
     versioning_class = NamespaceVersioning
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [APIPermission]
     serializer_class = StructureSerializer
     renderer_classes = [PrettyJSONRenderer]
     pagination_class = OptionalPageNumberPagination
@@ -87,7 +106,7 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
         .order_by("pk")
     )
     serializer_class = ServiceSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [APIPermission]
     renderer_classes = [PrettyJSONRenderer]
     pagination_class = OptionalPageNumberPagination
 
