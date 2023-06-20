@@ -488,7 +488,9 @@ class ModelViewSet(ServiceViewSet):
             )
 
             if self.request.data.get("update_all_services", "") in TRUTHY_VALUES:
-                services = Service.objects.filter(model_id=model.id)
+                services = Service.objects.filter(
+                    model_id=model.id, structure_id=model.structure_id
+                )
 
                 for service in services:
                     synchronize_service_from_model(service, model)

@@ -2038,6 +2038,50 @@ class ServiceModelTestCase(APITestCase):
         self.assertEqual(service_1.name, new_model_name)
         self.assertEqual(service_2.name, service_name_2)
 
+    def test_update_model_and_update_only_services_in_structure(self):
+        service_name_1 = "Nom du service 1"
+        service_name_2 = "Nom du service 2"
+        new_model_name = "Nouveau nom du modèle"
+
+        user = baker.make("users.User", is_valid=True)
+        struct1 = make_structure(user)
+        struct2 = make_structure(user)
+
+        # ÉTANT DONNÉ un modèle lié à la struct1
+        model = make_model(structure=struct1, name="Nom du modèle")
+
+        # ET un service lié au même modèle dans la struct1
+        service_1 = make_service(
+            model=model,
+            slug="service-1",
+            structure=struct1,
+            name=service_name_1,
+            status=ServiceStatus.PUBLISHED,
+        )
+        # ET un service lié au même modèle mais dans la struct2
+        service_2 = make_service(
+            model=model,
+            slug="service-2",
+            structure=struct2,
+            name=service_name_2,
+            status=ServiceStatus.PUBLISHED,
+        )
+
+        # QUAND je mets à jour le modèle en demandant la mise à jour des services associés
+        self.client.force_authenticate(user=user)
+        response = self.client.patch(
+            f"/models/{model.slug}/",
+            {"name": new_model_name, "update_all_services": "true"},
+        )
+        self.assertEqual(response.status_code, 200)
+        service_1.refresh_from_db()
+        service_2.refresh_from_db()
+
+        # ALORS seul le service 1 associé à la struct1 est modifié
+        self.assertEqual(service_1.name, new_model_name)
+        # et pas le service 2
+        self.assertNotEqual(service_2.name, new_model_name)
+
     def test_update_service_from_model(self):
         service_name = "Nom du service"
         service_slug = "nom-du-service"
