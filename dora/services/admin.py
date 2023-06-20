@@ -82,7 +82,12 @@ class ServiceAdmin(admin.GISModelAdmin):
         "last_editor",
         "status",
     ]
-    list_filter = ["status", "moderation_status", "source"]
+    list_filter = [
+        "status",
+        "moderation_status",
+        "source",
+        "use_inclusion_numerique_scheme",
+    ]
     filter_horizontal = [
         "categories",
         "subcategories",
