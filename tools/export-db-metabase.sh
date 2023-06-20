@@ -129,6 +129,7 @@ CREATE TABLE mb_user AS
   users_user.is_manager,
   users_user.department,
   users_user.date_joined,
+  users_user.last_login,
   users_user.last_notification_email_sent,
   users_user.newsletter,
   -- TODO: deprecated
