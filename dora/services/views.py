@@ -491,6 +491,9 @@ class ModelViewSet(ServiceViewSet):
                 services = Service.objects.filter(model_id=model.id)
 
                 for service in services:
+                    if not service.can_write(self.request.user):
+                        continue
+
                     synchronize_service_from_model(service, model)
 
                     service.log_note(
@@ -509,9 +512,6 @@ class ModelViewSet(ServiceViewSet):
                     service.last_sync_checksum = model.sync_checksum
                     service.modification_date = timezone.now()
 
-                    # On ne vérifie pas les droits sur les services liés au modèle,
-                    # en partant du principe que s'il peut modifier le modèle
-                    # alors il peut modifier les services liés
                     service.save()
 
 
