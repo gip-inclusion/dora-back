@@ -2000,6 +2000,39 @@ class ServiceModelTestCase(APITestCase):
         # ALORS le service est mise à jour avec le nouveau nom du modèle
         self.assertEqual(service.name, new_model_name)
 
+    def test_update_model_and_update_not_related_structure_admin(self):
+        service_name = "Nom du service"
+        new_model_name = "Nouveau nom du modèle"
+
+        # ÉTANT DONNÉ un modèle lié à un service
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+
+        model = make_model(structure=struct, name="Nom du modèle")
+        service = make_service(
+            model=model,
+            structure=struct,
+            name=service_name,
+            status=ServiceStatus.PUBLISHED,
+        )
+
+        # ET un utilisateur étant admin d'une autre structure
+        user2 = baker.make("users.User", is_valid=True)
+        make_structure(user2)
+
+        # QUAND je mets à jour le modèle en demandant la mise à jour des services associés
+        self.client.force_authenticate(user=user2)
+        response = self.client.patch(
+            f"/models/{model.slug}/",
+            {"name": new_model_name, "update_all_services": "true"},
+        )
+        service.refresh_from_db()
+
+        # ALORS la mise à jour du modèle est refusée
+        self.assertEqual(response.status_code, 403)
+        # ET le service n'est pas mis à jour
+        self.assertNotEqual(service.name, new_model_name)
+
     def test_update_model_and_update_only_linked_services(self):
         service_name_1 = "Nom du service 1"
         service_name_2 = "Nom du service 2"
