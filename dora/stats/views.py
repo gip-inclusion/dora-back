@@ -48,6 +48,7 @@ def log_event(request):
         if user.is_authenticated
         else False,
         "user_kind": user.main_activity if user.is_authenticated else "",
+        "anonymous_user_hash": request.data.get("user_hash", ""),
     }
 
     structure_membership = (
