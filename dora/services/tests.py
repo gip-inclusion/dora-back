@@ -2000,6 +2000,39 @@ class ServiceModelTestCase(APITestCase):
         # ALORS le service est mise à jour avec le nouveau nom du modèle
         self.assertEqual(service.name, new_model_name)
 
+    def test_update_model_and_update_not_related_structure_admin(self):
+        service_name = "Nom du service"
+        new_model_name = "Nouveau nom du modèle"
+
+        # ÉTANT DONNÉ un modèle lié à un service
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+
+        model = make_model(structure=struct, name="Nom du modèle")
+        service = make_service(
+            model=model,
+            structure=struct,
+            name=service_name,
+            status=ServiceStatus.PUBLISHED,
+        )
+
+        # ET un utilisateur étant admin d'une autre structure
+        user2 = baker.make("users.User", is_valid=True)
+        make_structure(user2)
+
+        # QUAND je mets à jour le modèle en demandant la mise à jour des services associés
+        self.client.force_authenticate(user=user2)
+        response = self.client.patch(
+            f"/models/{model.slug}/",
+            {"name": new_model_name, "update_all_services": "true"},
+        )
+        service.refresh_from_db()
+
+        # ALORS la mise à jour du modèle est refusée
+        self.assertEqual(response.status_code, 403)
+        # ET le service n'est pas mis à jour
+        self.assertNotEqual(service.name, new_model_name)
+
     def test_update_model_and_update_only_linked_services(self):
         service_name_1 = "Nom du service 1"
         service_name_2 = "Nom du service 2"
@@ -2037,6 +2070,50 @@ class ServiceModelTestCase(APITestCase):
         # ALORS seul le service associé au modèle est associé
         self.assertEqual(service_1.name, new_model_name)
         self.assertEqual(service_2.name, service_name_2)
+
+    def test_update_model_and_update_only_services_in_structure(self):
+        service_name_1 = "Nom du service 1"
+        service_name_2 = "Nom du service 2"
+        new_model_name = "Nouveau nom du modèle"
+
+        user = baker.make("users.User", is_valid=True)
+        struct1 = make_structure(user)
+        struct2 = make_structure(user)
+
+        # ÉTANT DONNÉ un modèle lié à la struct1
+        model = make_model(structure=struct1, name="Nom du modèle")
+
+        # ET un service lié au même modèle dans la struct1
+        service_1 = make_service(
+            model=model,
+            slug="service-1",
+            structure=struct1,
+            name=service_name_1,
+            status=ServiceStatus.PUBLISHED,
+        )
+        # ET un service lié au même modèle mais dans la struct2
+        service_2 = make_service(
+            model=model,
+            slug="service-2",
+            structure=struct2,
+            name=service_name_2,
+            status=ServiceStatus.PUBLISHED,
+        )
+
+        # QUAND je mets à jour le modèle en demandant la mise à jour des services associés
+        self.client.force_authenticate(user=user)
+        response = self.client.patch(
+            f"/models/{model.slug}/",
+            {"name": new_model_name, "update_all_services": "true"},
+        )
+        self.assertEqual(response.status_code, 200)
+        service_1.refresh_from_db()
+        service_2.refresh_from_db()
+
+        # ALORS seul le service 1 associé à la struct1 est modifié
+        self.assertEqual(service_1.name, new_model_name)
+        # et pas le service 2
+        self.assertNotEqual(service_2.name, new_model_name)
 
     def test_update_service_from_model(self):
         service_name = "Nom du service"
