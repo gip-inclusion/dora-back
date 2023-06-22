@@ -488,9 +488,7 @@ class ModelViewSet(ServiceViewSet):
             )
 
             if self.request.data.get("update_all_services", "") in TRUTHY_VALUES:
-                services = Service.objects.filter(
-                    model_id=model.id, structure_id=model.structure_id
-                )
+                services = Service.objects.filter(model_id=model.id)
 
                 for service in services:
                     if not service.can_write(self.request.user):
