@@ -1973,6 +1973,355 @@ class ServiceModelTestCase(APITestCase):
         self.assertEqual(hitem.user, user)
         self.assertEqual(hitem.status, "")
 
+    def test_update_model_and_update_all_linked_services(self):
+        service_name = "Nom du service"
+        new_model_name = "Nouveau nom du modèle"
+
+        # ÉTANT DONNÉ un modèle lié à un service
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        model = make_model(structure=struct, name="Nom du modèle")
+        service = make_service(
+            model=model,
+            structure=struct,
+            name=service_name,
+            status=ServiceStatus.PUBLISHED,
+        )
+
+        # QUAND je mets à jour le modèle en demandant la mise à jour des services associés
+        self.client.force_authenticate(user=user)
+        response = self.client.patch(
+            f"/models/{model.slug}/",
+            {"name": new_model_name, "update_all_services": "true"},
+        )
+        self.assertEqual(response.status_code, 200)
+        service.refresh_from_db()
+
+        # ALORS le service est mise à jour avec le nouveau nom du modèle
+        self.assertEqual(service.name, new_model_name)
+
+    def test_update_model_and_update_not_related_structure_admin(self):
+        service_name = "Nom du service"
+        new_model_name = "Nouveau nom du modèle"
+
+        # ÉTANT DONNÉ un modèle lié à un service
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+
+        model = make_model(structure=struct, name="Nom du modèle")
+        service = make_service(
+            model=model,
+            structure=struct,
+            name=service_name,
+            status=ServiceStatus.PUBLISHED,
+        )
+
+        # ET un utilisateur étant admin d'une autre structure
+        user2 = baker.make("users.User", is_valid=True)
+        make_structure(user2)
+
+        # QUAND je mets à jour le modèle en demandant la mise à jour des services associés
+        self.client.force_authenticate(user=user2)
+        response = self.client.patch(
+            f"/models/{model.slug}/",
+            {"name": new_model_name, "update_all_services": "true"},
+        )
+        service.refresh_from_db()
+
+        # ALORS la mise à jour du modèle est refusée
+        self.assertEqual(response.status_code, 403)
+        # ET le service n'est pas mis à jour
+        self.assertNotEqual(service.name, new_model_name)
+
+    def test_update_model_and_update_only_linked_services(self):
+        service_name_1 = "Nom du service 1"
+        service_name_2 = "Nom du service 2"
+        new_model_name = "Nouveau nom du modèle"
+
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+
+        # ÉTANT DONNÉ un service lié à un modèle
+        model = make_model(structure=struct, name="Nom du modèle")
+        service_1 = make_service(
+            model=model,
+            structure=struct,
+            name=service_name_1,
+            status=ServiceStatus.PUBLISHED,
+        )
+        # ET un service non-lié à un modèle
+        service_2 = make_service(
+            model=None,
+            structure=struct,
+            name=service_name_2,
+            status=ServiceStatus.PUBLISHED,
+        )
+
+        # QUAND je mets à jour le modèle en demandant la mise à jour des services associés
+        self.client.force_authenticate(user=user)
+        response = self.client.patch(
+            f"/models/{model.slug}/",
+            {"name": new_model_name, "update_all_services": "true"},
+        )
+        self.assertEqual(response.status_code, 200)
+        service_1.refresh_from_db()
+        service_2.refresh_from_db()
+
+        # ALORS seul le service associé au modèle est associé
+        self.assertEqual(service_1.name, new_model_name)
+        self.assertEqual(service_2.name, service_name_2)
+
+    def test_update_service_from_model(self):
+        service_name = "Nom du service"
+        service_slug = "nom-du-service"
+        model_name = "Nouveau nom du modèle"
+
+        # ÉTANT DONNÉ un modèle lié à un service
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        model = make_model(structure=struct, name=model_name)
+        service = make_service(
+            model=model,
+            structure=struct,
+            slug=service_slug,
+            name=service_name,
+            status=ServiceStatus.PUBLISHED,
+        )
+        self.assertEqual(service.name, service_name)
+
+        # QUAND je demande la mise à jour du service via son modèle
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/services/update-from-model/",
+            {
+                "services": [service_slug],
+            },
+        )
+        self.assertEqual(response.status_code, 204)
+        service.refresh_from_db()
+
+        # ALORS le service a été mis à jour
+        self.assertEqual(service.name, model_name)
+
+    def test_update_service_from_model_m2m(self):
+        service_name = "Nom du service"
+        service_slug = "nom-du-service"
+        model_name = "Nouveau nom du modèle"
+        model_slug = "nouveau-nom-du-modele"
+        user = baker.make("users.User", is_valid=True)
+
+        # ÉTANT DONNÉ un service lié à un modèle avec des champs custom et M2M
+        struct = make_structure(user)
+        global_condition1 = baker.make("AccessCondition", structure=None)
+        struct_condition1 = baker.make("AccessCondition", structure=struct)
+
+        model = make_model(
+            structure=struct,
+            name=model_name,
+            slug=model_slug,
+        )
+        # SYNC_CUSTOM_M2M_FIELDS
+        model.access_conditions.add(global_condition1)
+        model.access_conditions.add(struct_condition1)
+
+        # SYNC_M2M_FIELDS
+        model.categories.add(ServiceCategory.objects.get(value="numerique"))
+        model.subcategories.add(
+            ServiceSubCategory.objects.get(value="numerique--acceder-a-du-materiel")
+        )
+
+        service = make_service(
+            model=model,
+            structure=struct,
+            slug=service_slug,
+            name=service_name,
+            status=ServiceStatus.PUBLISHED,
+        )
+
+        self.assertNotEqual(
+            sorted(service.access_conditions.values_list("id", flat=True)),
+            sorted(model.access_conditions.values_list("id", flat=True)),
+        )
+        self.assertNotEqual(
+            sorted(service.categories.values_list("value", flat=True)),
+            sorted(model.categories.values_list("value", flat=True)),
+        )
+        self.assertNotEqual(
+            sorted(service.subcategories.values_list("value", flat=True)),
+            sorted(model.subcategories.values_list("value", flat=True)),
+        )
+
+        # QUAND je demande la mise à jour du service via son modèle
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/services/update-from-model/",
+            {
+                "services": [service_slug],
+            },
+        )
+        service.refresh_from_db()
+
+        # ALORS les champs custom et M2M ont été mis à jour
+        self.assertEqual(response.status_code, 204)
+
+        self.assertEqual(
+            sorted(service.access_conditions.values_list("id", flat=True)),
+            sorted(model.access_conditions.values_list("id", flat=True)),
+        )
+        self.assertEqual(
+            sorted(service.categories.values_list("value", flat=True)),
+            sorted(model.categories.values_list("value", flat=True)),
+        )
+        self.assertEqual(
+            sorted(service.subcategories.values_list("value", flat=True)),
+            sorted(model.subcategories.values_list("value", flat=True)),
+        )
+
+    def test_update_service_from_model_wrong_permission(self):
+        service_name = "Nom du service"
+        service_slug = "nom-du-service"
+        model_name = "Nouveau nom du modèle"
+
+        # ÉTANT DONNÉ un modèle lié à un service
+        user = baker.make("users.User", is_valid=True)
+
+        struct = make_structure(user)
+        model = make_model(structure=struct, name=model_name)
+        service = make_service(
+            model=model,
+            structure=struct,
+            slug=service_slug,
+            name=service_name,
+            status=ServiceStatus.PUBLISHED,
+        )
+        self.assertEqual(service.name, service_name)
+
+        # ET un utilisateur n'appartenant pas à la structure
+        user2 = baker.make("users.User", is_valid=True)
+
+        # QUAND je demande la mise à jour du service via son modèle avec un utilisateur n'appartenant pas à la structure
+        self.client.force_authenticate(user=user2)
+        response = self.client.post(
+            "/services/update-from-model/",
+            {
+                "services": [service_slug],
+            },
+        )
+
+        # ALORS je ne suis pas autorisé à faire la mise à jour
+        self.assertEqual(response.status_code, 403)
+
+        # ET le service n'a pas été mis à jour
+        service.refresh_from_db()
+        self.assertNotEqual(service.name, model_name)
+
+    def test_reject_update_service_from_model(self):
+        service_name = "Nom du service"
+        service_slug = "nom-du-service"
+        model_name = "Nouveau nom du modèle"
+        model_slug = "nouveau-nom-du-modele"
+
+        # ÉTANT DONNÉ un modèle lié à un service
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        model = make_model(structure=struct, name=model_name, slug=model_slug)
+        service = make_service(
+            model=model,
+            structure=struct,
+            slug=service_slug,
+            name=service_name,
+            status=ServiceStatus.PUBLISHED,
+        )
+        self.assertEqual(service.name, service_name)
+
+        # QUAND je refuse la mise à jour du service via son modèle
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/services/reject-update-from-model/",
+            {
+                "data": [{"model_slug": model_slug, "service_slug": service_slug}],
+            },
+        )
+        self.assertEqual(response.status_code, 204)
+        service.refresh_from_db()
+
+        # ALORS le service n'a été mis à jour
+        self.assertNotEqual(service.name, model_name)
+        # mais son checksum a été mis à jour
+        self.assertEqual(service.last_sync_checksum, model.sync_checksum)
+
+    def test_reject_update_service_from_model_non_existing_model(self):
+        service_name = "Nom du service"
+        service_slug = "nom-du-service"
+        model_name = "Nouveau nom du modèle"
+        model_slug = "nouveau-nom-du-modele"
+
+        # ÉTANT DONNÉ un modèle lié à un service
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        model = make_model(structure=struct, name=model_name, slug=model_slug)
+        service = make_service(
+            model=model,
+            structure=struct,
+            slug=service_slug,
+            name=service_name,
+            status=ServiceStatus.PUBLISHED,
+        )
+        self.assertEqual(service.name, service_name)
+
+        # QUAND je refuse la mise à jour du service via son modèle
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/services/reject-update-from-model/",
+            {
+                "data": [
+                    {"model_slug": "non-existing-slug", "service_slug": service_slug}
+                ],
+            },
+        )
+        self.assertEqual(response.status_code, 204)
+        service.refresh_from_db()
+
+        # ALORS le service n'a été mis à jour
+        self.assertNotEqual(service.name, model_name)
+        self.assertNotEqual(service.last_sync_checksum, model.sync_checksum)
+
+    def test_reject_update_service_from_model_non_existing_service(self):
+        service_name = "Nom du service"
+        service_slug = "nom-du-service"
+        model_name = "Nouveau nom du modèle"
+        model_slug = "nouveau-nom-du-modele"
+
+        # ÉTANT DONNÉ un modèle lié à un service
+        user = baker.make("users.User", is_valid=True)
+        struct = make_structure(user)
+        model = make_model(structure=struct, name=model_name, slug=model_slug)
+        service = make_service(
+            model=model,
+            structure=struct,
+            slug=service_slug,
+            name=service_name,
+            status=ServiceStatus.PUBLISHED,
+        )
+        self.assertEqual(service.name, service_name)
+
+        # QUAND je refuse la mise à jour du service via son modèle
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/services/reject-update-from-model/",
+            {
+                "data": [
+                    {"model_slug": model_slug, "service_slug": "non-existing-slug"}
+                ],
+            },
+        )
+        self.assertEqual(response.status_code, 204)
+        service.refresh_from_db()
+
+        # ALORS le service n'a été mis à jour
+        self.assertNotEqual(service.name, model_name)
+        self.assertNotEqual(service.last_sync_checksum, model.sync_checksum)
+
 
 class ServiceInstantiationTestCase(APITestCase):
     def test_cant_instantiate_a_service(self):

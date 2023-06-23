@@ -248,6 +248,7 @@ class Structure(ModerationMixin, models.Model):
         StructureSource, null=True, blank=True, on_delete=models.PROTECT
     )
     data_inclusion_id = models.TextField(blank=True, db_index=True)
+    data_inclusion_source = models.TextField(blank=True, db_index=True)
 
     members = models.ManyToManyField(User, through=StructureMember)
 

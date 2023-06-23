@@ -7,7 +7,6 @@ from django.utils import timezone
 from rest_framework import exceptions, serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 
-from dora.admin_express.models import EPCI, City, Department, Region
 from dora.core.utils import code_insee_to_code_dept
 from dora.services.enums import ServiceStatus, ServiceUpdateStatus
 from dora.structures.models import Structure, StructureMember
@@ -126,27 +125,6 @@ def _get_diffusion_zone_type_display(obj):
     )
 
 
-def _get_diffusion_zone_details_display(obj):
-    if obj.diffusion_zone_type == AdminDivisionType.COUNTRY:
-        return "France entière"
-
-    if obj.diffusion_zone_type == AdminDivisionType.CITY:
-        city = City.objects.get_from_code(obj.diffusion_zone_details)
-        # TODO: we'll probably want to log and correct a missing code
-        return f"{city.name} ({city.department})" if city else ""
-
-    item = None
-
-    if obj.diffusion_zone_type == AdminDivisionType.EPCI:
-        item = EPCI.objects.get_from_code(obj.diffusion_zone_details)
-    elif obj.diffusion_zone_type == AdminDivisionType.DEPARTMENT:
-        item = Department.objects.get_from_code(obj.diffusion_zone_details)
-    elif obj.diffusion_zone_type == AdminDivisionType.REGION:
-        item = Region.objects.get_from_code(obj.diffusion_zone_details)
-    # TODO: we'll probably want to log and correct a missing code
-    return item.name if item else ""
-
-
 class ServiceSerializer(serializers.ModelSerializer):
     # pour rétrocompatibilité temporaire
     category = serializers.SerializerMethodField()
@@ -250,6 +228,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     has_already_been_unpublished = serializers.SerializerMethodField()
 
     model_changed = serializers.SerializerMethodField()
+    model_name = serializers.SerializerMethodField()
     model = serializers.SlugRelatedField(
         queryset=ServiceModel.objects.all(),
         slug_field="slug",
@@ -316,6 +295,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "location_kinds_display",
             "model",
             "model_changed",
+            "model_name",
             "modification_date",
             "name",
             "online_form",
@@ -373,7 +353,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         return _get_diffusion_zone_type_display(obj)
 
     def get_diffusion_zone_details_display(self, obj):
-        return _get_diffusion_zone_details_display(obj)
+        return obj.get_diffusion_zone_details_display()
 
     def get_access_conditions_display(self, obj):
         return [item.name for item in obj.access_conditions.all()]
@@ -443,6 +423,11 @@ class ServiceSerializer(serializers.ModelSerializer):
     def get_model_changed(self, object):
         if object.model:
             return object.model.sync_checksum != object.last_sync_checksum
+        return None
+
+    def get_model_name(self, object):
+        if object.model:
+            return object.model.name
         return None
 
     def get_update_status(self, object):
@@ -616,7 +601,7 @@ class ServiceListSerializer(ServiceSerializer):
         return _get_diffusion_zone_type_display(obj)
 
     def get_diffusion_zone_details_display(self, obj):
-        return _get_diffusion_zone_details_display(obj)
+        return obj.get_diffusion_zone_details_display()
 
 
 class FeedbackSerializer(serializers.Serializer):

@@ -68,6 +68,8 @@ CREATE TABLE mb_all_service AS
     services_service.fee_condition_id,
     services_service.use_inclusion_numerique_scheme,
     services_service.source_id,
+    services_service.data_inclusion_id,
+    services_service.data_inclusion_source,
     -- TODO: deprecated
     (select services_service.status!='PUBLISHED') AS is_draft,
     (select services_service.status='SUGGESTION') AS is_suggestion,
