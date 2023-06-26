@@ -71,11 +71,7 @@ class ServiceStatusHistoryItemAdmin(admin.ModelAdmin):
 
 
 class ServiceAdmin(admin.GISModelAdmin):
-    search_fields = (
-        "name",
-        "structure__name",
-        "slug",
-    )
+    search_fields = ("name", "structure__name", "slug", "data_inclusion_id")
     list_display = [
         "name",
         "slug",
@@ -86,7 +82,12 @@ class ServiceAdmin(admin.GISModelAdmin):
         "last_editor",
         "status",
     ]
-    list_filter = ["status", "moderation_status", "source"]
+    list_filter = [
+        "status",
+        "moderation_status",
+        "source",
+        "use_inclusion_numerique_scheme",
+    ]
     filter_horizontal = [
         "categories",
         "subcategories",

@@ -8,15 +8,11 @@ from django.utils import timezone
 from django.utils.text import Truncator
 from furl import furl
 
-from dora.admin_express.models import AdminDivisionType, City
 from dora.core import utils
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
-from dora.core.utils import code_insee_to_code_dept, normalize_description
 from dora.services.enums import ServiceStatus
 from dora.services.models import (
-    BeneficiaryAccessMode,
-    CoachOrientationMode,
     ConcernedPublic,
     Credential,
     LocationKind,
@@ -60,6 +56,14 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         department = options["department"]
         source = options["source"]
+
+        if source.startswith("mediation-numerique"):
+            self.stderr.write(
+                self.style.ERROR("Source MedNum, utilisez `import_mednum`")
+            )
+            import sys
+
+            sys.exit(-1)
 
         self.stdout.write(self.style.SUCCESS(f"Import de la source: {source}"))
         try:
@@ -151,21 +155,7 @@ class Command(BaseCommand):
                 continue
             STRUCTURES_INDEX[s["id"]] = s["siret"]
 
-            matched_structures = Structure.objects.filter(siret=s["siret"])
-            if matched_structures.exists():
-                # la structure existe déjà; on ne la traite pas, mais on enregistre son id data·inclusion
-                parent = matched_structures.filter(
-                    parent=None, data_inclusion_id="", data_inclusion_source=""
-                ).first()
-                if parent:
-                    self.stdout.write(
-                        self.style.NOTICE(
-                            f"Mise à jour de l'id data·inclusion pour : {parent.slug}"
-                        )
-                    )
-                    parent.data_inclusion_id = s["id"]
-                    parent.data_inclusion_source = s["source"]
-                    parent.save()
+            if Structure.objects.filter(siret=s["siret"]).exists():
                 continue
             try:
                 establishment = Establishment.objects.get(siret=s["siret"])
@@ -333,8 +323,7 @@ class Command(BaseCommand):
                 service.location_kinds.set(
                     self._values_to_objects(LocationKind, s["modes_accueil"])
                 )
-                if source_value.startswith("mediation-numerique"):
-                    self._presave_mednum_services(service)
+
                 service.save()
                 send_moderation_notification(
                     service,
@@ -357,45 +346,3 @@ class Command(BaseCommand):
         if values:
             return Model.objects.filter(value__in=values)
         return []
-
-    def _presave_mednum_services(self, service):
-        service.use_inclusion_numerique_scheme = True
-        if not service.short_desc:
-            subcats_label = ", ".join(
-                s.label.lower() for s in service.subcategories.all()
-            )
-            short_desc, _ = normalize_description(subcats_label, 280)
-            service.short_desc = (
-                f"{service.structure.name} propose des services : {short_desc}"
-            )
-
-        if service.geom and not service.city_code:
-            try:
-                city = City.objects.get(geom__covers=service.geom)
-            except City.DoesNotExist:
-                self.stderr.write(self.style.ERROR("Impossible de déterminer la ville"))
-            else:
-                if city.code[:2] != service.postal_code[
-                    :2
-                ] and not service.postal_code.startswith("20"):
-                    self.stderr.write(
-                        self.style.ERROR("Ville inconsistente avec le code postal")
-                    )
-                else:
-                    service.city_code = city.code
-
-        if not service.diffusion_zone_type or not service.diffusion_zone_details:
-            service.diffusion_zone_type = AdminDivisionType.DEPARTMENT
-            if service.city_code:
-                service.diffusion_zone_details = code_insee_to_code_dept(
-                    service.city_code
-                )
-
-        service.beneficiaries_access_modes.add(
-            BeneficiaryAccessMode.objects.get(value="telephoner"),
-            BeneficiaryAccessMode.objects.get(value="se-presenter"),
-        )
-        service.coach_orientation_modes.add(
-            CoachOrientationMode.objects.get(value="telephoner"),
-            CoachOrientationMode.objects.get(value="envoyer-courriel"),
-        )
