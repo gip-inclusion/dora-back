@@ -135,6 +135,7 @@ private_api_patterns = [
     ),
     path("admin-stats/", dora.support.views.stats),
     path("", include(router.urls)),
+    path("profile/update-main-activity/", dora.users.views.update_main_activity),
 ]
 
 urlpatterns = [*private_api_patterns, *public_api_patterns, *spectacular_patterns]
