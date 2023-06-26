@@ -150,9 +150,9 @@ def inclusion_connect_authenticate(request):
         id_token = result["id_token"]
         decoded_id_token = jwt.decode(id_token, options={"verify_signature": False})
 
-        assert decoded_id_token["iss"] == settings.IC_ISSUER_ID
+        # TODO: à rétablir après la mise en prod de la nouvelle version d'IC
+        # assert decoded_id_token["iss"] == settings.IC_ISSUER_ID
         assert settings.IC_CLIENT_ID in decoded_id_token["aud"]
-        assert decoded_id_token["azp"] == settings.IC_CLIENT_ID
         assert int(decoded_id_token["exp"]) > time.time()
         assert stored_nonce and stored_nonce == decoded_id_token["nonce"]
 
@@ -161,7 +161,7 @@ def inclusion_connect_authenticate(request):
             "email": decoded_id_token["email"],
             "first_name": decoded_id_token["given_name"],
             "last_name": decoded_id_token["family_name"],
-            "is_valid": decoded_id_token["email_verified"],
+            "is_valid": True,
         }
         try:
             # On essaye de récupérer un utilisateur déjà migré
