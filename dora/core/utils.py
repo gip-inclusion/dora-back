@@ -4,6 +4,8 @@ from typing import Tuple
 
 import sib_api_v3_sdk
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import get_object_or_404
 from django.utils.text import Truncator
 from sib_api_v3_sdk.rest import ApiException as SibApiException
 
@@ -63,3 +65,20 @@ def add_to_sib(user):
             logger.info("User %s added to SiB: %s", user.pk, api_response)
         except SibApiException as e:
             logger.exception(e)
+
+
+def get_object_or_none(klass, *args, **kwargs):
+    """
+    Use get() to return an object, or return None if the object
+    does not exist.
+
+    klass may be a Model, Manager, or QuerySet object. All other passed
+    arguments and keyword arguments are used in the get() query.
+
+    Like with QuerySet.get(), MultipleObjectsReturned is raised if more than
+    one object is found.
+    """
+    try:
+        return get_object_or_404(klass, *args, **kwargs)
+    except ObjectDoesNotExist:
+        return None

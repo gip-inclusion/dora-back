@@ -1,14 +1,12 @@
 import logging
-from datetime import timedelta
 
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
-from django.utils import timezone
 from rest_framework import exceptions, serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 
 from dora.core.utils import code_insee_to_code_dept
-from dora.services.enums import ServiceStatus, ServiceUpdateStatus
+from dora.services.enums import ServiceStatus
 from dora.structures.models import Structure, StructureMember
 
 from .models import (
@@ -431,16 +429,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         return None
 
     def get_update_status(self, object):
-        if object.status != ServiceStatus.PUBLISHED:
-            return ServiceUpdateStatus.NOT_NEEDED
-
-        diff = timezone.now() - object.modification_date
-        if diff >= timedelta(days=240):
-            return ServiceUpdateStatus.REQUIRED
-        elif diff >= timedelta(days=180):
-            return ServiceUpdateStatus.NEEDED
-
-        return ServiceUpdateStatus.NOT_NEEDED
+        return object.get_update_status()
 
 
 class ServiceModelSerializer(ServiceSerializer):
