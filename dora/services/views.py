@@ -1,14 +1,17 @@
 import json
+from datetime import datetime
+from operator import itemgetter
 
 import humanize
 import requests
 from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
-from django.db.models import Case, IntegerField, Q, Value, When
+from django.db.models import IntegerField, Q, Value
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.timezone import is_naive, make_aware
 from furl import furl
 from rest_framework import mixins, permissions, serializers, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
@@ -670,20 +673,21 @@ class SearchResultSerializer(ServiceListSerializer):
     class Meta:
         model = Service
         fields = [
+            "diffusion_zone_type",
+            "distance",
+            "location",
+            "location_kinds",
+            "modification_date",
             "name",
             "short_desc",
             "slug",
+            "status",
             "structure",
             "structure_info",
-            "modification_date",
-            "diffusion_zone_type",
-            "distance",
-            "status",
-            "location",
         ]
 
     def get_distance(self, obj):
-        return int(obj.distance.km) if obj.distance is not None else None
+        return obj.distance.km if obj.distance is not None else None
 
     def get_location(self, obj):
         if obj.location_kinds.filter(value="en-presentiel").exists():
@@ -694,31 +698,52 @@ class SearchResultSerializer(ServiceListSerializer):
             return ""
 
 
-def _sort_search_results(services, location):
-    services = services.order_by().annotate(
-        diffusion_sort=Case(
-            When(diffusion_zone_type=AdminDivisionType.CITY, then=1),
-            When(diffusion_zone_type=AdminDivisionType.EPCI, then=2),
-            When(diffusion_zone_type=AdminDivisionType.DEPARTMENT, then=3),
-            When(diffusion_zone_type=AdminDivisionType.REGION, then=4),
-            default=5,
-        )
-    )
+def _filter_and_annotate_dora_services(services, location):
     # 1) services ayant un lieu de déroulement, à moins de 100km
     services_on_site = (
         services.filter(location_kinds__value="en-presentiel")
         .annotate(distance=Distance("geom", location))
         .filter(distance__lte=D(km=100))
-        .order_by("distance", "diffusion_sort", "-modification_date")
     )
     # 2) services sans lieu de déroulement
-    services_remote = (
-        services.exclude(location_kinds__value="en-presentiel")
-        .annotate(distance=Value(None, output_field=IntegerField()))
-        .order_by("diffusion_sort", "-modification_date")
+    services_remote = services.exclude(location_kinds__value="en-presentiel").annotate(
+        distance=Value(None, output_field=IntegerField())
     )
-
     return list(services_on_site) + list(services_remote)
+
+
+def multisort(xs, specs):
+    # https://docs.python.org/3/howto/sorting.html#sort-stability-and-complex-sorts
+    for key, reverse in reversed(specs):
+        xs.sort(key=itemgetter(key), reverse=reverse)
+    return xs
+
+
+def _sort_services(services):
+    diffusion_zone_priority = {
+        AdminDivisionType.CITY: 1,
+        AdminDivisionType.EPCI: 2,
+        AdminDivisionType.DEPARTMENT: 3,
+        AdminDivisionType.REGION: 4,
+    }
+    for service in services:
+        service["zone_priority"] = diffusion_zone_priority.get(
+            service["diffusion_zone_type"], 5
+        )
+        mod_date = datetime.fromisoformat(service["modification_date"])
+
+        service["sortable_date"] = (
+            make_aware(mod_date) if is_naive(mod_date) else mod_date
+        )
+    services_on_site = [s for s in services if "en-presentiel" in s["location_kinds"]]
+    services_remote = [
+        s for s in services if "en-presentiel" not in s["location_kinds"]
+    ]
+
+    return multisort(
+        services_on_site,
+        (("distance", False), ("zone_priority", False), ("sortable_date", True)),
+    ) + multisort(services_remote, (("zone_priority", False), ("sortable_date", True)))
 
 
 def get_pages(url):
@@ -749,9 +774,24 @@ def get_pages(url):
             return
 
 
+def _translate_zone_type(di_zone_type):
+    if di_zone_type == "commune":
+        return "city"
+    if di_zone_type == "epci":
+        return "epci"
+    if di_zone_type == "departement":
+        return "department"
+    if di_zone_type == "region":
+        return "region"
+    else:
+        # TODO: est-ce qu'indéfini == country?
+        return "country"
+
+
 @api_view()
 @permission_classes([permissions.AllowAny])
 def service_di(request, di_id):
+    # todo: categories/subcategories
     print(di_id)
     source_di, di_service_id = di_id.split("--")
     print(di_id, source_di, di_service_id)
@@ -798,55 +838,64 @@ def service_di(request, di_id):
     )
 
 
-@api_view()
-@permission_classes([permissions.AllowAny])
-def search(request):
-    categories = request.GET.get("cats", "")
-    subcategories = request.GET.get("subs", "")
-    city_code = request.GET.get("city", "")
-    kinds = request.GET.get("kinds", "")
-    fees = request.GET.get("fees", "")
+def _get_di_results(categories, subcategories, city_code, kinds, fees):
+    # TODO: mocker les appels d·i, et tester le tri
+    if settings.IS_TESTING:
+        return []
 
     url = furl(settings.DATA_INCLUSION_URL).add(
         path="search/services/",
+        # TODO: ajouter ls filtrage par kinds (='types') et fees (='frais')
+        # TODO: gestion plus fine des catégories et sous-catégories (voir ce qui est fait dans _get_dora_results)
+        # TODO: pour les services `en-presentiel` on voudrait recevoir seulement ceux qui sont à moins de 100 km du code insee de recherche
+        # TODO: attention: filtrer par département n'est pas une bonne idée, quand on est en bord de département.
         args={"code_insee": city_code, "thematiques": subcategories},
     )
 
     di_results = []
     for results in get_pages(url):
         for result in results:
-            # TODO exclude suspended services
-            import pprint
-
-            pprint.pprint(result)
+            # TODO: exclure les services suspendus: date_suspension non nulle et >= timezone.now()
+            # TODO: exclure la source "dora"
             # if result["source"] != "dora":
-            location = ""
+
+            # On transforme les champs nécessaires à l'affichage des resultats de recherche au format DORA
+            # (c.a.d qu'on veut un objet similaire à ce que renvoie le SearchResultSerializer)
+            location_str = ""
             if result["service"]["modes_accueil"]:
                 if "en-presentiel" in result["service"]["modes_accueil"]:
-                    location = f"{result['service']['code_postal']} {result['service']['commune']}"
+                    location_str = f"{result['service']['code_postal']} {result['service']['commune']}"
                 elif "a-distance" in result["service"]["modes_accueil"]:
-                    location = "À distance"
+                    location_str = "À distance"
             else:
-                location = f"""{result["service"]['code_postal']} {result["service"]['commune']}"""
+                location_str = ""
 
             di_results.append(
                 {
+                    "diffusion_zone_type": _translate_zone_type(
+                        result["service"]["zone_diffusion_type"]
+                    ),
+                    "distance": result["distance"] or 0,  # en km
+                    "location": location_str,
+                    # TODO: spécifier 'en-presentiel' si on a une geoloc/adresse?
+                    "location_kinds": result["service"]["modes_accueil"] or [],
+                    "modification_date": result["service"]["date_maj"],
                     "name": result["service"]["nom"],
                     "short_desc": result["service"]["presentation_resume"],
                     "slug": f"{result['service']['source']}--{result['service']['id']}",
+                    "status": ServiceStatus.PUBLISHED,
                     "structure": "",
                     "structure_info": {"name": result["service"]["structure"]["nom"]},
-                    "modification_date": result["service"]["date_maj"],
-                    "diffusion_zone_type": result["service"]["zone_diffusion_type"],
-                    "distance": result["distance"] or 0,
-                    "status": ServiceStatus.PUBLISHED,
-                    "location": location,
+                    # Champs spécifiques aux résultats d·i
+                    "type": "di",
                     "source": result["service"]["source"],
                     "id": result["service"]["id"],
-                    "type": "di",
                 }
             )
+    return di_results
 
+
+def _get_dora_results(request, categories, subcategories, city_code, kinds, fees):
     services = (
         Service.objects.published()
         .select_related(
@@ -897,20 +946,33 @@ def search(request):
         Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
     ).distinct()
 
-    results = _sort_search_results(
-        # Display first the services modified after the cutoff date
+    results = _filter_and_annotate_dora_services(
         services_to_display,
         city.geom,
     )
 
-    dora_results = SearchResultSerializer(
-        results, many=True, context={"request": request}
-    ).data
+    return json.loads(
+        json.dumps(
+            SearchResultSerializer(
+                results, many=True, context={"request": request}
+            ).data
+        )
+    )
+
+
+@api_view()
+@permission_classes([permissions.AllowAny])
+def search(request):
+    categories = request.GET.get("cats", "")
+    subcategories = request.GET.get("subs", "")
+    city_code = request.GET.get("city", "")
+    kinds = request.GET.get("kinds", "")
+    fees = request.GET.get("fees", "")
+
+    di_results = _get_di_results(categories, subcategories, city_code, kinds, fees)
+    dora_results = _get_dora_results(
+        request, categories, subcategories, city_code, kinds, fees
+    )
     all_results = [*dora_results, *di_results]
-    decorated = [
-        (res, res["distance"] if res["distance"] is not None else 9999)
-        for res in all_results
-    ]
-    decorated.sort(key=lambda res: res[1])
-    sorted_results = [result for result, distance in decorated]
+    sorted_results = _sort_services(all_results)
     return Response(sorted_results)
