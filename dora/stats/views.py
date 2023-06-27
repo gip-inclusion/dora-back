@@ -53,7 +53,7 @@ def log_event(request):
 
     structure_membership = (
         StructureMember.objects.filter(structure_id=structure.id, user=user).first()
-        if structure
+        if structure and user.is_authenticated
         else None
     )
     structure_data = {
