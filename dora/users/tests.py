@@ -10,7 +10,7 @@ class UserTestCase(APITestCase):
     def test_wrong_main_activity(self):
         main_activity = "xxx"
         response = self.client.patch(
-            "/profile/update-main-activity/",
+            "/profile/main-activity/",
             {"main_activity": main_activity},
         )
         self.assertEqual(response.status_code, 400)
@@ -20,7 +20,7 @@ class UserTestCase(APITestCase):
         main_activity = "offreur"
 
         response = self.client.patch(
-            "/profile/update-main-activity/",
+            "/profile/main-activity/",
             {"main_activity": main_activity},
         )
         self.user.refresh_from_db()
@@ -33,7 +33,7 @@ class UserTestCase(APITestCase):
         first_name = "new_first_name"
 
         response = self.client.patch(
-            "/profile/update-main-activity/",
+            "/profile/main-activity/",
             {"main_activity": main_activity, "first_name": first_name},
         )
         self.user.refresh_from_db()
