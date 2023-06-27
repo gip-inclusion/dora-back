@@ -14,6 +14,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "newsletter",
+            "main_activity",
         ]
         read_only_fields = ["email"]
 
@@ -22,6 +23,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
 @api_view(["PATCH"])
 @permission_classes([permissions.IsAuthenticated])
 def update_main_activity(request):
-    setattr(request.user, "main_activity", request.data.get("main_activity"))
+    serializer = UserProfileSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    request.user.main_activity = request.data.get("main_activity")
     request.user.save()
-    return Response("ok", status=200)
+    return Response(status=204)
