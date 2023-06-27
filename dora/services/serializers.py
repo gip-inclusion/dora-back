@@ -420,6 +420,8 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     def get_model_changed(self, object):
         if object.model:
+            if object.model.modification_date < object.modification_date:
+                return False
             return object.model.sync_checksum != object.last_sync_checksum
         return None
 

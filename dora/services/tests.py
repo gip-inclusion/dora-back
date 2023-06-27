@@ -2461,6 +2461,43 @@ class ServiceSyncTestCase(APITestCase):
             model.refresh_from_db()
             self.assertNotEqual(model.sync_checksum, initial_checksum)
 
+    def test_model_changed_after_service(self):
+        user = baker.make("users.User", is_valid=True)
+
+        # ETANT DONNÉE un service lié à un modèle
+        struct = make_structure(user)
+        model = make_model(structure=struct)
+        service = make_service(model=model, structure=struct)
+
+        self.client.force_authenticate(user=user)
+
+        # QUAND je mets à jour le modèle
+        self.client.patch(f"/models/{model.slug}/", {"name": "xxx"})
+
+        # ALORS la valeur `model_changed` est à True
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertTrue(response.data.get("model_changed"))
+
+    def test_service_changed_after_model(self):
+        user = baker.make("users.User", is_valid=True)
+
+        # ETANT DONNÉE un service lié à un modèle
+        struct = make_structure(user)
+        model = make_model(structure=struct)
+        service = make_service(
+            model=model, structure=struct, status=ServiceStatus.PUBLISHED
+        )
+
+        self.client.force_authenticate(user=user)
+
+        # QUAND je mets à jour le modèle puis le service
+        self.client.patch(f"/models/{model.slug}/", {"name": "xxx"})
+        self.client.patch(f"/services/{service.slug}/", {"name": "yyy"})
+
+        # ALORS la valeur `model_changed` est à False
+        response = self.client.get(f"/services/{service.slug}/")
+        self.assertFalse(response.data.get("model_changed"))
+
 
 class ServiceArchiveTestCase(APITestCase):
     def setUp(self):
