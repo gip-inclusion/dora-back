@@ -9,7 +9,7 @@ class UserTestCase(APITestCase):
 
     def test_wrong_main_activity(self):
         main_activity = "xxx"
-        response = self.client.patch(
+        response = self.client.post(
             "/profile/main-activity/",
             {"main_activity": main_activity},
         )
@@ -19,7 +19,7 @@ class UserTestCase(APITestCase):
     def test_main_activity_is_correctly_updated(self):
         main_activity = "offreur"
 
-        response = self.client.patch(
+        response = self.client.post(
             "/profile/main-activity/",
             {"main_activity": main_activity},
         )
@@ -32,7 +32,7 @@ class UserTestCase(APITestCase):
         main_activity = "offreur"
         first_name = "new_first_name"
 
-        response = self.client.patch(
+        response = self.client.post(
             "/profile/main-activity/",
             {"main_activity": main_activity, "first_name": first_name},
         )

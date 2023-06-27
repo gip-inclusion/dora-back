@@ -6,26 +6,19 @@ from rest_framework.response import Response
 from .models import User
 
 
-class UserProfileSerializer(serializers.ModelSerializer):
+class UserMainActivitySerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = [
-            "email",
-            "first_name",
-            "last_name",
-            "newsletter",
-            "main_activity",
-        ]
-        read_only_fields = ["email"]
+        fields = ["main_activity"]
 
 
 @sensitive_post_parameters(["main_activity"])
-@api_view(["PATCH"])
+@api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def update_main_activity(request):
-    serializer = UserProfileSerializer(data=request.data)
+    serializer = UserMainActivitySerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
-    request.user.main_activity = request.data.get("main_activity")
+    request.user.main_activity = serializer.validated_data["main_activity"]
     request.user.save()
     return Response(status=204)
