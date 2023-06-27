@@ -7,6 +7,13 @@ from django.utils import timezone
 
 from dora.core.utils import add_to_sib
 
+MAIN_ACTIVITY_CHOICES = [
+    ("accompagnateur", "Accompagnateur"),
+    ("offreur", "Offreur"),
+    ("accompagnateur_offreur", "Accompagnateur et offreur"),
+    ("autre", "Autre"),
+]
+
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -73,7 +80,13 @@ class User(AbstractBaseUser):
     department = models.CharField(
         max_length=3, default="", blank=True, help_text="Département d'un gestionnaire"
     )
-
+    main_activity = models.CharField(
+        max_length=25,
+        choices=MAIN_ACTIVITY_CHOICES,
+        verbose_name="Activité principale de l'utilisateur",
+        db_index=True,
+        blank=True,
+    )
     date_joined = models.DateTimeField("date joined", default=timezone.now)
     last_notification_email_sent = models.DateTimeField(blank=True, null=True)
     newsletter = models.BooleanField(default=False, db_index=True)
