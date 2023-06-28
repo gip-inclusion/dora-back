@@ -79,7 +79,6 @@ CREATE TABLE mb_all_service AS
     (SELECT services_service.contact_name != '') AS has_contact_name,
     (SELECT services_service.contact_phone != '') AS has_contact_phone,
     (SELECT services_service.contact_email != '') AS has_contact_email,
-    (SELECT concat('https://dora.inclusion.beta.gouv.fr/services/', slug)) as dora_url,
     CASE
         WHEN services_service.modification_date + '240 days'  <= now() AND services_service.status = 'PUBLISHED' THEN 'REQUIRED'
         WHEN services_service.modification_date + '180 days'  <= now() AND services_service.status = 'PUBLISHED' THEN 'NEEDED'
@@ -95,13 +94,36 @@ psql $SRC_DB_URL -c "ALTER TABLE mb_all_service ADD PRIMARY KEY (id)"
 psql $SRC_DB_URL -c "DROP VIEW IF EXISTS mb_service"
 psql $SRC_DB_URL -c "
 CREATE VIEW mb_service AS
- SELECT *
+ SELECT *,
+   (SELECT concat('https://dora.inclusion.beta.gouv.fr/services/', slug)) as dora_url
    FROM mb_all_service where is_model is false"
 
 psql $SRC_DB_URL -c "DROP VIEW IF EXISTS mb_model"
 psql $SRC_DB_URL -c "
 CREATE VIEW mb_model AS
- SELECT *
+SELECT
+    id,
+    name,
+    short_desc,
+    full_desc,
+    is_cumulative,
+    fee_details,
+    beneficiaries_access_modes_other,
+    coach_orientation_modes_other,
+    forms,
+    recurrence,
+    suspension_date,
+    creation_date,
+    modification_date,
+    creator_id,
+    last_editor_id,
+    structure_id,
+    slug,
+    online_form,
+    qpv_or_zrr,
+    sync_checksum,
+    fee_condition_id,
+   (SELECT concat('https://dora.inclusion.beta.gouv.fr/modeles/', slug)) as dora_url
    FROM mb_all_service where is_model is true"
 
 pg_dump $DATABASE_URL -O -t mb_all_service -t mb_model -t mb_service -c | psql $DEST_DB_URL
@@ -144,4 +166,4 @@ psql $SRC_DB_URL -c "ALTER TABLE mb_user ADD PRIMARY KEY (id)"
 
 pg_dump $DATABASE_URL -O -t mb_user -c | psql $DEST_DB_URL
 
-pg_dump $DATABASE_URL -O -t service_servicesource -t services_bookmark -t services_servicefee -t services_accesscondition -t services_beneficiaryaccessmode -t services_coachorientationmode -t services_concernedpublic -t services_credential -t services_locationkind -t services_requirement -t services_service_access_conditions -t services_service_beneficiaries_access_modes -t services_service_categories -t services_service_coach_orientation_modes -t services_service_concerned_public -t services_service_credentials -t services_service_kinds -t services_service_location_kinds -t services_service_requirements -t services_service_subcategories -t services_servicecategory -t services_servicekind -t services_servicemodificationhistoryitem -t services_servicestatushistoryitem -t services_servicesubcategory -t structures_structure_national_labels -t structures_structurenationallabel -t structures_structuremember -t structures_structureputativemember -t structures_structuresource -t structures_structuretypology -t stats_abtestgroup  -t stats_deploymentstate -t stats_mobilisationevent -t stats_mobilisationevent_ab_test_groups -t stats_pageview -t stats_searchview -t stats_searchview_categories -t stats_searchview_subcategories -t stats_serviceview -t stats_structureview -c | psql $DEST_DB_URL
+pg_dump $DATABASE_URL -O -t services_servicesource -t services_bookmark -t services_servicefee -t services_accesscondition -t services_beneficiaryaccessmode -t services_coachorientationmode -t services_concernedpublic -t services_credential -t services_locationkind -t services_requirement -t services_service_access_conditions -t services_service_beneficiaries_access_modes -t services_service_categories -t services_service_coach_orientation_modes -t services_service_concerned_public -t services_service_credentials -t services_service_kinds -t services_service_location_kinds -t services_service_requirements -t services_service_subcategories -t services_servicecategory -t services_servicekind -t services_servicemodificationhistoryitem -t services_servicestatushistoryitem -t services_servicesubcategory -t structures_structure_national_labels -t structures_structurenationallabel -t structures_structuremember -t structures_structureputativemember -t structures_structuresource -t structures_structuretypology -t stats_abtestgroup  -t stats_deploymentstate -t stats_mobilisationevent -t stats_mobilisationevent_ab_test_groups -t stats_pageview -t stats_searchview -t stats_searchview_categories -t stats_searchview_subcategories -t stats_serviceview -t stats_structureview -c | psql $DEST_DB_URL
