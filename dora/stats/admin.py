@@ -41,6 +41,7 @@ class PageViewAdmin(AnalyticsEventAdmin):
         "date",
         "path",
         "user",
+        "anonymous_user_hash",
         "title",
     ]
     list_filter = [
@@ -68,6 +69,7 @@ class SearchEventAdmin(AnalyticsEventAdmin):
         categories_display,
         subcategories_display,
         "user",
+        "anonymous_user_hash",
         "num_results",
     ]
     list_filter = [
@@ -91,6 +93,7 @@ class StructureEventAdmin(AnalyticsEventAdmin):
         "structure",
         "structure_department",
         "user",
+        "anonymous_user_hash",
     ]
     list_filter = [
         "date",
@@ -106,6 +109,7 @@ class ServiceEventAdmin(AnalyticsEventAdmin):
         "structure",
         "structure_department",
         "user",
+        "anonymous_user_hash",
     ]
     list_filter = [
         "date",
@@ -127,6 +131,7 @@ class MobilisationEventAdmin(AnalyticsEventAdmin):
         "structure",
         "structure_department",
         "user",
+        "anonymous_user_hash",
     ]
     list_filter = [
         "date",
