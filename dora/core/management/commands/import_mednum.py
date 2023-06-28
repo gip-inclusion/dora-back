@@ -286,6 +286,7 @@ class Command(BaseCommand):
                     service.geom = Point(lon, lat, srid=4326)
 
                 service.status = ServiceStatus.PUBLISHED
+                service.publication_date = timezone.now()
                 service.concerned_public.set(
                     cust_choice_to_objects(ConcernedPublic, s["profils"])
                 )

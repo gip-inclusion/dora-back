@@ -8,7 +8,7 @@ class ServiceStatus(models.TextChoices):
     ARCHIVED = "ARCHIVED", "Archived"
 
 
-class ServiceUpdateStatus:
-    NEEDED = "NEEDED"
-    NOT_NEEDED = "NOT_NEEDED"
-    REQUIRED = "REQUIRED"
+class ServiceUpdateStatus(models.TextChoices):
+    NEEDED = "NEEDED", "Actualisation conseillée"
+    NOT_NEEDED = "NOT_NEEDED", "Service à jour"
+    REQUIRED = "REQUIRED", "Actualisation exigée"

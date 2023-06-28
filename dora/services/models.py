@@ -16,7 +16,7 @@ from dora.admin_express.utils import get_clean_city_name
 from dora.core.models import EnumModel, LogItem, ModerationMixin
 from dora.structures.models import Structure
 
-from .enums import ServiceStatus
+from .enums import ServiceStatus, ServiceUpdateStatus
 
 logger = logging.getLogger(__name__)
 
@@ -451,6 +451,18 @@ class Service(ModerationMixin, models.Model):
             item = Region.objects.get_from_code(self.diffusion_zone_details)
         # TODO: we'll probably want to log and correct a missing code
         return item.name if item else ""
+
+    def get_update_status(self):
+        if self.status != ServiceStatus.PUBLISHED:
+            return ServiceUpdateStatus.NOT_NEEDED
+
+        diff = timezone.now() - self.modification_date
+        if diff >= timedelta(days=240):
+            return ServiceUpdateStatus.REQUIRED
+        elif diff >= timedelta(days=180):
+            return ServiceUpdateStatus.NEEDED
+
+        return ServiceUpdateStatus.NOT_NEEDED
 
 
 class ServiceModelManager(models.Manager):

@@ -11,7 +11,6 @@ from furl import furl
 from dora.core import utils
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
-from dora.services.enums import ServiceStatus
 from dora.services.models import (
     ConcernedPublic,
     Credential,
@@ -298,7 +297,10 @@ class Command(BaseCommand):
                 if lon and lat:
                     service.geom = Point(lon, lat, srid=4326)
 
-                service.status = ServiceStatus.PUBLISHED
+                # TODO: à publier directement?
+                # service.status = ServiceStatus.PUBLISHED
+                # service.publication_date = timezone.now()
+
                 service.concerned_public.set(
                     cust_choice_to_objects(ConcernedPublic, s["profils"])
                 )

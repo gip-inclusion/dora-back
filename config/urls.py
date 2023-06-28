@@ -11,6 +11,7 @@ import dora.rest_auth
 import dora.service_suggestions.views
 import dora.services.views
 import dora.sirene.views
+import dora.stats.views
 import dora.structures.views
 import dora.support.views
 import dora.users.views
@@ -102,6 +103,7 @@ spectacular_patterns = [
 private_api_patterns = [
     path("auth/", include("dora.rest_auth.urls")),
     path("search/", dora.services.views.search),
+    path("stats/event/", dora.stats.views.log_event),
     path("admin-division-search/", dora.admin_express.views.search),
     path("admin-division-reverse-search/", dora.admin_express.views.reverse_search),
     path(
@@ -135,6 +137,7 @@ private_api_patterns = [
     ),
     path("admin-stats/", dora.support.views.stats),
     path("", include(router.urls)),
+    path("profile/main-activity/", dora.users.views.update_main_activity),
 ]
 
 urlpatterns = [*private_api_patterns, *public_api_patterns, *spectacular_patterns]
