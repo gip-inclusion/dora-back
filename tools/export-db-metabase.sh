@@ -134,6 +134,7 @@ CREATE TABLE mb_user AS
   users_user.last_login,
   users_user.last_notification_email_sent,
   users_user.newsletter,
+  users_user.main_activity,
   -- TODO: deprecated
   (select FALSE) as is_bizdev
   --
