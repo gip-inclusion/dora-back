@@ -38,6 +38,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "pending_structures",
             "short_name",
             "structures",
+            "main_activity",
         ]
 
     def get_structures(self, user):
