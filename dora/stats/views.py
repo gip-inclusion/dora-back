@@ -104,9 +104,9 @@ def log_event(request):
         all_subcategories = ServiceSubCategory.objects.filter(
             value__in=requested_subcategories_values
         )
-        for category in all_categories:
+        for category_value in requested_categories_values:
             all_subcategories |= ServiceSubCategory.objects.filter(
-                value__startswith=category.value
+                value__startswith=category_value
             )
 
         searchevent.categories.set(all_categories)
