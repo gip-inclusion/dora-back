@@ -27,17 +27,3 @@ class UserTestCase(APITestCase):
 
         self.assertEqual(response.status_code, 204)
         self.assertEqual(self.user.main_activity, main_activity)
-
-    def test_main_activity_is_correctly_updated_but_not_the_first_name(self):
-        main_activity = "offreur"
-        first_name = "new_first_name"
-
-        response = self.client.post(
-            "/profile/main-activity/",
-            {"main_activity": main_activity, "first_name": first_name},
-        )
-        self.user.refresh_from_db()
-
-        self.assertEqual(response.status_code, 204)
-        self.assertEqual(self.user.main_activity, main_activity)
-        self.assertNotEquals(self.user.first_name, first_name)

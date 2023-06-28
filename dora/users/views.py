@@ -1,4 +1,3 @@
-from django.views.decorators.debug import sensitive_post_parameters
 from rest_framework import permissions, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -12,7 +11,6 @@ class UserMainActivitySerializer(serializers.ModelSerializer):
         fields = ["main_activity"]
 
 
-@sensitive_post_parameters(["main_activity"])
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def update_main_activity(request):
