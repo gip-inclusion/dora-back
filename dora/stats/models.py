@@ -86,7 +86,6 @@ class AbstractStructureEvent(AbstractAnalyticsEvent):
         blank=True,
         null=True,
     )
-    structure_slug = models.SlugField(blank=True)
     is_structure_member = models.BooleanField()
     is_structure_admin = models.BooleanField()
     structure_department = models.CharField(max_length=3, blank=True, db_index=True)
@@ -105,7 +104,6 @@ class AbstractServiceEvent(AbstractAnalyticsEvent):
         blank=True,
         null=True,
     )
-    structure_slug = models.SlugField(blank=True)
     is_structure_member = models.BooleanField()
     is_structure_admin = models.BooleanField()
     structure_department = models.CharField(max_length=3, blank=True, db_index=True)
@@ -119,7 +117,6 @@ class AbstractServiceEvent(AbstractAnalyticsEvent):
         blank=True,
         null=True,
     )
-    service_slug = models.SlugField(blank=True)
     update_status = models.CharField(
         max_length=10,
         choices=ServiceUpdateStatus.choices,

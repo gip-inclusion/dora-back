@@ -59,7 +59,6 @@ def log_event(request):
     )
     structure_data = {
         "structure": structure,
-        "structure_slug": structure_slug,
         "is_structure_member": structure_membership is not None,
         "is_structure_admin": structure_membership.is_admin
         if structure_membership
@@ -70,7 +69,6 @@ def log_event(request):
 
     service_data = {
         "service": service,
-        "service_slug": service_slug,
         "update_status": service.get_update_status() if service else "",
         "status": service.status if service else "",
     }
