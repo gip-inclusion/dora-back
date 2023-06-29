@@ -335,6 +335,7 @@ PUBLIC_API_VERSIONS = ["1", "2"]
 
 CSP_EXCLUDE_URL_PREFIXES = tuple(
     [
+        "/mjml/",
         "/admin/",
         "/silk/",
         *[f"/api/v{version}/schema/doc/" for version in PUBLIC_API_VERSIONS],

@@ -101,6 +101,7 @@ spectacular_patterns = [
 ]
 
 private_api_patterns = [
+    path("mjml/", dora.core.views.test_mjml),
     path("auth/", include("dora.rest_auth.urls")),
     path("search/", dora.services.views.search),
     path("stats/event/", dora.stats.views.log_event),

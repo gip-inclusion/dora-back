@@ -7,6 +7,7 @@ import requests
 from django.conf import settings
 from django.core.cache import cache
 from django.core.files.storage import default_storage
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.crypto import get_random_string
 from django.utils.text import get_valid_filename
@@ -213,3 +214,24 @@ def inclusion_connect_authenticate(request):
     except requests.exceptions.RequestException as e:
         logging.exception(e)
         raise APIException("Erreur de communication avec le fournisseur d'identité")
+
+
+def test_mjml(request):
+    from mjml import mjml2html
+
+    html = mjml2html(
+        """
+    <mjml>
+      <mj-body>
+        <mj-section>
+          <mj-column>
+            <mj-image width="100px" src="https://dora.inclusion.beta.gouv.fr/_app/immutable/assets/logo-dora.c100c6e3.svg"></mj-image>
+            <mj-divider border-color="#F45E43"></mj-divider>
+            <mj-text font-size="40px" color="#F45E43" align="center" font-family="helvetica">Hello World</mj-text>
+          </mj-column>
+        </mj-section>
+      </mj-body>
+    </mjml>
+    """
+    )
+    return HttpResponse(html)
