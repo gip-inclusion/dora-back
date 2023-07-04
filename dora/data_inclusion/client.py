@@ -12,7 +12,6 @@ def log_and_raise(resp: requests.Response, *args, **kwargs):
     try:
         resp.raise_for_status()
     except requests.HTTPError as err:
-        breakpoint()
         logger.error(resp.json())
         raise err
 
@@ -46,9 +45,9 @@ class DataInclusionClient:
         thematiques: Optional[list[str]] = None,
         types: Optional[list[str]] = None,
         frais: Optional[list[str]] = None,
-    ):
+    ) -> list[dict]:
         url = self.base_url.copy()
-        url = url / "search/services/"
+        url = url / "search/services"
 
         if source is not None:
             url.args["source"] = source

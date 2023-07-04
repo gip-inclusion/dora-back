@@ -747,20 +747,6 @@ def _sort_services(services):
     ) + multisort(services_remote, (("zone_priority", False), ("sortable_date", True)))
 
 
-def _translate_zone_type(di_zone_type):
-    if di_zone_type == "commune":
-        return "city"
-    if di_zone_type == "epci":
-        return "epci"
-    if di_zone_type == "departement":
-        return "department"
-    if di_zone_type == "region":
-        return "region"
-    else:
-        # TODO: est-ce qu'indéfini == country?
-        return "country"
-
-
 @api_view()
 @permission_classes([permissions.AllowAny])
 def service_di(request, di_id):
@@ -821,8 +807,6 @@ def _get_di_results(categories, subcategories, city_code, kinds, fees):
     )
 
     # TODO: gestion plus fine des catégories et sous-catégories (voir ce qui est fait dans _get_dora_results)
-    # TODO: pour les services `en-presentiel` on voudrait recevoir seulement ceux qui sont à moins de 100 km du code insee de recherche
-    # TODO: attention: filtrer par département n'est pas une bonne idée, quand on est en bord de département.
 
     raw_di_results = di_client.search_services(
         code_insee=city_code,
@@ -830,13 +814,6 @@ def _get_di_results(categories, subcategories, city_code, kinds, fees):
         types=kinds.split(",") if kinds != "" else None,
         frais=fees.split(",") if fees != "" else None,
     )
-
-    # url = furl(settings.DATA_INCLUSION_URL).add(
-    #     path="search/services/",
-    #     # TODO: gestion plus fine des catégories et sous-catégories (voir ce qui est fait dans _get_dora_results)
-    #     # TODO: pour les services `en-presentiel` on voudrait recevoir seulement ceux qui sont à moins de 100 km du code insee de recherche
-    #     args={"code_insee": city_code, "thematiques": subcategories},
-    # )
 
     # TODO: faire ça côté di par défaut
     raw_di_results = [
