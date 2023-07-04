@@ -756,7 +756,7 @@ def service_di(request, di_id):
         base_url=settings.DATA_INCLUSION_URL, token=settings.DATA_INCLUSION_API_KEY
     )
 
-    raw_service = di_client.retrieve_services(source=source_di, id=di_service_id)
+    raw_service = di_client.retrieve_service(source=source_di, id=di_service_id)
     return Response(data_inclusion.map_service(raw_service))
 
 

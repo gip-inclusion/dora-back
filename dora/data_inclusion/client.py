@@ -38,7 +38,16 @@ class DataInclusionClient:
             else:
                 return data
 
-    def retrieve_services(self, source: str, id: str) -> dict:
+    def list_services(self, source: Optional[str] = None) -> list[dict]:
+        url = self.base_url.copy()
+        url = url / "services"
+
+        if source is not None:
+            url.args["source"] = source
+
+        return self._get_pages(url)
+
+    def retrieve_service(self, source: str, id: str) -> dict:
         url = self.base_url.copy()
         url = url / "services" / source / id
         response = self.session.get(url)
