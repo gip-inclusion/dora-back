@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import date, datetime
 from operator import itemgetter
 
 import humanize
@@ -838,7 +838,17 @@ def _get_di_results(categories, subcategories, city_code, kinds, fees):
     #     args={"code_insee": city_code, "thematiques": subcategories},
     # )
 
-    # TODO: exclure les services suspendus: date_suspension non nulle et >= timezone.now()
+    # TODO: faire ça côté di par défaut
+    raw_di_results = [
+        result
+        for result in raw_di_results
+        if (
+            result["service"]["date_suspension"] is None
+            or date.fromisoformat(result["service"]["date_suspension"])
+            > timezone.now().date()
+        )
+    ]
+
     # TODO: exclure la source "dora"
     # if result["source"] != "dora":
     mapped_di_results = [
