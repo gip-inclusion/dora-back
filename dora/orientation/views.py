@@ -58,4 +58,5 @@ def send_orientation_email(orientation):
         body,
         tags=["orientation"],
         reply_to=None,
+        attachments=orientation.beneficiary_attachments,
     )

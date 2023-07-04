@@ -2,6 +2,7 @@ import datetime
 import json
 
 from django.conf import settings
+from django.core.files.storage import default_storage
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from furl import furl
@@ -14,6 +15,7 @@ def send_mail(
     from_email=settings.DEFAULT_FROM_EMAIL,
     tags=None,
     reply_to=None,
+    attachments=None,
 ):
     headers = {
         "X-TM-DOMAIN": settings.EMAIL_DOMAIN,
@@ -36,7 +38,17 @@ def send_mail(
         reply_to=reply_to,
     )
     msg.content_subtype = "html"
+    if attachments is not None:
+        for attachment in attachments:
+            filename = attachment.split("/")[-1]
+            msg.attach(
+                filename,
+                default_storage.open(attachment).read(),
+            )
     msg.send()
+    if attachments is not None:
+        for attachment in attachments:
+            default_storage.delete(attachment)
 
 
 def send_services_check_email(
