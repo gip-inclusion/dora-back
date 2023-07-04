@@ -24,6 +24,7 @@ from dora.core.models import ModerationStatus
 from dora.core.notify import send_mattermost_notification, send_moderation_notification
 from dora.core.pagination import OptionalPageNumberPagination
 from dora.core.utils import TRUTHY_VALUES
+from dora import data_inclusion
 from dora.services.emails import send_service_feedback_email
 from dora.services.enums import ServiceStatus
 from dora.services.models import (
@@ -746,34 +747,6 @@ def _sort_services(services):
     ) + multisort(services_remote, (("zone_priority", False), ("sortable_date", True)))
 
 
-def get_pages(url):
-    page = 1
-    while True:
-        paginated_url = url.copy().add({"page": page})
-        print(f"Chargement de {paginated_url}")
-        response = requests.get(
-            paginated_url,
-            params={},
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Authorization": f"Bearer {settings.DATA_INCLUSION_API_KEY}",
-            },
-        )
-        if response.status_code != 200:
-            print(
-                f"Erreur dans la récupération des données\n{url}: {response.status_code}"
-            )
-            return
-
-        result = json.loads(response.content)["items"]
-        if len(result):
-            yield result
-            page += 1
-        else:
-            return
-
-
 def _translate_zone_type(di_zone_type):
     if di_zone_type == "commune":
         return "city"
@@ -843,56 +816,35 @@ def _get_di_results(categories, subcategories, city_code, kinds, fees):
     if settings.IS_TESTING:
         return []
 
-    url = furl(settings.DATA_INCLUSION_URL).add(
-        path="search/services/",
-        # TODO: ajouter ls filtrage par kinds (='types') et fees (='frais')
-        # TODO: gestion plus fine des catégories et sous-catégories (voir ce qui est fait dans _get_dora_results)
-        # TODO: pour les services `en-presentiel` on voudrait recevoir seulement ceux qui sont à moins de 100 km du code insee de recherche
-        # TODO: attention: filtrer par département n'est pas une bonne idée, quand on est en bord de département.
-        args={"code_insee": city_code, "thematiques": subcategories},
+    di_client = data_inclusion.DataInclusionClient(
+        base_url=settings.DATA_INCLUSION_URL, token=settings.DATA_INCLUSION_API_KEY
     )
 
-    di_results = []
-    for results in get_pages(url):
-        for result in results:
-            # TODO: exclure les services suspendus: date_suspension non nulle et >= timezone.now()
-            # TODO: exclure la source "dora"
-            # if result["source"] != "dora":
+    # TODO: ajouter ls filtrage par kinds (='types') et fees (='frais')
+    # TODO: gestion plus fine des catégories et sous-catégories (voir ce qui est fait dans _get_dora_results)
+    # TODO: pour les services `en-presentiel` on voudrait recevoir seulement ceux qui sont à moins de 100 km du code insee de recherche
+    # TODO: attention: filtrer par département n'est pas une bonne idée, quand on est en bord de département.
 
-            # On transforme les champs nécessaires à l'affichage des resultats de recherche au format DORA
-            # (c.a.d qu'on veut un objet similaire à ce que renvoie le SearchResultSerializer)
-            location_str = ""
-            if result["service"]["modes_accueil"]:
-                if "en-presentiel" in result["service"]["modes_accueil"]:
-                    location_str = f"{result['service']['code_postal']} {result['service']['commune']}"
-                elif "a-distance" in result["service"]["modes_accueil"]:
-                    location_str = "À distance"
-            else:
-                location_str = ""
+    raw_di_results = di_client.search_services(
+        code_insee=city_code,
+        thematiques=subcategories,
+    )
 
-            di_results.append(
-                {
-                    "diffusion_zone_type": _translate_zone_type(
-                        result["service"]["zone_diffusion_type"]
-                    ),
-                    "distance": result["distance"] or 0,  # en km
-                    "location": location_str,
-                    # TODO: spécifier 'en-presentiel' si on a une geoloc/adresse?
-                    "location_kinds": result["service"]["modes_accueil"] or [],
-                    "modification_date": result["service"]["date_maj"],
-                    "name": result["service"]["nom"],
-                    "short_desc": result["service"]["presentation_resume"],
-                    "slug": f"{result['service']['source']}--{result['service']['id']}",
-                    "status": ServiceStatus.PUBLISHED,
-                    "structure": "",
-                    "structure_info": {"name": result["service"]["structure"]["nom"]},
-                    # Champs spécifiques aux résultats d·i
-                    "type": "di",
-                    "source": result["service"]["source"],
-                    "id": result["service"]["id"],
-                }
-            )
-    return di_results
+    # url = furl(settings.DATA_INCLUSION_URL).add(
+    #     path="search/services/",
+    #     # TODO: gestion plus fine des catégories et sous-catégories (voir ce qui est fait dans _get_dora_results)
+    #     # TODO: pour les services `en-presentiel` on voudrait recevoir seulement ceux qui sont à moins de 100 km du code insee de recherche
+    #     args={"code_insee": city_code, "thematiques": subcategories},
+    # )
+
+    # TODO: exclure les services suspendus: date_suspension non nulle et >= timezone.now()
+    # TODO: exclure la source "dora"
+    # if result["source"] != "dora":
+    mapped_di_results = [
+        data_inclusion.map_search_result(result) for result in raw_di_results
+    ]
+
+    return mapped_di_results
 
 
 def _get_dora_results(request, categories, subcategories, city_code, kinds, fees):
