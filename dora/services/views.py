@@ -761,6 +761,11 @@ def service_di(request, di_id):
 
 
 def _get_di_results(categories, subcategories, city_code, kinds, fees):
+    kinds_list = kinds.split(",") if kinds != "" else None
+    fees_list = fees.split(",") if fees != "" else None
+    categories_list = categories.split(",") if categories != "" else None
+    subcategories_list = subcategories.split(",") if subcategories != "" else None
+
     # TODO: mocker les appels d·i, et tester le tri
     if settings.IS_TESTING:
         return []
@@ -769,14 +774,23 @@ def _get_di_results(categories, subcategories, city_code, kinds, fees):
         base_url=settings.DATA_INCLUSION_URL, token=settings.DATA_INCLUSION_API_KEY
     )
 
-    # TODO: gestion plus fine des catégories et sous-catégories (voir ce qui est fait dans _get_dora_results)
+    thematiques = []
+    if categories_list is not None:
+        thematiques += categories_list
+    if subcategories_list is not None:
+        thematiques += [
+            subcat for subcat in subcategories_list if "--autre" not in subcat
+        ]
 
-    raw_di_results = di_client.search_services(
-        code_insee=city_code,
-        thematiques=subcategories,
-        types=kinds.split(",") if kinds != "" else None,
-        frais=fees.split(",") if fees != "" else None,
-    )
+    try:
+        raw_di_results = di_client.search_services(
+            code_insee=city_code,
+            thematiques=thematiques,
+            types=kinds_list,
+            frais=fees_list,
+        )
+    except requests.HTTPError:
+        return []
 
     # TODO: faire ça côté di par défaut
     raw_di_results = [
