@@ -750,51 +750,14 @@ def _sort_services(services):
 @api_view()
 @permission_classes([permissions.AllowAny])
 def service_di(request, di_id):
-    # todo: categories/subcategories
-    print(di_id)
     source_di, di_service_id = di_id.split("--")
-    print(di_id, source_di, di_service_id)
-    url = (
-        furl(settings.DATA_INCLUSION_URL)
-        .copy()
-        .add(
-            path=f"services/{source_di}/{di_service_id}/",
-        )
-    )
-    response = requests.get(
-        url,
-        headers={
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Authorization": f"Bearer {settings.DATA_INCLUSION_API_KEY}",
-        },
-    )
-    print(response.status_code, response)
-    if response.status_code != 200:
-        print(f"Erreur dans la récupération des données\n{url}: {response.status_code}")
-        return
 
-    di = json.loads(response.content)
-    return Response(
-        {
-            "name": di["nom"],
-            "structureInfo": {
-                "name": di["structure"]["nom"],
-            },
-            "subcategories": [],
-            "concerned_public_display": [],
-            "access_conditions_display": [],
-            "requirements_display": [],
-            "coach_orientation_modes_display": [],
-            "beneficiaries_access_modes_display": [],
-            "forms_info": [],
-            "credentials_display": [],
-            "shortDesc": di["presentation_resume"],
-            "fullDesc": di["presentation_detail"],
-            "kinds": di["types"],
-            "kinds_display": di["types"] or [],
-        }
+    di_client = data_inclusion.DataInclusionClient(
+        base_url=settings.DATA_INCLUSION_URL, token=settings.DATA_INCLUSION_API_KEY
     )
+
+    raw_service = di_client.retrieve_services(source=source_di, id=di_service_id)
+    return Response(data_inclusion.map_service(raw_service))
 
 
 def _get_di_results(categories, subcategories, city_code, kinds, fees):

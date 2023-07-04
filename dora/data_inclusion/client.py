@@ -38,6 +38,12 @@ class DataInclusionClient:
             else:
                 return data
 
+    def retrieve_services(self, source: str, id: str) -> dict:
+        url = self.base_url.copy()
+        url = url / "services" / source / id
+        response = self.session.get(url)
+        return response.json()
+
     def search_services(
         self,
         source: Optional[str] = None,

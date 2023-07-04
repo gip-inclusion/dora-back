@@ -41,3 +41,26 @@ def map_search_result(result: dict) -> dict:
         "source": result["service"]["source"],
         "id": result["service"]["id"],
     }
+
+
+def map_service(service: dict) -> dict:
+    # todo: categories/subcategories
+
+    return {
+        "name": service["nom"],
+        "structureInfo": {
+            "name": service["structure"]["nom"],
+        },
+        "subcategories": [],
+        "concerned_public_display": [],
+        "access_conditions_display": [],
+        "requirements_display": [],
+        "coach_orientation_modes_display": [],
+        "beneficiaries_access_modes_display": [],
+        "forms_info": [],
+        "credentials_display": [],
+        "shortDesc": service["presentation_resume"],
+        "fullDesc": service["presentation_detail"],
+        "kinds": service["types"],
+        "kinds_display": service["types"] or [],
+    }
