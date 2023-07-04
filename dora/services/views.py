@@ -820,7 +820,6 @@ def _get_di_results(categories, subcategories, city_code, kinds, fees):
         base_url=settings.DATA_INCLUSION_URL, token=settings.DATA_INCLUSION_API_KEY
     )
 
-    # TODO: ajouter ls filtrage par kinds (='types') et fees (='frais')
     # TODO: gestion plus fine des catégories et sous-catégories (voir ce qui est fait dans _get_dora_results)
     # TODO: pour les services `en-presentiel` on voudrait recevoir seulement ceux qui sont à moins de 100 km du code insee de recherche
     # TODO: attention: filtrer par département n'est pas une bonne idée, quand on est en bord de département.
@@ -828,6 +827,8 @@ def _get_di_results(categories, subcategories, city_code, kinds, fees):
     raw_di_results = di_client.search_services(
         code_insee=city_code,
         thematiques=subcategories,
+        types=kinds.split(",") if kinds != "" else None,
+        frais=fees.split(",") if fees != "" else None,
     )
 
     # url = furl(settings.DATA_INCLUSION_URL).add(
