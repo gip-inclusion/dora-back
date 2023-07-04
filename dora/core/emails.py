@@ -23,7 +23,7 @@ def send_mail(
         "X-TM-TEXTVERSION": 1,
     }
 
-    # Conversion en list si besoin
+    # Conversion en liste si besoin
     if not isinstance(to, list):
         to = [to]
 

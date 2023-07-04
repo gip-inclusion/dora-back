@@ -1,0 +1,12 @@
+from django.contrib import admin
+
+from .models import Orientation
+
+
+class OrientationAdmin(admin.ModelAdmin):
+    list_display = ("creation_date", "beneficiary_last_name", "service")
+    raw_id_fields = ("prescriber", "prescriber_structure", "service")
+    date_hierarchy = "creation_date"
+
+
+admin.site.register(Orientation, OrientationAdmin)

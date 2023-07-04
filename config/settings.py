@@ -105,6 +105,7 @@ INSTALLED_APPS = [
     "dora.support",
     "dora.admin_express",
     "dora.stats",
+    "dora.orientation",
 ]
 
 MIDDLEWARE = [
