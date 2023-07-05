@@ -12,6 +12,10 @@ DI_TO_DORA_DIFFUSION_ZONE_TYPE_MAPPING = {
 def map_search_result(result: dict) -> dict:
     # On transforme les champs nécessaires à l'affichage des resultats de recherche au format DORA
     # (c.a.d qu'on veut un objet similaire à ce que renvoie le SearchResultSerializer)
+
+    # TODO: peut-être instancier un object dora.services.models.Service
+    # et réutiliser la logique de SearchResultSerializer ?
+
     location_str = ""
     if result["service"]["modes_accueil"]:
         if "en-presentiel" in result["service"]["modes_accueil"]:
