@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
@@ -13,6 +15,8 @@ class ContactPreference(models.TextChoices):
 
 
 class Orientation(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     # Infos bénéficiaires
     requirements = ArrayField(
         models.CharField(max_length=480),
@@ -108,3 +112,12 @@ class Orientation(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True)
 
     # TODO: statuts...
+
+    def get_magic_link(self):
+        return self.get_frontend_url()
+
+    def get_absolute_url(self):
+        return self.get_frontend_url()
+
+    def get_frontend_url(self):
+        return f"{settings.FRONTEND_URL}/orientation/{self.id}"

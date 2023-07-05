@@ -77,7 +77,7 @@ Contactez le professionnel qui a réalisé la demande ou le bénéficiaire et ap
 {% endblock %}
 
 {% block cta %}
-<mj-button mj-class="cta" href="{{homepage_url}}">
+<mj-button mj-class="cta" href="{{ magic_link }}">
     Visualiser et traiter la demande
 </mj-button>
 <mj-spacer height="24px"/>

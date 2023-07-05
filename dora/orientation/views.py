@@ -45,6 +45,7 @@ def send_orientation_email(orientation):
         {
             "data": orientation,
             "homepage_url": settings.FRONTEND_URL,
+            "magic_link": orientation.get_magic_link(),
             "beneficiary_contact_info": beneficiary_contact_info,
         },
     )
