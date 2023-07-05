@@ -4,9 +4,10 @@ from django.contrib.gis.geos import MultiPolygon, Point
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from model_bakery import baker
-from rest_framework.test import APITestCase
+from rest_framework.test import APIRequestFactory, APITestCase
 
 from dora.admin_express.models import AdminDivisionType
+from dora.data_inclusion.test_utils import FakeDataInclusionClient, make_di_service_data
 from dora.core.test_utils import make_model, make_service, make_structure
 from dora.services.enums import ServiceStatus
 from dora.services.migration_utils import (
@@ -27,6 +28,7 @@ from dora.services.migration_utils import (
 )
 from dora.services.utils import SYNC_CUSTOM_M2M_FIELDS, SYNC_FIELDS, SYNC_M2M_FIELDS
 from dora.structures.models import Structure
+from dora.services.views import search
 
 from .models import (
     AccessCondition,
@@ -1007,6 +1009,59 @@ class ServiceTestCase(APITestCase):
         # ALORS il est considéré comme ayant déjà été dépublié
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["has_already_been_unpublished"], True)
+
+
+class DataInclusionSearchTestCase(APITestCase):
+    def setUp(self):
+        self.region = baker.make("Region", code="99")
+        self.dept = baker.make("Department", region=self.region.code, code="77")
+        self.epci11 = baker.make("EPCI", code="11111")
+        self.epci12 = baker.make("EPCI", code="22222")
+        self.city1 = baker.make(
+            "City",
+            code="12345",
+            epcis=[self.epci11.code, self.epci12.code],
+            department=self.dept.code,
+            region=self.region.code,
+        )
+        self.city2 = baker.make("City")
+
+        self.factory = APIRequestFactory()
+
+    def test_simple_search_with_data_inclusion(self):
+        service_data = make_di_service_data(
+            id="foo", source="dora", code_insee=self.city1.code
+        )
+        di_client = FakeDataInclusionClient(services=[service_data])
+
+        request = self.factory.get("/search/", {"city": self.city1.code})
+        response = search(request, di_client=di_client)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["distance"], 0)
+        self.assertEqual(response.data[0]["id"], service_data["id"])
+
+    def test_simple_search_with_data_inclusion_and_dora(self):
+        service_dora = make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.CITY,
+            diffusion_zone_details=self.city1.code,
+        )
+        service_data = make_di_service_data(
+            id="foo", source="dora", code_insee=self.city1.code
+        )
+        di_client = FakeDataInclusionClient(services=[service_data])
+
+        request = self.factory.get("/search/", {"city": self.city1.code})
+        response = search(request, di_client=di_client)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data[0]["slug"], service_dora.slug)
+        self.assertEqual(response.data[1]["id"], service_data["id"])
+
+    # TODO: ordre, errors, etc.
 
 
 class ServiceSearchTestCase(APITestCase):

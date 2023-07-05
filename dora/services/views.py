@@ -1,6 +1,7 @@
 import json
 from datetime import date, datetime
 from operator import itemgetter
+from typing import Optional
 
 import humanize
 import requests
@@ -763,34 +764,29 @@ def service_di(request, di_id):
     if raw_service is None:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-def _get_di_results(categories, subcategories, city_code, kinds, fees):
-    kinds_list = kinds.split(",") if kinds != "" else None
-    fees_list = fees.split(",") if fees != "" else None
-    categories_list = categories.split(",") if categories != "" else None
-    subcategories_list = subcategories.split(",") if subcategories != "" else None
+    return Response(data_inclusion.map_service(raw_service))
 
-    # TODO: mocker les appels d·i, et tester le tri
-    if settings.IS_TESTING:
-        return []
 
-    di_client = data_inclusion.DataInclusionClient(
-        base_url=settings.DATA_INCLUSION_URL, token=settings.DATA_INCLUSION_API_KEY
-    )
-
+def _get_di_results(
+    di_client: data_inclusion.DataInclusionClient,
+    city_code: str,
+    categories: Optional[list[str]] = None,
+    subcategories: Optional[list[str]] = None,
+    kinds: Optional[list[str]] = None,
+    fees: Optional[list[str]] = None,
+) -> list:
     thematiques = []
-    if categories_list is not None:
-        thematiques += categories_list
-    if subcategories_list is not None:
-        thematiques += [
-            subcat for subcat in subcategories_list if "--autre" not in subcat
-        ]
+    if categories is not None:
+        thematiques += categories
+    if subcategories is not None:
+        thematiques += [subcat for subcat in subcategories if "--autre" not in subcat]
 
     try:
         raw_di_results = di_client.search_services(
             code_insee=city_code,
-            thematiques=thematiques,
-            types=kinds_list,
-            frais=fees_list,
+            thematiques=thematiques if len(thematiques) > 0 else None,
+            types=kinds,
+            frais=fees,
         )
     except requests.ConnectionError:
         return []
@@ -818,7 +814,14 @@ def _get_di_results(categories, subcategories, city_code, kinds, fees):
     return mapped_di_results
 
 
-def _get_dora_results(request, categories, subcategories, city_code, kinds, fees):
+def _get_dora_results(
+    request,
+    city_code: str,
+    categories: Optional[list[str]] = None,
+    subcategories: Optional[list[str]] = None,
+    kinds: Optional[list[str]] = None,
+    fees: Optional[list[str]] = None,
+):
     services = (
         Service.objects.published()
         .select_related(
@@ -832,18 +835,18 @@ def _get_dora_results(request, categories, subcategories, city_code, kinds, fees
     )
 
     if kinds:
-        services = services.filter(kinds__value__in=kinds.split(","))
+        services = services.filter(kinds__value__in=kinds)
 
     if fees:
-        services = services.filter(fee_condition__value__in=fees.split(","))
+        services = services.filter(fee_condition__value__in=fees)
 
     categories_filter = Q()
     if categories:
-        categories_filter = Q(categories__value__in=categories.split(","))
+        categories_filter = Q(categories__value__in=categories)
 
     subcategories_filter = Q()
     if subcategories:
-        for subcategory in subcategories.split(","):
+        for subcategory in subcategories:
             cat, subcat = subcategory.split("--")
             if subcat == "autre":
                 # Quand on cherche une sous-catégorie de type 'Autre', on veut
@@ -883,19 +886,63 @@ def _get_dora_results(request, categories, subcategories, city_code, kinds, fees
     )
 
 
+def _search(
+    request,
+    city_code: str,
+    categories: Optional[list[str]] = None,
+    subcategories: Optional[list[str]] = None,
+    kinds: Optional[list[str]] = None,
+    fees: Optional[list[str]] = None,
+    di_client: Optional[data_inclusion.DataInclusionClient] = None,
+):
+    di_results = (
+        _get_di_results(
+            di_client=di_client,
+            categories=categories,
+            subcategories=subcategories,
+            city_code=city_code,
+            kinds=kinds,
+            fees=fees,
+        )
+        if di_client is not None
+        else []
+    )
+
+    dora_results = _get_dora_results(
+        request=request,
+        categories=categories,
+        subcategories=subcategories,
+        city_code=city_code,
+        kinds=kinds,
+        fees=fees,
+    )
+
+    all_results = [*dora_results, *di_results]
+    return _sort_services(all_results)
+
+
 @api_view()
 @permission_classes([permissions.AllowAny])
-def search(request):
-    categories = request.GET.get("cats", "")
-    subcategories = request.GET.get("subs", "")
-    city_code = request.GET.get("city", "")
-    kinds = request.GET.get("kinds", "")
-    fees = request.GET.get("fees", "")
+def search(request, di_client=None):
+    city_code = request.GET.get("city", None)
+    categories = request.GET.get("cats", None)
+    subcategories = request.GET.get("subs", None)
+    kinds = request.GET.get("kinds", None)
+    fees = request.GET.get("fees", None)
 
-    di_results = _get_di_results(categories, subcategories, city_code, kinds, fees)
-    dora_results = _get_dora_results(
-        request, categories, subcategories, city_code, kinds, fees
+    categories_list = categories.split(",") if categories is not None else None
+    subcategories_list = subcategories.split(",") if subcategories is not None else None
+    kinds_list = kinds.split(",") if kinds is not None else None
+    fees_list = fees.split(",") if fees is not None else None
+
+    sorted_results = _search(
+        request=request,
+        di_client=di_client,
+        city_code=city_code,
+        categories=categories_list,
+        subcategories=subcategories_list,
+        kinds=kinds_list,
+        fees=fees_list,
     )
-    all_results = [*dora_results, *di_results]
-    sorted_results = _sort_services(all_results)
+
     return Response(sorted_results)
