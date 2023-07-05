@@ -38,20 +38,27 @@ class DataInclusionClient:
             else:
                 return data
 
-    def list_services(self, source: Optional[str] = None) -> list[dict]:
+    def list_services(self, source: Optional[str] = None) -> Optional[list[dict]]:
         url = self.base_url.copy()
         url = url / "services"
 
         if source is not None:
             url.args["source"] = source
 
-        return self._get_pages(url)
+        try:
+            return self._get_pages(url)
+        except requests.HTTPError:
+            return None
 
-    def retrieve_service(self, source: str, id: str) -> dict:
+    def retrieve_service(self, source: str, id: str) -> Optional[dict]:
         url = self.base_url.copy()
         url = url / "services" / source / id
         response = self.session.get(url)
-        return response.json()
+
+        try:
+            return response.json()
+        except requests.HTTPError:
+            return None
 
     def search_services(
         self,
@@ -60,7 +67,7 @@ class DataInclusionClient:
         thematiques: Optional[list[str]] = None,
         types: Optional[list[str]] = None,
         frais: Optional[list[str]] = None,
-    ) -> list[dict]:
+    ) -> Optional[list[dict]]:
         url = self.base_url.copy()
         url = url / "search/services"
 
@@ -79,4 +86,7 @@ class DataInclusionClient:
         if frais is not None:
             url.args["frais"] = frais
 
-        return self._get_pages(url)
+        try:
+            return self._get_pages(url)
+        except requests.HTTPError:
+            return None

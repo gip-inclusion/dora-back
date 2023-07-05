@@ -12,8 +12,7 @@ from django.http.response import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.timezone import is_naive, make_aware
-from furl import furl
-from rest_framework import mixins, permissions, serializers, viewsets
+from rest_framework import mixins, permissions, serializers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
@@ -756,9 +755,13 @@ def service_di(request, di_id):
         base_url=settings.DATA_INCLUSION_URL, token=settings.DATA_INCLUSION_API_KEY
     )
 
-    raw_service = di_client.retrieve_service(source=source_di, id=di_service_id)
-    return Response(data_inclusion.map_service(raw_service))
+    try:
+        raw_service = di_client.retrieve_service(source=source_di, id=di_service_id)
+    except requests.ConnectionError:
+        return Response(status=status.HTTP_502_BAD_GATEWAY)
 
+    if raw_service is None:
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
 def _get_di_results(categories, subcategories, city_code, kinds, fees):
     kinds_list = kinds.split(",") if kinds != "" else None
@@ -789,7 +792,10 @@ def _get_di_results(categories, subcategories, city_code, kinds, fees):
             types=kinds_list,
             frais=fees_list,
         )
-    except requests.HTTPError:
+    except requests.ConnectionError:
+        return []
+
+    if raw_di_results is None:
         return []
 
     # TODO: faire ça côté di par défaut
