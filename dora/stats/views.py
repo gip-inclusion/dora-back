@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -58,7 +59,6 @@ def log_event(request):
     )
     structure_data = {
         "structure": structure,
-        "structure_slug": structure_slug,
         "is_structure_member": structure_membership is not None,
         "is_structure_admin": structure_membership.is_admin
         if structure_membership
@@ -69,7 +69,6 @@ def log_event(request):
 
     service_data = {
         "service": service,
-        "service_slug": service_slug,
         "update_status": service.get_update_status() if service else "",
         "status": service.status if service else "",
     }
@@ -87,15 +86,29 @@ def log_event(request):
             department=search_department,
             num_results=search_num_results,
         )
-        categories_values = request.data.get("category_ids", "")
-        categories = ServiceCategory.objects.filter(value__in=categories_values)
-        subcategories_values = request.data.get("sub_category_ids", "")
-        # TODO: est-ce qu'on veut aussi ajouter les categories de ces sous-categories dans la liste des categorie set vice versa?
-        subcategories = ServiceSubCategory.objects.filter(
-            value__in=subcategories_values
+        requested_categories_values = request.data.get("category_ids", "")
+        requested_subcategories_values = request.data.get("sub_category_ids", "")
+
+        # On loggue également toutes les catégories des sous-catégories demandées
+        requested_subcategories_categories_values = set(
+            subcat.split("--")[0] for subcat in requested_subcategories_values
         )
-        searchevent.categories.set(categories)
-        searchevent.subcategories.set(subcategories)
+
+        all_categories = ServiceCategory.objects.filter(
+            Q(value__in=requested_categories_values)
+            | Q(value__in=requested_subcategories_categories_values)
+        )
+
+        all_subcategories = ServiceSubCategory.objects.filter(
+            value__in=requested_subcategories_values
+        )
+        for category_value in requested_categories_values:
+            all_subcategories |= ServiceSubCategory.objects.filter(
+                value__startswith=category_value
+            )
+
+        searchevent.categories.set(all_categories)
+        searchevent.subcategories.set(all_subcategories)
     elif tag == "structure":
         StructureView.objects.create(**common_analytics_data, **structure_data)
     elif tag == "service":
