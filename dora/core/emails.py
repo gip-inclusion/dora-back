@@ -10,9 +10,11 @@ from furl import furl
 
 def send_mail(
     subject,
-    to,  # string ou tableau de string
+    # chaine ou liste de chaines
+    to,
     body,
-    from_email=settings.DEFAULT_FROM_EMAIL,
+    # soit une chaine, soit un tuple (nom, email)
+    from_email=("La plateforme DORA", settings.DEFAULT_FROM_EMAIL),
     tags=None,
     reply_to=None,
     attachments=None,
@@ -28,6 +30,11 @@ def send_mail(
     # Conversion en liste si besoin
     if not isinstance(to, list):
         to = [to]
+
+    if type(from_email) in [list, tuple]:
+        name = from_email[0].replace('"', r"\"")
+        email = from_email[1]
+        from_email = f'"{name}" <{email}>'
 
     msg = EmailMessage(
         subject,

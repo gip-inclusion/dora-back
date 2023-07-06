@@ -1,0 +1,13 @@
+{% load orientation_extras %}
+
+{% if data.beneficiary_attachments %}
+    <h2>Les documents transmis&nbsp;:</h2>
+
+    <p>
+        <em>
+            {% for item in data.beneficiary_attachments %}
+                {{ item|format_attachment }}{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        </em>
+    </p>
+{% endif %}

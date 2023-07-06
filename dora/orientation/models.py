@@ -121,3 +121,15 @@ class Orientation(models.Model):
 
     def get_frontend_url(self):
         return f"{settings.FRONTEND_URL}/orientation/{self.id}"
+
+    def get_beneficiary_full_name(self):
+        if self.beneficiary_first_name or self.beneficiary_last_name:
+            full_name = "%s %s" % (
+                self.beneficiary_first_name,
+                self.beneficiary_last_name,
+            )
+            return full_name.strip()
+        return self.beneficiary_email
+
+    # def get_short_name(self):
+    #     return self.first_name or self.last_name or self.email

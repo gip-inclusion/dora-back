@@ -2,6 +2,8 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from mjml import mjml2html
 from rest_framework import mixins, permissions, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from dora.structures.models import Structure
 
@@ -31,33 +33,106 @@ class OrientationViewSet(
     def get_queryset(self):
         return Orientation.objects.all()
 
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="validate",
+        permission_classes=[permissions.AllowAny],
+    )
+    def validate(self, request):
+        # orientation = self.get_object()
+        # message = self.request.data.get("message")
+        return Response(status=204)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="reject",
+        permission_classes=[permissions.AllowAny],
+    )
+    def reject(self, request):
+        # orientation = self.get_object()
+        # message = self.request.data.get("message")
+        return Response(status=204)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="contact/beneficiary",
+        permission_classes=[permissions.AllowAny],
+    )
+    def contact_beneficiary(self, request):
+        # orientation = self.get_object()
+        # message = self.request.data.get("message")
+        return Response(status=204)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="contact/prescriber",
+        permission_classes=[permissions.AllowAny],
+    )
+    def contact_prescriber(self, request):
+        # orientation = self.get_object()
+        # message = self.request.data.get("message")
+        return Response(status=204)
+
     def perform_create(self, serializer):
         serializer.is_valid()
 
         orientation = serializer.save(prescriber=self.request.user)
-        send_orientation_email(orientation)
+        send_orientation_emails(orientation)
 
 
-def send_orientation_email(orientation):
-    beneficiary_contact_info = f"{orientation.beneficiary_email}"  # TODO
-    mjml_string = render_to_string(
-        "structure.mjml",
-        {
-            "data": orientation,
-            "homepage_url": settings.FRONTEND_URL,
-            "magic_link": orientation.get_magic_link(),
-            "beneficiary_contact_info": beneficiary_contact_info,
-        },
-    )
-    # print(mjml_string)
-    print([x for x in orientation.__dict__.items() if not x[0].startswith("_")])
-    body = mjml2html(mjml_string)
-
+def send_orientation_emails(orientation):
+    context = {
+        "data": orientation,
+        "homepage_url": settings.FRONTEND_URL,
+        "magic_link": orientation.get_magic_link(),
+    }
+    # Structure porteuse
     send_mail(
         "[DORA] Nouvelle demande d'orientation reçue",
-        settings.SERVER_EMAIL,
-        body,
+        orientation.service.contact_email,
+        mjml2html(render_to_string("notif-structure.mjml", context)),
+        from_email=(
+            f"{orientation.prescriber.get_full_name()} via DORA",
+            settings.DEFAULT_FROM_EMAIL,
+        ),
         tags=["orientation"],
-        reply_to=None,
+        reply_to=[orientation.referent_email, orientation.prescriber.email],
         attachments=orientation.beneficiary_attachments,
     )
+    # Prescripteur
+    send_mail(
+        "[DORA] Votre demande a bien été transmise !",
+        orientation.prescriber.email,
+        mjml2html(render_to_string("notif-prescriber.mjml", context)),
+        tags=["orientation"],
+        reply_to=[orientation.service.contact_email, orientation.referent_email],
+    )
+    # Référent
+    if (
+        orientation.referent_email
+        and orientation.referent_email != orientation.prescriber.email
+    ):
+        send_mail(
+            "[DORA] Notification d'une demande d'orientation",
+            orientation.referent_email,
+            mjml2html(render_to_string("notif-referent.mjml", context)),
+            from_email=(
+                f"{orientation.prescriber.get_full_name()} via DORA",
+                settings.DEFAULT_FROM_EMAIL,
+            ),
+            tags=["orientation"],
+            reply_to=[orientation.service.contact_email, orientation.prescriber.email],
+        )
+    # Bénéficiaire
+    if orientation.beneficiary_email:
+        send_mail(
+            "[DORA] Une orientation a été effectuée en votre nom",
+            orientation.beneficiary_email,
+            mjml2html(render_to_string("notif-beneficiary.mjml", context)),
+            tags=["orientation"],
+            reply_to=[orientation.referent_email, orientation.prescriber.email],
+        )

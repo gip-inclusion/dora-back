@@ -3,11 +3,40 @@
         <mj-attributes>
             <mj-all font-family="Arial, Helvetica, sans-serif" color="#555" font-size="15px" line-height="24px"
                     padding="0"/>
-            <mj-class name="title" font-size="24px" line-height="24px" color="#000091" font-weight="bold"/>
             <mj-class name="cta" font-size="15px" line-height="24px" background-color="#5B12EB" color="white"
                       border-radius="4px" width="100%"
             />
+
         </mj-attributes>
+
+        <mj-style inline="inline">
+            h1, h2, h3 {
+                font-family: Arial, Helvetica, sans-serif;
+                color: #555;
+                font-size: 15px;
+                line-height: 24px;
+                padding: 0;
+            }
+
+            h1 {
+                color: #000091;
+                font-size: 24px;
+                font-weight: bold;
+            }
+
+            h2 {
+                font-weight: bold;
+                margin-bottom: 0
+            }
+
+            ul, p {
+                margin-top: 0
+            }
+
+            a, a:visited {
+                color: #5B12EB;
+            }
+        </mj-style>
 
         <mj-preview>
             {% block preview %}{% endblock %}
@@ -18,7 +47,10 @@
         <!-- Logo -->
         <mj-section>
             <mj-column padding="32px 40px">
-                <mj-image src="{{homepage_url}}/emails/logo-dora-email-new.png"
+                <mj-text>
+                    <a href="">blabblabbla</a>
+                </mj-text>
+                <mj-image src="{{ homepage_url }}/emails/logo-dora-email-new.png"
                           height="60px" width="238px"
                           align="left" alt=""/>
             </mj-column>
@@ -28,13 +60,13 @@
         <mj-section padding-bottom="40px">
             <mj-column padding="44px 40px" border-radius="24px" background-color="white">
                 <!-- Titre -->
-                <mj-text mj-class="title">
-                    {% block title %}{% endblock %}
+                <mj-text>
+                    <h1>{% block title %}{% endblock %}</h1>
                 </mj-text>
                 <mj-spacer height="24px"/>
 
                 <!-- Illustration -->
-                <mj-image src="{{homepage_url}}/emails/illu-orientation.png"
+                <mj-image src="{{ homepage_url }}/emails/illu-orientation.png"
                           alt="Une personne souriante tape sur une machine à écrire tandis que des bulles de dialogue flottent au-dessus, représentant l'échange d'informations. Cela illustre comment une personne guide un bénéficiaire vers un service approprié."/>
                 <mj-spacer height="24px"/>
 
@@ -55,6 +87,8 @@
                     <strong>L’équipe DORA</strong>
                 </mj-text>
 
+                <!-- Footer -->
+                {% block footer %}{% endblock %}
             </mj-column>
         </mj-section>
 
