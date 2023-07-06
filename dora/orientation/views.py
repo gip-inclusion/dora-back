@@ -30,6 +30,7 @@ class OrientationViewSet(
 ):
     serializer_class = OrientationSerializer
     permission_classes = [OrientationPermission]
+    lookup_field = "query_id"
 
     def get_queryset(self):
         return Orientation.objects.all()

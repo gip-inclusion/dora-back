@@ -44,6 +44,7 @@ class OrientationSerializer(serializers.ModelSerializer):
             "beneficiary_other_contact_method",
             "beneficiary_phone",
             "creation_date",
+            "id",
             "orientation_reasons",
             "prescriber_structure",
             "processing_date",

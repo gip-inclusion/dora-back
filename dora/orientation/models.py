@@ -21,7 +21,7 @@ class OrientationStatus(models.TextChoices):
 
 
 class Orientation(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    query_id = models.UUIDField(default=uuid.uuid4, editable=False, db_index=True)
 
     # Infos bénéficiaires
     requirements = ArrayField(
@@ -114,7 +114,6 @@ class Orientation(models.Model):
     orientation_reasons = models.TextField(
         verbose_name="Motif de l'orientation", blank=True
     )
-
     creation_date = models.DateTimeField(auto_now_add=True)
     processing_date = models.DateTimeField(blank=True, null=True)
     status = models.CharField(
@@ -122,6 +121,9 @@ class Orientation(models.Model):
         choices=OrientationStatus.choices,
         default="ouverte",
     )
+
+    def __str__(self):
+        return f"Orientation #{self.id}"
 
     def get_magic_link(self):
         return self.get_frontend_url()
