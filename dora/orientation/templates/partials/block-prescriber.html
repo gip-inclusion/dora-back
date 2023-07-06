@@ -12,6 +12,6 @@
 <h2>Conseiller ou conseillère référente&nbsp;:</h2>
 
 <ul>
-    <li>{{ data.referent_first_name }} {{ data.referent_last_name }}</li>
+    <li>{{ data.get_referent_full_name }}</li>
     <li>{{ data.referent_email }}{% if not private %} – {{ data.referent_phone|format_phone }}{% endif %}</li>
 </ul>

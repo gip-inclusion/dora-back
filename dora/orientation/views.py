@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.utils import timezone
 from mjml import mjml2html
 from rest_framework import mixins, permissions, viewsets
 from rest_framework.decorators import action
@@ -8,7 +9,7 @@ from rest_framework.response import Response
 from dora.structures.models import Structure
 
 from ..core.emails import send_mail
-from .models import Orientation
+from .models import Orientation, OrientationStatus
 from .serializers import OrientationSerializer
 
 
@@ -40,8 +41,12 @@ class OrientationViewSet(
         permission_classes=[permissions.AllowAny],
     )
     def validate(self, request):
-        # orientation = self.get_object()
+        orientation = self.get_object()
         # message = self.request.data.get("message")
+        orientation.processing_date = timezone.now()
+        orientation.status = OrientationStatus.ACCEPTED
+        orientation.save()
+        # todo: send mails
         return Response(status=204)
 
     @action(
@@ -51,8 +56,12 @@ class OrientationViewSet(
         permission_classes=[permissions.AllowAny],
     )
     def reject(self, request):
-        # orientation = self.get_object()
+        orientation = self.get_object()
         # message = self.request.data.get("message")
+        orientation.processing_date = timezone.now()
+        orientation.status = OrientationStatus.REJECTED
+        orientation.save()
+        # todo: send mails
         return Response(status=204)
 
     @action(
@@ -94,7 +103,7 @@ def send_orientation_emails(orientation):
     send_mail(
         "[DORA] Nouvelle demande d'orientation reçue",
         orientation.service.contact_email,
-        mjml2html(render_to_string("notif-structure.mjml", context)),
+        mjml2html(render_to_string("orientation-created-structure.mjml", context)),
         from_email=(
             f"{orientation.prescriber.get_full_name()} via DORA",
             settings.DEFAULT_FROM_EMAIL,
@@ -107,7 +116,7 @@ def send_orientation_emails(orientation):
     send_mail(
         "[DORA] Votre demande a bien été transmise !",
         orientation.prescriber.email,
-        mjml2html(render_to_string("notif-prescriber.mjml", context)),
+        mjml2html(render_to_string("orientation-created-prescriber.mjml", context)),
         tags=["orientation"],
         reply_to=[orientation.service.contact_email, orientation.referent_email],
     )
@@ -119,7 +128,7 @@ def send_orientation_emails(orientation):
         send_mail(
             "[DORA] Notification d'une demande d'orientation",
             orientation.referent_email,
-            mjml2html(render_to_string("notif-referent.mjml", context)),
+            mjml2html(render_to_string("orientation-created-referent.mjml", context)),
             from_email=(
                 f"{orientation.prescriber.get_full_name()} via DORA",
                 settings.DEFAULT_FROM_EMAIL,
@@ -132,7 +141,9 @@ def send_orientation_emails(orientation):
         send_mail(
             "[DORA] Une orientation a été effectuée en votre nom",
             orientation.beneficiary_email,
-            mjml2html(render_to_string("notif-beneficiary.mjml", context)),
+            mjml2html(
+                render_to_string("orientation-created-beneficiary.mjml", context)
+            ),
             tags=["orientation"],
             reply_to=[orientation.referent_email, orientation.prescriber.email],
         )

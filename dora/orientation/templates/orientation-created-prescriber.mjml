@@ -1,4 +1,4 @@
-{% extends "base.mjml" %}
+{% extends "email-base.mjml" %}
 
 {% block preview %}
 Voici un récapitulatif de la demande que vous avez envoyé à {{ data.service.structure.name }}
@@ -42,7 +42,4 @@ On pourra vous solliciter pour offrir plus de détails sur le ou la bénéficiai
         réponse.
     </strong>
 </p>
-{% endblock %}
-
-{% block cta %}
 {% endblock %}

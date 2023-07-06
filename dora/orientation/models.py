@@ -14,6 +14,12 @@ class ContactPreference(models.TextChoices):
     OTHER = "autre", "Autre"
 
 
+class OrientationStatus(models.TextChoices):
+    PENDING = "ouverte", "Ouverte / En cours de traitement"
+    ACCEPTED = "validée", "Validée"
+    REJECTED = "refusée", "Refusée"
+
+
 class Orientation(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -110,8 +116,12 @@ class Orientation(models.Model):
     )
 
     creation_date = models.DateTimeField(auto_now_add=True)
-
-    # TODO: statuts...
+    processing_date = models.DateTimeField(blank=True, null=True)
+    status = models.CharField(
+        max_length=10,
+        choices=OrientationStatus.choices,
+        default="ouverte",
+    )
 
     def get_magic_link(self):
         return self.get_frontend_url()
@@ -131,5 +141,11 @@ class Orientation(models.Model):
             return full_name.strip()
         return self.beneficiary_email
 
-    # def get_short_name(self):
-    #     return self.first_name or self.last_name or self.email
+    def get_referent_full_name(self):
+        if self.referent_first_name or self.referent_last_name:
+            full_name = "%s %s" % (
+                self.referent_first_name,
+                self.referent_last_name,
+            )
+            return full_name.strip()
+        return self.referent_email

@@ -1,4 +1,4 @@
-{% extends "base.mjml" %}
+{% extends "email-base.mjml" %}
 
 {% block preview %}
 {{ data.prescriber.get_full_name }} vous a orienté vers un service solidaire
@@ -52,8 +52,7 @@ Une orientation a été effectuée en votre nom
 </p>
 {% endblock %}
 
-{% block cta %}
-{% endblock %}
+
 
 {% block footer %}
 <mj-divider border-width="1px" border-color="#F5F5F5" width="100%" padding="24px 0"/>
