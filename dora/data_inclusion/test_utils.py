@@ -1,10 +1,10 @@
 from typing import Optional
+from uuid import uuid4
 
 
 def make_di_service_data(
-    id: str,
-    source: str,
-    code_insee: str,
+    source: Optional[str] = "un-jeune-une-solution",
+    code_insee: Optional[str] = None,
     thematiques: Optional[list[str]] = None,
     types: Optional[list[str]] = None,
     frais: Optional[list[str]] = None,
@@ -16,7 +16,7 @@ def make_di_service_data(
     return {
         "_di_geocodage_code_insee": None,
         "_di_geocodage_score": None,
-        "id": id,
+        "id": str(uuid4()),
         "structure_id": "rouge-empire",
         "source": source,
         "nom": "Munoz",
@@ -61,8 +61,8 @@ def make_di_service_data(
 
 
 class FakeDataInclusionClient:
-    def __init__(self, services: list[dict]) -> None:
-        self.services = services
+    def __init__(self, services: Optional[list[dict]] = None) -> None:
+        self.services = services if services is not None else []
 
     def list_services(self, source: Optional[str] = None) -> list[dict]:
         raise NotImplementedError()

@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Optional
 
 from django.contrib.gis.geos import MultiPolygon, Point
 from django.core.exceptions import ValidationError
@@ -1026,16 +1027,34 @@ class DataInclusionSearchTestCase(APITestCase):
         )
         self.city2 = baker.make("City")
 
+        self.di_client = FakeDataInclusionClient()
         self.factory = APIRequestFactory()
+        self.search = lambda request: search(request, di_client=self.di_client)
 
-    def test_simple_search_with_data_inclusion(self):
-        service_data = make_di_service_data(
-            id="foo", source="dora", code_insee=self.city1.code
+    def make_di_service(self, **kwargs) -> dict:
+        service_data = make_di_service_data(**kwargs)
+        self.di_client.services.append(service_data)
+        return service_data
+
+    def test_find_services_in_city(self):
+        service_data = self.make_di_service(
+            code_insee=self.city1.code,
+            zone_diffusion_type="commune",
+            zone_diffusion_code=self.city1.code,
         )
-        di_client = FakeDataInclusionClient(services=[service_data])
 
         request = self.factory.get("/search/", {"city": self.city1.code})
-        response = search(request, di_client=di_client)
+        response = self.search(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], service_data["id"])
+
+    def test_simple_search_with_data_inclusion(self):
+        service_data = self.make_di_service(code_insee=self.city1.code)
+
+        request = self.factory.get("/search/", {"city": self.city1.code})
+        response = self.search(request)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
@@ -1048,13 +1067,10 @@ class DataInclusionSearchTestCase(APITestCase):
             diffusion_zone_type=AdminDivisionType.CITY,
             diffusion_zone_details=self.city1.code,
         )
-        service_data = make_di_service_data(
-            id="foo", source="dora", code_insee=self.city1.code
-        )
-        di_client = FakeDataInclusionClient(services=[service_data])
+        service_data = self.make_di_service(code_insee=self.city1.code)
 
         request = self.factory.get("/search/", {"city": self.city1.code})
-        response = search(request, di_client=di_client)
+        response = self.search(request)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
