@@ -109,10 +109,7 @@ private_api_patterns = [
         dora.services.views.search,
         # conditionally inject the real di_client dependency to the view
         {
-            "di_client": data_inclusion.DataInclusionClient(
-                base_url=settings.DATA_INCLUSION_URL,
-                token=settings.DATA_INCLUSION_API_KEY,
-            )
+            "di_client": data_inclusion.di_client_factory()
             if not settings.IS_TESTING
             else None
         },

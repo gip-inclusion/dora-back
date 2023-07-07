@@ -4,6 +4,7 @@ from typing import Optional
 import furl
 import requests
 
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +15,13 @@ def log_and_raise(resp: requests.Response, *args, **kwargs):
     except requests.HTTPError as err:
         logger.error(resp.json())
         raise err
+
+
+def di_client_factory():
+    return DataInclusionClient(
+        base_url=settings.DATA_INCLUSION_URL,
+        token=settings.DATA_INCLUSION_API_KEY,
+    )
 
 
 class DataInclusionClient:
