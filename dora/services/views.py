@@ -18,13 +18,13 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
+from dora import data_inclusion
 from dora.admin_express.models import City
 from dora.admin_express.utils import arrdt_to_main_insee_code
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_mattermost_notification, send_moderation_notification
 from dora.core.pagination import OptionalPageNumberPagination
 from dora.core.utils import TRUTHY_VALUES
-from dora import data_inclusion
 from dora.services.emails import send_service_feedback_email
 from dora.services.enums import ServiceStatus
 from dora.services.models import (

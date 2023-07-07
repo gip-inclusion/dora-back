@@ -1,5 +1,4 @@
 from datetime import timedelta
-from typing import Optional
 
 from django.contrib.gis.geos import MultiPolygon, Point
 from django.core.exceptions import ValidationError
@@ -8,8 +7,8 @@ from model_bakery import baker
 from rest_framework.test import APIRequestFactory, APITestCase
 
 from dora.admin_express.models import AdminDivisionType
-from dora.data_inclusion.test_utils import FakeDataInclusionClient, make_di_service_data
 from dora.core.test_utils import make_model, make_service, make_structure
+from dora.data_inclusion.test_utils import FakeDataInclusionClient, make_di_service_data
 from dora.services.enums import ServiceStatus
 from dora.services.migration_utils import (
     add_categories_and_subcategories_if_subcategory,
@@ -28,8 +27,8 @@ from dora.services.migration_utils import (
     update_subcategory_value_and_label,
 )
 from dora.services.utils import SYNC_CUSTOM_M2M_FIELDS, SYNC_FIELDS, SYNC_M2M_FIELDS
-from dora.structures.models import Structure
 from dora.services.views import search
+from dora.structures.models import Structure
 
 from .models import (
     AccessCondition,

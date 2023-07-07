@@ -1,9 +1,9 @@
 import unittest
 
+from django.conf import settings
 from rest_framework.test import APITestCase
 
 from dora import data_inclusion
-from django.conf import settings
 
 
 class DataInclusionIntegrationTestCase(APITestCase):

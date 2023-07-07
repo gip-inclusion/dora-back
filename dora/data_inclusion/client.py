@@ -3,7 +3,6 @@ from typing import Optional
 
 import furl
 import requests
-
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
