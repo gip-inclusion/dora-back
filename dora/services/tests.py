@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+import requests
 from django.contrib.gis.geos import MultiPolygon, Point
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -1037,24 +1038,87 @@ class DataInclusionSearchTestCase(APITestCase):
 
     def test_find_services_in_city(self):
         service_data = self.make_di_service(
-            code_insee=self.city1.code,
             zone_diffusion_type="commune",
             zone_diffusion_code=self.city1.code,
         )
-
         request = self.factory.get("/search/", {"city": self.city1.code})
         response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], service_data["id"])
 
+    def test_dont_find_services_in_other_city(self):
+        self.make_di_service(
+            zone_diffusion_type="commune",
+            zone_diffusion_code=self.city1.code,
+        )
+        request = self.factory.get("/search/", {"city": self.city2.code})
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_filter_by_fee(self):
+        service_data = self.make_di_service(
+            zone_diffusion_type="pays", frais=["gratuit"]
+        )
+        self.make_di_service(zone_diffusion_type="pays", frais=["payant"])
+        request = self.factory.get(
+            "/search/",
+            {
+                "city": self.city2.code,
+                "fees": ServiceFee.objects.filter(value="gratuit").first().value,
+            },
+        )
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], service_data["id"])
+
+    def test_filter_by_kind(self):
+        service_data = self.make_di_service(
+            zone_diffusion_type="pays", types=["atelier", "accompagnement"]
+        )
+        self.make_di_service(zone_diffusion_type="pays", types=["formation"])
+        request = self.factory.get(
+            "/search/",
+            {
+                "city": self.city2.code,
+                "kinds": ServiceKind.objects.filter(value=service_data["types"][0])
+                .first()
+                .value,
+            },
+        )
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], service_data["id"])
+
+    def test_filter_by_cat(self):
+        service_data = self.make_di_service(
+            zone_diffusion_type="pays",
+            thematiques=["famille", "sante"],
+        )
+        self.make_di_service(zone_diffusion_type="pays", thematiques=["numerique"])
+        request = self.factory.get(
+            "/search/",
+            {
+                "city": self.city2.code,
+                "cats": ServiceCategory.objects.filter(
+                    value=service_data["thematiques"][0]
+                )
+                .first()
+                .value,
+            },
+        )
+        response = self.search(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["id"], service_data["id"])
 
     def test_simple_search_with_data_inclusion(self):
         service_data = self.make_di_service(code_insee=self.city1.code)
-
         request = self.factory.get("/search/", {"city": self.city1.code})
         response = self.search(request)
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["distance"], 0)
@@ -1067,16 +1131,32 @@ class DataInclusionSearchTestCase(APITestCase):
             diffusion_zone_details=self.city1.code,
         )
         service_data = self.make_di_service(code_insee=self.city1.code)
-
         request = self.factory.get("/search/", {"city": self.city1.code})
         response = self.search(request)
-
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
         self.assertEqual(response.data[0]["slug"], service_dora.slug)
         self.assertEqual(response.data[1]["id"], service_data["id"])
 
-    # TODO: ordre, errors, etc.
+    def test_data_inclusion_connection_error(self):
+        service_dora = make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.CITY,
+            diffusion_zone_details=self.city1.code,
+        )
+
+        class FaultyDataInclusionClient:
+            def search_services(self, **kwargs):
+                raise requests.ConnectionError()
+
+        di_client = FaultyDataInclusionClient()
+        request = self.factory.get("/search/", {"city": self.city1.code})
+        response = search(request, di_client=di_client)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], service_dora.slug)
+
+    # TODO: ordre, etc.
 
 
 class ServiceSearchTestCase(APITestCase):

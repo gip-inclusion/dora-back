@@ -64,7 +64,7 @@ class FakeDataInclusionClient:
     def __init__(self, services: Optional[list[dict]] = None) -> None:
         self.services = services if services is not None else []
 
-    def list_services(self, source: Optional[str] = None) -> list[dict]:
+    def list_services(self, source: Optional[str] = None) -> Optional[list[dict]]:
         raise NotImplementedError()
 
     def retrieve_service(self, source: str, id: str) -> Optional[dict]:
@@ -77,7 +77,7 @@ class FakeDataInclusionClient:
         thematiques: Optional[list[str]] = None,
         types: Optional[list[str]] = None,
         frais: Optional[list[str]] = None,
-    ) -> list[dict]:
+    ) -> Optional[list[dict]]:
         services = self.services
 
         if source is not None:
@@ -95,9 +95,24 @@ class FakeDataInclusionClient:
             services = [r for r in services if any(t in r["frais"] for t in frais)]
 
         if code_insee is not None:
+            # filter for zone_diffusion_type=commune only
+            # the goal is simply to make it possible to
+            # validate the usage of the zone_diffusion_* by the caller
+            services = [
+                r
+                for r in services
+                if r["zone_diffusion_type"] != "commune"
+                or r["zone_diffusion_code"] == code_insee
+            ]
+
             return [
                 # overly simple distance for tests. avoid corsica
-                {"distance": abs(int(code_insee) - int(s["code_insee"])), "service": s}
+                {
+                    "distance": abs(int(code_insee) - int(s["code_insee"]))
+                    if s["code_insee"] is not None
+                    else None,
+                    "service": s,
+                }
                 for s in services
             ]
         else:
