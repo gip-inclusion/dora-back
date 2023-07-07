@@ -8,10 +8,7 @@ from dora import data_inclusion
 
 class DataInclusionIntegrationTestCase(APITestCase):
     def setUp(self):
-        self.di_client = data_inclusion.DataInclusionClient(
-            base_url=settings.DATA_INCLUSION_URL,
-            token=settings.DATA_INCLUSION_API_KEY,
-        )
+        self.di_client = data_inclusion.di_client_factory()
 
     @unittest.skipUnless(
         settings.ENVIRONMENT == "local",  # TODO: need a more accurate condition
