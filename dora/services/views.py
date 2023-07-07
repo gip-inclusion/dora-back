@@ -783,6 +783,13 @@ def _get_di_results(
 
     try:
         raw_di_results = di_client.search_services(
+            sources=[
+                "dora",  # TODO: exclure avant merge
+                "soliguide",
+                "monenfant",
+                "odspep",
+                # "mediation_numerique_???",
+            ],  # TODO: put this in (admin)model or setting sourced from env
             code_insee=city_code,
             thematiques=thematiques if len(thematiques) > 0 else None,
             types=kinds,
@@ -805,8 +812,6 @@ def _get_di_results(
         )
     ]
 
-    # TODO: exclure la source "dora"
-    # if result["source"] != "dora":
     mapped_di_results = [
         data_inclusion.map_search_result(result) for result in raw_di_results
     ]

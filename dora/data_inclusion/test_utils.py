@@ -3,7 +3,7 @@ from uuid import uuid4
 
 
 def make_di_service_data(
-    source: Optional[str] = "un-jeune-une-solution",
+    source: Optional[str] = "odspep",
     code_insee: Optional[str] = None,
     thematiques: Optional[list[str]] = None,
     types: Optional[list[str]] = None,
@@ -72,7 +72,7 @@ class FakeDataInclusionClient:
 
     def search_services(
         self,
-        source: Optional[str] = None,
+        sources: Optional[str] = None,
         code_insee: Optional[str] = None,
         thematiques: Optional[list[str]] = None,
         types: Optional[list[str]] = None,
@@ -80,8 +80,8 @@ class FakeDataInclusionClient:
     ) -> Optional[list[dict]]:
         services = self.services
 
-        if source is not None:
-            services = [r for r in services if r["source"] == source]
+        if sources is not None:
+            services = [r for r in services if r["source"] in sources]
 
         if thematiques is not None:
             services = [

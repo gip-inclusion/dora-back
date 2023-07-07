@@ -69,7 +69,7 @@ class DataInclusionClient:
 
     def search_services(
         self,
-        source: Optional[str] = None,
+        sources: Optional[list[str]] = None,
         code_insee: Optional[str] = None,
         thematiques: Optional[list[str]] = None,
         types: Optional[list[str]] = None,
@@ -78,8 +78,8 @@ class DataInclusionClient:
         url = self.base_url.copy()
         url = url / "search/services"
 
-        if source is not None:
-            url.args["source"] = source
+        if sources is not None:
+            url.args["sources"] = sources
 
         if code_insee is not None:
             url.args["code_insee"] = code_insee
