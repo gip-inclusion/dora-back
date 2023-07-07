@@ -37,7 +37,7 @@ def map_search_result(result: dict) -> dict:
         "name": result["service"]["nom"],
         "short_desc": result["service"]["presentation_resume"],
         "slug": f"{result['service']['source']}--{result['service']['id']}",
-        "status": ServiceStatus.PUBLISHED,
+        "status": ServiceStatus.PUBLISHED.value,
         "structure": "",
         "structure_info": {"name": result["service"]["structure"]["nom"]},
         # Champs spécifiques aux résultats d·i

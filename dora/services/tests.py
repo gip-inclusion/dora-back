@@ -1156,7 +1156,68 @@ class DataInclusionSearchTestCase(APITestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["slug"], service_dora.slug)
 
-    # TODO: ordre, etc.
+    def test_on_site_first(self):
+        self.make_di_service(
+            zone_diffusion_type="pays", modes_accueil=["en-presentiel"]
+        )
+        service_data_2 = self.make_di_service(
+            zone_diffusion_type="pays", modes_accueil=["a-distance"]
+        )
+        self.make_di_service(
+            zone_diffusion_type="pays", modes_accueil=["en-presentiel"]
+        )
+        request = self.factory.get("/search/", {"city": "12345"})
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 3)
+        self.assertEqual(response.data[2]["id"], service_data_2["id"])
+
+    def test_dora_first(self):
+        toulouse_center = Point(1.4436700, 43.6042600, srid=4326)
+        # Points à moins de 100km de Toulouse
+        point_in_toulouse = Point(1.4187594455116272, 43.601528176416416, srid=4326)
+
+        region = baker.make("Region", code="76")
+        dept = baker.make("Department", region=region.code, code="31")
+        toulouse = baker.make(
+            "City",
+            code="31555",
+            department=dept.code,
+            region=region.code,
+            # la valeur du buffer est complètement approximative
+            # elle permet juste de valider les assertions suivantes
+            geom=MultiPolygon(toulouse_center.buffer(0.05)),
+        )
+
+        service_instance_1 = make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+        )
+        service_instance_1.location_kinds.set(
+            [LocationKind.objects.get(value="a-distance")]
+        )
+        service_instance_2 = make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            geom=point_in_toulouse,
+        )
+        service_instance_2.location_kinds.set(
+            [LocationKind.objects.get(value="en-presentiel")]
+        )
+        service_data_3 = self.make_di_service(
+            zone_diffusion_type="pays", modes_accueil=["a-distance"]
+        )
+        service_data_4 = self.make_di_service(
+            zone_diffusion_type="pays", modes_accueil=["en-presentiel"]
+        )
+        request = self.factory.get("/search/", {"city": toulouse.code})
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 4)
+        self.assertEqual(response.data[0]["slug"], service_instance_2.slug)
+        self.assertEqual(response.data[1]["id"], service_data_4["id"])
+        self.assertEqual(response.data[2]["slug"], service_instance_1.slug)
+        self.assertEqual(response.data[3]["id"], service_data_3["id"])
 
 
 class ServiceSearchTestCase(APITestCase):
