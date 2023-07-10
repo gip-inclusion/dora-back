@@ -15,7 +15,6 @@ import dora.stats.views
 import dora.structures.views
 import dora.support.views
 import dora.users.views
-
 from dora import data_inclusion
 
 from .url_converters import InseeCodeConverter, SiretConverter
@@ -118,6 +117,12 @@ private_api_patterns = [
     path(
         "service-di/<slug:di_id>/",
         dora.services.views.service_di,
+        # conditionally inject the real di_client dependency to the view
+        {
+            "di_client": data_inclusion.di_client_factory()
+            if not settings.IS_TESTING
+            else None
+        },
     ),
     path("admin-division-search/", dora.admin_express.views.search),
     path("admin-division-reverse-search/", dora.admin_express.views.reverse_search),

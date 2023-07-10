@@ -29,7 +29,7 @@ from dora.services.migration_utils import (
     update_subcategory_value_and_label,
 )
 from dora.services.utils import SYNC_CUSTOM_M2M_FIELDS, SYNC_FIELDS, SYNC_M2M_FIELDS
-from dora.services.views import search
+from dora.services.views import search, service_di
 from dora.structures.models import Structure
 
 from .models import (
@@ -1229,6 +1229,14 @@ class DataInclusionSearchTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["id"], service_data["id"])
+
+    def test_get_data_inclusion_result(self):
+        service_data = self.make_di_service(source="foo", zone_diffusion_type="pays")
+        di_id = service_data["source"] + "--" + service_data["id"]
+        request = self.factory.get(f"/service-di/{di_id}/")
+        service_di(request, di_id=di_id, di_client=self.di_client)
+
+        # TODO: test response format
 
 
 class ServiceSearchTestCase(APITestCase):

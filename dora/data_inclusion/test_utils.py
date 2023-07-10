@@ -68,7 +68,9 @@ class FakeDataInclusionClient:
         raise NotImplementedError()
 
     def retrieve_service(self, source: str, id: str) -> Optional[dict]:
-        raise NotImplementedError()
+        return next(
+            (s for s in self.services if s["source"] == source and s["id"] == id), None
+        )
 
     def search_services(
         self,

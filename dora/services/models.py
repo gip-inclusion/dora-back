@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.contrib.gis.db import models
@@ -166,6 +166,43 @@ class ServiceManager(models.Manager):
 
     def archived(self):
         return self.filter(status=ServiceStatus.ARCHIVED)
+
+
+def get_diffusion_zone_details_display(
+    diffusion_zone_type: AdminDivisionType,
+    diffusion_zone_details: str,
+) -> str:
+    if diffusion_zone_type == AdminDivisionType.COUNTRY:
+        return "France entière"
+
+    if diffusion_zone_type == AdminDivisionType.CITY:
+        city = City.objects.get_from_code(diffusion_zone_details)
+        # TODO: we'll probably want to log and correct a missing code
+        return f"{city.name} ({city.department})" if city else ""
+
+    item = None
+
+    if diffusion_zone_type == AdminDivisionType.EPCI:
+        item = EPCI.objects.get_from_code(diffusion_zone_details)
+    elif diffusion_zone_type == AdminDivisionType.DEPARTMENT:
+        item = Department.objects.get_from_code(diffusion_zone_details)
+    elif diffusion_zone_type == AdminDivisionType.REGION:
+        item = Region.objects.get_from_code(diffusion_zone_details)
+    # TODO: we'll probably want to log and correct a missing code
+    return item.name if item else ""
+
+
+def get_update_status(status: ServiceStatus, modification_date: datetime):
+    if status != ServiceStatus.PUBLISHED:
+        return ServiceUpdateStatus.NOT_NEEDED
+
+    diff = timezone.now() - modification_date
+    if diff >= timedelta(days=240):
+        return ServiceUpdateStatus.REQUIRED
+    elif diff >= timedelta(days=180):
+        return ServiceUpdateStatus.NEEDED
+
+    return ServiceUpdateStatus.NOT_NEEDED
 
 
 class Service(ModerationMixin, models.Model):
@@ -433,36 +470,15 @@ class Service(ModerationMixin, models.Model):
         LogItem.objects.create(service=self, user=user, message=msg.strip())
 
     def get_diffusion_zone_details_display(self):
-        if self.diffusion_zone_type == AdminDivisionType.COUNTRY:
-            return "France entière"
-
-        if self.diffusion_zone_type == AdminDivisionType.CITY:
-            city = City.objects.get_from_code(self.diffusion_zone_details)
-            # TODO: we'll probably want to log and correct a missing code
-            return f"{city.name} ({city.department})" if city else ""
-
-        item = None
-
-        if self.diffusion_zone_type == AdminDivisionType.EPCI:
-            item = EPCI.objects.get_from_code(self.diffusion_zone_details)
-        elif self.diffusion_zone_type == AdminDivisionType.DEPARTMENT:
-            item = Department.objects.get_from_code(self.diffusion_zone_details)
-        elif self.diffusion_zone_type == AdminDivisionType.REGION:
-            item = Region.objects.get_from_code(self.diffusion_zone_details)
-        # TODO: we'll probably want to log and correct a missing code
-        return item.name if item else ""
+        return get_diffusion_zone_details_display(
+            self.diffusion_zone_type,
+            self.diffusion_zone_details,
+        )
 
     def get_update_status(self):
-        if self.status != ServiceStatus.PUBLISHED:
-            return ServiceUpdateStatus.NOT_NEEDED
-
-        diff = timezone.now() - self.modification_date
-        if diff >= timedelta(days=240):
-            return ServiceUpdateStatus.REQUIRED
-        elif diff >= timedelta(days=180):
-            return ServiceUpdateStatus.NEEDED
-
-        return ServiceUpdateStatus.NOT_NEEDED
+        return get_update_status(
+            status=self.status, modification_date=self.modification_date
+        )
 
 
 class ServiceModelManager(models.Manager):

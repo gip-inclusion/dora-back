@@ -749,12 +749,15 @@ def _sort_services(services):
 
 @api_view()
 @permission_classes([permissions.AllowAny])
-def service_di(request, di_id):
+def service_di(
+    request,
+    di_id: str,
+    di_client: Optional[data_inclusion.DataInclusionClient] = None,
+):
     source_di, di_service_id = di_id.split("--")
 
-    di_client = data_inclusion.DataInclusionClient(
-        base_url=settings.DATA_INCLUSION_URL, token=settings.DATA_INCLUSION_API_KEY
-    )
+    if di_client is None:
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
     try:
         raw_service = di_client.retrieve_service(source=source_di, id=di_service_id)
