@@ -41,7 +41,7 @@ class OrientationViewSet(
         url_path="validate",
         permission_classes=[permissions.AllowAny],
     )
-    def validate(self, request):
+    def validate(self, request, query_id=None):
         orientation = self.get_object()
         # message = self.request.data.get("message")
         orientation.processing_date = timezone.now()
@@ -56,7 +56,7 @@ class OrientationViewSet(
         url_path="reject",
         permission_classes=[permissions.AllowAny],
     )
-    def reject(self, request):
+    def reject(self, request, query_id=None):
         orientation = self.get_object()
         # message = self.request.data.get("message")
         orientation.processing_date = timezone.now()
@@ -71,7 +71,7 @@ class OrientationViewSet(
         url_path="contact/beneficiary",
         permission_classes=[permissions.AllowAny],
     )
-    def contact_beneficiary(self, request):
+    def contact_beneficiary(self, request, query_id=None):
         # orientation = self.get_object()
         # message = self.request.data.get("message")
         return Response(status=204)
@@ -82,7 +82,7 @@ class OrientationViewSet(
         url_path="contact/prescriber",
         permission_classes=[permissions.AllowAny],
     )
-    def contact_prescriber(self, request):
+    def contact_prescriber(self, request, query_id=None):
         # orientation = self.get_object()
         # message = self.request.data.get("message")
         return Response(status=204)

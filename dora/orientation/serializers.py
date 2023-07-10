@@ -52,6 +52,7 @@ class OrientationSerializer(serializers.ModelSerializer):
             "prescriber_structure",
             "processing_date",
             "processing_date",
+            "query_id",
             "referent_email",
             "referent_first_name",
             "referent_last_name",
