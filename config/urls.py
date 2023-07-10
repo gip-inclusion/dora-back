@@ -7,7 +7,7 @@ from rest_framework.versioning import NamespaceVersioning
 
 import dora.admin_express.views
 import dora.core.views
-import dora.rest_auth
+import dora.orientations.views
 import dora.service_suggestions.views
 import dora.services.views
 import dora.sirene.views
@@ -50,6 +50,11 @@ router.register(
     r"services-admin",
     dora.support.views.ServiceAdminViewSet,
     basename="service-admin",
+)
+router.register(
+    r"orientations",
+    dora.orientations.views.OrientationViewSet,
+    basename="orientation",
 )
 
 register_converter(InseeCodeConverter, "insee_code")
@@ -116,6 +121,7 @@ private_api_patterns = [
     path("siret-claimed/<siret:siret>/", dora.structures.views.siret_was_claimed),
     path("structures-options/", dora.structures.views.options),
     path("upload/<slug:structure_slug>/<str:filename>/", dora.core.views.upload),
+    path("safe-upload/<str:filename>/", dora.core.views.safe_upload),
     path("admin/", admin.site.urls),
     path("ping/", dora.core.views.ping),
     path("sentry-debug/", dora.core.views.trigger_error),

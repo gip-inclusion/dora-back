@@ -1,0 +1,17 @@
+{% load orientation_extras %}
+
+{% if data.prescriber.email !=  data.referent_email %}
+    <h2>Prescripteur ou prescriptrice&nbsp;:</h2>
+
+    <ul>
+        <li>{{ data.prescriber.get_full_name }}</li>
+        <li>{{ data.prescriber.email }}</li>
+    </ul>
+{% endif %}
+
+<h2>Conseiller ou conseillère référente&nbsp;:</h2>
+
+<ul>
+    <li>{{ data.get_referent_full_name }}</li>
+    <li>{{ data.referent_email }}{% if not private %} – {{ data.referent_phone|format_phone }}{% endif %}</li>
+</ul>

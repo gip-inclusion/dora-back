@@ -1,0 +1,12 @@
+{% load orientation_extras %}
+
+<h2>Contact du ou de la responsable du service {{ data.service.name }}</h2>
+
+<ul>
+    <li>{{ data.service.contact_name }}</li>
+    <li>{{ data.service.contact_email }} – {{ data.service.contact_phone|format_phone }}</li>
+</ul>
+
+<p>
+    Si vous souhaitez contacter la structure, répondez directement à ce mail.
+</p>
