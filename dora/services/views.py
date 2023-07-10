@@ -783,13 +783,7 @@ def _get_di_results(
 
     try:
         raw_di_results = di_client.search_services(
-            sources=[
-                "dora",  # TODO: exclure avant merge
-                "soliguide",
-                "monenfant",
-                "odspep",
-                # "mediation_numerique_???",
-            ],  # TODO: put this in (admin)model or setting sourced from env
+            sources=settings.DATA_INCLUSION_SEARCH_SOURCES,
             code_insee=city_code,
             thematiques=thematiques if len(thematiques) > 0 else None,
             types=kinds,

@@ -3,6 +3,7 @@ from datetime import timedelta
 import requests
 from django.contrib.gis.geos import MultiPolygon, Point
 from django.core.exceptions import ValidationError
+from django.test import override_settings
 from django.utils import timezone
 from model_bakery import baker
 from rest_framework.test import APIRequestFactory, APITestCase
@@ -1218,6 +1219,16 @@ class DataInclusionSearchTestCase(APITestCase):
         self.assertEqual(response.data[1]["id"], service_data_4["id"])
         self.assertEqual(response.data[2]["slug"], service_instance_1.slug)
         self.assertEqual(response.data[3]["id"], service_data_3["id"])
+
+    @override_settings(DATA_INCLUSION_SEARCH_SOURCES=["foo"])
+    def test_search_target_sources(self):
+        service_data = self.make_di_service(source="foo", zone_diffusion_type="pays")
+        self.make_di_service(source="bar", zone_diffusion_type="pays")
+        request = self.factory.get("/search/", {"city": self.city1.code})
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], service_data["id"])
 
 
 class ServiceSearchTestCase(APITestCase):
