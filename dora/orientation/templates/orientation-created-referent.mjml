@@ -39,8 +39,7 @@
 
     {% include "partials/block-contact.html" %}
     <p>
-        <strong>La structure {{ data.service.structure.name }} va traiter la demande et reviendra vers vous avec une
-            réponse.
+        <strong>La structure {{ data.service.structure.name }} va traiter la demande et y apportera une réponse.
         </strong>
     </p>
 {% endblock %}

@@ -32,6 +32,8 @@ class OrientationSerializer(serializers.ModelSerializer):
         required=False,
     )
 
+    prescriber = serializers.SerializerMethodField()
+
     class Meta:
         model = Orientation
         fields = [
@@ -46,6 +48,7 @@ class OrientationSerializer(serializers.ModelSerializer):
             "creation_date",
             "id",
             "orientation_reasons",
+            "prescriber",
             "prescriber_structure",
             "processing_date",
             "processing_date",
@@ -60,6 +63,12 @@ class OrientationSerializer(serializers.ModelSerializer):
             "situation_other",
             "status",
         ]
+
+    def get_prescriber(self, orientation):
+        return {
+            "name": orientation.prescriber.get_full_name(),
+            "email": orientation.prescriber.email,
+        }
 
     def get_service(self, orientation):
         service = Service.objects.filter(id=orientation.service_id).first()
