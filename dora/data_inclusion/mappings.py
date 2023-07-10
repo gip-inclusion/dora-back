@@ -117,6 +117,10 @@ def map_service(service_data: dict) -> dict:
     if service_data["frais"] is not None:
         fee_condition = ", ".join(service_data["frais"])
 
+    requirements = []
+    if service_data["pre_requis"] is not None:
+        requirements = service_data["pre_requis"].split(",")
+
     return {
         "access_conditions": [],
         "access_conditions_display": [],
@@ -186,8 +190,8 @@ def map_service(service_data: dict) -> dict:
         "qpv_or_zrr": None,
         "recurrence": service_data["recurrence"],
         "remote_url": None,
-        "requirements": service_data["pre_requis"] or [],
-        "requirements_display": service_data["pre_requis"] or [],
+        "requirements": requirements,
+        "requirements_display": requirements,
         "short_desc": service_data["presentation_resume"],
         "slug": f"{service_data['source']}--{service_data['id']}",
         "status": ServiceStatus.PUBLISHED.value,

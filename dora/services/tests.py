@@ -1368,7 +1368,36 @@ class DataInclusionSearchTestCase(APITestCase):
             response.data["diffusion_zone_type_display"], AdminDivisionType.CITY.label
         )
 
-    # TODO: fee, forms, location_kinds, requirements, metadata
+    def test_service_di_fee(self):
+        service_data = self.make_di_service(
+            frais=["gratuit", "adhesion"], frais_autres="Gratuit pour tous"
+        )
+        di_id = service_data["source"] + "--" + service_data["id"]
+        request = self.factory.get(f"/service-di/{di_id}/")
+        response = service_di(request, di_id=di_id, di_client=self.di_client)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["fee_condition"], "gratuit, adhesion")
+        self.assertEqual(response.data["fee_details"], service_data["frais_autres"])
+
+    def test_service_di_location_kinds(self):
+        service_data = self.make_di_service(modes_accueil=["en-presentiel"])
+        di_id = service_data["source"] + "--" + service_data["id"]
+        request = self.factory.get(f"/service-di/{di_id}/")
+        response = service_di(request, di_id=di_id, di_client=self.di_client)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["location_kinds"], ["en-presentiel"])
+        self.assertEqual(response.data["location_kinds_display"], ["En présentiel"])
+
+    def test_service_di_requirements(self):
+        service_data = self.make_di_service(pre_requis="lorem,ipsum")
+        di_id = service_data["source"] + "--" + service_data["id"]
+        request = self.factory.get(f"/service-di/{di_id}/")
+        response = service_di(request, di_id=di_id, di_client=self.di_client)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["requirements"], ["lorem", "ipsum"])
+        self.assertEqual(response.data["requirements_display"], ["lorem", "ipsum"])
+
+    # TODO: other metadata
 
 
 class ServiceSearchTestCase(APITestCase):
