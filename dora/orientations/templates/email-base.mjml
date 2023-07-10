@@ -11,30 +11,30 @@
 
         <mj-style inline="inline">
             h1, h2, h3 {
-                font-family: Arial, Helvetica, sans-serif;
-                color: #555;
-                font-size: 15px;
-                line-height: 24px;
-                padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #555;
+            font-size: 15px;
+            line-height: 24px;
+            padding: 0;
             }
 
             h1 {
-                color: #000091;
-                font-size: 24px;
-                font-weight: bold;
+            color: #000091;
+            font-size: 24px;
+            font-weight: bold;
             }
 
             h2 {
-                font-weight: bold;
-                margin-bottom: 0
+            font-weight: bold;
+            margin-bottom: 0
             }
 
             ul, p {
-                margin-top: 0
+            margin-top: 0
             }
 
             a, a:visited {
-                color: #5B12EB;
+            color: #5B12EB;
             }
         </mj-style>
 
@@ -47,9 +47,6 @@
         <!-- Logo -->
         <mj-section>
             <mj-column padding="32px 40px">
-                <mj-text>
-                    <a href="">blabblabbla</a>
-                </mj-text>
                 <mj-image src="{{ homepage_url }}/emails/logo-dora-email-new.png"
                           height="60px" width="238px"
                           align="left" alt=""/>
