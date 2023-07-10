@@ -1368,6 +1368,8 @@ class DataInclusionSearchTestCase(APITestCase):
             response.data["diffusion_zone_type_display"], AdminDivisionType.CITY.label
         )
 
+    # TODO: fee, forms, location_kinds, requirements, metadata
+
 
 class ServiceSearchTestCase(APITestCase):
     def setUp(self):
