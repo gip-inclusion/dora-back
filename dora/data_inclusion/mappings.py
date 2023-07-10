@@ -107,7 +107,7 @@ def map_service(service_data: dict) -> dict:
             modification_date=timezone.make_aware(
                 dateparse.parse_datetime(service_data["date_maj"])
             ),
-        )
+        ).value
 
     credentials = []
     if service_data["justificatifs"] is not None:
@@ -142,7 +142,7 @@ def map_service(service_data: dict) -> dict:
             "modes_orientation_accompagnateur"
         ]
         or [],
-        "beneficiaries_access_modes_other": None,
+        "coach_orientation_modes_other": None,
         "concerned_public": service_data["profils"] or [],
         "concerned_public_display": service_data["profils"] or [],
         "contact_email": service_data["courriel"],
@@ -166,6 +166,8 @@ def map_service(service_data: dict) -> dict:
         "forms": [],
         "forms_info": [],
         "full_desc": service_data["presentation_detail"],
+        "geom": None,
+        "has_already_been_unpublished": None,
         "is_available": True,
         "is_contact_info_public": service_data["contact_public"],
         "is_cumulative": service_data["cumulable"],
@@ -178,6 +180,7 @@ def map_service(service_data: dict) -> dict:
         "model_name": None,
         "modification_date": service_data["date_maj"],
         "name": service_data["nom"],
+        "online_form": None,
         "postal_code": service_data["code_postal"],
         "publication_date": None,
         "qpv_or_zrr": None,
