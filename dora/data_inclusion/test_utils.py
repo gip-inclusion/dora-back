@@ -80,7 +80,13 @@ class FakeDataInclusionClient:
 
         if thematiques is not None:
             services = [
-                r for r in services if any(t in r["thematiques"] for t in thematiques)
+                r
+                for r in services
+                if any(
+                    t.startswith(requested_thematique)
+                    for t in r["thematiques"]
+                    for requested_thematique in thematiques
+                )
             ]
 
         if types is not None:

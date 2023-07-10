@@ -1097,26 +1097,27 @@ class DataInclusionSearchTestCase(APITestCase):
         self.assertEqual(response.data[0]["id"], service_data["id"])
 
     def test_filter_by_cat(self):
-        service_data = self.make_di_service(
+        service_data_1 = self.make_di_service(
             zone_diffusion_type="pays",
             thematiques=["famille", "sante"],
+        )
+        service_data_2 = self.make_di_service(
+            zone_diffusion_type="pays",
+            thematiques=["famille--garde-denfants"],
         )
         self.make_di_service(zone_diffusion_type="pays", thematiques=["numerique"])
         request = self.factory.get(
             "/search/",
             {
                 "city": self.city2.code,
-                "cats": ServiceCategory.objects.filter(
-                    value=service_data["thematiques"][0]
-                )
-                .first()
-                .value,
+                "cats": "famille",
             },
         )
         response = self.search(request)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["id"], service_data["id"])
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data[0]["id"], service_data_1["id"])
+        self.assertEqual(response.data[1]["id"], service_data_2["id"])
 
     def test_simple_search_with_data_inclusion(self):
         service_data = self.make_di_service(code_insee=self.city1.code)
