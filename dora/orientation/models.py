@@ -114,7 +114,7 @@ class Orientation(models.Model):
     orientation_reasons = models.TextField(
         verbose_name="Motif de l'orientation", blank=True
     )
-    creation_date = models.DateTimeField(auto_now_add=True)
+    creation_date = models.DateTimeField(auto_now_add=True, editable=False)
     processing_date = models.DateTimeField(blank=True, null=True)
     status = models.CharField(
         max_length=10,
