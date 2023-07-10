@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from dora.orientation.models import Orientation
+from dora.orientations.models import Orientation
 from dora.services.models import Service
 from dora.structures.models import Structure
 

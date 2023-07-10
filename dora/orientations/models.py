@@ -9,15 +9,15 @@ from dora.structures.models import Structure
 
 
 class ContactPreference(models.TextChoices):
-    PHONE = "telephone", "Téléphone"
-    EMAIL = "email", "E-mail"
-    OTHER = "autre", "Autre"
+    PHONE = "TELEPHONE", "Téléphone"
+    EMAIL = "EMAIL", "E-mail"
+    OTHER = "AUTRE", "Autre"
 
 
 class OrientationStatus(models.TextChoices):
-    PENDING = "ouverte", "Ouverte / En cours de traitement"
-    ACCEPTED = "validée", "Validée"
-    REJECTED = "refusée", "Refusée"
+    PENDING = "OUVERTE", "Ouverte / En cours de traitement"
+    ACCEPTED = "VALIDÉE", "Validée"
+    REJECTED = "REFUSÉE", "Refusée"
 
 
 class Orientation(models.Model):
@@ -100,16 +100,16 @@ class Orientation(models.Model):
     prescriber_structure = models.ForeignKey(
         Structure,
         verbose_name="Structure",
-        on_delete=models.CASCADE,
-        db_index=True,
+        on_delete=models.SET_NULL,
         related_name="+",
+        null=True,
     )
     service = models.ForeignKey(
         Service,
         verbose_name="Service",
-        on_delete=models.CASCADE,
-        db_index=True,
+        on_delete=models.SET_NULL,
         related_name="+",
+        null=True,
     )
     orientation_reasons = models.TextField(
         verbose_name="Motif de l'orientation", blank=True
@@ -119,7 +119,7 @@ class Orientation(models.Model):
     status = models.CharField(
         max_length=10,
         choices=OrientationStatus.choices,
-        default="ouverte",
+        default=OrientationStatus.PENDING,
     )
 
     def __str__(self):
@@ -132,7 +132,7 @@ class Orientation(models.Model):
         return self.get_frontend_url()
 
     def get_frontend_url(self):
-        return f"{settings.FRONTEND_URL}/orientation/{self.query_id}"
+        return f"{settings.FRONTEND_URL}/orientations/{self.query_id}"
 
     def get_beneficiary_full_name(self):
         if self.beneficiary_first_name or self.beneficiary_last_name:

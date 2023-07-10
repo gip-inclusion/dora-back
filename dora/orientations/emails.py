@@ -3,6 +3,7 @@ from django.template.loader import render_to_string
 from mjml import mjml2html
 
 from dora.core.emails import send_mail
+from dora.orientations.models import ContactPreference
 
 
 def send_orientation_created_emails(orientation):
@@ -10,6 +11,7 @@ def send_orientation_created_emails(orientation):
         "data": orientation,
         "homepage_url": settings.FRONTEND_URL,
         "magic_link": orientation.get_magic_link(),
+        "ContactPreference": ContactPreference,
     }
     # Structure porteuse
     send_mail(

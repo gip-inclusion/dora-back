@@ -6,26 +6,26 @@
     <li>{% if is_beneficiary %}Vous, {% endif %}{{ data.get_beneficiary_full_name }}</li>
     <li>Moyens de contact privilégiés&nbsp;:
         <ul>
-            {% if "email" in data.beneficiary.beneficiary_contact_preferences %}
+            {% if ContactPreference.EMAIL in data.beneficiary.beneficiary_contact_preferences %}
                 <li>{{ data.beneficiary_email }}</li>
             {% endif %}
-            {% if "telephone" in data.beneficiary.beneficiary_contact_preferences %}
+            {% if ContactPreference.PHONE in data.beneficiary.beneficiary_contact_preferences %}
                 <li>{{ data.beneficiary_phone|format_phone }}</li>
             {% endif %}
-            {% if "autre" in data.beneficiary.beneficiary_contact_preferences %}
+            {% if ContactPreference.OTHER in data.beneficiary.beneficiary_contact_preferences %}
                 <li>{{ data.beneficiary_other_contact_method }}</li>
             {% endif %}
         </ul>
     </li>
     <li>Autres moyen de contact&nbsp;:
         <ul>
-            {% if not "email" in data.beneficiary.beneficiary_contact_preferences and data.beneficiary_email %}
+            {% if not ContactPreference.EMAIL in data.beneficiary.beneficiary_contact_preferences and data.beneficiary_email %}
                 <li>{{ data.beneficiary_email }}</li>
             {% endif %}
-            {% if not "telephone" in data.beneficiary.beneficiary_contact_preferences and data.beneficiary_phone %}
+            {% if not ContactPreference.PHONE in data.beneficiary.beneficiary_contact_preferences and data.beneficiary_phone %}
                 <li>{{ data.beneficiary_phone|format_phone }}</li>
             {% endif %}
-            {% if not "autre" in data.beneficiary.beneficiary_contact_preferences and data.beneficiary_other_contact_method %}
+            {% if not ContactPreference.OTHER in data.beneficiary.beneficiary_contact_preferences and data.beneficiary_other_contact_method %}
                 <li>{{ data.beneficiary_other_contact_method }}</li>
             {% endif %}
         </ul>

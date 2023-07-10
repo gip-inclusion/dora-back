@@ -7,7 +7,7 @@ from rest_framework.versioning import NamespaceVersioning
 
 import dora.admin_express.views
 import dora.core.views
-import dora.orientation.views
+import dora.orientations.views
 import dora.service_suggestions.views
 import dora.services.views
 import dora.sirene.views
@@ -52,10 +52,11 @@ router.register(
     basename="service-admin",
 )
 router.register(
-    r"orientation",
-    dora.orientation.views.OrientationViewSet,
+    r"orientations",
+    dora.orientations.views.OrientationViewSet,
     basename="orientation",
 )
+
 register_converter(InseeCodeConverter, "insee_code")
 register_converter(SiretConverter, "siret")
 
