@@ -1266,62 +1266,115 @@ class DataInclusionSearchTestCase(APITestCase):
         self.assertEqual(response.data["department"], "59")
 
     def test_service_di_categories(self):
-        service_data = self.make_di_service(
-            thematiques=["mobilite", "famille--garde-denfants"]
-        )
-        di_id = service_data["source"] + "--" + service_data["id"]
-        request = self.factory.get(f"/service-di/{di_id}/")
-        response = service_di(request, di_id=di_id, di_client=self.di_client)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["categories"], ["mobilite"])
-        self.assertEqual(response.data["subcategories"], ["famille--garde-denfants"])
+        cases = [
+            (None, [], [], [], []),
+            ([], [], [], [], []),
+            (
+                ["mobilite", "famille--garde-denfants"],
+                ["mobilite"],
+                ["Mobilité"],
+                ["famille--garde-denfants"],
+                ["Garde d'enfants"],
+            ),
+        ]
+        for (
+            thematiques,
+            categories,
+            categories_display,
+            subcategories,
+            subcategories_display,
+        ) in cases:
+            with self.subTest(thematiques=thematiques):
+                service_data = self.make_di_service(thematiques=thematiques)
+                di_id = service_data["source"] + "--" + service_data["id"]
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["categories"], categories)
+                self.assertEqual(
+                    response.data["categories_display"], categories_display
+                )
+                self.assertEqual(response.data["subcategories"], subcategories)
+                self.assertEqual(
+                    response.data["subcategories_display"], subcategories_display
+                )
 
     def test_service_di_beneficiaries_access_modes(self):
-        service_data = self.make_di_service(
-            modes_orientation_beneficiaire=["envoyer-un-mail"]
-        )
-        di_id = service_data["source"] + "--" + service_data["id"]
-        request = self.factory.get(f"/service-di/{di_id}/")
-        response = service_di(request, di_id=di_id, di_client=self.di_client)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.data["beneficiaries_access_modes"],
-            service_data["modes_orientation_beneficiaire"],
-        )
-        self.assertEqual(
-            response.data["beneficiaries_access_modes_display"],
-            service_data["modes_orientation_beneficiaire"],
-        )
-        self.assertEqual(response.data["beneficiaries_access_modes_other"], None)
+        cases = [
+            (None, [], []),
+            ([], [], []),
+            (["envoyer-un-mail"], ["envoyer-un-mail"], ["envoyer-un-mail"]),
+        ]
+        for (
+            modes_orientation_beneficiaire,
+            beneficiaries_access_modes,
+            beneficiaries_access_modes_display,
+        ) in cases:
+            with self.subTest(
+                modes_orientation_beneficiaire=modes_orientation_beneficiaire
+            ):
+                service_data = self.make_di_service(
+                    modes_orientation_beneficiaire=modes_orientation_beneficiaire
+                )
+                di_id = service_data["source"] + "--" + service_data["id"]
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    response.data["beneficiaries_access_modes"],
+                    beneficiaries_access_modes,
+                )
+                self.assertEqual(
+                    response.data["beneficiaries_access_modes_display"],
+                    beneficiaries_access_modes_display,
+                )
 
     def test_service_di_coach_orientation_modes(self):
-        service_data = self.make_di_service(
-            modes_orientation_accompagnateur=["envoyer-un-mail"]
-        )
-        di_id = service_data["source"] + "--" + service_data["id"]
-        request = self.factory.get(f"/service-di/{di_id}/")
-        response = service_di(request, di_id=di_id, di_client=self.di_client)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.data["coach_orientation_modes"],
-            service_data["modes_orientation_accompagnateur"],
-        )
-        self.assertEqual(
-            response.data["coach_orientation_modes_display"],
-            service_data["modes_orientation_accompagnateur"],
-        )
-        self.assertEqual(response.data["coach_orientation_modes_other"], None)
+        cases = [
+            (None, [], []),
+            ([], [], []),
+            (["envoyer-un-mail"], ["envoyer-un-mail"], ["envoyer-un-mail"]),
+        ]
+        for (
+            modes_orientation_accompagnateur,
+            coach_orientation_modes,
+            coach_orientation_modes_display,
+        ) in cases:
+            with self.subTest(
+                modes_orientation_accompagnateur=modes_orientation_accompagnateur
+            ):
+                service_data = self.make_di_service(
+                    modes_orientation_accompagnateur=modes_orientation_accompagnateur
+                )
+                di_id = service_data["source"] + "--" + service_data["id"]
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    response.data["coach_orientation_modes"], coach_orientation_modes
+                )
+                self.assertEqual(
+                    response.data["coach_orientation_modes_display"],
+                    coach_orientation_modes_display,
+                )
 
     def test_service_di_concerned_public(self):
-        service_data = self.make_di_service(profils=["adultes"])
-        di_id = service_data["source"] + "--" + service_data["id"]
-        request = self.factory.get(f"/service-di/{di_id}/")
-        response = service_di(request, di_id=di_id, di_client=self.di_client)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["concerned_public"], service_data["profils"])
-        self.assertEqual(
-            response.data["concerned_public_display"], service_data["profils"]
-        )
+        cases = [
+            (None, [], []),
+            ([], [], []),
+            (["adultes"], ["adultes"], ["adultes"]),
+        ]
+        for profils, concerned_public, concerned_public_display in cases:
+            with self.subTest(profils=profils):
+                service_data = self.make_di_service(profils=profils)
+                di_id = service_data["source"] + "--" + service_data["id"]
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["concerned_public"], concerned_public)
+                self.assertEqual(
+                    response.data["concerned_public_display"], concerned_public_display
+                )
 
     def test_service_di_contact(self):
         service_data = self.make_di_service(
@@ -1363,6 +1416,14 @@ class DataInclusionSearchTestCase(APITestCase):
 
     def test_service_di_diffusion_zone(self):
         cases = [
+            (
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+            ),
             (
                 "commune",
                 self.city1.code,
