@@ -323,8 +323,8 @@ DATA_INCLUSION_URL = os.environ["DATA_INCLUSION_URL"]
 DATA_INCLUSION_IMPORT_API_KEY = os.environ.get("DATA_INCLUSION_IMPORT_API_KEY")
 DATA_INCLUSION_STREAM_API_KEY = os.environ.get("DATA_INCLUSION_STREAM_API_KEY")
 # sources to lookup when streaming services from data.inclusion
-DATA_INCLUSION_SEARCH_SOURCES = (lambda s: s.split(",") if s else None)(
-    os.environ.get("DATA_INCLUSION_SEARCH_SOURCES")
+DATA_INCLUSION_STREAM_SOURCES = (lambda s: s.split(",") if s else None)(
+    os.environ.get("DATA_INCLUSION_STREAM_SOURCES")
 )
 
 # Data inclusion user account

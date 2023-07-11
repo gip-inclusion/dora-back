@@ -789,7 +789,7 @@ def _get_di_results(
 
     The ``di_client`` acts as an entrypoint to the data.inclusion service repository.
 
-    The search will target the sources configured by the ``DATA_INCLUSION_SEARCH_SOURCES``
+    The search will target the sources configured by the ``DATA_INCLUSION_STREAM_SOURCES``
     environment variable.
 
     The other arguments match the input parameters from the classical search.
@@ -814,7 +814,7 @@ def _get_di_results(
 
     try:
         raw_di_results = di_client.search_services(
-            sources=settings.DATA_INCLUSION_SEARCH_SOURCES,
+            sources=settings.DATA_INCLUSION_STREAM_SOURCES,
             code_insee=city_code,
             thematiques=thematiques if len(thematiques) > 0 else None,
             types=kinds,

@@ -1227,7 +1227,7 @@ class DataInclusionSearchTestCase(APITestCase):
         self.assertEqual(response.data[2]["slug"], service_instance_1.slug)
         self.assertEqual(response.data[3]["id"], service_data_3["id"])
 
-    @override_settings(DATA_INCLUSION_SEARCH_SOURCES=["foo"])
+    @override_settings(DATA_INCLUSION_STREAM_SOURCES=["foo"])
     def test_search_target_sources(self):
         service_data = self.make_di_service(source="foo", zone_diffusion_type="pays")
         self.make_di_service(source="bar", zone_diffusion_type="pays")
