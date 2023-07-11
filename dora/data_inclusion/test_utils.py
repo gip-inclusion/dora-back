@@ -54,6 +54,19 @@ def make_di_service_data(**kwargs) -> dict:
 
 
 class FakeDataInclusionClient:
+    """This is a fake data.inclusion client.
+
+    It fakes an in-memory data.inclusion backend, leveraging ducktyping of
+    the actual ``DataInclusionClient`` implementation.
+
+    The goal of this client is not be fully compliant with the real behaviour,
+    but to merely impersonate it, to be able to do assertions about the calling
+    code.
+
+    The fake client is injected during tests to the views that depends on the
+    data.inclusion backend.
+    """
+
     def __init__(self, services: Optional[list[dict]] = None) -> None:
         self.services = services if services is not None else []
 

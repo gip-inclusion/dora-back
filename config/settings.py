@@ -321,6 +321,7 @@ PE_CLIENT_ID = os.environ["PE_CLIENT_ID"]
 PE_CLIENT_SECRET = os.environ["PE_CLIENT_SECRET"]
 DATA_INCLUSION_URL = os.environ["DATA_INCLUSION_URL"]
 DATA_INCLUSION_API_KEY = os.environ.get("DATA_INCLUSION_API_KEY")
+# sources to lookup when streaming services from data.inclusion
 DATA_INCLUSION_SEARCH_SOURCES = (lambda s: s.split(",") if s else None)(
     os.environ.get("DATA_INCLUSION_SEARCH_SOURCES")
 )

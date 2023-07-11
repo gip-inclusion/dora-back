@@ -754,6 +754,13 @@ def service_di(
     di_id: str,
     di_client: Optional[data_inclusion.DataInclusionClient] = None,
 ):
+    """Retrieve a single service from data.inclusion.
+
+    The ``di_client`` acts as an entrypoint to the data.inclusion service repository.
+
+    The output format matches the ServiceSerializer.
+    """
+
     source_di, di_service_id = di_id.split("--")
 
     if di_client is None:
@@ -778,6 +785,27 @@ def _get_di_results(
     kinds: Optional[list[str]] = None,
     fees: Optional[list[str]] = None,
 ) -> list:
+    """Search data.inclusion services.
+
+    The ``di_client`` acts as an entrypoint to the data.inclusion service repository.
+
+    The search will target the sources configured by the ``DATA_INCLUSION_SEARCH_SOURCES``
+    environment variable.
+
+    The other arguments match the input parameters from the classical search.
+
+    This function essentially:
+
+    * maps the input parameters,
+    * offloads the search to the data.inclusion client,
+    * maps the output results.
+
+    This function should catch any client and upstream errors to prevent any impact on
+    the classical flow of dora.
+
+    Returns:
+        A list of search results by SearchResultSerializer.
+    """
     thematiques = []
     if categories is not None:
         thematiques += categories
@@ -878,6 +906,7 @@ def _get_dora_results(
         city.geom,
     )
 
+    # TODO: json serialization/deserialization might be costly
     return json.loads(
         json.dumps(
             SearchResultSerializer(
@@ -895,7 +924,17 @@ def _search(
     kinds: Optional[list[str]] = None,
     fees: Optional[list[str]] = None,
     di_client: Optional[data_inclusion.DataInclusionClient] = None,
-):
+) -> list[dict]:
+    """Search services from all available repositories.
+
+    It always includes results from dora own databases.
+
+    If the ``di_client`` parameter is defined, results from data.inclusion will be
+    added using the client dependency.
+
+    Returns:
+        A list of search results by SearchResultSerializer.
+    """
     di_results = (
         _get_di_results(
             di_client=di_client,

@@ -7,6 +7,12 @@ from dora import data_inclusion
 
 
 class DataInclusionIntegrationTestCase(APITestCase):
+    """These integration-level tests check the connection to data.inclusion.
+
+    They depend on the data.inclusion api and should not be run
+    systematically, because of their inherent high cost and instability.
+    """
+
     def setUp(self):
         self.di_client = data_inclusion.di_client_factory()
 
