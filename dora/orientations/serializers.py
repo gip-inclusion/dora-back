@@ -13,7 +13,10 @@ class OrientationSerializer(serializers.ModelSerializer):
         write_only=True,
     )
     prescriber_structure_slug = serializers.SlugRelatedField(
-        slug_field="slug", queryset=Structure.objects.all(), write_only=True
+        source="prescriber_structure",
+        slug_field="slug",
+        queryset=Structure.objects.all(),
+        write_only=True,
     )
 
     # TODO: utiliser un vrai champ pour stocker l'état initial
@@ -63,11 +66,7 @@ class OrientationSerializer(serializers.ModelSerializer):
                 "slug": orientation.service.slug,
             }
         else:
-            return {
-                # TODO: implémentation temporaire
-                # on veut renvoyer le nom original
-                "name": orientation.service.name
-            }
+            return {"name": orientation.original_service_name}
 
     def get_prescriber_structure(self, orientation):
         return {
