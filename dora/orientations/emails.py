@@ -139,7 +139,7 @@ def send_orientation_rejected_emails(orientation):
     send_mail(
         "[Refusée - Prescripteur] Votre demande a été refusée",
         [orientation.prescriber.email],
-        mjml2html(render_to_string("orientation-accepted-prescriber.mjml", context)),
+        mjml2html(render_to_string("orientation-rejected-prescriber.mjml", context)),
         from_email=(
             f"{orientation.service.structure.name} via DORA",
             settings.DEFAULT_FROM_EMAIL,
@@ -152,7 +152,7 @@ def send_orientation_rejected_emails(orientation):
     send_mail(
         "[Refusée - Conseiller référent] Votre demande a été refusée",
         [orientation.referent_email],
-        mjml2html(render_to_string("orientation-accepted-prescriber.mjml", context)),
+        mjml2html(render_to_string("orientation-rejected-prescriber.mjml", context)),
         from_email=(
             f"{orientation.service.structure.name} via DORA",
             settings.DEFAULT_FROM_EMAIL,
