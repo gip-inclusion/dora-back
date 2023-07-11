@@ -1,0 +1,19 @@
+{% extends "email-base.mjml" %}
+
+{% block preview %}
+    {{ data.prescriber.get_full_name }} vous a orienté vers un service solidaire
+{% endblock %}
+
+{% block title %}
+    La demande d’orientation réalisée en votre nom a été acceptée.
+{% endblock %}
+
+{% block content %}
+    <p>
+        <strong>Bonjour,</strong>
+    </p>
+    <p>
+        Lorem Ipsum
+    </p>
+
+{% endblock %}

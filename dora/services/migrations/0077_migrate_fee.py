@@ -26,6 +26,7 @@ def migrate_fee(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ("services", "0076_servicefee_service_fee_condition"),
+        ("service_suggestions", "0002_alter_servicesuggestion_options"),
     ]
 
     operations = [
