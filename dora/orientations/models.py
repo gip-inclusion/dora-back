@@ -21,6 +21,13 @@ class OrientationStatus(models.TextChoices):
 
 
 class Orientation(models.Model):
+    id = models.BigAutoField(
+        auto_created=True,
+        primary_key=True,
+        serialize=False,
+        verbose_name="ID",
+    )
+
     query_id = models.UUIDField(default=uuid.uuid4, editable=False, db_index=True)
 
     # Infos bénéficiaires
