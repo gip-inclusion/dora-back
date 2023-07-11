@@ -798,7 +798,6 @@ def _get_di_results(
     if raw_di_results is None:
         return []
 
-    # TODO: faire ça côté di par défaut
     raw_di_results = [
         result
         for result in raw_di_results
