@@ -3,8 +3,6 @@ from rest_framework import mixins, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from dora.structures.models import Structure
-
 from .emails import send_orientation_created_emails
 from .models import Orientation, OrientationStatus
 from .serializers import OrientationSerializer
@@ -12,10 +10,14 @@ from .serializers import OrientationSerializer
 
 class OrientationPermission(permissions.BasePermission):
     def has_permission(self, request, view):
+        if request.method == "DELETE":
+            return False
+        if request.method == "POST":
+            return request.user.is_authenticated
         return True
 
-    def has_object_permission(self, request, view, structure: Structure):
-        return True
+    def has_object_permission(self, request, view, orientation):
+        return request.method in ["GET", "POST"]
 
 
 class OrientationViewSet(
@@ -31,6 +33,12 @@ class OrientationViewSet(
 
     def get_queryset(self):
         return Orientation.objects.all()
+
+    def perform_create(self, serializer):
+        # TODO: auth user only
+        serializer.is_valid()
+        orientation = serializer.save(prescriber=self.request.user)
+        send_orientation_created_emails(orientation)
 
     @action(
         detail=True,
@@ -83,9 +91,3 @@ class OrientationViewSet(
         # orientation = self.get_object()
         # message = self.request.data.get("message")
         return Response(status=204)
-
-    def perform_create(self, serializer):
-        serializer.is_valid()
-
-        orientation = serializer.save(prescriber=self.request.user)
-        send_orientation_created_emails(orientation)
