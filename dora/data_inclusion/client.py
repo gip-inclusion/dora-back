@@ -23,6 +23,9 @@ def di_client_factory():
     )
 
 
+# TODO: use tenacity ?
+
+
 class DataInclusionClient:
     def __init__(self, base_url: str, token: str) -> None:
         self.base_url = furl.furl(base_url)
