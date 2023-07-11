@@ -906,14 +906,7 @@ def _get_dora_results(
         city.geom,
     )
 
-    # TODO: json serialization/deserialization might be costly
-    return json.loads(
-        json.dumps(
-            SearchResultSerializer(
-                results, many=True, context={"request": request}
-            ).data
-        )
-    )
+    return SearchResultSerializer(results, many=True, context={"request": request}).data
 
 
 def _search(
