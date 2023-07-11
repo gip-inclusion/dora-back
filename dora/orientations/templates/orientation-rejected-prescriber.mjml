@@ -1,7 +1,7 @@
 {% extends "email-base.mjml" %}
 
 {% block preview %}
-    {{ data.prescriber.get_full_name }} vous a orienté vers un service solidaire
+    La demande pour {{ data.get_beneficiary_full_name }} à été refusée.
 {% endblock %}
 
 {% block title %}
@@ -13,7 +13,7 @@
         <strong>Bonjour,</strong>
     </p>
     <p>
-        Lorem Ipsum
+
     </p>
 
 {% endblock %}

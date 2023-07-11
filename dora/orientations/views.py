@@ -3,7 +3,13 @@ from rest_framework import mixins, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .emails import send_orientation_created_emails
+from .emails import (
+    send_message_to_beneficiary,
+    send_message_to_prescriber,
+    send_orientation_accepted_emails,
+    send_orientation_created_emails,
+    send_orientation_rejected_emails,
+)
 from .models import Orientation, OrientationStatus
 from .serializers import OrientationSerializer
 
@@ -35,7 +41,6 @@ class OrientationViewSet(
         return Orientation.objects.all()
 
     def perform_create(self, serializer):
-        # TODO: auth user only
         serializer.is_valid()
         orientation = serializer.save(prescriber=self.request.user)
         send_orientation_created_emails(orientation)
@@ -52,7 +57,7 @@ class OrientationViewSet(
         orientation.processing_date = timezone.now()
         orientation.status = OrientationStatus.ACCEPTED
         orientation.save()
-        # todo: send mails
+        send_orientation_accepted_emails(orientation)
         return Response(status=204)
 
     @action(
@@ -67,7 +72,7 @@ class OrientationViewSet(
         orientation.processing_date = timezone.now()
         orientation.status = OrientationStatus.REJECTED
         orientation.save()
-        # todo: send mails
+        send_orientation_rejected_emails(orientation)
         return Response(status=204)
 
     @action(
@@ -77,8 +82,9 @@ class OrientationViewSet(
         permission_classes=[permissions.AllowAny],
     )
     def contact_beneficiary(self, request, query_id=None):
-        # orientation = self.get_object()
-        # message = self.request.data.get("message")
+        orientation = self.get_object()
+        message = self.request.data.get("message")
+        send_message_to_beneficiary(orientation, message)
         return Response(status=204)
 
     @action(
@@ -88,6 +94,7 @@ class OrientationViewSet(
         permission_classes=[permissions.AllowAny],
     )
     def contact_prescriber(self, request, query_id=None):
-        # orientation = self.get_object()
-        # message = self.request.data.get("message")
+        orientation = self.get_object()
+        message = self.request.data.get("message")
+        send_message_to_prescriber(orientation, message)
         return Response(status=204)

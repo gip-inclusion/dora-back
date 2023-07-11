@@ -35,7 +35,7 @@
 
     {% include "partials/block-attachments.html" %}
 
-    {% include "partials/block-contact.html" %}
+    {% include "partials/block-service-contact.html" %}
 
     <p>
         <strong>La structure {{ data.service.structure.name }} va traiter votre demande et reviendra vers vous avec une
