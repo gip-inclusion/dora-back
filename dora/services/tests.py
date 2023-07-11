@@ -1377,24 +1377,33 @@ class DataInclusionSearchTestCase(APITestCase):
                 )
 
     def test_service_di_contact(self):
-        service_data = self.make_di_service(
-            courriel="foo@bar.baz",
-            contact_nom_prenom="David Rocher",
-            telephone="0102030405",
-            contact_public=True,
-        )
-        di_id = service_data["source"] + "--" + service_data["id"]
-        request = self.factory.get(f"/service-di/{di_id}/")
-        response = service_di(request, di_id=di_id, di_client=self.di_client)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["contact_email"], service_data["courriel"])
-        self.assertEqual(
-            response.data["contact_name"], service_data["contact_nom_prenom"]
-        )
-        self.assertEqual(response.data["contact_phone"], service_data["telephone"])
-        self.assertEqual(
-            response.data["is_contact_info_public"], service_data["contact_public"]
-        )
+        cases = [
+            (None, None, None, None),
+            ("foo@bar.baz", "David Rocher", "0102030405", True),
+        ]
+        for courriel, contact_nom_prenom, telephone, contact_public in cases:
+            with self.subTest(
+                courriel=courriel,
+                contact_nom_prenom=contact_nom_prenom,
+                telephone=telephone,
+                contact_public=contact_public,
+            ):
+                service_data = self.make_di_service(
+                    courriel=courriel,
+                    contact_nom_prenom=contact_nom_prenom,
+                    telephone=telephone,
+                    contact_public=contact_public,
+                )
+                di_id = service_data["source"] + "--" + service_data["id"]
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["contact_email"], courriel)
+                self.assertEqual(response.data["contact_name"], contact_nom_prenom)
+                self.assertEqual(response.data["contact_phone"], telephone)
+                self.assertEqual(
+                    response.data["is_contact_info_public"], contact_public
+                )
 
     def test_service_di_credentials(self):
         cases = [
