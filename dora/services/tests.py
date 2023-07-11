@@ -1328,6 +1328,7 @@ class DataInclusionSearchTestCase(APITestCase):
             courriel="foo@bar.baz",
             contact_nom_prenom="David Rocher",
             telephone="0102030405",
+            contact_public=True,
         )
         di_id = service_data["source"] + "--" + service_data["id"]
         request = self.factory.get(f"/service-di/{di_id}/")
@@ -1338,66 +1339,257 @@ class DataInclusionSearchTestCase(APITestCase):
             response.data["contact_name"], service_data["contact_nom_prenom"]
         )
         self.assertEqual(response.data["contact_phone"], service_data["telephone"])
+        self.assertEqual(
+            response.data["is_contact_info_public"], service_data["contact_public"]
+        )
 
     def test_service_di_credentials(self):
-        service_data = self.make_di_service(justificatifs="lorem,ipsum")
-        di_id = service_data["source"] + "--" + service_data["id"]
-        request = self.factory.get(f"/service-di/{di_id}/")
-        response = service_di(request, di_id=di_id, di_client=self.di_client)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["credentials"], ["lorem", "ipsum"])
-        self.assertEqual(response.data["credentials_display"], ["lorem", "ipsum"])
+        cases = [
+            (None, [], []),
+            ("", [], []),
+            ("lorem,ipsum", ["lorem", "ipsum"], ["lorem", "ipsum"]),
+        ]
+        for justificatifs, credentials, credentials_display in cases:
+            with self.subTest(justificatifs=justificatifs):
+                service_data = self.make_di_service(justificatifs=justificatifs)
+                di_id = service_data["source"] + "--" + service_data["id"]
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["credentials"], credentials)
+                self.assertEqual(
+                    response.data["credentials_display"], credentials_display
+                )
 
     def test_service_di_diffusion_zone(self):
-        service_data = self.make_di_service(
-            zone_diffusion_type="commune", zone_diffusion_code=self.city1.code
-        )
-        di_id = service_data["source"] + "--" + service_data["id"]
-        request = self.factory.get(f"/service-di/{di_id}/")
-        response = service_di(request, di_id=di_id, di_client=self.di_client)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["diffusion_zone_details"], self.city1.code)
-        self.assertEqual(
-            response.data["diffusion_zone_details_display"],
-            f"{self.city1.name} ({self.dept.code})",
-        )
-        self.assertEqual(
-            response.data["diffusion_zone_type"], AdminDivisionType.CITY.value
-        )
-        self.assertEqual(
-            response.data["diffusion_zone_type_display"], AdminDivisionType.CITY.label
-        )
+        cases = [
+            (
+                "commune",
+                self.city1.code,
+                self.city1.code,
+                f"{self.city1.name} ({self.dept.code})",
+                AdminDivisionType.CITY.value,
+                AdminDivisionType.CITY.label,
+            ),
+            (
+                "pays",
+                None,
+                None,
+                "France entière",
+                AdminDivisionType.COUNTRY.value,
+                AdminDivisionType.COUNTRY.label,
+            ),
+        ]
+
+        for (
+            zone_diffusion_type,
+            zone_diffusion_code,
+            diffusion_zone_details,
+            diffusion_zone_details_display,
+            diffusion_zone_type,
+            diffusion_zone_type_display,
+        ) in cases:
+            with self.subTest(
+                zone_diffusion_type=zone_diffusion_type,
+                zone_diffusion_code=zone_diffusion_code,
+            ):
+                service_data = self.make_di_service(
+                    zone_diffusion_type=zone_diffusion_type,
+                    zone_diffusion_code=zone_diffusion_code,
+                )
+                di_id = service_data["source"] + "--" + service_data["id"]
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    response.data["diffusion_zone_details"], diffusion_zone_details
+                )
+                self.assertEqual(
+                    response.data["diffusion_zone_details_display"],
+                    diffusion_zone_details_display,
+                )
+                self.assertEqual(
+                    response.data["diffusion_zone_type"], diffusion_zone_type
+                )
+                self.assertEqual(
+                    response.data["diffusion_zone_type_display"],
+                    diffusion_zone_type_display,
+                )
+                self.assertEqual(response.data["qpv_or_zrr"], None)
 
     def test_service_di_fee(self):
+        cases = [
+            (None, None),
+            ([], ""),
+            (["gratuit", "adhesion"], "gratuit, adhesion"),
+        ]
+        for frais, fee_condition in cases:
+            with self.subTest(frais=frais):
+                service_data = self.make_di_service(frais=frais)
+                di_id = service_data["source"] + "--" + service_data["id"]
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["fee_condition"], fee_condition)
+
+        cases = [
+            (None, None),
+            ("", ""),
+            ("Gratuit pour tous", "Gratuit pour tous"),
+        ]
+        for frais_autres, fee_details in cases:
+            with self.subTest(frais_autres=frais_autres):
+                service_data = self.make_di_service(frais_autres=frais_autres)
+                di_id = service_data["source"] + "--" + service_data["id"]
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["fee_details"], fee_details)
+
+    def test_service_di_location_kinds(self):
+        cases = [
+            (None, [], []),
+            ([], [], []),
+            (["en-presentiel"], ["en-presentiel"], ["En présentiel"]),
+        ]
+        for modes_accueil, location_kinds, location_kinds_display in cases:
+            with self.subTest(modes_accueil=modes_accueil):
+                service_data = self.make_di_service(modes_accueil=modes_accueil)
+                di_id = service_data["source"] + "--" + service_data["id"]
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["location_kinds"], location_kinds)
+                self.assertEqual(
+                    response.data["location_kinds_display"], location_kinds_display
+                )
+
+    def test_service_di_requirements(self):
+        cases = [
+            (None, [], []),
+            ("", [], []),
+            ("lorem,ipsum", ["lorem", "ipsum"], ["lorem", "ipsum"]),
+        ]
+        for pre_requis, requirements, requirements_display in cases:
+            with self.subTest(pre_requis=pre_requis):
+                service_data = self.make_di_service(pre_requis=pre_requis)
+                di_id = service_data["source"] + "--" + service_data["id"]
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["requirements"], requirements)
+                self.assertEqual(
+                    response.data["requirements_display"], requirements_display
+                )
+
+    def test_service_di_kinds(self):
+        cases = [
+            (None, [], []),
+            ([], [], []),
+            (["accompagnement"], ["accompagnement"], ["Accompagnement"]),
+        ]
+        for types, kinds, kinds_display in cases:
+            with self.subTest(types=types):
+                service_data = self.make_di_service(types=types)
+                di_id = service_data["source"] + "--" + service_data["id"]
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["kinds"], kinds)
+                self.assertEqual(response.data["kinds_display"], kinds_display)
+
+    def test_service_di_desc(self):
         service_data = self.make_di_service(
-            frais=["gratuit", "adhesion"], frais_autres="Gratuit pour tous"
+            nom="L.I.",
+            presentation_resume="Lorem...",
+            presentation_detail="Lorem ipsum.",
         )
         di_id = service_data["source"] + "--" + service_data["id"]
         request = self.factory.get(f"/service-di/{di_id}/")
         response = service_di(request, di_id=di_id, di_client=self.di_client)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["fee_condition"], "gratuit, adhesion")
-        self.assertEqual(response.data["fee_details"], service_data["frais_autres"])
+        self.assertEqual(response.data["name"], service_data["nom"])
+        self.assertEqual(
+            response.data["full_desc"], service_data["presentation_detail"]
+        )
+        self.assertEqual(
+            response.data["short_desc"], service_data["presentation_resume"]
+        )
 
-    def test_service_di_location_kinds(self):
-        service_data = self.make_di_service(modes_accueil=["en-presentiel"])
+    def test_service_di_date(self):
+        service_data = self.make_di_service(
+            date_creation="2022-01-01",
+            date_maj="2023-01-01",
+            recurrence="Tous les jours",
+            date_suspension="2030-01-01",
+            structure={"nom": "Rouge Empire"},
+        )
         di_id = service_data["source"] + "--" + service_data["id"]
         request = self.factory.get(f"/service-di/{di_id}/")
         response = service_di(request, di_id=di_id, di_client=self.di_client)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["location_kinds"], ["en-presentiel"])
-        self.assertEqual(response.data["location_kinds_display"], ["En présentiel"])
+        self.assertEqual(response.data["creation_date"], service_data["date_creation"])
+        self.assertEqual(response.data["modification_date"], service_data["date_maj"])
+        self.assertEqual(response.data["publication_date"], None)
+        self.assertEqual(response.data["recurrence"], service_data["recurrence"])
+        self.assertEqual(
+            response.data["suspension_date"], service_data["date_suspension"]
+        )
+        self.assertEqual(response.data["publication_date"], None)
 
-    def test_service_di_requirements(self):
-        service_data = self.make_di_service(pre_requis="lorem,ipsum")
+    def test_service_di_structure(self):
+        service_data = self.make_di_service(
+            structure={"nom": "Rouge Empire"},
+        )
         di_id = service_data["source"] + "--" + service_data["id"]
         request = self.factory.get(f"/service-di/{di_id}/")
         response = service_di(request, di_id=di_id, di_client=self.di_client)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["requirements"], ["lorem", "ipsum"])
-        self.assertEqual(response.data["requirements_display"], ["lorem", "ipsum"])
+        self.assertEqual(response.data["structure"], None)
+        self.assertEqual(
+            response.data["structure_info"]["name"], service_data["structure"]["nom"]
+        )
 
-    # TODO: other metadata
+    def test_service_di_is_cumulative(self):
+        for cumulable in [True, False, None]:
+            with self.subTest(cumulable=cumulable):
+                service_data = self.make_di_service(cumulable=cumulable)
+                di_id = service_data["source"] + "--" + service_data["id"]
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["is_cumulative"], cumulable)
+
+    def test_service_di_update_status(self):
+        cases = [
+            (str(timezone.now().date() - timedelta(days=365)), "REQUIRED"),
+            (str(timezone.now().date()), "NOT_NEEDED"),
+        ]
+        for date_maj, update_status in cases:
+            with self.subTest(update_status=update_status):
+                service_data = self.make_di_service(date_maj=date_maj)
+                di_id = service_data["source"] + "--" + service_data["id"]
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["update_status"], update_status)
+
+    def test_service_di_misc(self):
+        service_data = self.make_di_service()
+        di_id = service_data["source"] + "--" + service_data["id"]
+        request = self.factory.get(f"/service-di/{di_id}/")
+        response = service_di(request, di_id=di_id, di_client=self.di_client)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_write"], False)
+        self.assertEqual(response.data["has_already_been_unpublished"], None)
+        self.assertEqual(response.data["is_available"], True)
+        self.assertEqual(response.data["model"], None)
+        self.assertEqual(response.data["model_changed"], None)
+        self.assertEqual(response.data["model_name"], None)
+        self.assertEqual(response.data["online_form"], None)
+        self.assertEqual(response.data["remote_url"], None)
+        self.assertEqual(response.data["status"], "PUBLISHED")
+        self.assertEqual(response.data["use_inclusion_numerique_scheme"], False)
 
 
 class ServiceSearchTestCase(APITestCase):

@@ -110,7 +110,7 @@ def map_service(service_data: dict) -> dict:
         ).value
 
     credentials = []
-    if service_data["justificatifs"] is not None:
+    if service_data["justificatifs"] not in [None, ""]:
         credentials = service_data["justificatifs"].split(",")
 
     fee_condition = None
@@ -118,7 +118,7 @@ def map_service(service_data: dict) -> dict:
         fee_condition = ", ".join(service_data["frais"])
 
     requirements = []
-    if service_data["pre_requis"] is not None:
+    if service_data["pre_requis"] not in [None, ""]:
         requirements = service_data["pre_requis"].split(",")
 
     return {
