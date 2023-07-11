@@ -22,14 +22,12 @@ class OrientationSerializer(serializers.ModelSerializer):
         source="service",
         slug_field="slug",
         queryset=Service.objects.all(),
-        required=False,
     )
     service = ServiceSerializer(read_only=True)
 
     prescriber_structure = serializers.SlugRelatedField(
         slug_field="slug",
         queryset=Structure.objects.all(),
-        required=False,
     )
 
     prescriber = serializers.SerializerMethodField()
@@ -70,7 +68,3 @@ class OrientationSerializer(serializers.ModelSerializer):
             "name": orientation.prescriber.get_full_name(),
             "email": orientation.prescriber.email,
         }
-
-    def get_service(self, orientation):
-        service = Service.objects.filter(id=orientation.service_id).first()
-        return ServiceSerializer(service).data

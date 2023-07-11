@@ -41,10 +41,10 @@ class Orientation(models.Model):
     )
 
     beneficiary_last_name = models.CharField(
-        max_length=140, verbose_name="Nom bénéficiaire", blank=True
+        max_length=140, verbose_name="Nom bénéficiaire"
     )
     beneficiary_first_name = models.CharField(
-        max_length=140, verbose_name="Prénom bénéficiaire", blank=True
+        max_length=140, verbose_name="Prénom bénéficiaire"
     )
 
     beneficiary_contact_preferences = ArrayField(
@@ -54,7 +54,6 @@ class Orientation(models.Model):
             blank=True,
         ),
         verbose_name="Préférences de contact",
-        blank=True,
         default=list,
     )
 
@@ -79,21 +78,19 @@ class Orientation(models.Model):
     )
 
     # Infos du référent
-    referent_last_name = models.CharField(
-        max_length=140, verbose_name="Nom référent", blank=True
-    )
+    referent_last_name = models.CharField(max_length=140, verbose_name="Nom référent")
     referent_first_name = models.CharField(
-        max_length=140, verbose_name="Prénom référent", blank=True
+        max_length=140, verbose_name="Prénom référent"
     )
     referent_phone = models.CharField(
         verbose_name="Tel référent", max_length=10, blank=True
     )
-    referent_email = models.EmailField(verbose_name="Courriel référent", blank=True)
+    referent_email = models.EmailField(verbose_name="Courriel référent")
 
     # Meta
     prescriber = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        verbose_name="Préscripteur",
+        verbose_name="Prescripteur",
         on_delete=models.SET_NULL,
         null=True,
     )

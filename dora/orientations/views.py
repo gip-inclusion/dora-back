@@ -32,6 +32,12 @@ class OrientationViewSet(
     def get_queryset(self):
         return Orientation.objects.all()
 
+    def perform_create(self, serializer):
+        # TODO: auth user only
+        serializer.is_valid()
+        orientation = serializer.save(prescriber=self.request.user)
+        send_orientation_created_emails(orientation)
+
     @action(
         detail=True,
         methods=["post"],
@@ -83,9 +89,3 @@ class OrientationViewSet(
         # orientation = self.get_object()
         # message = self.request.data.get("message")
         return Response(status=204)
-
-    def perform_create(self, serializer):
-        serializer.is_valid()
-
-        orientation = serializer.save(prescriber=self.request.user)
-        send_orientation_created_emails(orientation)
