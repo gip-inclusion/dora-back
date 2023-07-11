@@ -18,7 +18,7 @@
             href="{{ data.service.get_frontend_url }}">{{ data.service.name }}
     </a>&nbsp;» porté par la structure
         <a href="{{ data.service.structure.get_frontend_url }}">{{ data.service.structure.name }}</a>
-        ({{ data.service.structure.postal_code }} {{ data.service.structure.city }}) à été transmis !
+        ({{ data.service.structure.postal_code }} {{ data.service.structure.city }}) à été transmis&nbsp;!
         Voici un récapitulatif de la demande&nbsp;:
     </p>
 
@@ -35,7 +35,7 @@
 
     {% include "partials/block-attachments.html" %}
 
-    {% include "partials/block-contact.html" %}
+    {% include "partials/block-service-contact.html" %}
 
     <p>
         <strong>La structure {{ data.service.structure.name }} va traiter votre demande et reviendra vers vous avec une

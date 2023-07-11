@@ -86,6 +86,19 @@
 
                 <!-- Footer -->
                 {% block footer %}{% endblock %}
+
+
+                <mj-spacer height="24px"/>
+
+                <mj-text>
+                    <div style="color: #555555; background-color: #F0F8FF; border-radius: 12px;
+padding: 16px 24px">
+                        En cas de difficulté, n'hésitez pas à
+                        <a style="color: #555" href="mailto:{{ support_email }}">contacter le support</a>
+                        de la plateforme DORA pour obtenir de
+                        l'aide.
+                    </div>
+                </mj-text>
             </mj-column>
         </mj-section>
 

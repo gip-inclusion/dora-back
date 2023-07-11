@@ -17,7 +17,7 @@
             {% endif %}
         </ul>
     </li>
-    {% if data.beneficiary_contact_preferences|length < 3 %}
+    {% if beneficiaries_has_alternate_contact_methods %}
         <li>Autres moyens de contact&nbsp;:
             <ul>
                 {% if not ContactPreference.EMAIL in data.beneficiary_contact_preferences and data.beneficiary_email %}
@@ -32,5 +32,7 @@
             </ul>
         </li>
     {% endif %}
-    <li>{% if not is_beneficiary %}est {% endif %}disponible à partir du {{ data.beneficiary_availability }}</li>
+    {% if data.beneficiary_availability %}
+        <li>{% if not is_beneficiary %}est {% endif %}disponible à partir du {{ data.beneficiary_availability }}</li>
+    {% endif %}
 </ul>
