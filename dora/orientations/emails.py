@@ -12,6 +12,7 @@ def send_orientation_created_emails(orientation):
         "homepage_url": settings.FRONTEND_URL,
         "magic_link": orientation.get_magic_link(),
         "ContactPreference": ContactPreference,
+        "support_email": settings.SUPPORT_EMAIL,
     }
     # Structure porteuse
     send_mail(
@@ -68,6 +69,7 @@ def send_orientation_accepted_emails(orientation):
         "data": orientation,
         "homepage_url": settings.FRONTEND_URL,
         "magic_link": orientation.get_magic_link(),
+        "support_email": settings.SUPPORT_EMAIL,
     }
 
     # Prescripteur
@@ -116,6 +118,7 @@ def send_orientation_rejected_emails(orientation):
         "data": orientation,
         "homepage_url": settings.FRONTEND_URL,
         "magic_link": orientation.get_magic_link(),
+        "support_email": settings.SUPPORT_EMAIL,
     }
 
     # Prescripteur
@@ -151,6 +154,7 @@ def send_message_to_prescriber(orientation, message):
         "homepage_url": settings.FRONTEND_URL,
         "magic_link": orientation.get_magic_link(),
         "message": message,
+        "support_email": settings.SUPPORT_EMAIL,
     }
 
     # Prescripteur
@@ -173,6 +177,7 @@ def send_message_to_beneficiary(orientation, message):
         "homepage_url": settings.FRONTEND_URL,
         "magic_link": orientation.get_magic_link(),
         "message": message,
+        "support_email": settings.SUPPORT_EMAIL,
     }
 
     # Prescripteur
