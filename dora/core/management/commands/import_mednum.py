@@ -115,7 +115,7 @@ class Command(BaseCommand):
                 headers={
                     "Content-Type": "application/json",
                     "Accept": "application/json",
-                    "Authorization": f"Bearer {settings.DATA_INCLUSION_API_KEY}",
+                    "Authorization": f"Bearer {settings.DATA_INCLUSION_IMPORT_API_KEY}",
                 },
             )
             if response.status_code != 200:

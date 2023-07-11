@@ -19,7 +19,7 @@ def log_and_raise(resp: requests.Response, *args, **kwargs):
 def di_client_factory():
     return DataInclusionClient(
         base_url=settings.DATA_INCLUSION_URL,
-        token=settings.DATA_INCLUSION_API_KEY,
+        token=settings.DATA_INCLUSION_STREAM_API_KEY,
     )
 
 
