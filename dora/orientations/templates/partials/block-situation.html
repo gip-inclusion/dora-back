@@ -3,7 +3,9 @@
 
     <ul>
         {% for item in data.situation %}
-            <li>{{ item }}</li>
+            {% if item != "Autre" %}
+                <li>{{ item }}</li>
+            {% endif %}
         {% endfor %}
         {% if data.situation_other %}
             <li>
