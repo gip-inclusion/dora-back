@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block title %}
-    {{ data.service.structure.name }} vient de vous envoyer un message.
+    La structure {{ data.service.structure.name }} vient de vous envoyer un message.
 {% endblock %}
 
 {% block content %}
