@@ -835,6 +835,19 @@ def _get_di_results(
         )
     ]
 
+    # FIXME: exclude a few services which are not well managed yet
+    raw_di_results = [
+        result
+        for result in raw_di_results
+        if not (
+            (
+                result["service"]["latitude"] is None
+                or result["service"]["longitude"] is None
+            )
+            and "en-presentiel" in result["service"]["modes_accueil"]
+        )
+    ]
+
     mapped_di_results = [
         data_inclusion.map_search_result(result) for result in raw_di_results
     ]
