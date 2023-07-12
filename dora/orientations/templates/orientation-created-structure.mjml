@@ -46,7 +46,8 @@
 
 {% block cta %}
     <mj-text>
-        Contactez le bénéficiaire ou le professionnel qui a réalisé la demande et apportez une réponse&nbsp;:
+        N’hésitez pas à contacter le professionnel qui a réalisé la demande ou le bénéficiaire afin d’apporter une
+        réponse rapide à cette demande&nbsp;:
     </mj-text>
     <mj-spacer height="24px"/>
     <mj-button mj-class="cta" href="{{ data.get_magic_link }}">
