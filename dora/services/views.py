@@ -957,11 +957,11 @@ def _search(
 @api_view()
 @permission_classes([permissions.AllowAny])
 def search(request, di_client=None):
-    city_code = request.GET.get("city", None)
-    categories = request.GET.get("cats", None)
-    subcategories = request.GET.get("subs", None)
-    kinds = request.GET.get("kinds", None)
-    fees = request.GET.get("fees", None)
+    city_code = request.GET.get("city")
+    categories = request.GET.get("cats")
+    subcategories = request.GET.get("subs")
+    kinds = request.GET.get("kinds")
+    fees = request.GET.get("fees")
 
     categories_list = categories.split(",") if categories is not None else None
     subcategories_list = subcategories.split(",") if subcategories is not None else None
