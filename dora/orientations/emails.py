@@ -203,7 +203,6 @@ def send_message_to_beneficiary(orientation, message, cc_prescriber, cc_referent
         "support_email": settings.SUPPORT_EMAIL,
     }
 
-    # Prescripteur
     send_mail(
         "[Contact - Bénéficiaire] Vous avez un nouveau message 📩",
         orientation.beneficiary_email,
@@ -213,7 +212,6 @@ def send_message_to_beneficiary(orientation, message, cc_prescriber, cc_referent
             settings.DEFAULT_FROM_EMAIL,
         ),
         tags=["orientation"],
-        reply_to=[orientation.service.contact_email, orientation.referent_email],
         reply_to=[
             orientation.service.contact_email,
             orientation.referent_email,

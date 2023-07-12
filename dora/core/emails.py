@@ -10,7 +10,8 @@ from furl import furl
 
 def clean_reply_to(emails):
     # Déduplique et enlève les adresses vides
-    return list(set(email for email in emails if email))
+    if emails:
+        return list(set(email for email in emails if email))
 
 
 def send_mail(
