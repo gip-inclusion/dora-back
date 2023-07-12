@@ -2,12 +2,21 @@
 
 {% if data.beneficiary_attachments %}
     <h2>Les documents transmis&nbsp;:</h2>
-
-    <p>
-        <em>
-            {% for item in data.beneficiary_attachments %}
-                {{ item|format_attachment }}{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        </em>
-    </p>
+    {% if show_links %}
+        <ul>
+            <li>
+                {% for item in attachments %}
+                    <a href="{{ item.url }}">{{ item.name|format_attachment }}</a>
+                {% endfor %}
+            </li>
+        </ul>
+    {% else %}
+        <p>
+            <em>
+                {% for item in data.beneficiary_attachments %}
+                    {{ item|format_attachment }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            </em>
+        </p>
+    {% endif %}
 {% endif %}

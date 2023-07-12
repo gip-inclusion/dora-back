@@ -38,9 +38,11 @@
     {% endif %}
 
     {% include "partials/block-orientation.html" %}
+
+    {% include "partials/block-attachments.html" with show_links=True %}
+
 {% endblock %}
 
-{% include "partials/block-attachments.html" %}
 
 {% block cta %}
     <mj-text>

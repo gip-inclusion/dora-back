@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.files.storage import default_storage
 from django.template.loader import render_to_string
 from mjml import mjml2html
 
@@ -27,6 +28,10 @@ def send_orientation_created_emails(orientation):
             beneficiaries_contact_methods
         )
         > len(orientation.beneficiary_contact_preferences),
+        "attachments": [
+            {"name": a, "url": default_storage.url(a)}
+            for a in orientation.beneficiary_attachments
+        ],
     }
     # Structure porteuse
     send_mail(
@@ -39,7 +44,6 @@ def send_orientation_created_emails(orientation):
         ),
         tags=["orientation"],
         reply_to=[orientation.referent_email, orientation.prescriber.email],
-        attachments=orientation.beneficiary_attachments,
     )
     # Prescripteur
     send_mail(
