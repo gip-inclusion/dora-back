@@ -21,6 +21,13 @@ class OrientationStatus(models.TextChoices):
 
 
 class Orientation(models.Model):
+    id = models.BigAutoField(
+        auto_created=True,
+        primary_key=True,
+        serialize=False,
+        verbose_name="ID",
+    )
+
     query_id = models.UUIDField(default=uuid.uuid4, editable=False, db_index=True)
 
     # Infos bénéficiaires
@@ -108,6 +115,9 @@ class Orientation(models.Model):
         related_name="+",
         null=True,
     )
+    original_service_name = models.CharField(
+        verbose_name="Nom original", max_length=140, default="", editable=False
+    )
     orientation_reasons = models.TextField(
         verbose_name="Motif de l'orientation", blank=True
     )
@@ -118,6 +128,11 @@ class Orientation(models.Model):
         choices=OrientationStatus.choices,
         default=OrientationStatus.PENDING,
     )
+
+    def save(self, *args, **kwargs):
+        if not self.id:
+            self.original_service_name = self.service.name
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Orientation #{self.id}"

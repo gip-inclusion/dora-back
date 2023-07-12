@@ -5,31 +5,24 @@ from dora.services.models import Service
 from dora.structures.models import Structure
 
 
-class ServiceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Service
-        fields = [
-            "contact_email",
-            "contact_name",
-            "contact_phone",
-            "name",
-            "slug",
-        ]
-
-
 class OrientationSerializer(serializers.ModelSerializer):
     service_slug = serializers.SlugRelatedField(
         source="service",
         slug_field="slug",
         queryset=Service.objects.all(),
+        write_only=True,
     )
-    service = ServiceSerializer(read_only=True)
-
-    prescriber_structure = serializers.SlugRelatedField(
+    prescriber_structure_slug = serializers.SlugRelatedField(
+        source="prescriber_structure",
         slug_field="slug",
         queryset=Structure.objects.all(),
+        write_only=True,
     )
 
+    # TODO: utiliser un vrai champ pour stocker l'état initial
+    # TODO: est-ce qu'il faut la même chose pour la structure?
+    service = serializers.SerializerMethodField()
+    prescriber_structure = serializers.SerializerMethodField()
     prescriber = serializers.SerializerMethodField()
 
     class Meta:
@@ -48,7 +41,7 @@ class OrientationSerializer(serializers.ModelSerializer):
             "orientation_reasons",
             "prescriber",
             "prescriber_structure",
-            "processing_date",
+            "prescriber_structure_slug",
             "processing_date",
             "query_id",
             "referent_email",
@@ -62,6 +55,28 @@ class OrientationSerializer(serializers.ModelSerializer):
             "situation_other",
             "status",
         ]
+
+    def get_service(self, orientation):
+        if orientation.service:
+            return {
+                "contact_email": orientation.service.contact_email,
+                "contact_name": orientation.service.contact_name,
+                "contact_phone": orientation.service.contact_phone,
+                "name": orientation.service.name,
+                "slug": orientation.service.slug,
+            }
+        else:
+            return {"name": orientation.original_service_name}
+
+    def get_prescriber_structure(self, orientation):
+        return {
+            "name": orientation.prescriber_structure.name
+            if orientation.prescriber_structure
+            else "",
+            "slug": orientation.prescriber_structure.slug
+            if orientation.prescriber_structure
+            else "",
+        }
 
     def get_prescriber(self, orientation):
         return {

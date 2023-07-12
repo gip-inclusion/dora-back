@@ -13,8 +13,14 @@
         <strong>Bonjour,</strong>
     </p>
     <p>
-        Lorem Ipsum
+        La demande concernant {{ data.get_beneficiary_full_name }} à été validée par la structure <a
+            href="{{ data.service.structure.get_frontend_url }}">{{ data.service.structure.name }}</a>. Il ou elle
+        intégrera «&nbsp;<a
+            href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a>&nbsp;» qui se déroulera à {lieu}, à
+        partir du {date.début} et jusqu'au {date.fin}.
     </p>
+
+    {% include "partials/block-service-contact-inline.html" %}
 
 {% endblock %}
 tad
