@@ -8,6 +8,11 @@ from django.template.loader import render_to_string
 from furl import furl
 
 
+def clean_reply_to(emails):
+    # Déduplique et enlève les adresses vides
+    return list(set(email for email in emails if email))
+
+
 def send_mail(
     subject,
     # chaine ou liste de chaines
@@ -42,7 +47,7 @@ def send_mail(
         from_email,
         to,
         headers=headers,
-        reply_to=reply_to,
+        reply_to=clean_reply_to(reply_to),
     )
     msg.content_subtype = "html"
     if attachments is not None:

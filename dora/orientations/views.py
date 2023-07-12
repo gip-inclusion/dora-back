@@ -3,6 +3,7 @@ from rest_framework import mixins, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from ..core.utils import TRUTHY_VALUES
 from .emails import (
     send_message_to_beneficiary,
     send_message_to_prescriber,
@@ -53,11 +54,14 @@ class OrientationViewSet(
     )
     def validate(self, request, query_id=None):
         orientation = self.get_object()
-        # message = self.request.data.get("message")
+        prescriberMessage = self.request.data.get("message")
+        beneficiaryMessage = self.request.data.get("beneficiary_message")
         orientation.processing_date = timezone.now()
         orientation.status = OrientationStatus.ACCEPTED
         orientation.save()
-        send_orientation_accepted_emails(orientation)
+        send_orientation_accepted_emails(
+            orientation, prescriberMessage, beneficiaryMessage
+        )
         return Response(status=204)
 
     @action(
@@ -67,12 +71,13 @@ class OrientationViewSet(
         permission_classes=[permissions.AllowAny],
     )
     def reject(self, request, query_id=None):
+        # todo: stocker les motifs de refus
         orientation = self.get_object()
-        # message = self.request.data.get("message")
+        message = self.request.data.get("message")
         orientation.processing_date = timezone.now()
         orientation.status = OrientationStatus.REJECTED
         orientation.save()
-        send_orientation_rejected_emails(orientation)
+        send_orientation_rejected_emails(orientation, message)
         return Response(status=204)
 
     @action(
@@ -82,9 +87,13 @@ class OrientationViewSet(
         permission_classes=[permissions.AllowAny],
     )
     def contact_beneficiary(self, request, query_id=None):
+        # TODO: logguer le fait qu'un message a été envoyé, et sa date
+
         orientation = self.get_object()
         message = self.request.data.get("message")
-        send_message_to_beneficiary(orientation, message)
+        cc_prescriber = self.request.data.get("cc_prescriber") in TRUTHY_VALUES
+        cc_referent = self.request.data.get("cc_referent") in TRUTHY_VALUES
+        send_message_to_beneficiary(orientation, message, cc_prescriber, cc_referent)
         return Response(status=204)
 
     @action(
@@ -94,7 +103,10 @@ class OrientationViewSet(
         permission_classes=[permissions.AllowAny],
     )
     def contact_prescriber(self, request, query_id=None):
+        # TODO: logguer le fait qu'un message a été envoyé, et sa date
         orientation = self.get_object()
         message = self.request.data.get("message")
-        send_message_to_prescriber(orientation, message)
+        cc_beneficiary = self.request.data.get("cc_beneficiary") in TRUTHY_VALUES
+        cc_referent = self.request.data.get("cc_referent") in TRUTHY_VALUES
+        send_message_to_prescriber(orientation, message, cc_beneficiary, cc_referent)
         return Response(status=204)

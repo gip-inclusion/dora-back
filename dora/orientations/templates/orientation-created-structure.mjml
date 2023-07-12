@@ -49,7 +49,7 @@
         Contactez le bénéficiaire ou le professionnel qui a réalisé la demande et apportez une réponse&nbsp;:
     </mj-text>
     <mj-spacer height="24px"/>
-    <mj-button mj-class="cta" href="{{ magic_link }}">
+    <mj-button mj-class="cta" href="{{ orientation.get_magic_link }}">
         Visualiser et traiter la demande
     </mj-button>
     <mj-spacer height="24px"/>

@@ -9,11 +9,5 @@
 {% endblock %}
 
 {% block content %}
-    <p>
-        <strong>Bonjour,</strong>
-    </p>
-    <p>
-
-    </p>
-
+    {{ message|linebreaks }}
 {% endblock %}
