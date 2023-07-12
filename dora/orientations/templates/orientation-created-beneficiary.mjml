@@ -42,6 +42,8 @@
 
     {% include "partials/block-requirements.html" with is_beneficiary=True %}
 
+    {% include "partials/block-attachments.html" %}
+
     {% include "partials/block-prescriber.html" %}
 
     <p>
