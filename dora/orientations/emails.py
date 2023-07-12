@@ -181,10 +181,14 @@ def send_message_to_prescriber(orientation, message, cc_beneficiary, cc_referent
         "support_email": settings.SUPPORT_EMAIL,
     }
 
-    # Prescripteur
+    recipients = [orientation.prescriber.email]
+    if cc_referent and orientation.referent_email != orientation.prescriber.email:
+        recipients.append(orientation.referent_email)
+    if cc_beneficiary:
+        recipients.append(orientation.beneficiary_email)
     send_mail(
         "[Contact - Prescripteur] Vous avez un nouveau message 📩",
-        orientation.prescriber.email,
+        recipients,
         mjml2html(render_to_string("contact-prescriber.mjml", context)),
         from_email=(
             f"{orientation.service.structure.name} via DORA",
@@ -203,9 +207,15 @@ def send_message_to_beneficiary(orientation, message, cc_prescriber, cc_referent
         "support_email": settings.SUPPORT_EMAIL,
     }
 
+    recipients = [orientation.beneficiary_email]
+    if cc_prescriber:
+        recipients.append(orientation.prescriber.email)
+    if cc_referent and orientation.referent_email != orientation.prescriber.email:
+        recipients.append(orientation.referent_email)
+
     send_mail(
         "[Contact - Bénéficiaire] Vous avez un nouveau message 📩",
-        orientation.beneficiary_email,
+        recipients,
         mjml2html(render_to_string("contact-beneficiary.mjml", context)),
         from_email=(
             f"{orientation.service.structure.name} via DORA",
