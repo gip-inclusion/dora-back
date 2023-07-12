@@ -1507,7 +1507,7 @@ class DataInclusionSearchTestCase(APITestCase):
                 self.assertEqual(response.data["fee_condition"], fee_condition)
 
         cases = [
-            (None, None),
+            (None, ""),
             ("", ""),
             ("Gratuit pour tous", "Gratuit pour tous"),
         ]

@@ -166,7 +166,7 @@ def map_service(service_data: dict) -> dict:
         if zone_diffusion_type is not None
         else "",
         "fee_condition": fee_condition,
-        "fee_details": service_data["frais_autres"],
+        "fee_details": service_data["frais_autres"] or "",
         "forms": [],
         "forms_info": [],
         "full_desc": service_data["presentation_detail"],
