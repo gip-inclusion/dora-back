@@ -751,7 +751,7 @@ def _sort_services(services):
 def service_di(
     request,
     di_id: str,
-    di_client: Optional[data_inclusion.DataInclusionClient] = None,
+    di_client: data_inclusion.DataInclusionClient,
 ):
     """Retrieve a single service from data.inclusion.
 
@@ -761,9 +761,6 @@ def service_di(
     """
 
     source_di, di_service_id = di_id.split("--")
-
-    if di_client is None:
-        return Response(status=status.HTTP_404_NOT_FOUND)
 
     try:
         raw_service = di_client.retrieve_service(source=source_di, id=di_service_id)
