@@ -106,28 +106,17 @@ spectacular_patterns = [
     ),
 ]
 
+# conditionally inject a di_client dependency to views
+di_client = data_inclusion.di_client_factory() if not settings.IS_TESTING else None
+
 private_api_patterns = [
     path("auth/", include("dora.rest_auth.urls")),
-    path(
-        "search/",
-        dora.services.views.search,
-        # conditionally inject the real di_client dependency to the view
-        {
-            "di_client": data_inclusion.di_client_factory()
-            if not settings.IS_TESTING
-            else None
-        },
-    ),
+    path("search/", dora.services.views.search, {"di_client": di_client}),
     path("stats/event/", dora.stats.views.log_event),
     path(
         "service-di/<slug:di_id>/",
         dora.services.views.service_di,
-        # conditionally inject the real di_client dependency to the view
-        {
-            "di_client": data_inclusion.di_client_factory()
-            if not settings.IS_TESTING
-            else None
-        },
+        {"di_client": di_client},
     ),
     path("admin-division-search/", dora.admin_express.views.search),
     path("admin-division-reverse-search/", dora.admin_express.views.reverse_search),
