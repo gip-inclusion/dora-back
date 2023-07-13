@@ -971,6 +971,7 @@ def search(request, di_client=None):
     subcategories = request.GET.get("subs")
     kinds = request.GET.get("kinds")
     fees = request.GET.get("fees")
+    use_di = request.GET.get("di", False)
 
     categories_list = categories.split(",") if categories is not None else None
     subcategories_list = subcategories.split(",") if subcategories is not None else None
@@ -979,7 +980,7 @@ def search(request, di_client=None):
 
     sorted_results = _search(
         request=request,
-        di_client=di_client,
+        di_client=di_client if use_di else None,
         city_code=city_code,
         categories=categories_list,
         subcategories=subcategories_list,
