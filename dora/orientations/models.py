@@ -144,7 +144,7 @@ class Orientation(models.Model):
         return self.get_frontend_url()
 
     def get_frontend_url(self):
-        return f"{settings.FRONTEND_URL}/orientations/?token={self.query_id}"
+        return f"{settings.FRONTEND_URL}/orientations?token={self.query_id}"
 
     def get_beneficiary_full_name(self):
         if self.beneficiary_first_name or self.beneficiary_last_name:
