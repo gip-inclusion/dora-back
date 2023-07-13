@@ -92,6 +92,14 @@ def send_orientation_accepted_emails(
         "beneficiaryMessage": beneficiaryMessage,
     }
 
+    # Structure
+    send_mail(
+        "[Validée - Structure porteuse] Vous venez de valider une demande 🎉",
+        [orientation.service.contact_email],
+        mjml2html(render_to_string("orientation-accepted-structure.mjml", context)),
+        tags=["orientation"],
+    )
+
     # Prescripteur
     send_mail(
         "[Validée - Prescripteur] Votre demande a été acceptée ! 🎉",
