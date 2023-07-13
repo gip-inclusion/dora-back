@@ -11,3 +11,5 @@
 {% block content %}
     {{ beneficiaryMessage|linebreaks }}
 {% endblock %}
+
+{% block signature %}{% endblock %}

@@ -61,10 +61,6 @@ def send_orientation_created_emails(orientation):
             "[Envoyée - Conseiller référent] Notification d'une demande d'orientation",
             orientation.referent_email,
             mjml2html(render_to_string("orientation-created-referent.mjml", context)),
-            from_email=(
-                f"{orientation.prescriber.get_full_name()} via DORA",
-                settings.DEFAULT_FROM_EMAIL,
-            ),
             tags=["orientation"],
             reply_to=[orientation.service.contact_email, orientation.prescriber.email],
         )
@@ -75,6 +71,10 @@ def send_orientation_created_emails(orientation):
             orientation.beneficiary_email,
             mjml2html(
                 render_to_string("orientation-created-beneficiary.mjml", context)
+            ),
+            from_email=(
+                f"{orientation.prescriber.get_full_name()} via DORA",
+                settings.DEFAULT_FROM_EMAIL,
             ),
             tags=["orientation"],
             reply_to=[orientation.referent_email, orientation.prescriber.email],
@@ -106,7 +106,7 @@ def send_orientation_accepted_emails(
         orientation.prescriber.email,
         mjml2html(render_to_string("orientation-accepted-prescriber.mjml", context)),
         from_email=(
-            f"{orientation.structure.name} via DORA",
+            f"{orientation.service.structure.name} via DORA",
             settings.DEFAULT_FROM_EMAIL,
         ),
         tags=["orientation"],
@@ -119,7 +119,7 @@ def send_orientation_accepted_emails(
             orientation.referent_email,
             mjml2html(render_to_string("orientation-accepted-referent.mjml", context)),
             from_email=(
-                f"{orientation.structure.name} via DORA",
+                f"{orientation.service.structure.name} via DORA",
                 settings.DEFAULT_FROM_EMAIL,
             ),
             tags=["orientation"],
@@ -134,7 +134,7 @@ def send_orientation_accepted_emails(
                 render_to_string("orientation-accepted-beneficiary.mjml", context)
             ),
             from_email=(
-                f"{orientation.structure.name} via DORA",
+                f"{orientation.service.structure.name} via DORA",
                 settings.DEFAULT_FROM_EMAIL,
             ),
             tags=["orientation"],

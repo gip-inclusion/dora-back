@@ -11,3 +11,5 @@
 {% block content %}
     {{ prescriberMessage|linebreaks }}
 {% endblock %}
+
+{% block signature %}{% endblock %}
