@@ -9,15 +9,13 @@
 {% endblock %}
 
 {% block content %}
-    Le message concerne la demande d’orientation réalisée en votre nom vers le service
-    «&nbsp;<a href="{{ data.service.get_frontend_url }}">
-    {{ data.service.name }}
-</a>&nbsp;»
-    de la structure
-    <a href="{{ data.service.structure.get_frontend_url }}">
-        {{ data.service.structure.name }}
-    </a>.
+    <p>
+        Le message concerne la demande d’orientation réalisée en votre nom vers le service
+        «&nbsp;<a href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a>&nbsp;»
+        de la structure
+        <a href="{{ data.service.structure.get_frontend_url }}">
+            {{ data.service.structure.name }}
+        </a>.
     </p>
-
     {{ message|linebreaks }}
 {% endblock %}

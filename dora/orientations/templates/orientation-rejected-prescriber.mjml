@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block title %}
-    La demande d’orientation pour {{ data.get_beneficiary_full_name }}} a été refusée.
+    La demande d’orientation pour {{ data.get_beneficiary_full_name }} a été refusée.
 {% endblock %}
 
 {% block content %}
