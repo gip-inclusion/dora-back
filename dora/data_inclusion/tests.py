@@ -16,9 +16,8 @@ class DataInclusionIntegrationTestCase(APITestCase):
     def setUp(self):
         self.di_client = data_inclusion.di_client_factory()
 
-    @unittest.skipUnless(
-        settings.ENVIRONMENT == "local",  # TODO: need a more accurate condition
-        "3rd party probably not available",
+    @unittest.skipIf(
+        settings.SKIP_DI_INTEGRATION_TESTS, "data.inclusion api not available"
     )
     def test_search_services(self):
         self.di_client.search_services(
@@ -26,16 +25,14 @@ class DataInclusionIntegrationTestCase(APITestCase):
             thematiques=["mobilite--comprendre-et-utiliser-les-transports-en-commun"],
         )
 
-    @unittest.skipUnless(
-        settings.ENVIRONMENT == "local",  # TODO: need a more accurate condition
-        "3rd party probably not available",
+    @unittest.skipIf(
+        settings.SKIP_DI_INTEGRATION_TESTS, "data.inclusion api not available"
     )
     def test_list_services(self):
         self.di_client.list_services(source="dora")
 
-    @unittest.skipUnless(
-        settings.ENVIRONMENT == "local",  # TODO: need a more accurate condition
-        "3rd party probably not available",
+    @unittest.skipIf(
+        settings.SKIP_DI_INTEGRATION_TESTS, "data.inclusion api not available"
     )
     def test_retrieve_service(self):
         services = self.di_client.list_services(source="dora")

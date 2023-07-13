@@ -327,6 +327,7 @@ DATA_INCLUSION_STREAM_API_KEY = os.environ.get("DATA_INCLUSION_STREAM_API_KEY")
 DATA_INCLUSION_STREAM_SOURCES = (lambda s: s.split(",") if s else None)(
     os.environ.get("DATA_INCLUSION_STREAM_SOURCES")
 )
+SKIP_DI_INTEGRATION_TESTS = True
 
 # Data inclusion user account
 DATA_INCLUSION_EMAIL = "data.inclusion@beta.gouv.fr"
