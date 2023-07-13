@@ -23,6 +23,7 @@ def send_mail(
     from_email=("La plateforme DORA", settings.DEFAULT_FROM_EMAIL),
     tags=None,
     reply_to=None,
+    cc=None,
     attachments=None,
 ):
     headers = {
@@ -48,6 +49,7 @@ def send_mail(
         from_email,
         to,
         headers=headers,
+        cc=cc,
         reply_to=clean_reply_to(reply_to),
     )
     msg.content_subtype = "html"

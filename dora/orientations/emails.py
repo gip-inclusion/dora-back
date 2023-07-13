@@ -197,14 +197,14 @@ def send_message_to_prescriber(orientation, message, cc_beneficiary, cc_referent
         "support_email": settings.SUPPORT_EMAIL,
     }
 
-    recipients = [orientation.prescriber.email]
+    cc = []
     if cc_referent and orientation.referent_email != orientation.prescriber.email:
-        recipients.append(orientation.referent_email)
+        cc.append(orientation.referent_email)
     if cc_beneficiary:
-        recipients.append(orientation.beneficiary_email)
+        cc.append(orientation.beneficiary_email)
     send_mail(
         "[Contact - Prescripteur] Vous avez un nouveau message 📩",
-        recipients,
+        orientation.prescriber.email,
         mjml2html(render_to_string("contact-prescriber.mjml", context)),
         from_email=(
             f"{orientation.service.structure.name} via DORA",
@@ -212,6 +212,7 @@ def send_message_to_prescriber(orientation, message, cc_beneficiary, cc_referent
         ),
         tags=["orientation"],
         reply_to=[orientation.service.contact_email, orientation.referent_email],
+        cc=cc,
     )
 
 
@@ -223,15 +224,15 @@ def send_message_to_beneficiary(orientation, message, cc_prescriber, cc_referent
         "support_email": settings.SUPPORT_EMAIL,
     }
 
-    recipients = [orientation.beneficiary_email]
+    cc = []
     if cc_prescriber:
-        recipients.append(orientation.prescriber.email)
+        cc.append(orientation.prescriber.email)
     if cc_referent and orientation.referent_email != orientation.prescriber.email:
-        recipients.append(orientation.referent_email)
+        cc.append(orientation.referent_email)
 
     send_mail(
         "[Contact - Bénéficiaire] Vous avez un nouveau message 📩",
-        recipients,
+        orientation.beneficiary_email,
         mjml2html(render_to_string("contact-beneficiary.mjml", context)),
         from_email=(
             f"{orientation.service.structure.name} via DORA",
@@ -243,4 +244,5 @@ def send_message_to_beneficiary(orientation, message, cc_prescriber, cc_referent
             orientation.referent_email,
             orientation.prescriber.email,
         ],
+        cc=cc,
     )
