@@ -4,7 +4,6 @@ from typing import Optional
 
 import furl
 import requests
-import sentry_sdk
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -28,14 +27,13 @@ def di_client_factory():
 # TODO: use tenacity ?
 
 
-def log_conn_error_to_sentry(func):
+def log_conn_error(func):
     @functools.wraps(func)
     def _func(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except requests.ConnectionError as err:
-            breakpoint()
-            sentry_sdk.capture_exception(err)
+            logger.error(err)
             raise err
 
     return _func
@@ -63,7 +61,7 @@ class DataInclusionClient:
             else:
                 return data
 
-    @log_conn_error_to_sentry
+    @log_conn_error
     def list_services(self, source: Optional[str] = None) -> Optional[list[dict]]:
         url = self.base_url.copy()
         url = url / "services"
@@ -76,7 +74,7 @@ class DataInclusionClient:
         except requests.HTTPError:
             return None
 
-    @log_conn_error_to_sentry
+    @log_conn_error
     def retrieve_service(self, source: str, id: str) -> Optional[dict]:
         url = self.base_url.copy()
         url = url / "services" / source / id
@@ -87,7 +85,7 @@ class DataInclusionClient:
         except requests.HTTPError:
             return None
 
-    @log_conn_error_to_sentry
+    @log_conn_error
     def search_services(
         self,
         sources: Optional[list[str]] = None,
