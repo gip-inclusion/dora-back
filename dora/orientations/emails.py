@@ -154,9 +154,17 @@ def send_orientation_rejected_emails(orientation, message):
         "message": message,
     }
 
+    # Structure
+    send_mail(
+        "[Refusée - Structure porteuse] Vous venez de refuser une demande",
+        [orientation.service.contact_email],
+        mjml2html(render_to_string("orientation-rejected-structure.mjml", context)),
+        tags=["orientation"],
+    )
+
     # Prescripteur
     send_mail(
-        "[Refusée - Prescripteur] Votre demande a été refusée",
+        "[Refusée - Prescripteur] Votre demande d'orientation a été refusée",
         [orientation.prescriber.email],
         mjml2html(render_to_string("orientation-rejected-prescriber.mjml", context)),
         from_email=(
@@ -169,7 +177,7 @@ def send_orientation_rejected_emails(orientation, message):
 
     # Referent
     send_mail(
-        "[Refusée - Conseiller référent] Votre demande a été refusée",
+        "[Refusée - Conseiller référent] Votre demande d'orientation a été refusée",
         [orientation.referent_email],
         mjml2html(render_to_string("orientation-rejected-prescriber.mjml", context)),
         from_email=(

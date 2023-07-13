@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
+from dora.core.models import EnumModel
 from dora.services.models import Service
 from dora.structures.models import Structure
 
@@ -18,6 +19,12 @@ class OrientationStatus(models.TextChoices):
     PENDING = "OUVERTE", "Ouverte / En cours de traitement"
     ACCEPTED = "VALIDÉE", "Validée"
     REJECTED = "REFUSÉE", "Refusée"
+
+
+class RejectionReason(EnumModel):
+    class Meta:
+        verbose_name = "Motif de refus"
+        verbose_name_plural = "Motifs de refus"
 
 
 class Orientation(models.Model):
@@ -121,6 +128,10 @@ class Orientation(models.Model):
     orientation_reasons = models.TextField(
         verbose_name="Motif de l'orientation", blank=True
     )
+    rejection_reasons = models.ManyToManyField(
+        RejectionReason, verbose_name="Motifs de refus de l'orientation", blank=True
+    )
+
     creation_date = models.DateTimeField(auto_now_add=True, editable=False)
     processing_date = models.DateTimeField(blank=True, null=True)
     status = models.CharField(

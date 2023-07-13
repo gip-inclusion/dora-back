@@ -13,6 +13,7 @@ class OrientationAdmin(admin.ModelAdmin):
     date_hierarchy = "creation_date"
     ordering = ("-id",)
     readonly_fields = ("query_id", "original_service_name")
+    filter_horizontal = ("rejection_reasons",)
 
 
 admin.site.register(Orientation, OrientationAdmin)

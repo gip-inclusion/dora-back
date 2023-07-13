@@ -11,7 +11,7 @@ from .emails import (
     send_orientation_created_emails,
     send_orientation_rejected_emails,
 )
-from .models import Orientation, OrientationStatus
+from .models import Orientation, OrientationStatus, RejectionReason
 from .serializers import OrientationSerializer
 
 
@@ -71,12 +71,15 @@ class OrientationViewSet(
         permission_classes=[permissions.AllowAny],
     )
     def reject(self, request, query_id=None):
-        # todo: stocker les motifs de refus
         orientation = self.get_object()
-        message = self.request.data.get("message")
+        message = self.request.data.get("message", "")
+        reasons = self.request.data.get("reasons", [])
         orientation.processing_date = timezone.now()
         orientation.status = OrientationStatus.REJECTED
         orientation.save()
+        orientation.rejection_reasons.set(
+            RejectionReason.objects.filter(value__in=reasons)
+        )
         send_orientation_rejected_emails(orientation, message)
         return Response(status=204)
 
