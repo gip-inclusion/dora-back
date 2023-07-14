@@ -136,8 +136,8 @@ def map_service(service_data: dict) -> dict:
         "can_write": False,
         "categories": [c.value for c in categories],
         "categories_display": [c.label for c in categories],
-        "category": categories[0] if len(categories) > 0 else None,
-        "category_display": categories[0] if len(categories) > 0 else None,
+        "category": categories[0].value if len(categories) > 0 else None,
+        "category_display": categories[0].label if len(categories) > 0 else None,
         "city": service_data["commune"],
         "city_code": service_data["code_insee"],
         "coach_orientation_modes": service_data["modes_orientation_accompagnateur"]
