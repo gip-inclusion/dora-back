@@ -1586,22 +1586,26 @@ class DataInclusionSearchTestCase(APITestCase):
                 self.assertEqual(response.data["kinds_display"], kinds_display)
 
     def test_service_di_desc(self):
-        service_data = self.make_di_service(
-            nom="L.I.",
-            presentation_resume="Lorem...",
-            presentation_detail="Lorem ipsum.",
-        )
-        di_id = self.get_di_id(service_data)
-        request = self.factory.get(f"/service-di/{di_id}/")
-        response = service_di(request, di_id=di_id, di_client=self.di_client)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["name"], service_data["nom"])
-        self.assertEqual(
-            response.data["full_desc"], service_data["presentation_detail"]
-        )
-        self.assertEqual(
-            response.data["short_desc"], service_data["presentation_resume"]
-        )
+        cases = [
+            (None, ""),
+            ("", ""),
+            ("Lorem ipsum", "Lorem ipsum"),
+        ]
+
+        for presentation, desc in cases:
+            with self.subTest(presentation=presentation):
+                service_data = self.make_di_service(
+                    nom="L.I.",
+                    presentation_resume=presentation,
+                    presentation_detail=presentation,
+                )
+                di_id = self.get_di_id(service_data)
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["name"], service_data["nom"])
+                self.assertEqual(response.data["full_desc"], desc)
+                self.assertEqual(response.data["short_desc"], desc)
 
     def test_service_di_date(self):
         service_data = self.make_di_service(
