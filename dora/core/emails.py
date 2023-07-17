@@ -1,6 +1,5 @@
 import datetime
 import json
-from smtplib import SMTPException
 
 from django.conf import settings
 from django.core.files.storage import default_storage
@@ -63,7 +62,7 @@ def send_mail(
             )
     try:
         msg.send()
-    except SMTPException:
+    except Exception:
         raise
     finally:
         if attachments is not None:
