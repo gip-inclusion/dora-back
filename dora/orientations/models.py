@@ -174,3 +174,30 @@ class Orientation(models.Model):
             )
             return full_name.strip()
         return self.referent_email
+
+
+class ContactRecipient(models.TextChoices):
+    BENEFICIARY = "BÉNÉFICIAIRE", "Bénéficiaire"
+    PRESCRIBER = "PRESCRIPTEUR", "Prescripteur"
+    REFERENT = "RÉFÉRENT", "Réfeérent"
+
+
+class SentContactEmail(models.Model):
+    orientation = models.ForeignKey(
+        Orientation,
+        on_delete=models.CASCADE,
+    )
+    date_sent = models.DateTimeField(auto_now_add=True, editable=False)
+    recipient = models.CharField(
+        choices=ContactRecipient.choices,
+        max_length=20,
+    )
+    carbon_copies = ArrayField(
+        models.CharField(
+            choices=ContactRecipient.choices,
+            max_length=20,
+        ),
+        verbose_name="Carbon Copies",
+        blank=True,
+        default=list,
+    )

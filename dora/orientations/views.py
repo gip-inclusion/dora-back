@@ -3,7 +3,8 @@ from rest_framework import mixins, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from ..core.utils import TRUTHY_VALUES
+from dora.core.utils import TRUTHY_VALUES
+
 from .emails import (
     send_message_to_beneficiary,
     send_message_to_prescriber,
@@ -11,7 +12,13 @@ from .emails import (
     send_orientation_created_emails,
     send_orientation_rejected_emails,
 )
-from .models import Orientation, OrientationStatus, RejectionReason
+from .models import (
+    ContactRecipient,
+    Orientation,
+    OrientationStatus,
+    RejectionReason,
+    SentContactEmail,
+)
 from .serializers import OrientationSerializer
 
 
@@ -90,13 +97,21 @@ class OrientationViewSet(
         permission_classes=[permissions.AllowAny],
     )
     def contact_beneficiary(self, request, query_id=None):
-        # TODO: logguer le fait qu'un message a été envoyé, et sa date
-
         orientation = self.get_object()
         message = self.request.data.get("message")
         cc_prescriber = self.request.data.get("cc_prescriber") in TRUTHY_VALUES
         cc_referent = self.request.data.get("cc_referent") in TRUTHY_VALUES
         send_message_to_beneficiary(orientation, message, cc_prescriber, cc_referent)
+        carbon_copies = []
+        if cc_prescriber:
+            carbon_copies.append(ContactRecipient.PRESCRIBER)
+        if cc_referent:
+            carbon_copies.append(ContactRecipient.REFERENT)
+        SentContactEmail.objects.create(
+            orientation=orientation,
+            recipient=ContactRecipient.BENEFICIARY,
+            carbon_copies=carbon_copies,
+        )
         return Response(status=204)
 
     @action(
@@ -106,10 +121,19 @@ class OrientationViewSet(
         permission_classes=[permissions.AllowAny],
     )
     def contact_prescriber(self, request, query_id=None):
-        # TODO: logguer le fait qu'un message a été envoyé, et sa date
         orientation = self.get_object()
         message = self.request.data.get("message")
         cc_beneficiary = self.request.data.get("cc_beneficiary") in TRUTHY_VALUES
         cc_referent = self.request.data.get("cc_referent") in TRUTHY_VALUES
         send_message_to_prescriber(orientation, message, cc_beneficiary, cc_referent)
+        carbon_copies = []
+        if cc_beneficiary:
+            carbon_copies.append(ContactRecipient.BENEFICIARY)
+        if cc_referent:
+            carbon_copies.append(ContactRecipient.REFERENT)
+        SentContactEmail.objects.create(
+            orientation=orientation,
+            recipient=ContactRecipient.PRESCRIBER,
+            carbon_copies=carbon_copies,
+        )
         return Response(status=204)
