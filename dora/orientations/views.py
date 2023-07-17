@@ -1,5 +1,5 @@
 from django.utils import timezone
-from rest_framework import mixins, permissions, viewsets
+from rest_framework import mixins, permissions, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -98,19 +98,32 @@ class OrientationViewSet(
     )
     def contact_beneficiary(self, request, query_id=None):
         orientation = self.get_object()
+        if not orientation.beneficiary_email:
+            raise serializers.ValidationError("Adresse email du bénéficiaire inconnue")
         message = self.request.data.get("message")
         cc_prescriber = self.request.data.get("cc_prescriber") in TRUTHY_VALUES
         cc_referent = self.request.data.get("cc_referent") in TRUTHY_VALUES
-        send_message_to_beneficiary(orientation, message, cc_prescriber, cc_referent)
-        carbon_copies = []
+
+        sent_contact_emails = []
+        cc = []
+
         if cc_prescriber:
-            carbon_copies.append(ContactRecipient.PRESCRIBER)
-        if cc_referent:
-            carbon_copies.append(ContactRecipient.REFERENT)
+            cc.append(orientation.prescriber.email)
+            sent_contact_emails.append(ContactRecipient.PRESCRIBER)
+        if (
+            cc_referent
+            and orientation.referent_email
+            and orientation.referent_email != orientation.prescriber.email
+        ):
+            cc.append(orientation.referent_email)
+            sent_contact_emails.append(ContactRecipient.REFERENT)
+
+        send_message_to_beneficiary(orientation, message, cc)
+
         SentContactEmail.objects.create(
             orientation=orientation,
             recipient=ContactRecipient.BENEFICIARY,
-            carbon_copies=carbon_copies,
+            carbon_copies=sent_contact_emails,
         )
         return Response(status=204)
 
@@ -125,15 +138,27 @@ class OrientationViewSet(
         message = self.request.data.get("message")
         cc_beneficiary = self.request.data.get("cc_beneficiary") in TRUTHY_VALUES
         cc_referent = self.request.data.get("cc_referent") in TRUTHY_VALUES
-        send_message_to_prescriber(orientation, message, cc_beneficiary, cc_referent)
-        carbon_copies = []
-        if cc_beneficiary:
-            carbon_copies.append(ContactRecipient.BENEFICIARY)
-        if cc_referent:
-            carbon_copies.append(ContactRecipient.REFERENT)
+
+        sent_contact_emails = []
+        cc = []
+
+        if cc_beneficiary and orientation.beneficiary_email:
+            cc.append(orientation.beneficiary_email)
+            sent_contact_emails.append(ContactRecipient.BENEFICIARY)
+        if (
+            cc_referent
+            and orientation.referent_email
+            and orientation.referent_email != orientation.prescriber.email
+        ):
+            cc.append(orientation.referent_email)
+            sent_contact_emails.append(ContactRecipient.REFERENT)
+
+        send_message_to_prescriber(orientation, message, cc)
+
         SentContactEmail.objects.create(
             orientation=orientation,
             recipient=ContactRecipient.PRESCRIBER,
-            carbon_copies=carbon_copies,
+            carbon_copies=sent_contact_emails,
         )
+
         return Response(status=204)

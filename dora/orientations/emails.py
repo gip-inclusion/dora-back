@@ -113,7 +113,10 @@ def send_orientation_accepted_emails(
         reply_to=[orientation.service.contact_email, orientation.referent_email],
     )
     # Référent
-    if orientation.referent_email != orientation.prescriber.email:
+    if (
+        orientation.referent_email
+        and orientation.referent_email != orientation.prescriber.email
+    ):
         send_mail(
             "[Validée - Conseiller référent] Notification de l'acceptation d'une demande d'orientation",
             orientation.referent_email,
@@ -175,33 +178,33 @@ def send_orientation_rejected_emails(orientation, message):
         reply_to=[orientation.service.contact_email, orientation.referent_email],
     )
 
-    # Referent
-    send_mail(
-        "[Refusée - Conseiller référent] Votre demande d'orientation a été refusée",
-        [orientation.referent_email],
-        mjml2html(render_to_string("orientation-rejected-prescriber.mjml", context)),
-        from_email=(
-            f"{orientation.service.structure.name} via DORA",
-            settings.DEFAULT_FROM_EMAIL,
-        ),
-        tags=["orientation"],
-        reply_to=[orientation.service.contact_email, orientation.prescriber.email],
-    )
+    if (
+        orientation.referent_email
+        and orientation.referent_email != orientation.prescriber.email
+    ):
+        # Referent
+        send_mail(
+            "[Refusée - Conseiller référent] Votre demande d'orientation a été refusée",
+            [orientation.referent_email],
+            mjml2html(
+                render_to_string("orientation-rejected-prescriber.mjml", context)
+            ),
+            from_email=(
+                f"{orientation.service.structure.name} via DORA",
+                settings.DEFAULT_FROM_EMAIL,
+            ),
+            tags=["orientation"],
+            reply_to=[orientation.service.contact_email, orientation.prescriber.email],
+        )
 
 
-def send_message_to_prescriber(orientation, message, cc_beneficiary, cc_referent):
+def send_message_to_prescriber(orientation, message, cc):
     context = {
         "data": orientation,
         "homepage_url": settings.FRONTEND_URL,
         "message": message,
         "support_email": settings.SUPPORT_EMAIL,
     }
-
-    cc = []
-    if cc_referent and orientation.referent_email != orientation.prescriber.email:
-        cc.append(orientation.referent_email)
-    if cc_beneficiary:
-        cc.append(orientation.beneficiary_email)
     send_mail(
         "[Contact - Prescripteur] Vous avez un nouveau message 📩",
         orientation.prescriber.email,
@@ -216,19 +219,13 @@ def send_message_to_prescriber(orientation, message, cc_beneficiary, cc_referent
     )
 
 
-def send_message_to_beneficiary(orientation, message, cc_prescriber, cc_referent):
+def send_message_to_beneficiary(orientation, message, cc):
     context = {
         "data": orientation,
         "homepage_url": settings.FRONTEND_URL,
         "message": message,
         "support_email": settings.SUPPORT_EMAIL,
     }
-
-    cc = []
-    if cc_prescriber:
-        cc.append(orientation.prescriber.email)
-    if cc_referent and orientation.referent_email != orientation.prescriber.email:
-        cc.append(orientation.referent_email)
 
     send_mail(
         "[Contact - Bénéficiaire] Vous avez un nouveau message 📩",
