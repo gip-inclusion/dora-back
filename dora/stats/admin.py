@@ -3,6 +3,7 @@ from django.contrib import admin
 from dora.stats.models import (
     ABTestGroup,
     DeploymentState,
+    DiServiceView,
     MobilisationEvent,
     OrientationView,
     PageView,
@@ -33,7 +34,7 @@ class DeploymentStateAdmin(admin.ModelAdmin):
 class AnalyticsEventAdmin(admin.ModelAdmin):
     date_hierarchy = "date"
 
-    ordering = ("-date",)
+    ordering = ("-id",)
     raw_id_fields = ["user"]
 
 
@@ -99,6 +100,7 @@ class StructureEventAdmin(AnalyticsEventAdmin):
     list_filter = [
         "date",
         "structure_department",
+        "structure_source",
     ]
 
 
@@ -112,9 +114,24 @@ class ServiceEventAdmin(AnalyticsEventAdmin):
         "user",
         "anonymous_user_hash",
     ]
-    list_filter = [
+    list_filter = ["date", "structure_department", "structure_source", "service_source"]
+
+
+class DiServiceEventAdmin(AnalyticsEventAdmin):
+    raw_id_fields = ("user",)
+    list_display = [
         "date",
+        "service_name",
+        "structure_name",
         "structure_department",
+        "source",
+        "user",
+        "anonymous_user_hash",
+    ]
+    list_filter = ["date", "structure_department", "source"]
+    filter_horizontal = [
+        "categories",
+        "subcategories",
     ]
 
 
@@ -161,6 +178,7 @@ admin.site.register(PageView, PageViewAdmin)
 admin.site.register(StructureView, StructureEventAdmin)
 admin.site.register(OrientationView, OrientationEventAdmin)
 admin.site.register(ServiceView, ServiceEventAdmin)
+admin.site.register(DiServiceView, DiServiceEventAdmin)
 admin.site.register(SearchView, SearchEventAdmin)
 admin.site.register(MobilisationEvent, MobilisationEventAdmin)
 

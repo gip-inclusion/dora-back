@@ -8,6 +8,7 @@ from dora.orientations.models import Orientation
 from dora.services.models import Service, ServiceCategory, ServiceSubCategory
 from dora.stats.models import (
     ABTestGroup,
+    DiServiceView,
     MobilisationEvent,
     OrientationView,
     SearchView,
@@ -22,11 +23,29 @@ from .models import PageView
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 def log_event(request):
+    def get_categories(cats_values, subcats_values):
+        # On loggue également toutes les catégories des sous-catégories demandées
+        subcats_cats_values = set(subcat.split("--")[0] for subcat in subcats_values)
+
+        all_categories = ServiceCategory.objects.filter(
+            Q(value__in=cats_values) | Q(value__in=subcats_cats_values)
+        )
+
+        all_subcategories = ServiceSubCategory.objects.filter(value__in=subcats_values)
+        for category_value in cats_values:
+            all_subcategories |= ServiceSubCategory.objects.filter(
+                value__startswith=category_value
+            )
+        return all_categories, all_subcategories
+
     tag = request.data.get("tag")
     service_slug = request.data.get("service", "")
     structure_slug = request.data.get("structure", "")
     service = structure = orientation = None
     orientation_id = request.data.get("orientation", "")
+    num_di_results = int(request.data.get("num_di_results", "0"))
+    num_di_results_top10 = int(request.data.get("num_di_results_top10", "0"))
+
     if orientation_id:
         orientation = get_object_or_none(Orientation, id=orientation_id)
         if orientation:
@@ -73,12 +92,16 @@ def log_event(request):
         else False,
         "structure_department": structure.department if structure else "",
         "structure_city_code": structure.city_code if structure else "",
+        "structure_source": structure.source.value
+        if structure and structure.source
+        else "",
     }
 
     service_data = {
         "service": service,
         "update_status": service.get_update_status() if service else "",
         "status": service.status if service else "",
+        "service_source": service.source.value if service and service.source else "",
     }
 
     if tag == "pageview":
@@ -93,36 +116,35 @@ def log_event(request):
             city_code=search_city_code,
             department=search_department,
             num_results=search_num_results,
+            num_di_results=num_di_results,
+            num_di_results_top10=num_di_results_top10,
         )
-        requested_categories_values = request.data.get("category_ids", "")
-        requested_subcategories_values = request.data.get("sub_category_ids", "")
-
-        # On loggue également toutes les catégories des sous-catégories demandées
-        requested_subcategories_categories_values = set(
-            subcat.split("--")[0] for subcat in requested_subcategories_values
-        )
-
-        all_categories = ServiceCategory.objects.filter(
-            Q(value__in=requested_categories_values)
-            | Q(value__in=requested_subcategories_categories_values)
-        )
-
-        all_subcategories = ServiceSubCategory.objects.filter(
-            value__in=requested_subcategories_values
-        )
-        for category_value in requested_categories_values:
-            all_subcategories |= ServiceSubCategory.objects.filter(
-                value__startswith=category_value
-            )
-
-        searchevent.categories.set(all_categories)
-        searchevent.subcategories.set(all_subcategories)
+        cats_values = request.data.get("category_ids", [])
+        subcats_values = request.data.get("sub_category_ids", [])
+        categories, subcategories = get_categories(cats_values, subcats_values)
+        searchevent.categories.set(categories)
+        searchevent.subcategories.set(subcategories)
     elif tag == "structure":
         StructureView.objects.create(**common_analytics_data, **structure_data)
     elif tag == "service":
         ServiceView.objects.create(
             **common_analytics_data, **structure_data, **service_data
         )
+    elif tag == "di_service":
+        di_view = DiServiceView.objects.create(
+            **common_analytics_data,
+            structure_id=request.data.get("di_structure_id", ""),
+            structure_name=request.data.get("di_structure_name", ""),
+            structure_department=request.data.get("di_structure_department", ""),
+            service_id=request.data.get("di_service_id", ""),
+            service_name=request.data.get("di_service_name", ""),
+            source=request.data.get("di_source", ""),
+        )
+        cats_values = request.data.get("di_categories", "")
+        subcats_values = request.data.get("di_subcategories", "")
+        categories, subcategories = get_categories(cats_values, subcats_values)
+        di_view.categories.set(categories)
+        di_view.subcategories.set(subcategories)
     elif tag == "orientation":
         OrientationView.objects.create(
             orientation=orientation,

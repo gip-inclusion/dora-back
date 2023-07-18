@@ -122,6 +122,16 @@ def map_service(service_data: dict) -> dict:
     if service_data["pre_requis"] not in [None, ""]:
         requirements = service_data["pre_requis"].split(",")
 
+    structure_insee_code = (
+        service_data["structure"]["code_insee"]
+        if service_data["structure"]["code_insee"]
+        else service_data["structure"]["_di_geocodage_code_insee"]
+    )
+
+    structure_department = (
+        code_insee_to_code_dept(structure_insee_code) if structure_insee_code else ""
+    )
+
     return {
         "access_conditions": [],
         "access_conditions_display": [],
@@ -195,10 +205,12 @@ def map_service(service_data: dict) -> dict:
         "requirements_display": requirements,
         "short_desc": service_data["presentation_resume"] or "",
         "slug": f"{service_data['source']}--{service_data['id']}",
+        "source": service_data["source"],
         "status": ServiceStatus.PUBLISHED.value,
-        "structure": None,
+        "structure": service_data["structure_id"],
         "structure_info": {
             "name": service_data["structure"]["nom"],
+            "department": structure_department,
         },
         "subcategories": [c.value for c in subcategories],
         "subcategories_display": [c.label for c in subcategories],
