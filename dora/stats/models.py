@@ -149,6 +149,24 @@ class AbstractServiceEvent(AbstractAnalyticsEvent):
         abstract = True
 
 
+class AbstractDiServiceEvent(AbstractAnalyticsEvent):
+    structure_id = models.CharField(max_length=255, default="")
+    structure_name = models.CharField(max_length=255, default="")
+    structure_department = models.CharField(
+        max_length=3, default="", blank=True, db_index=True
+    )
+    service_id = models.CharField(max_length=255, default="")
+    service_name = models.CharField(max_length=255, default="")
+    source = models.CharField(max_length=255, default="")
+    categories = models.ManyToManyField(ServiceCategory, blank=True, related_name="+")
+    subcategories = models.ManyToManyField(
+        ServiceSubCategory, blank=True, related_name="+"
+    )
+
+    class Meta:
+        abstract = True
+
+
 class AbstractSearchEvent(AbstractAnalyticsEvent):
     categories = models.ManyToManyField(ServiceCategory, blank=True, related_name="+")
     subcategories = models.ManyToManyField(
@@ -183,19 +201,8 @@ class ServiceView(AbstractServiceEvent):
     pass
 
 
-class DiServiceView(AbstractAnalyticsEvent):
-    structure_id = models.CharField(max_length=255, default="")
-    structure_name = models.CharField(max_length=255, default="")
-    structure_department = models.CharField(
-        max_length=3, default="", blank=True, db_index=True
-    )
-    service_id = models.CharField(max_length=255, default="")
-    service_name = models.CharField(max_length=255, default="")
-    source = models.CharField(max_length=255, default="")
-    categories = models.ManyToManyField(ServiceCategory, blank=True, related_name="+")
-    subcategories = models.ManyToManyField(
-        ServiceSubCategory, blank=True, related_name="+"
-    )
+class DiServiceView(AbstractDiServiceEvent):
+    pass
 
 
 class SearchView(AbstractSearchEvent):
@@ -223,4 +230,8 @@ class OrientationView(AbstractServiceEvent):
 
 
 class MobilisationEvent(AbstractServiceEvent):
+    ab_test_groups = models.ManyToManyField(ABTestGroup, blank=True)
+
+
+class DiMobilisationEvent(AbstractDiServiceEvent):
     ab_test_groups = models.ManyToManyField(ABTestGroup, blank=True)

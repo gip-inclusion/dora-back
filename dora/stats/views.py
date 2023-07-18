@@ -8,6 +8,7 @@ from dora.orientations.models import Orientation
 from dora.services.models import Service, ServiceCategory, ServiceSubCategory
 from dora.stats.models import (
     ABTestGroup,
+    DiMobilisationEvent,
     DiServiceView,
     MobilisationEvent,
     OrientationView,
@@ -104,6 +105,15 @@ def log_event(request):
         "service_source": service.source.value if service and service.source else "",
     }
 
+    di_service_data = {
+        "structure_id": request.data.get("di_structure_id", ""),
+        "structure_name": request.data.get("di_structure_name", ""),
+        "structure_department": request.data.get("di_structure_department", ""),
+        "service_id": request.data.get("di_service_id", ""),
+        "service_name": request.data.get("di_service_name", ""),
+        "source": request.data.get("di_source", ""),
+    }
+
     if tag == "pageview":
         PageView.objects.create(
             **common_analytics_data,
@@ -132,13 +142,7 @@ def log_event(request):
         )
     elif tag == "di_service":
         di_view = DiServiceView.objects.create(
-            **common_analytics_data,
-            structure_id=request.data.get("di_structure_id", ""),
-            structure_name=request.data.get("di_structure_name", ""),
-            structure_department=request.data.get("di_structure_department", ""),
-            service_id=request.data.get("di_service_id", ""),
-            service_name=request.data.get("di_service_name", ""),
-            source=request.data.get("di_source", ""),
+            **common_analytics_data, **di_service_data
         )
         cats_values = request.data.get("di_categories", "")
         subcats_values = request.data.get("di_subcategories", "")
@@ -163,4 +167,20 @@ def log_event(request):
                 value=ab_testing_group
             )
             mev.ab_test_groups.set([ab_testing_group])
+
+    elif tag == "di_mobilisation":
+        di_mev = DiMobilisationEvent.objects.create(
+            **common_analytics_data, **di_service_data
+        )
+        ab_testing_group = request.data.get("ab_testing_group", "")
+        if ab_testing_group:
+            ab_testing_group, _created = ABTestGroup.objects.get_or_create(
+                value=ab_testing_group
+            )
+            di_mev.ab_test_groups.set([ab_testing_group])
+        cats_values = request.data.get("di_categories", "")
+        subcats_values = request.data.get("di_subcategories", "")
+        categories, subcategories = get_categories(cats_values, subcats_values)
+        di_mev.categories.set(categories)
+        di_mev.subcategories.set(subcategories)
     return Response(status=204)
