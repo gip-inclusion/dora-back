@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block content %}
-    {{ prescriberMessage|linebreaks }}
+    {{ prescriber_message|linebreaks }}
 {% endblock %}
 
 {% block signature %}{% endblock %}

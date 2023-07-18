@@ -61,13 +61,13 @@ class OrientationViewSet(
     )
     def validate(self, request, query_id=None):
         orientation = self.get_object()
-        prescriberMessage = self.request.data.get("message")
-        beneficiaryMessage = self.request.data.get("beneficiary_message")
+        prescriber_message = self.request.data.get("message")
+        beneficiary_message = self.request.data.get("beneficiary_message")
         orientation.processing_date = timezone.now()
         orientation.status = OrientationStatus.ACCEPTED
         orientation.save()
         send_orientation_accepted_emails(
-            orientation, prescriberMessage, beneficiaryMessage
+            orientation, prescriber_message, beneficiary_message
         )
         return Response(status=204)
 

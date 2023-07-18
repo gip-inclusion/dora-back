@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block content %}
-    {{ beneficiaryMessage|linebreaks }}
+    {{ beneficiary_message|linebreaks }}
 {% endblock %}
 
 {% block signature %}{% endblock %}

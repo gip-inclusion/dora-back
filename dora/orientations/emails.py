@@ -82,14 +82,14 @@ def send_orientation_created_emails(orientation):
 
 
 def send_orientation_accepted_emails(
-    orientation, prescriberMessage, beneficiaryMessage
+    orientation, prescriber_message, beneficiary_message
 ):
     context = {
         "data": orientation,
         "homepage_url": settings.FRONTEND_URL,
         "support_email": settings.SUPPORT_EMAIL,
-        "prescriberMessage": prescriberMessage,
-        "beneficiaryMessage": beneficiaryMessage,
+        "prescriber_message": prescriber_message,
+        "beneficiary_message": beneficiary_message,
     }
 
     # Structure
