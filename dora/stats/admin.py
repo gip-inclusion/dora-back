@@ -4,6 +4,7 @@ from dora.stats.models import (
     ABTestGroup,
     DeploymentState,
     MobilisationEvent,
+    OrientationView,
     PageView,
     SearchView,
     ServiceView,
@@ -117,6 +118,22 @@ class ServiceEventAdmin(AnalyticsEventAdmin):
     ]
 
 
+class OrientationEventAdmin(AnalyticsEventAdmin):
+    raw_id_fields = ("service", "structure", "user")
+    list_display = [
+        "date",
+        "service",
+        "structure",
+        "structure_department",
+        "user",
+        "anonymous_user_hash",
+    ]
+    list_filter = [
+        "date",
+        "structure_department",
+    ]
+
+
 @admin.display(description="AB groups")
 def ab_testing_groups_display(obj):
     return ", ".join(c.value for c in obj.ab_test_groups.all())
@@ -142,6 +159,7 @@ class MobilisationEventAdmin(AnalyticsEventAdmin):
 admin.site.register(DeploymentState, DeploymentStateAdmin)
 admin.site.register(PageView, PageViewAdmin)
 admin.site.register(StructureView, StructureEventAdmin)
+admin.site.register(OrientationView, OrientationEventAdmin)
 admin.site.register(ServiceView, ServiceEventAdmin)
 admin.site.register(SearchView, SearchEventAdmin)
 admin.site.register(MobilisationEvent, MobilisationEventAdmin)

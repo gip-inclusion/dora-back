@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 
+from dora.orientations.models import Orientation, OrientationStatus
 from dora.services.enums import ServiceStatus, ServiceUpdateStatus
 from dora.services.models import Service, ServiceCategory, ServiceSubCategory
 from dora.structures.models import Structure
@@ -169,6 +170,21 @@ class ServiceView(AbstractServiceEvent):
 
 class SearchView(AbstractSearchEvent):
     pass
+
+
+class OrientationView(AbstractServiceEvent):
+    orientation = models.ForeignKey(
+        Orientation,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
+    orientation_status = models.CharField(
+        max_length=10,
+        choices=OrientationStatus.choices,
+        default="",
+        blank=True,
+    )
 
 
 #############################################################################################
