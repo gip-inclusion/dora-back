@@ -66,6 +66,7 @@ class OrientationSerializer(serializers.ModelSerializer):
                 "contact_email": orientation.service.contact_email,
                 "contact_name": orientation.service.contact_name,
                 "contact_phone": orientation.service.contact_phone,
+                "structure_name": orientation.service.structure.name,
                 "name": orientation.service.name,
                 "slug": orientation.service.slug,
             }
