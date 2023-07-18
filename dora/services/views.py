@@ -740,10 +740,13 @@ def _sort_services(services):
         s for s in services if "en-presentiel" not in s["location_kinds"]
     ]
 
-    return multisort(
+    results = multisort(
         services_on_site,
         (("distance", False), ("zone_priority", False), ("sortable_date", True)),
     ) + multisort(services_remote, (("zone_priority", False), ("sortable_date", True)))
+    for result in results:
+        del result["sortable_date"]
+    return results
 
 
 @api_view()
