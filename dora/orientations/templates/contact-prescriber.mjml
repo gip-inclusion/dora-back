@@ -5,21 +5,16 @@
 {% endblock %}
 
 {% block title %}
-    {{ data.service.structure.name }} vient de vous envoyer un message.
+    La structure {{ data.service.structure.name }} vient de vous envoyer un message.
 {% endblock %}
 
 {% block content %}
     <p>
-        <strong>Bonjour,</strong>
-    </p>
-
-    <p>
         Le message concerne la demande d’orientation réalisée pour {{ data.get_beneficiary_full_name }} vers le service
-        «&nbsp;<a
-            href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a>&nbsp;»
+        «&nbsp;<a href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a>&nbsp;»
     </p>
 
-    <p>
-        {{ message }}
-    </p>
+    {{ message|linebreaks }}
 {% endblock %}
+
+{% block signature %}{% endblock %}

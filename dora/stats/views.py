@@ -4,10 +4,12 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from dora.core.utils import code_insee_to_code_dept, get_object_or_none
+from dora.orientations.models import Orientation
 from dora.services.models import Service, ServiceCategory, ServiceSubCategory
 from dora.stats.models import (
     ABTestGroup,
     MobilisationEvent,
+    OrientationView,
     SearchView,
     ServiceView,
     StructureView,
@@ -23,8 +25,14 @@ def log_event(request):
     tag = request.data.get("tag")
     service_slug = request.data.get("service", "")
     structure_slug = request.data.get("structure", "")
-    service = structure = None
-    if service_slug:
+    service = structure = orientation = None
+    orientation_id = request.data.get("orientation", "")
+    if orientation_id:
+        orientation = get_object_or_none(Orientation, id=orientation_id)
+        if orientation:
+            service = orientation.service
+            structure = orientation.service.structure
+    if not service and service_slug:
         service = get_object_or_none(Service, slug=service_slug)
         if service:
             structure = service.structure
@@ -114,6 +122,14 @@ def log_event(request):
     elif tag == "service":
         ServiceView.objects.create(
             **common_analytics_data, **structure_data, **service_data
+        )
+    elif tag == "orientation":
+        OrientationView.objects.create(
+            orientation=orientation,
+            orientation_status=orientation.status,
+            **common_analytics_data,
+            **structure_data,
+            **service_data,
         )
     elif tag == "mobilisation":
         mev = MobilisationEvent.objects.create(

@@ -9,31 +9,7 @@
 {% endblock %}
 
 {% block content %}
-    <p>
-        <strong>Bonjour,</strong>
-    </p>
-
-    <p>
-        Nous avons le plaisir de vous informer que la structure <a
-            href="{{ data.service.structure.get_frontend_url }}">{{ data.service.structure.name }}</a> a validé la
-        demande réalisée par
-        {{ data.prescriber.get_full_name }} concernant votre positionnement sur «&nbsp;<a
-            href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a>&nbsp;».
-    </p>
-    <p>
-        Vous êtes désormais intégré·e au programme «&nbsp;<a
-            href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a>&nbsp;», qui se déroulera du
-        {date.debut} jusqu'au {date.fin} à
-        (lieu).
-    </p>
-    <p>
-        Pour toute information supplémentaire, n'hésitez pas à contacter votre référent
-        {% if structure.contact_phone %}
-            ou la structure directement
-            {{ data.structure.contact_phone }}
-        {% endif %}
-    </p>
-    <p>
-        Nous vous souhaitons une bonne continuation.
-    </p>
+    {{ beneficiaryMessage|linebreaks }}
 {% endblock %}
+
+{% block signature %}{% endblock %}

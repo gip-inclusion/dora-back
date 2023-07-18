@@ -5,15 +5,11 @@
 {% endblock %}
 
 {% block title %}
-    La demande d’orientation pour {{ data.get_beneficiary_full_name }}} a été refusée.
+    La demande d’orientation pour {{ data.get_beneficiary_full_name }} a été refusée.
 {% endblock %}
 
 {% block content %}
-    <p>
-        <strong>Bonjour,</strong>
-    </p>
-    <p>
-
-    </p>
-
+    {{ message|linebreaks }}
 {% endblock %}
+
+{% block signature %}{% endblock %}

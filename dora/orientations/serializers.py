@@ -1,3 +1,4 @@
+from django.core.files.storage import default_storage
 from rest_framework import serializers
 
 from dora.orientations.models import Orientation
@@ -24,11 +25,13 @@ class OrientationSerializer(serializers.ModelSerializer):
     service = serializers.SerializerMethodField()
     prescriber_structure = serializers.SerializerMethodField()
     prescriber = serializers.SerializerMethodField()
+    beneficiary_attachments_details = serializers.SerializerMethodField()
 
     class Meta:
         model = Orientation
         fields = [
             "beneficiary_attachments",
+            "beneficiary_attachments_details",
             "beneficiary_availability",
             "beneficiary_contact_preferences",
             "beneficiary_email",
@@ -55,6 +58,7 @@ class OrientationSerializer(serializers.ModelSerializer):
             "situation_other",
             "status",
         ]
+        extra_kwargs = {"beneficiary_attachments": {"write_only": True}}
 
     def get_service(self, orientation):
         if orientation.service:
@@ -83,3 +87,9 @@ class OrientationSerializer(serializers.ModelSerializer):
             "name": orientation.prescriber.get_full_name(),
             "email": orientation.prescriber.email,
         }
+
+    def get_beneficiary_attachments_details(self, orientation):
+        return [
+            {"name": a, "url": default_storage.url(a)}
+            for a in orientation.beneficiary_attachments
+        ]

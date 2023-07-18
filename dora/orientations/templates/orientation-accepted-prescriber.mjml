@@ -1,30 +1,15 @@
 {% extends "email-base.mjml" %}
 
 {% block preview %}
-    La demande pour {{ data.get_beneficiary_full_name }}} a été acceptée&nbsp;!
+    La demande pour {{ data.get_beneficiary_full_name }} a été acceptée&nbsp;!
 {% endblock %}
 
 {% block title %}
-    Votre demande d’orientation pour {{ data.get_beneficiary_full_name }} a été acceptée ! 🎉
+    Votre demande d’orientation pour {{ data.get_beneficiary_full_name }} a été acceptée&nbsp;! 🎉
 {% endblock %}
 
 {% block content %}
-    <p>
-        <strong>Bonjour,</strong>
-    </p>
-    <p>
-        Nous avons le plaisir de vous informer que votre demande d'orientation a été acceptée ! 🎉
-    </p>
-    <p>
-        Votre demande concernant {{ data.get_beneficiary_full_name }} à été validée par la
-        structure <a href="{{ data.service.structure.get_frontend_url }}">{{ data.service.structure.name }}</a>.
-        Il ou elle intégrera
-        «&nbsp;<a
-            href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a>&nbsp;»
-        qui se déroulera à { lieu }, à partir
-        du { date.début } et jusqu'au { date.fin }.
-    </p>
-
-    {% include "partials/block-service-contact-inline.html" %}
-
+    {{ prescriberMessage|linebreaks }}
 {% endblock %}
+
+{% block signature %}{% endblock %}

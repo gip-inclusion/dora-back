@@ -8,6 +8,12 @@ from django.template.loader import render_to_string
 from furl import furl
 
 
+def clean_reply_to(emails):
+    # Déduplique et enlève les adresses vides
+    if emails:
+        return list(set(email for email in emails if email))
+
+
 def send_mail(
     subject,
     # chaine ou liste de chaines
@@ -17,6 +23,7 @@ def send_mail(
     from_email=("La plateforme DORA", settings.DEFAULT_FROM_EMAIL),
     tags=None,
     reply_to=None,
+    cc=None,
     attachments=None,
 ):
     headers = {
@@ -42,7 +49,8 @@ def send_mail(
         from_email,
         to,
         headers=headers,
-        reply_to=reply_to,
+        cc=cc,
+        reply_to=clean_reply_to(reply_to),
     )
     msg.content_subtype = "html"
     if attachments is not None:
@@ -52,10 +60,14 @@ def send_mail(
                 filename,
                 default_storage.open(attachment).read(),
             )
-    msg.send()
-    if attachments is not None:
-        for attachment in attachments:
-            default_storage.delete(attachment)
+    try:
+        msg.send()
+    except Exception:
+        raise
+    finally:
+        if attachments is not None:
+            for attachment in attachments:
+                default_storage.delete(attachment)
 
 
 def send_services_check_email(

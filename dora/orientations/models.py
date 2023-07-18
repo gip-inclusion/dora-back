@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
+from dora.core.models import EnumModel
 from dora.services.models import Service
 from dora.structures.models import Structure
 
@@ -18,6 +19,12 @@ class OrientationStatus(models.TextChoices):
     PENDING = "OUVERTE", "Ouverte / En cours de traitement"
     ACCEPTED = "VALIDÉE", "Validée"
     REJECTED = "REFUSÉE", "Refusée"
+
+
+class RejectionReason(EnumModel):
+    class Meta:
+        verbose_name = "Motif de refus"
+        verbose_name_plural = "Motifs de refus"
 
 
 class Orientation(models.Model):
@@ -121,6 +128,10 @@ class Orientation(models.Model):
     orientation_reasons = models.TextField(
         verbose_name="Motif de l'orientation", blank=True
     )
+    rejection_reasons = models.ManyToManyField(
+        RejectionReason, verbose_name="Motifs de refus de l'orientation", blank=True
+    )
+
     creation_date = models.DateTimeField(auto_now_add=True, editable=False)
     processing_date = models.DateTimeField(blank=True, null=True)
     status = models.CharField(
@@ -144,7 +155,7 @@ class Orientation(models.Model):
         return self.get_frontend_url()
 
     def get_frontend_url(self):
-        return f"{settings.FRONTEND_URL}/orientations/{self.query_id}"
+        return f"{settings.FRONTEND_URL}/orientations?token={self.query_id}"
 
     def get_beneficiary_full_name(self):
         if self.beneficiary_first_name or self.beneficiary_last_name:
@@ -163,3 +174,30 @@ class Orientation(models.Model):
             )
             return full_name.strip()
         return self.referent_email
+
+
+class ContactRecipient(models.TextChoices):
+    BENEFICIARY = "BÉNÉFICIAIRE", "Bénéficiaire"
+    PRESCRIBER = "PRESCRIPTEUR", "Prescripteur"
+    REFERENT = "RÉFÉRENT", "Réfeérent"
+
+
+class SentContactEmail(models.Model):
+    orientation = models.ForeignKey(
+        Orientation,
+        on_delete=models.CASCADE,
+    )
+    date_sent = models.DateTimeField(auto_now_add=True, editable=False)
+    recipient = models.CharField(
+        choices=ContactRecipient.choices,
+        max_length=20,
+    )
+    carbon_copies = ArrayField(
+        models.CharField(
+            choices=ContactRecipient.choices,
+            max_length=20,
+        ),
+        verbose_name="Carbon Copies",
+        blank=True,
+        default=list,
+    )

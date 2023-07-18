@@ -33,7 +33,9 @@
         <li>Structure&nbsp;:
             <a href="{{ data.service.structure.get_frontend_url }}">{{ data.service.structure.name }}</a>
         </li>
-        <li>Responsable du service&nbsp;: {{ data.service.contact_name }}</li>
+        {% if  data.service.contact_name %}
+            <li>Responsable du service&nbsp;: {{ data.service.contact_name }}</li>
+        {% endif %}
     </ul>
 
     {% include "partials/block-beneficiary.html" with is_beneficiary=True %}
@@ -41,6 +43,8 @@
     {% include "partials/block-situation.html" with is_beneficiary=True %}
 
     {% include "partials/block-requirements.html" with is_beneficiary=True %}
+
+    {% include "partials/block-attachments.html" %}
 
     {% include "partials/block-prescriber.html" %}
 

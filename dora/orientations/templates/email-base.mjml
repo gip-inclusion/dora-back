@@ -78,11 +78,13 @@
                 {% endblock %}
 
                 <!-- Salutations -->
-                <mj-text>
-                    À très bientôt,
-                    <br/>
-                    <strong>L’équipe DORA</strong>
-                </mj-text>
+                {% block signature %}
+                    <mj-text>
+                        À très bientôt,
+                        <br/>
+                        <strong>L’équipe DORA</strong>
+                    </mj-text>
+                {% endblock %}
 
                 <!-- Footer -->
                 {% block footer %}{% endblock %}
