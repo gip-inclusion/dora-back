@@ -46,7 +46,7 @@
 
     {% include "partials/block-attachments.html" %}
 
-    {% include "partials/block-prescriber.html" %}
+    {% include "partials/block-prescriber.html" with is_beneficiary=True %}
 
     <p>
         La structure
