@@ -23,6 +23,7 @@ def send_orientation_created_emails(orientation):
         "homepage_url": settings.FRONTEND_URL,
         "ContactPreference": ContactPreference,
         "support_email": settings.SUPPORT_EMAIL,
+        "support_link": settings.ORIENTATION_SUPPORT_LINK,
         "beneficiaries_has_alternate_contact_methods": len(
             beneficiaries_contact_methods
         )
@@ -88,6 +89,7 @@ def send_orientation_accepted_emails(
         "data": orientation,
         "homepage_url": settings.FRONTEND_URL,
         "support_email": settings.SUPPORT_EMAIL,
+        "support_link": settings.ORIENTATION_SUPPORT_LINK,
         "prescriber_message": prescriber_message,
         "beneficiary_message": beneficiary_message,
     }
@@ -154,6 +156,7 @@ def send_orientation_rejected_emails(orientation, message):
         "data": orientation,
         "homepage_url": settings.FRONTEND_URL,
         "support_email": settings.SUPPORT_EMAIL,
+        "support_link": settings.ORIENTATION_SUPPORT_LINK,
         "message": message,
     }
 
@@ -204,6 +207,7 @@ def send_message_to_prescriber(orientation, message, cc):
         "homepage_url": settings.FRONTEND_URL,
         "message": message,
         "support_email": settings.SUPPORT_EMAIL,
+        "support_link": settings.ORIENTATION_SUPPORT_LINK,
     }
     send_mail(
         "[Contact - Prescripteur] Vous avez un nouveau message 📩",
@@ -225,6 +229,7 @@ def send_message_to_beneficiary(orientation, message, cc):
         "homepage_url": settings.FRONTEND_URL,
         "message": message,
         "support_email": settings.SUPPORT_EMAIL,
+        "support_link": settings.ORIENTATION_SUPPORT_LINK,
     }
 
     send_mail(

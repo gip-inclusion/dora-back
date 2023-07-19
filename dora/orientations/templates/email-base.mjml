@@ -95,10 +95,12 @@
                 <mj-text>
                     <div style="color: #555555; background-color: #F0F8FF; border-radius: 12px;
 padding: 16px 24px">
-                        En cas de difficulté, n'hésitez pas à
-                        <a style="color: #555" href="mailto:{{ support_email }}">contacter le support</a>
-                        de la plateforme DORA pour obtenir de
-                        l'aide.
+                        {% block support %}
+                            En cas de difficulté, n'hésitez pas à
+                            <a style="color: #555" href="{{ support_link }}">contacter le support</a>
+                            de la plateforme DORA pour obtenir de
+                            l'aide.
+                        {% endblock %}
                     </div>
                 </mj-text>
             </mj-column>

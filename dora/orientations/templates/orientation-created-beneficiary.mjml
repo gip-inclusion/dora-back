@@ -84,3 +84,10 @@
         </p>
     </mj-text>
 {% endblock %}
+
+{% block support %}
+    En cas de difficulté, n'hésitez pas à
+    <a style="color: #555" href="mailto:{{ support_email }}">contacter le support</a>
+    de la plateforme DORA pour obtenir de
+    l'aide.
+{% endblock %}
