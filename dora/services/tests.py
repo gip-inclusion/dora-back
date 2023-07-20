@@ -1,13 +1,16 @@
 from datetime import timedelta
 
+import requests
 from django.contrib.gis.geos import MultiPolygon, Point
 from django.core.exceptions import ValidationError
+from django.test import override_settings
 from django.utils import timezone
 from model_bakery import baker
-from rest_framework.test import APITestCase
+from rest_framework.test import APIRequestFactory, APITestCase
 
 from dora.admin_express.models import AdminDivisionType
 from dora.core.test_utils import make_model, make_service, make_structure
+from dora.data_inclusion.test_utils import FakeDataInclusionClient, make_di_service_data
 from dora.services.enums import ServiceStatus
 from dora.services.migration_utils import (
     add_categories_and_subcategories_if_subcategory,
@@ -25,7 +28,9 @@ from dora.services.migration_utils import (
     update_category_value_and_label,
     update_subcategory_value_and_label,
 )
+from dora.services.serializers import ServiceSerializer
 from dora.services.utils import SYNC_CUSTOM_M2M_FIELDS, SYNC_FIELDS, SYNC_M2M_FIELDS
+from dora.services.views import search, service_di
 from dora.structures.models import Structure
 
 from .models import (
@@ -1007,6 +1012,675 @@ class ServiceTestCase(APITestCase):
         # ALORS il est considéré comme ayant déjà été dépublié
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["has_already_been_unpublished"], True)
+
+
+class DataInclusionSearchTestCase(APITestCase):
+    def setUp(self):
+        self.region = baker.make("Region", code="99")
+        self.dept = baker.make("Department", region=self.region.code, code="77")
+        self.epci11 = baker.make("EPCI", code="11111")
+        self.epci12 = baker.make("EPCI", code="22222")
+        self.city1 = baker.make(
+            "City",
+            name="Sainte Jacquelineboeuf",
+            code="12345",
+            epcis=[self.epci11.code, self.epci12.code],
+            department=self.dept.code,
+            region=self.region.code,
+        )
+        self.city2 = baker.make("City")
+
+        self.di_client = FakeDataInclusionClient()
+        self.factory = APIRequestFactory()
+        self.search = lambda request: search(request, di_client=self.di_client)
+
+    def make_di_service(self, **kwargs) -> dict:
+        service_data = make_di_service_data(**kwargs)
+        self.di_client.services.append(service_data)
+        return service_data
+
+    @staticmethod
+    def get_di_id(service_data: dict) -> str:
+        return service_data["source"] + "--" + service_data["id"]
+
+    def test_dont_find_services_if_di_flag_not_set(self):
+        self.make_di_service(
+            zone_diffusion_type="commune",
+            zone_diffusion_code=self.city1.code,
+        )
+        request = self.factory.get("/search/", {"city": self.city1.code})
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_find_services_in_city(self):
+        service_data = self.make_di_service(
+            zone_diffusion_type="commune",
+            zone_diffusion_code=self.city1.code,
+        )
+        request = self.factory.get("/search/", {"di": True, "city": self.city1.code})
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], service_data["id"])
+
+    def test_dont_find_services_in_other_city(self):
+        self.make_di_service(
+            zone_diffusion_type="commune",
+            zone_diffusion_code=self.city1.code,
+        )
+        request = self.factory.get("/search/", {"di": True, "city": self.city2.code})
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_filter_by_fee(self):
+        service_data = self.make_di_service(
+            zone_diffusion_type="pays", frais=["gratuit"]
+        )
+        self.make_di_service(zone_diffusion_type="pays", frais=["payant"])
+        request = self.factory.get(
+            "/search/",
+            {
+                "di": True,
+                "city": self.city2.code,
+                "fees": ServiceFee.objects.filter(value="gratuit").first().value,
+            },
+        )
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], service_data["id"])
+
+    def test_filter_by_kind(self):
+        service_data = self.make_di_service(
+            zone_diffusion_type="pays", types=["atelier", "accompagnement"]
+        )
+        self.make_di_service(zone_diffusion_type="pays", types=["formation"])
+        request = self.factory.get(
+            "/search/",
+            {
+                "di": True,
+                "city": self.city2.code,
+                "kinds": ServiceKind.objects.filter(value=service_data["types"][0])
+                .first()
+                .value,
+            },
+        )
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], service_data["id"])
+
+    def test_filter_by_cat(self):
+        service_data_1 = self.make_di_service(
+            zone_diffusion_type="pays",
+            thematiques=["famille", "sante"],
+        )
+        service_data_2 = self.make_di_service(
+            zone_diffusion_type="pays",
+            thematiques=["famille--garde-denfants"],
+        )
+        self.make_di_service(zone_diffusion_type="pays", thematiques=["numerique"])
+        request = self.factory.get(
+            "/search/",
+            {
+                "di": True,
+                "city": self.city2.code,
+                "cats": "famille",
+            },
+        )
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data[0]["id"], service_data_1["id"])
+        self.assertEqual(response.data[1]["id"], service_data_2["id"])
+
+    def test_simple_search_with_data_inclusion(self):
+        service_data = self.make_di_service(code_insee=self.city1.code)
+        request = self.factory.get("/search/", {"di": True, "city": self.city1.code})
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["distance"], 0)
+        self.assertEqual(response.data[0]["id"], service_data["id"])
+
+    def test_simple_search_with_data_inclusion_and_dora(self):
+        service_dora = make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.CITY,
+            diffusion_zone_details=self.city1.code,
+        )
+        service_data = self.make_di_service(code_insee=self.city1.code)
+        request = self.factory.get("/search/", {"di": True, "city": self.city1.code})
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data[0]["slug"], service_dora.slug)
+        self.assertEqual(response.data[1]["id"], service_data["id"])
+
+    def test_data_inclusion_connection_error(self):
+        service_dora = make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.CITY,
+            diffusion_zone_details=self.city1.code,
+        )
+
+        class FaultyDataInclusionClient:
+            def search_services(self, **kwargs):
+                raise requests.ConnectionError()
+
+        di_client = FaultyDataInclusionClient()
+        request = self.factory.get("/search/", {"di": True, "city": self.city1.code})
+        response = search(request, di_client=di_client)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["slug"], service_dora.slug)
+
+    def test_on_site_first(self):
+        self.make_di_service(
+            zone_diffusion_type="pays", modes_accueil=["en-presentiel"]
+        )
+        service_data_2 = self.make_di_service(
+            zone_diffusion_type="pays", modes_accueil=["a-distance"]
+        )
+        self.make_di_service(
+            zone_diffusion_type="pays", modes_accueil=["en-presentiel"]
+        )
+        request = self.factory.get("/search/", {"di": True, "city": "12345"})
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 3)
+        self.assertEqual(response.data[2]["id"], service_data_2["id"])
+
+    def test_dora_first(self):
+        toulouse_center = Point(1.4436700, 43.6042600, srid=4326)
+        # Points à moins de 100km de Toulouse
+        point_in_toulouse = Point(1.4187594455116272, 43.601528176416416, srid=4326)
+
+        region = baker.make("Region", code="76")
+        dept = baker.make("Department", region=region.code, code="31")
+        toulouse = baker.make(
+            "City",
+            code="31555",
+            department=dept.code,
+            region=region.code,
+            # la valeur du buffer est complètement approximative
+            # elle permet juste de valider les assertions suivantes
+            geom=MultiPolygon(toulouse_center.buffer(0.05)),
+        )
+
+        service_instance_1 = make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+        )
+        service_instance_1.location_kinds.set(
+            [LocationKind.objects.get(value="a-distance")]
+        )
+        service_instance_2 = make_service(
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            geom=point_in_toulouse,
+        )
+        service_instance_2.location_kinds.set(
+            [LocationKind.objects.get(value="en-presentiel")]
+        )
+        service_data_3 = self.make_di_service(
+            zone_diffusion_type="pays", modes_accueil=["a-distance"]
+        )
+        service_data_4 = self.make_di_service(
+            zone_diffusion_type="pays", modes_accueil=["en-presentiel"]
+        )
+        request = self.factory.get("/search/", {"di": True, "city": toulouse.code})
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 4)
+        self.assertEqual(response.data[0]["slug"], service_instance_2.slug)
+        self.assertEqual(response.data[1]["id"], service_data_4["id"])
+        self.assertEqual(response.data[2]["slug"], service_instance_1.slug)
+        self.assertEqual(response.data[3]["id"], service_data_3["id"])
+
+    @override_settings(DATA_INCLUSION_STREAM_SOURCES=["foo"])
+    def test_search_target_sources(self):
+        service_data = self.make_di_service(source="foo", zone_diffusion_type="pays")
+        self.make_di_service(source="bar", zone_diffusion_type="pays")
+        request = self.factory.get("/search/", {"di": True, "city": self.city1.code})
+        response = self.search(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], service_data["id"])
+
+    def test_service_di_contains_service_fields(self):
+        service_data = self.make_di_service()
+        di_id = self.get_di_id(service_data)
+        request = self.factory.get(f"/service-di/{di_id}/")
+        response = service_di(request, di_id=di_id, di_client=self.di_client)
+
+        for field in ServiceSerializer.Meta.fields:
+            with self.subTest(field=field):
+                self.assertIn(field, response.data)
+
+    def test_service_di_address(self):
+        service_data = self.make_di_service(
+            adresse="chemin de Ferreira",
+            complement_adresse="2ème étage",
+            code_insee="59999",
+            code_postal="59998",
+            commune="Sainte Jacquelineboeuf",
+            longitude=-61.64115,
+            latitude=9.8741475,
+        )
+        di_id = self.get_di_id(service_data)
+        request = self.factory.get(f"/service-di/{di_id}/")
+        response = service_di(request, di_id=di_id, di_client=self.di_client)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["address1"], service_data["adresse"])
+        self.assertEqual(response.data["address2"], service_data["complement_adresse"])
+        self.assertEqual(response.data["city_code"], service_data["code_insee"])
+        self.assertEqual(response.data["postal_code"], service_data["code_postal"])
+        self.assertEqual(response.data["city"], service_data["commune"])
+        self.assertEqual(response.data["geom"], None)
+        self.assertEqual(response.data["department"], "59")
+
+    def test_service_di_categories(self):
+        cases = [
+            (None, [], [], [], []),
+            ([], [], [], [], []),
+            (
+                ["mobilite", "famille--garde-denfants"],
+                ["mobilite"],
+                ["Mobilité"],
+                ["famille--garde-denfants"],
+                ["Garde d'enfants"],
+            ),
+        ]
+        for (
+            thematiques,
+            categories,
+            categories_display,
+            subcategories,
+            subcategories_display,
+        ) in cases:
+            with self.subTest(thematiques=thematiques):
+                service_data = self.make_di_service(thematiques=thematiques)
+                di_id = self.get_di_id(service_data)
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["categories"], categories)
+                self.assertEqual(
+                    response.data["categories_display"], categories_display
+                )
+                self.assertEqual(response.data["subcategories"], subcategories)
+                self.assertEqual(
+                    response.data["subcategories_display"], subcategories_display
+                )
+
+    def test_service_di_beneficiaries_access_modes(self):
+        cases = [
+            (None, [], []),
+            ([], [], []),
+            (["envoyer-un-mail"], ["envoyer-un-mail"], ["envoyer-un-mail"]),
+        ]
+        for (
+            modes_orientation_beneficiaire,
+            beneficiaries_access_modes,
+            beneficiaries_access_modes_display,
+        ) in cases:
+            with self.subTest(
+                modes_orientation_beneficiaire=modes_orientation_beneficiaire
+            ):
+                service_data = self.make_di_service(
+                    modes_orientation_beneficiaire=modes_orientation_beneficiaire
+                )
+                di_id = self.get_di_id(service_data)
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    response.data["beneficiaries_access_modes"],
+                    beneficiaries_access_modes,
+                )
+                self.assertEqual(
+                    response.data["beneficiaries_access_modes_display"],
+                    beneficiaries_access_modes_display,
+                )
+
+    def test_service_di_coach_orientation_modes(self):
+        cases = [
+            (None, [], []),
+            ([], [], []),
+            (["envoyer-un-mail"], ["envoyer-un-mail"], ["envoyer-un-mail"]),
+        ]
+        for (
+            modes_orientation_accompagnateur,
+            coach_orientation_modes,
+            coach_orientation_modes_display,
+        ) in cases:
+            with self.subTest(
+                modes_orientation_accompagnateur=modes_orientation_accompagnateur
+            ):
+                service_data = self.make_di_service(
+                    modes_orientation_accompagnateur=modes_orientation_accompagnateur
+                )
+                di_id = self.get_di_id(service_data)
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    response.data["coach_orientation_modes"], coach_orientation_modes
+                )
+                self.assertEqual(
+                    response.data["coach_orientation_modes_display"],
+                    coach_orientation_modes_display,
+                )
+
+    def test_service_di_concerned_public(self):
+        cases = [
+            (None, [], []),
+            ([], [], []),
+            (["adultes"], ["adultes"], ["adultes"]),
+        ]
+        for profils, concerned_public, concerned_public_display in cases:
+            with self.subTest(profils=profils):
+                service_data = self.make_di_service(profils=profils)
+                di_id = self.get_di_id(service_data)
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["concerned_public"], concerned_public)
+                self.assertEqual(
+                    response.data["concerned_public_display"], concerned_public_display
+                )
+
+    def test_service_di_contact(self):
+        cases = [
+            (None, None, None, None),
+            ("foo@bar.baz", "David Rocher", "0102030405", True),
+        ]
+        for courriel, contact_nom_prenom, telephone, contact_public in cases:
+            with self.subTest(
+                courriel=courriel,
+                contact_nom_prenom=contact_nom_prenom,
+                telephone=telephone,
+                contact_public=contact_public,
+            ):
+                service_data = self.make_di_service(
+                    courriel=courriel,
+                    contact_nom_prenom=contact_nom_prenom,
+                    telephone=telephone,
+                    contact_public=contact_public,
+                )
+                di_id = self.get_di_id(service_data)
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["contact_email"], courriel)
+                self.assertEqual(response.data["contact_name"], contact_nom_prenom)
+                self.assertEqual(response.data["contact_phone"], telephone)
+                self.assertEqual(
+                    response.data["is_contact_info_public"], contact_public
+                )
+
+    def test_service_di_credentials(self):
+        cases = [
+            (None, [], []),
+            ("", [], []),
+            ("lorem,ipsum", ["lorem", "ipsum"], ["lorem", "ipsum"]),
+        ]
+        for justificatifs, credentials, credentials_display in cases:
+            with self.subTest(justificatifs=justificatifs):
+                service_data = self.make_di_service(justificatifs=justificatifs)
+                di_id = self.get_di_id(service_data)
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["credentials"], credentials)
+                self.assertEqual(
+                    response.data["credentials_display"], credentials_display
+                )
+
+    def test_service_di_diffusion_zone(self):
+        cases = [
+            (
+                None,
+                None,
+                None,
+                "",
+                None,
+                "",
+            ),
+            (
+                "commune",
+                self.city1.code,
+                self.city1.code,
+                f"{self.city1.name} ({self.dept.code})",
+                AdminDivisionType.CITY.value,
+                AdminDivisionType.CITY.label,
+            ),
+            (
+                "pays",
+                None,
+                None,
+                "France entière",
+                AdminDivisionType.COUNTRY.value,
+                AdminDivisionType.COUNTRY.label,
+            ),
+        ]
+
+        for (
+            zone_diffusion_type,
+            zone_diffusion_code,
+            diffusion_zone_details,
+            diffusion_zone_details_display,
+            diffusion_zone_type,
+            diffusion_zone_type_display,
+        ) in cases:
+            with self.subTest(
+                zone_diffusion_type=zone_diffusion_type,
+                zone_diffusion_code=zone_diffusion_code,
+            ):
+                service_data = self.make_di_service(
+                    zone_diffusion_type=zone_diffusion_type,
+                    zone_diffusion_code=zone_diffusion_code,
+                )
+                di_id = self.get_di_id(service_data)
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    response.data["diffusion_zone_details"], diffusion_zone_details
+                )
+                self.assertEqual(
+                    response.data["diffusion_zone_details_display"],
+                    diffusion_zone_details_display,
+                )
+                self.assertEqual(
+                    response.data["diffusion_zone_type"], diffusion_zone_type
+                )
+                self.assertEqual(
+                    response.data["diffusion_zone_type_display"],
+                    diffusion_zone_type_display,
+                )
+                self.assertEqual(response.data["qpv_or_zrr"], None)
+
+    def test_service_di_fee(self):
+        cases = [
+            (None, None),
+            ([], ""),
+            (["gratuit", "adhesion"], "gratuit, adhesion"),
+        ]
+        for frais, fee_condition in cases:
+            with self.subTest(frais=frais):
+                service_data = self.make_di_service(frais=frais)
+                di_id = self.get_di_id(service_data)
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["fee_condition"], fee_condition)
+
+        cases = [
+            (None, ""),
+            ("", ""),
+            ("Gratuit pour tous", "Gratuit pour tous"),
+        ]
+        for frais_autres, fee_details in cases:
+            with self.subTest(frais_autres=frais_autres):
+                service_data = self.make_di_service(frais_autres=frais_autres)
+                di_id = self.get_di_id(service_data)
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["fee_details"], fee_details)
+
+    def test_service_di_location_kinds(self):
+        cases = [
+            (None, [], []),
+            ([], [], []),
+            (["en-presentiel"], ["en-presentiel"], ["En présentiel"]),
+        ]
+        for modes_accueil, location_kinds, location_kinds_display in cases:
+            with self.subTest(modes_accueil=modes_accueil):
+                service_data = self.make_di_service(modes_accueil=modes_accueil)
+                di_id = self.get_di_id(service_data)
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["location_kinds"], location_kinds)
+                self.assertEqual(
+                    response.data["location_kinds_display"], location_kinds_display
+                )
+
+    def test_service_di_requirements(self):
+        cases = [
+            (None, [], []),
+            ("", [], []),
+            ("lorem,ipsum", ["lorem", "ipsum"], ["lorem", "ipsum"]),
+        ]
+        for pre_requis, requirements, requirements_display in cases:
+            with self.subTest(pre_requis=pre_requis):
+                service_data = self.make_di_service(pre_requis=pre_requis)
+                di_id = self.get_di_id(service_data)
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["requirements"], requirements)
+                self.assertEqual(
+                    response.data["requirements_display"], requirements_display
+                )
+
+    def test_service_di_kinds(self):
+        cases = [
+            (None, [], []),
+            ([], [], []),
+            (["accompagnement"], ["accompagnement"], ["Accompagnement"]),
+        ]
+        for types, kinds, kinds_display in cases:
+            with self.subTest(types=types):
+                service_data = self.make_di_service(types=types)
+                di_id = self.get_di_id(service_data)
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["kinds"], kinds)
+                self.assertEqual(response.data["kinds_display"], kinds_display)
+
+    def test_service_di_desc(self):
+        cases = [
+            (None, ""),
+            ("", ""),
+            ("Lorem ipsum", "Lorem ipsum"),
+        ]
+
+        for presentation, desc in cases:
+            with self.subTest(presentation=presentation):
+                service_data = self.make_di_service(
+                    nom="L.I.",
+                    presentation_resume=presentation,
+                    presentation_detail=presentation,
+                )
+                di_id = self.get_di_id(service_data)
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["name"], service_data["nom"])
+                self.assertEqual(response.data["full_desc"], desc)
+                self.assertEqual(response.data["short_desc"], desc)
+
+    def test_service_di_date(self):
+        service_data = self.make_di_service(
+            date_creation="2022-01-01",
+            date_maj="2023-01-01",
+            recurrence="Tous les jours",
+            date_suspension="2030-01-01",
+            structure={"nom": "Rouge Empire"},
+        )
+        di_id = self.get_di_id(service_data)
+        request = self.factory.get(f"/service-di/{di_id}/")
+        response = service_di(request, di_id=di_id, di_client=self.di_client)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["creation_date"], service_data["date_creation"])
+        self.assertEqual(response.data["modification_date"], service_data["date_maj"])
+        self.assertEqual(response.data["publication_date"], None)
+        self.assertEqual(response.data["recurrence"], service_data["recurrence"])
+        self.assertEqual(
+            response.data["suspension_date"], service_data["date_suspension"]
+        )
+        self.assertEqual(response.data["publication_date"], None)
+
+    def test_service_di_structure(self):
+        service_data = self.make_di_service(
+            structure={"nom": "Rouge Empire"},
+        )
+        di_id = self.get_di_id(service_data)
+        request = self.factory.get(f"/service-di/{di_id}/")
+        response = service_di(request, di_id=di_id, di_client=self.di_client)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["structure"], None)
+        self.assertEqual(
+            response.data["structure_info"]["name"], service_data["structure"]["nom"]
+        )
+
+    def test_service_di_is_cumulative(self):
+        for cumulable in [True, False, None]:
+            with self.subTest(cumulable=cumulable):
+                service_data = self.make_di_service(cumulable=cumulable)
+                di_id = self.get_di_id(service_data)
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["is_cumulative"], cumulable)
+
+    def test_service_di_update_status(self):
+        cases = [
+            (str(timezone.now().date() - timedelta(days=365)), "REQUIRED"),
+            (str(timezone.now().date()), "NOT_NEEDED"),
+        ]
+        for date_maj, update_status in cases:
+            with self.subTest(update_status=update_status):
+                service_data = self.make_di_service(date_maj=date_maj)
+                di_id = self.get_di_id(service_data)
+                request = self.factory.get(f"/service-di/{di_id}/")
+                response = service_di(request, di_id=di_id, di_client=self.di_client)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data["update_status"], update_status)
+
+    def test_service_di_misc(self):
+        service_data = self.make_di_service()
+        di_id = self.get_di_id(service_data)
+        request = self.factory.get(f"/service-di/{di_id}/")
+        response = service_di(request, di_id=di_id, di_client=self.di_client)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["can_write"], False)
+        self.assertEqual(response.data["has_already_been_unpublished"], None)
+        self.assertEqual(response.data["is_available"], True)
+        self.assertEqual(response.data["model"], None)
+        self.assertEqual(response.data["model_changed"], None)
+        self.assertEqual(response.data["model_name"], None)
+        self.assertEqual(response.data["online_form"], None)
+        self.assertEqual(response.data["remote_url"], None)
+        self.assertEqual(response.data["status"], "PUBLISHED")
+        self.assertEqual(response.data["use_inclusion_numerique_scheme"], False)
 
 
 class ServiceSearchTestCase(APITestCase):

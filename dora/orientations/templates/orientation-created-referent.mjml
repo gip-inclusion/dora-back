@@ -1,0 +1,45 @@
+{% extends "email-base.mjml" %}
+
+{% block preview %}
+    {{ data.get_beneficiary_full_name }} a été orienté·e vers {{ data.service.name }}
+{% endblock %}
+
+{% block title %}
+    {{ data.get_beneficiary_full_name }} a été orienté vers le service «&nbsp;{{ data.service.name }}&nbsp;»
+{% endblock %}
+
+
+{% block content %}
+    <p>
+        <strong>Bonjour,</strong>
+    </p>
+    <p>
+        {{ data.prescriber.get_full_name }} de la structure
+        <a
+                href="{{ data.prescriber_structure.get_frontend_url }}">{{ data.prescriber_structure.name }}
+        </a>
+        a orienté
+        {{ data.get_beneficiary_full_name }} vers le
+        service «&nbsp;<a href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a>&nbsp;».
+        Voici un récapitulatif de la demande&nbsp;:
+    </p>
+
+    {% include "partials/block-beneficiary.html" %}
+
+    {% include "partials/block-situation.html" %}
+
+    {% include "partials/block-requirements.html" %}
+
+    {% include "partials/block-prescriber.html" %}
+    On pourra vous solliciter pour offrir plus de détails sur le ou la bénéficiaire.
+
+    {% include "partials/block-orientation.html" %}
+
+    {% include "partials/block-attachments.html" %}
+
+    {% include "partials/block-service-contact.html" %}
+    <p>
+        <strong>La structure {{ data.service.structure.name }} va traiter la demande et y apportera une réponse.
+        </strong>
+    </p>
+{% endblock %}

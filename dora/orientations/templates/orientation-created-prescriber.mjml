@@ -1,0 +1,45 @@
+{% extends "email-base.mjml" %}
+
+{% block preview %}
+    Voici un récapitulatif de la demande que vous avez envoyé à {{ data.service.structure.name }}
+{% endblock %}
+
+{% block title %}
+    Votre demande a bien été transmise&nbsp;!
+{% endblock %}
+
+
+{% block content %}
+    <p>
+        <strong>Bonjour {{ data.prescriber.get_short_name }},</strong>
+    </p>
+    <p>
+        Votre demande d’orientation pour le service «&nbsp;<a
+            href="{{ data.service.get_frontend_url }}">{{ data.service.name }}
+    </a>&nbsp;» porté par la structure
+        <a href="{{ data.service.structure.get_frontend_url }}">{{ data.service.structure.name }}</a>
+        ({{ data.service.structure.postal_code }} {{ data.service.structure.city }}) à été transmis&nbsp;!
+        Voici un récapitulatif de la demande&nbsp;:
+    </p>
+
+    {% include "partials/block-beneficiary.html" %}
+
+    {% include "partials/block-situation.html" %}
+
+    {% include "partials/block-requirements.html" %}
+
+    {% include "partials/block-prescriber.html" %}
+    On pourra vous solliciter pour offrir plus de détails sur le ou la bénéficiaire.
+
+    {% include "partials/block-orientation.html" %}
+
+    {% include "partials/block-attachments.html" %}
+
+    {% include "partials/block-service-contact.html" %}
+
+    <p>
+        <strong>La structure {{ data.service.structure.name }} va traiter votre demande et reviendra vers vous avec une
+            réponse.
+        </strong>
+    </p>
+{% endblock %}

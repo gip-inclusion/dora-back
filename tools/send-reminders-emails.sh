@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Désactivation du script de début juillet
-echo "Envoi des courriels de relance suspendu"
-exit 0;
+#echo "Envoi des courriels de relance suspendu"
+#exit 0;
 
 
 # Only run on the production app

@@ -7,7 +7,7 @@ from rest_framework.versioning import NamespaceVersioning
 
 import dora.admin_express.views
 import dora.core.views
-import dora.rest_auth
+import dora.orientations.views
 import dora.service_suggestions.views
 import dora.services.views
 import dora.sirene.views
@@ -15,6 +15,7 @@ import dora.stats.views
 import dora.structures.views
 import dora.support.views
 import dora.users.views
+from dora import data_inclusion
 
 from .url_converters import InseeCodeConverter, SiretConverter
 
@@ -50,6 +51,11 @@ router.register(
     r"services-admin",
     dora.support.views.ServiceAdminViewSet,
     basename="service-admin",
+)
+router.register(
+    r"orientations",
+    dora.orientations.views.OrientationViewSet,
+    basename="orientation",
 )
 
 register_converter(InseeCodeConverter, "insee_code")
@@ -100,10 +106,18 @@ spectacular_patterns = [
     ),
 ]
 
+# conditionally inject a di_client dependency to views
+di_client = data_inclusion.di_client_factory() if not settings.IS_TESTING else None
+
 private_api_patterns = [
     path("auth/", include("dora.rest_auth.urls")),
-    path("search/", dora.services.views.search),
+    path("search/", dora.services.views.search, {"di_client": di_client}),
     path("stats/event/", dora.stats.views.log_event),
+    path(
+        "service-di/<slug:di_id>/",
+        dora.services.views.service_di,
+        {"di_client": di_client},
+    ),
     path("admin-division-search/", dora.admin_express.views.search),
     path("admin-division-reverse-search/", dora.admin_express.views.reverse_search),
     path(
@@ -116,6 +130,7 @@ private_api_patterns = [
     path("siret-claimed/<siret:siret>/", dora.structures.views.siret_was_claimed),
     path("structures-options/", dora.structures.views.options),
     path("upload/<slug:structure_slug>/<str:filename>/", dora.core.views.upload),
+    path("safe-upload/<str:filename>/", dora.core.views.safe_upload),
     path("admin/", admin.site.urls),
     path("ping/", dora.core.views.ping),
     path("sentry-debug/", dora.core.views.trigger_error),

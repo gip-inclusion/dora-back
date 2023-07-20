@@ -30,12 +30,21 @@ logger = logging.getLogger(__name__)
 @parser_classes([FileUploadParser])
 @permission_classes([permissions.AllowAny])
 def upload(request, filename, structure_slug):
-    # TODO: check that I have permission to upload to this service
     structure = get_object_or_404(Structure.objects.all(), slug=structure_slug)
     file_obj = request.data["file"]
     clean_filename = (
         f"{settings.ENVIRONMENT}/{structure.id}/{get_valid_filename(filename)}"
     )
+    result = default_storage.save(clean_filename, file_obj)
+    return Response({"key": result}, status=201)
+
+
+@api_view(["POST"])
+@parser_classes([FileUploadParser])
+@permission_classes([permissions.AllowAny])
+def safe_upload(request, filename):
+    file_obj = request.data["file"]
+    clean_filename = f"{settings.ENVIRONMENT}/#orientations/{get_random_string(32)}/{get_valid_filename(filename)}"
     result = default_storage.save(clean_filename, file_obj)
     return Response({"key": result}, status=201)
 

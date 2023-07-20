@@ -2,18 +2,29 @@ import datetime
 import json
 
 from django.conf import settings
+from django.core.files.storage import default_storage
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from furl import furl
 
 
+def clean_reply_to(emails):
+    # Déduplique et enlève les adresses vides
+    if emails:
+        return list(set(email for email in emails if email))
+
+
 def send_mail(
     subject,
-    to,  # string ou tableau de string
+    # chaine ou liste de chaines
+    to,
     body,
-    from_email=settings.DEFAULT_FROM_EMAIL,
+    # soit une chaine, soit un tuple (nom, email)
+    from_email=("La plateforme DORA", settings.DEFAULT_FROM_EMAIL),
     tags=None,
     reply_to=None,
+    cc=None,
+    attachments=None,
 ):
     headers = {
         "X-TM-DOMAIN": settings.EMAIL_DOMAIN,
@@ -23,9 +34,14 @@ def send_mail(
         "X-TM-TEXTVERSION": 1,
     }
 
-    # Conversion en list si besoin
+    # Conversion en liste si besoin
     if not isinstance(to, list):
         to = [to]
+
+    if type(from_email) in [list, tuple]:
+        name = from_email[0].replace('"', r"\"")
+        email = from_email[1]
+        from_email = f'"{name}" <{email}>'
 
     msg = EmailMessage(
         subject,
@@ -33,10 +49,25 @@ def send_mail(
         from_email,
         to,
         headers=headers,
-        reply_to=reply_to,
+        cc=cc,
+        reply_to=clean_reply_to(reply_to),
     )
     msg.content_subtype = "html"
-    msg.send()
+    if attachments is not None:
+        for attachment in attachments:
+            filename = attachment.split("/")[-1]
+            msg.attach(
+                filename,
+                default_storage.open(attachment).read(),
+            )
+    try:
+        msg.send()
+    except Exception:
+        raise
+    finally:
+        if attachments is not None:
+            for attachment in attachments:
+                default_storage.delete(attachment)
 
 
 def send_services_check_email(

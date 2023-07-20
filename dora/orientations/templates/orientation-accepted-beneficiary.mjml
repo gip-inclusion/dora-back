@@ -1,0 +1,22 @@
+{% extends "email-base.mjml" %}
+
+{% block preview %}
+    La demande réalisée par {{ data.prescriber.get_full_name }} à été acceptée !
+{% endblock %}
+
+{% block title %}
+    Votre demande a été acceptée ! 🎉
+{% endblock %}
+
+{% block content %}
+    {{ beneficiary_message|linebreaks }}
+{% endblock %}
+
+{% block signature %}{% endblock %}
+
+{% block support %}
+    En cas de difficulté, n'hésitez pas à
+    <a style="color: #555" href="mailto:{{ support_email }}">contacter le support</a>
+    de la plateforme DORA pour obtenir de
+    l'aide.
+{% endblock %}
