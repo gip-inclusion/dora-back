@@ -43,7 +43,7 @@ def send_orientation_created_emails(orientation):
             settings.DEFAULT_FROM_EMAIL,
         ),
         tags=["orientation"],
-        reply_to=[orientation.referent_email, orientation.prescriber.email],
+        reply_to=[orientation.prescriber.email],
     )
     # Prescripteur
     send_mail(
@@ -51,7 +51,7 @@ def send_orientation_created_emails(orientation):
         orientation.prescriber.email,
         mjml2html(render_to_string("orientation-created-prescriber.mjml", context)),
         tags=["orientation"],
-        reply_to=[orientation.service.contact_email, orientation.referent_email],
+        reply_to=[orientation.service.contact_email],
     )
     # Référent
     if (
@@ -63,7 +63,7 @@ def send_orientation_created_emails(orientation):
             orientation.referent_email,
             mjml2html(render_to_string("orientation-created-referent.mjml", context)),
             tags=["orientation"],
-            reply_to=[orientation.service.contact_email, orientation.prescriber.email],
+            reply_to=[orientation.prescriber.email],
         )
     # Bénéficiaire
     if orientation.beneficiary_email:
@@ -78,7 +78,7 @@ def send_orientation_created_emails(orientation):
                 settings.DEFAULT_FROM_EMAIL,
             ),
             tags=["orientation"],
-            reply_to=[orientation.referent_email, orientation.prescriber.email],
+            reply_to=[orientation.prescriber.email],
         )
 
 
@@ -112,7 +112,7 @@ def send_orientation_accepted_emails(
             settings.DEFAULT_FROM_EMAIL,
         ),
         tags=["orientation"],
-        reply_to=[orientation.service.contact_email, orientation.referent_email],
+        reply_to=[orientation.service.contact_email],
     )
     # Référent
     if (
@@ -128,7 +128,7 @@ def send_orientation_accepted_emails(
                 settings.DEFAULT_FROM_EMAIL,
             ),
             tags=["orientation"],
-            reply_to=[orientation.service.contact_email, orientation.prescriber.email],
+            reply_to=[orientation.prescriber.email],
         )
     # Bénéficiaire
     if orientation.beneficiary_email:
@@ -143,11 +143,7 @@ def send_orientation_accepted_emails(
                 settings.DEFAULT_FROM_EMAIL,
             ),
             tags=["orientation"],
-            reply_to=[
-                orientation.referent_email,
-                orientation.prescriber.email,
-                orientation.service.contact_email,
-            ],
+            reply_to=[orientation.service.contact_email],
         )
 
 
@@ -178,7 +174,7 @@ def send_orientation_rejected_emails(orientation, message):
             settings.DEFAULT_FROM_EMAIL,
         ),
         tags=["orientation"],
-        reply_to=[orientation.service.contact_email, orientation.referent_email],
+        reply_to=[orientation.service.contact_email],
     )
 
     if (
@@ -197,7 +193,7 @@ def send_orientation_rejected_emails(orientation, message):
                 settings.DEFAULT_FROM_EMAIL,
             ),
             tags=["orientation"],
-            reply_to=[orientation.service.contact_email, orientation.prescriber.email],
+            reply_to=[orientation.service.contact_email],
         )
 
 
@@ -218,7 +214,7 @@ def send_message_to_prescriber(orientation, message, cc):
             settings.DEFAULT_FROM_EMAIL,
         ),
         tags=["orientation"],
-        reply_to=[orientation.service.contact_email, orientation.referent_email],
+        reply_to=[orientation.service.contact_email],
         cc=cc,
     )
 
@@ -241,10 +237,6 @@ def send_message_to_beneficiary(orientation, message, cc):
             settings.DEFAULT_FROM_EMAIL,
         ),
         tags=["orientation"],
-        reply_to=[
-            orientation.service.contact_email,
-            orientation.referent_email,
-            orientation.prescriber.email,
-        ],
+        reply_to=[orientation.service.contact_email],
         cc=cc,
     )
