@@ -144,8 +144,8 @@ def log_event(request):
         di_view = DiServiceView.objects.create(
             **common_analytics_data, **di_service_data
         )
-        cats_values = request.data.get("di_categories", "")
-        subcats_values = request.data.get("di_subcategories", "")
+        cats_values = request.data.get("di_categories", [])
+        subcats_values = request.data.get("di_subcategories", [])
         categories, subcategories = get_categories(cats_values, subcats_values)
         di_view.categories.set(categories)
         di_view.subcategories.set(subcategories)
@@ -178,8 +178,8 @@ def log_event(request):
                 value=ab_testing_group
             )
             di_mev.ab_test_groups.set([ab_testing_group])
-        cats_values = request.data.get("di_categories", "")
-        subcats_values = request.data.get("di_subcategories", "")
+        cats_values = request.data.get("di_categories", [])
+        subcats_values = request.data.get("di_subcategories", [])
         categories, subcategories = get_categories(cats_values, subcats_values)
         di_mev.categories.set(categories)
         di_mev.subcategories.set(subcategories)
