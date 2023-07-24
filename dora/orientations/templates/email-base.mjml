@@ -35,6 +35,7 @@
 
             a, a:visited {
             color: #5B12EB;
+            text-decoration-line: underline;
             }
         </mj-style>
 
