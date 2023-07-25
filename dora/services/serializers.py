@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from rest_framework import exceptions, serializers
@@ -86,12 +87,14 @@ class ModelCreatablePrimaryKeyRelatedField(CreatablePrimaryKeyRelatedField):
 class StructureSerializer(serializers.ModelSerializer):
     has_admin = serializers.SerializerMethodField()
     num_services = serializers.SerializerMethodField()
+    can_show_orientation_form = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
         fields = [
             "address1",
             "address2",
+            "can_show_orientation_form",
             "city",
             "department",
             "has_admin",
@@ -113,6 +116,14 @@ class StructureSerializer(serializers.ModelSerializer):
 
     def get_num_services(self, structure):
         return structure.get_num_visible_services(self.context["request"].user)
+
+    def get_can_show_orientation_form(self, structure):
+        # La structure est désactivée via son code siren
+        for siren in settings.ORIENTATION_SIRENE_BLACKLIST:
+            if structure.siret.startswith(siren):
+                return False
+        # La structure est désactivee manuellement
+        return not structure.disable_orientation_form
 
 
 def _get_diffusion_zone_type_display(obj):
