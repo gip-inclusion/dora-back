@@ -120,7 +120,7 @@ class StructureSerializer(serializers.ModelSerializer):
     def get_can_show_orientation_form(self, structure):
         # La structure est désactivée via son code siren
         for siren in settings.ORIENTATION_SIRENE_BLACKLIST:
-            if structure.siret.startswith(siren):
+            if structure.siret and structure.siret.startswith(siren):
                 return False
         # La structure est désactivee manuellement
         return not structure.disable_orientation_form
