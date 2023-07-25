@@ -280,7 +280,7 @@ class StructureAdminSerializer(StructureSerializer):
         )
 
     def get_admins_to_moderate(self, obj):
-        if obj.moderation_status == ModerationStatus.NEED_INITIAL_MODERATION:
+        if obj.moderation_status != ModerationStatus.VALIDATED:
             return self.get_admins(obj)
         return []
 
