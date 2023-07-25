@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import serializers
 
 from dora.core.models import LogItem, ModerationStatus
@@ -271,7 +272,12 @@ class StructureAdminSerializer(StructureSerializer):
 
     def get_editors(self, obj):
         services = Service.objects.published().filter(structure=obj)
-        return set(s.last_editor.email for s in services if s.last_editor is not None)
+        return set(
+            s.last_editor.email
+            for s in services
+            if s.last_editor is not None
+            and s.last_editor.email != settings.DORA_BOT_USER
+        )
 
     def get_admins_to_moderate(self, obj):
         if obj.moderation_status == ModerationStatus.NEED_INITIAL_MODERATION:
