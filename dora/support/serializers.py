@@ -1,6 +1,7 @@
+from django.conf import settings
 from rest_framework import serializers
 
-from dora.core.models import LogItem
+from dora.core.models import LogItem, ModerationStatus
 from dora.services.enums import ServiceStatus
 from dora.services.models import Service, ServiceModel
 from dora.services.serializers import ServiceSerializer
@@ -64,14 +65,24 @@ class StructureAdminSerializer(StructureSerializer):
     categories = serializers.SerializerMethodField()
     has_admin = serializers.SerializerMethodField()
     num_services = serializers.SerializerMethodField()
+    num_draft_services = serializers.SerializerMethodField()
     num_published_services = serializers.SerializerMethodField()
     num_outdated_services = serializers.SerializerMethodField()
+    admins = serializers.SerializerMethodField()
+    editors = serializers.SerializerMethodField()
+    admins_to_moderate = serializers.SerializerMethodField()
+    admins_to_remind = serializers.SerializerMethodField()
+    num_potential_members_to_validate = serializers.SerializerMethodField()
+    num_potential_members_to_remind = serializers.SerializerMethodField()
 
     class Meta:
         model = Structure
         fields = [
             "address1",
             "address2",
+            "admins",
+            "admins_to_moderate",
+            "admins_to_remind",
             "ape",
             "branches",
             "categories",
@@ -79,6 +90,7 @@ class StructureAdminSerializer(StructureSerializer):
             "creation_date",
             "creator",
             "department",
+            "editors",
             "email",
             "full_desc",
             "has_admin",
@@ -92,7 +104,10 @@ class StructureAdminSerializer(StructureSerializer):
             "modification_date",
             "name",
             "notes",
+            "num_draft_services",
             "num_outdated_services",
+            "num_potential_members_to_remind",
+            "num_potential_members_to_validate",
             "num_published_services",
             "num_services",
             "parent",
@@ -111,6 +126,9 @@ class StructureAdminSerializer(StructureSerializer):
         read_only_fields = [
             "address1",
             "address2",
+            "admins",
+            "admins_to_moderate",
+            "admins_to_remind",
             "ape",
             "branches",
             "categories",
@@ -118,6 +136,7 @@ class StructureAdminSerializer(StructureSerializer):
             "creation_date",
             "creator",
             "department",
+            "editors",
             "email",
             "full_desc",
             "has_admin",
@@ -130,7 +149,10 @@ class StructureAdminSerializer(StructureSerializer):
             "modification_date",
             "name",
             "notes",
+            "num_draft_services",
             "num_outdated_services",
+            "num_potential_members_to_remind",
+            "num_potential_members_to_validate",
             "num_published_services",
             "num_services",
             "parent",
@@ -221,6 +243,9 @@ class StructureAdminSerializer(StructureSerializer):
     def get_has_admin(self, obj):
         return obj.has_admin()
 
+    def get_num_draft_services(self, obj):
+        return Service.objects.draft().filter(structure=obj).count()
+
     def get_num_published_services(self, obj):
         return Service.objects.published().filter(structure=obj).count()
 
@@ -239,44 +264,114 @@ class StructureAdminSerializer(StructureSerializer):
     def get_categories(self, obj):
         return obj.services.values_list("categories__value", flat=True).distinct()
 
+    def get_admins(self, obj):
+        admins = StructureMember.objects.filter(
+            structure=obj, is_admin=True, user__is_valid=True, user__is_active=True
+        )
+        return [a.user.email for a in admins]
+
+    def get_editors(self, obj):
+        services = Service.objects.published().filter(structure=obj)
+        return set(
+            s.last_editor.email
+            for s in services
+            if s.last_editor is not None
+            and s.last_editor.email != settings.DORA_BOT_USER
+        )
+
+    def get_admins_to_moderate(self, obj):
+        if obj.moderation_status != ModerationStatus.VALIDATED:
+            return self.get_admins(obj)
+        return []
+
+    def get_admins_to_remind(self, obj):
+        if not obj.has_admin():
+            admins = StructurePutativeMember.objects.filter(
+                structure=obj,
+                is_admin=True,
+                invited_by_admin=True,
+                user__is_valid=True,
+                user__is_active=True,
+            )
+            return [a.user.email for a in admins]
+        return []
+
+    def get_num_potential_members_to_validate(self, obj):
+        members = StructurePutativeMember.objects.filter(
+            structure=obj,
+            invited_by_admin=False,
+            user__is_valid=True,
+            user__is_active=True,
+        )
+        return len([m.user.email for m in members])
+
+    def get_num_potential_members_to_remind(self, obj):
+        members = StructurePutativeMember.objects.filter(
+            structure=obj,
+            invited_by_admin=True,
+            user__is_valid=True,
+            user__is_active=True,
+        )
+        return len([m.user.email for m in members])
+
 
 class StructureAdminListSerializer(StructureAdminSerializer):
     class Meta:
         model = Structure
         fields = [
+            "admins",
+            "admins_to_moderate",
+            "admins_to_remind",
             "categories",
+            "city",
             "department",
+            "editors",
+            "email",
             "has_admin",
             "latitude",
             "longitude",
             "moderation_date",
             "moderation_status",
             "name",
-            "num_published_services",
+            "num_draft_services",
             "num_outdated_services",
+            "num_potential_members_to_remind",
+            "num_potential_members_to_validate",
+            "num_published_services",
             "num_services",
+            "phone",
+            "short_desc",
             "siret",
             "slug",
             "typology",
             "typology_display",
-            "short_desc",
         ]
         read_only_fields = [
+            "admins",
+            "admins_to_moderate",
+            "admins_to_remind",
             "categories",
+            "city",
             "department",
+            "editors",
+            "email",
             "has_admin",
             "latitude",
             "longitude",
             "moderation_date",
             "name",
-            "num_published_services",
+            "num_draft_services",
             "num_outdated_services",
+            "num_potential_members_to_remind",
+            "num_potential_members_to_validate",
+            "num_published_services",
             "num_services",
+            "phone",
+            "short_desc",
             "siret",
             "slug",
             "typology",
             "typology_display",
-            "short_desc",
         ]
         lookup_field = "slug"
 
