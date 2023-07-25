@@ -174,7 +174,7 @@ def inclusion_connect_authenticate(request):
         }
         try:
             # On essaye de récupérer un utilisateur déjà migré
-            user = User.objects.get(ic_id="06cea102-d5ad-444f-aaa7-c20a15ede8c1")
+            user = User.objects.get(ic_id=user_dict["ic_id"])
             should_save = False
             if user.email != user_dict["email"]:
                 user.email = user_dict["email"]
@@ -189,8 +189,7 @@ def inclusion_connect_authenticate(request):
                 user.is_valid = user_dict["is_valid"]
                 should_save = True
             if should_save:
-                pass
-                # user.save()
+                user.save()
         except User.DoesNotExist:
             try:
                 # On essaye de faire la correspondance avec un utilisateur existant
