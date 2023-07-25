@@ -124,8 +124,8 @@ def map_service(service_data: dict) -> dict:
 
     structure_insee_code = (
         service_data["structure"]["code_insee"]
-        if service_data["structure"]["code_insee"]
-        else service_data["structure"]["_di_geocodage_code_insee"]
+        if service_data["structure"].get("code_insee")
+        else service_data["structure"].get("_di_geocodage_code_insee")
     )
 
     structure_department = (
