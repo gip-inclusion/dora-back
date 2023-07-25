@@ -312,6 +312,8 @@ ORIENTATION_EMAILS_DEBUG = os.environ.get("ORIENTATION_EMAILS_DEBUG") == "true"
 # APP SETTINGS #
 ################
 
+CURRENT_CGU_VERSION = os.environ["CURRENT_CGU_VERSION"]
+
 # Services
 DEFAULT_SEARCH_RADIUS = 15  # in km
 

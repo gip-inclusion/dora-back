@@ -93,6 +93,8 @@ class User(AbstractBaseUser):
 
     bookmarks = models.ManyToManyField("services.Service", through="services.Bookmark")
 
+    cgu = models.JSONField(default=dict)
+
     objects = UserManager()
 
     USERNAME_FIELD = "email"

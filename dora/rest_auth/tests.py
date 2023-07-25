@@ -1,11 +1,51 @@
+from django.test import override_settings
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
 from dora.core.models import ModerationStatus
 from dora.core.test_utils import make_structure
+from dora.rest_auth.models import Token
 from dora.structures.models import Structure, StructureMember, StructurePutativeMember
 
 DUMMY_SIRET = "12345678901234"
+
+
+class CGUTestCase(APITestCase):
+    @override_settings(CURRENT_CGU_VERSION="")
+    def test_needs_to_accept_cgu_is_false_when_no_env_variable(self):
+        user = baker.make("users.User", is_valid=True)
+        token = Token.objects.create(user=user)
+        response = self.client.post("/auth/user-info/", {"key": token.key})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.data["need_to_accept_cgu"])
+
+    @override_settings(CURRENT_CGU_VERSION="20230722")
+    def test_user_needs_to_accept_cgu(self):
+        user = baker.make("users.User", is_valid=True, cgu={})
+        token = Token.objects.create(user=user)
+        response = self.client.post("/auth/user-info/", {"key": token.key})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["need_to_accept_cgu"])
+
+    @override_settings(CURRENT_CGU_VERSION="20230725")
+    def test_user_needs_to_accept_cgu_renewal(self):
+        user = baker.make(
+            "users.User", is_valid=True, cgu={"20230722": "2021-07-22T00:00:00+00:00"}
+        )
+        token = Token.objects.create(user=user)
+        response = self.client.post("/auth/user-info/", {"key": token.key})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["need_to_accept_cgu"])
+
+    @override_settings(CURRENT_CGU_VERSION="20230722")
+    def test_user_not_needs_to_accept_cgu(self):
+        user = baker.make(
+            "users.User", is_valid=True, cgu={"20230722": "2021-07-22T00:00:00+00:00"}
+        )
+        token = Token.objects.create(user=user)
+        response = self.client.post("/auth/user-info/", {"key": token.key})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.data["need_to_accept_cgu"])
 
 
 class AuthenticationTestCase(APITestCase):
