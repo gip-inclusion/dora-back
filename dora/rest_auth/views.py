@@ -30,10 +30,9 @@ def update_last_login(user):
     user.save(update_fields=["last_login"])
 
 
-def _set_user_has_accepted_cgu(user):
-    if not (settings.CURRENT_CGU_VERSION in user.cgu):
-        user.cgu.update({settings.CURRENT_CGU_VERSION: str(timezone.now())})
-        user.save(update_fields=["cgu"])
+def _set_user_has_accepted_cgu(user, cgu_version):
+    user.cgu.update({cgu_version: timezone.now().isoformat()})
+    user.save(update_fields=["cgu"])
 
 
 @sensitive_post_parameters(["key"])
@@ -154,7 +153,8 @@ def join_structure(request):
 
     structure_has_admin = structure.has_admin()
 
-    _set_user_has_accepted_cgu(user)
+    if data.get("cgu_version"):
+        _set_user_has_accepted_cgu(user, data.get("cgu_version"))
 
     if _is_member_of_structure(structure, user):
         return Response(
@@ -179,5 +179,10 @@ def join_structure(request):
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def accept_cgu(request):
-    _set_user_has_accepted_cgu(request.user)
+    cgu_version = request.data.get("cgu_version")
+
+    if not cgu_version:
+        return Response(status=400)
+
+    _set_user_has_accepted_cgu(request.user, cgu_version)
     return Response(status=204)

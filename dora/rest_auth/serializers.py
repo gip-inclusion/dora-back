@@ -1,4 +1,3 @@
-from django.conf import settings
 from rest_framework import serializers
 
 from dora.services.models import Bookmark
@@ -23,7 +22,6 @@ class UserInfoSerializer(serializers.ModelSerializer):
     structures = serializers.SerializerMethodField()
     pending_structures = serializers.SerializerMethodField()
     bookmarks = serializers.SerializerMethodField()
-    need_to_accept_cgu = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -41,7 +39,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "short_name",
             "structures",
             "main_activity",
-            "need_to_accept_cgu",
+            "cgu",
         ]
 
     def get_structures(self, user):
@@ -61,11 +59,6 @@ class UserInfoSerializer(serializers.ModelSerializer):
             )
         return StructureListSerializer(qs, many=True).data
 
-    def get_need_to_accept_cgu(self, user):
-        if not settings.CURRENT_CGU_VERSION:
-            return False
-        return not (settings.CURRENT_CGU_VERSION in user.cgu)
-
     def get_bookmarks(self, user):
         if not user or not user.is_authenticated:
             qs = Bookmark.objects.none()
@@ -81,6 +74,7 @@ class TokenSerializer(serializers.Serializer):
 class JoinStructureSerializer(serializers.Serializer):
     siret = serializers.CharField(required=False)
     structure_slug = serializers.CharField(required=False)
+    cgu_version = serializers.CharField(required=False)
 
     def validate(self, data):
         siret = data.get("siret")
