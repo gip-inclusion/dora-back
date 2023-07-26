@@ -252,6 +252,8 @@ class Structure(ModerationMixin, models.Model):
 
     members = models.ManyToManyField(User, through=StructureMember)
 
+    disable_orientation_form = models.BooleanField(default=False)
+
     objects = StructureManager()
 
     class Meta:

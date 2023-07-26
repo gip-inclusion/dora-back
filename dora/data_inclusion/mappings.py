@@ -73,8 +73,8 @@ def map_search_result(result: dict) -> dict:
 
 
 def map_service(service_data: dict) -> dict:
-    categories = []
-    subcategories = []
+    categories = None
+    subcategories = None
     if service_data["thematiques"] is not None:
         categories = ServiceCategory.objects.filter(
             value__in=service_data["thematiques"]
@@ -83,13 +83,13 @@ def map_service(service_data: dict) -> dict:
             value__in=service_data["thematiques"]
         )
 
-    location_kinds = []
+    location_kinds = None
     if service_data["modes_accueil"] is not None:
         location_kinds = LocationKind.objects.filter(
             value__in=service_data["modes_accueil"]
         )
 
-    kinds = []
+    kinds = None
     if service_data["types"] is not None:
         kinds = ServiceKind.objects.filter(value__in=service_data["types"])
 
@@ -110,7 +110,7 @@ def map_service(service_data: dict) -> dict:
             ),
         ).value
 
-    credentials = []
+    credentials = None
     if service_data["justificatifs"] not in [None, ""]:
         credentials = service_data["justificatifs"].split(",")
 
@@ -118,14 +118,14 @@ def map_service(service_data: dict) -> dict:
     if service_data["frais"] is not None:
         fee_condition = ", ".join(service_data["frais"])
 
-    requirements = []
+    requirements = None
     if service_data["pre_requis"] not in [None, ""]:
         requirements = service_data["pre_requis"].split(",")
 
     structure_insee_code = (
         service_data["structure"]["code_insee"]
-        if service_data["structure"]["code_insee"]
-        else service_data["structure"]["_di_geocodage_code_insee"]
+        if service_data["structure"].get("code_insee")
+        else service_data["structure"].get("_di_geocodage_code_insee")
     )
 
     structure_department = (
@@ -133,33 +133,31 @@ def map_service(service_data: dict) -> dict:
     )
 
     return {
-        "access_conditions": [],
-        "access_conditions_display": [],
+        "access_conditions": None,
+        "access_conditions_display": None,
         "address1": service_data["adresse"],
         "address2": service_data["complement_adresse"],
-        "beneficiaries_access_modes": service_data["modes_orientation_beneficiaire"]
-        or [],
+        "beneficiaries_access_modes": service_data["modes_orientation_beneficiaire"],
         "beneficiaries_access_modes_display": service_data[
             "modes_orientation_beneficiaire"
         ]
         or [],
         "beneficiaries_access_modes_other": None,
         "can_write": False,
-        "categories": [c.value for c in categories],
-        "categories_display": [c.label for c in categories],
-        "category": categories[0].value if len(categories) > 0 else None,
-        "category_display": categories[0].label if len(categories) > 0 else None,
+        "categories": [c.value for c in categories] if categories is not None else None,
+        "categories_display": [c.label for c in categories]
+        if categories is not None
+        else None,
         "city": service_data["commune"],
         "city_code": service_data["code_insee"],
-        "coach_orientation_modes": service_data["modes_orientation_accompagnateur"]
-        or [],
+        "coach_orientation_modes": service_data["modes_orientation_accompagnateur"],
         "coach_orientation_modes_display": service_data[
             "modes_orientation_accompagnateur"
         ]
         or [],
         "coach_orientation_modes_other": None,
-        "concerned_public": service_data["profils"] or [],
-        "concerned_public_display": service_data["profils"] or [],
+        "concerned_public": service_data["profils"] or None,
+        "concerned_public_display": service_data["profils"] or None,
         "contact_email": service_data["courriel"],
         "contact_name": service_data["contact_nom_prenom"],
         "contact_phone": service_data["telephone"],
@@ -178,18 +176,22 @@ def map_service(service_data: dict) -> dict:
         else "",
         "fee_condition": fee_condition,
         "fee_details": service_data["frais_autres"] or "",
-        "forms": [],
-        "forms_info": [],
+        "forms": None,
+        "forms_info": None,
         "full_desc": service_data["presentation_detail"] or "",
         "geom": None,
         "has_already_been_unpublished": None,
         "is_available": True,
         "is_contact_info_public": service_data["contact_public"],
         "is_cumulative": service_data["cumulable"],
-        "kinds": [k.value for k in kinds],
-        "kinds_display": [k.label for k in kinds],
-        "location_kinds": [lk.value for lk in location_kinds],
-        "location_kinds_display": [lk.label for lk in location_kinds],
+        "kinds": [k.value for k in kinds] if kinds is not None else None,
+        "kinds_display": [k.label for k in kinds] if kinds is not None else None,
+        "location_kinds": [lk.value for lk in location_kinds]
+        if location_kinds is not None
+        else None,
+        "location_kinds_display": [lk.label for lk in location_kinds]
+        if location_kinds is not None
+        else None,
         "model": None,
         "model_changed": None,
         "model_name": None,
@@ -212,8 +214,12 @@ def map_service(service_data: dict) -> dict:
             "name": service_data["structure"]["nom"],
             "department": structure_department,
         },
-        "subcategories": [c.value for c in subcategories],
-        "subcategories_display": [c.label for c in subcategories],
+        "subcategories": [c.value for c in subcategories]
+        if subcategories is not None
+        else None,
+        "subcategories_display": [c.label for c in subcategories]
+        if subcategories is not None
+        else None,
         "suspension_date": service_data["date_suspension"],
         "update_status": update_status,
         "use_inclusion_numerique_scheme": False,

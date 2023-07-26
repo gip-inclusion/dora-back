@@ -150,7 +150,6 @@ private_api_patterns = [
         "inclusion-connect-authenticate/",
         dora.core.views.inclusion_connect_authenticate,
     ),
-    path("admin-stats/", dora.support.views.stats),
     path("", include(router.urls)),
     path("profile/main-activity/", dora.users.views.update_main_activity),
 ]
