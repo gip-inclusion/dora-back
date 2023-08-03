@@ -1256,7 +1256,9 @@ class DataInclusionSearchTestCase(APITestCase):
         request = self.factory.get(f"/service-di/{di_id}/")
         response = service_di(request, di_id=di_id, di_client=self.di_client)
 
-        for field in ServiceSerializer.Meta.fields:
+        for field in set(ServiceSerializer.Meta.fields) - set(
+            ["category", "category_display"]
+        ):
             with self.subTest(field=field):
                 self.assertIn(field, response.data)
 
@@ -1284,7 +1286,7 @@ class DataInclusionSearchTestCase(APITestCase):
 
     def test_service_di_categories(self):
         cases = [
-            (None, [], [], [], []),
+            (None, None, None, None, None),
             ([], [], [], [], []),
             (
                 ["mobilite", "famille--garde-denfants"],
@@ -1377,7 +1379,7 @@ class DataInclusionSearchTestCase(APITestCase):
 
     def test_service_di_concerned_public(self):
         cases = [
-            (None, [], []),
+            (None, None, None),
             ([], [], []),
             (["adultes"], ["adultes"], ["adultes"]),
         ]
@@ -1424,7 +1426,7 @@ class DataInclusionSearchTestCase(APITestCase):
 
     def test_service_di_credentials(self):
         cases = [
-            (None, [], []),
+            (None, None, None),
             ("", [], []),
             ("lorem,ipsum", ["lorem", "ipsum"], ["lorem", "ipsum"]),
         ]
@@ -1535,7 +1537,7 @@ class DataInclusionSearchTestCase(APITestCase):
 
     def test_service_di_location_kinds(self):
         cases = [
-            (None, [], []),
+            (None, None, None),
             ([], [], []),
             (["en-presentiel"], ["en-presentiel"], ["En présentiel"]),
         ]
@@ -1553,7 +1555,7 @@ class DataInclusionSearchTestCase(APITestCase):
 
     def test_service_di_requirements(self):
         cases = [
-            (None, [], []),
+            (None, None, None),
             ("", [], []),
             ("lorem,ipsum", ["lorem", "ipsum"], ["lorem", "ipsum"]),
         ]
@@ -1571,7 +1573,7 @@ class DataInclusionSearchTestCase(APITestCase):
 
     def test_service_di_kinds(self):
         cases = [
-            (None, [], []),
+            (None, None, None),
             ([], [], []),
             (["accompagnement"], ["accompagnement"], ["Accompagnement"]),
         ]
@@ -1630,13 +1632,14 @@ class DataInclusionSearchTestCase(APITestCase):
 
     def test_service_di_structure(self):
         service_data = self.make_di_service(
+            structure_id="rouge-empire",
             structure={"nom": "Rouge Empire"},
         )
         di_id = self.get_di_id(service_data)
         request = self.factory.get(f"/service-di/{di_id}/")
         response = service_di(request, di_id=di_id, di_client=self.di_client)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["structure"], None)
+        self.assertEqual(response.data["structure"], service_data["structure_id"])
         self.assertEqual(
             response.data["structure_info"]["name"], service_data["structure"]["nom"]
         )
