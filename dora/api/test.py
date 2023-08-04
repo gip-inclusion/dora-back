@@ -9,6 +9,8 @@ from dora.admin_express.models import City, Department
 from dora.core.test_utils import make_service, make_structure
 from dora.services.enums import ServiceStatus
 from dora.services.models import (
+    BeneficiaryAccessMode,
+    CoachOrientationMode,
     ConcernedPublic,
     Credential,
     LocationKind,
@@ -207,6 +209,14 @@ class PublicAPIServiceTestCase(APITestCase):
                 Credential, name="Carte d'identité, passeport ou permis de séjour"
             ),
         )
+        service.coach_orientation_modes.add(
+            CoachOrientationMode.objects.get(value="envoyer-courriel"),
+            CoachOrientationMode.objects.get(value="envoyer-formulaire"),
+            CoachOrientationMode.objects.get(value="envoyer-fiche-prescription"),
+        )
+        service.beneficiaries_access_modes.add(
+            BeneficiaryAccessMode.objects.get(value="telephoner")
+        )
 
         response = self.client.get(f"/api/v2/services/{service.id}/")
         self.assertEqual(response.status_code, 200)
@@ -253,6 +263,12 @@ class PublicAPIServiceTestCase(APITestCase):
                 "zone_diffusion_code": "29",
                 "zone_diffusion_nom": "Finistère",
                 "zone_diffusion_type": "departement",
+                "modes_orientation_accompagnateur": [
+                    "completer-le-formulaire-dadhesion",
+                    "envoyer-un-mail",
+                    "envoyer-un-mail-avec-une-fiche-de-prescription",
+                ],
+                "modes_orientation_beneficiaire": ["telephoner"],
             },
         )
 
