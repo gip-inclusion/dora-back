@@ -1320,7 +1320,7 @@ class DataInclusionSearchTestCase(APITestCase):
 
     def test_service_di_beneficiaries_access_modes(self):
         cases = [
-            (None, [], []),
+            (None, None, None),
             ([], [], []),
             (["envoyer-un-mail"], ["envoyer-un-mail"], ["envoyer-un-mail"]),
         ]
@@ -1350,7 +1350,7 @@ class DataInclusionSearchTestCase(APITestCase):
 
     def test_service_di_coach_orientation_modes(self):
         cases = [
-            (None, [], []),
+            (None, None, None),
             ([], [], []),
             (["envoyer-un-mail"], ["envoyer-un-mail"], ["envoyer-un-mail"]),
         ]
@@ -1522,7 +1522,7 @@ class DataInclusionSearchTestCase(APITestCase):
                 self.assertEqual(response.data["fee_condition"], fee_condition)
 
         cases = [
-            (None, ""),
+            (None, None),
             ("", ""),
             ("Gratuit pour tous", "Gratuit pour tous"),
         ]
