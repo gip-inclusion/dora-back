@@ -81,12 +81,14 @@ class JoinStructureSerializer(serializers.Serializer):
         structure_slug = data.get("structure_slug")
         if siret and structure_slug:
             raise serializers.ValidationError(
-                "Expecting only one of `siret` and `structure_slug`"
+                "`siret` et `structure_slug` ne peuvent être présents simultanément"
             )
         if siret:
             cgu_version = data.get("cgu_version")
             if not cgu_version:
-                raise serializers.ValidationError("Expecting `cgu_version`")
+                raise serializers.ValidationError(
+                    "`cgu_version` est obligatoire si `siret` est présent"
+                )
 
             try:
                 establishment = Establishment.objects.get(siret=siret)
