@@ -84,6 +84,10 @@ class JoinStructureSerializer(serializers.Serializer):
                 "Expecting only one of `siret` and `structure_slug`"
             )
         if siret:
+            cgu_version = data.get("cgu_version")
+            if not cgu_version:
+                raise serializers.ValidationError("Expecting `cgu_version`")
+
             try:
                 establishment = Establishment.objects.get(siret=siret)
                 data["establishment"] = establishment
