@@ -31,8 +31,9 @@ def update_last_login(user):
 
 
 def _set_user_has_accepted_cgu(user, cgu_version):
-    user.cgu.update({cgu_version: timezone.now().isoformat()})
-    user.save(update_fields=["cgu"])
+    if cgu_version not in user.cgu_versions_accepted:
+        user.cgu_versions_accepted.update({cgu_version: timezone.now().isoformat()})
+        user.save(update_fields=["cgu_versions_accepted"])
 
 
 @sensitive_post_parameters(["key"])

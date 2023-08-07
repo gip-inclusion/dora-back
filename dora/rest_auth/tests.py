@@ -1,3 +1,7 @@
+from datetime import timedelta
+
+from django.utils import timezone
+from freezegun import freeze_time
 from model_bakery import baker
 from rest_framework.test import APITestCase
 
@@ -22,7 +26,7 @@ class CguTestCase(APITestCase):
         response = self.client.post("/auth/accept-cgu/", {"cgu_version": cgu_version})
         user.refresh_from_db()
         self.assertEqual(response.status_code, 204)
-        self.assertIn(cgu_version, user.cgu)
+        self.assertIn(cgu_version, user.cgu_versions_accepted)
 
     def test_user_accepts_new_cgu_version(self):
         old_cgu_version = "20230715"
@@ -36,8 +40,30 @@ class CguTestCase(APITestCase):
         response = self.client.post("/auth/accept-cgu/", {"cgu_version": cgu_version})
         user.refresh_from_db()
         self.assertEqual(response.status_code, 204)
-        self.assertIn(old_cgu_version, user.cgu)
-        self.assertIn(cgu_version, user.cgu)
+        self.assertIn(old_cgu_version, user.cgu_versions_accepted)
+        self.assertIn(cgu_version, user.cgu_versions_accepted)
+
+    def test_no_overwrite_already_valided_cgu(self):
+        cgu_version = "20230714"
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+
+        response = self.client.post("/auth/accept-cgu/", {"cgu_version": cgu_version})
+        user.refresh_from_db()
+        self.assertEqual(response.status_code, 204)
+        self.assertIn(cgu_version, user.cgu_versions_accepted)
+        cgu_validation_datetime = user.cgu_versions_accepted[cgu_version]
+
+        with freeze_time(timezone.now() + timedelta(days=2)):
+            response = self.client.post(
+                "/auth/accept-cgu/", {"cgu_version": cgu_version}
+            )
+            user.refresh_from_db()
+            self.assertEqual(response.status_code, 204)
+            self.assertIn(cgu_version, user.cgu_versions_accepted)
+            self.assertEqual(
+                cgu_validation_datetime, user.cgu_versions_accepted[cgu_version]
+            )
 
 
 class AuthenticationTestCase(APITestCase):

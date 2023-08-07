@@ -39,7 +39,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "short_name",
             "structures",
             "main_activity",
-            "cgu",
+            "cgu_versions_accepted",
         ]
 
     def get_structures(self, user):
