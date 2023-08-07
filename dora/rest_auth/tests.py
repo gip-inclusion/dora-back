@@ -34,7 +34,7 @@ class CguTestCase(APITestCase):
         user = baker.make(
             "users.User",
             is_valid=True,
-            cgu={old_cgu_version: "2021-07-22T00:00:00+00:00"},
+            cgu_versions_accepted={old_cgu_version: "2021-07-22T00:00:00+00:00"},
         )
         self.client.force_authenticate(user=user)
         response = self.client.post("/auth/accept-cgu/", {"cgu_version": cgu_version})
@@ -73,9 +73,7 @@ class AuthenticationTestCase(APITestCase):
         self.client.force_authenticate(user=user)
         response = self.client.post(
             "/auth/join-structure/",
-            {
-                "siret": DUMMY_SIRET,
-            },
+            {"siret": DUMMY_SIRET, "cguVersion": "20230805"},
         )
         self.assertEqual(response.status_code, 200)
         slug = response.data["slug"]
@@ -88,9 +86,7 @@ class AuthenticationTestCase(APITestCase):
         self.client.force_authenticate(user=user)
         response = self.client.post(
             "/auth/join-structure/",
-            {
-                "siret": DUMMY_SIRET,
-            },
+            {"siret": DUMMY_SIRET, "cguVersion": "20230805"},
         )
         self.assertEqual(response.status_code, 200)
         StructureMember.objects.get(structure__siret=DUMMY_SIRET, user=user)
@@ -101,9 +97,7 @@ class AuthenticationTestCase(APITestCase):
         self.client.force_authenticate(user=user)
         response = self.client.post(
             "/auth/join-structure/",
-            {
-                "siret": DUMMY_SIRET,
-            },
+            {"siret": DUMMY_SIRET, "cguVersion": "20230805"},
         )
         self.assertEqual(response.status_code, 200)
         member = StructureMember.objects.get(structure__siret=DUMMY_SIRET, user=user)
@@ -123,9 +117,7 @@ class AuthenticationTestCase(APITestCase):
         self.client.force_authenticate(user=user2)
         response = self.client.post(
             "/auth/join-structure/",
-            {
-                "siret": DUMMY_SIRET,
-            },
+            {"siret": DUMMY_SIRET, "cguVersion": "20230805"},
         )
         self.assertEqual(response.status_code, 200)
         with self.assertRaises(StructureMember.DoesNotExist):
@@ -142,9 +134,7 @@ class AuthenticationTestCase(APITestCase):
         self.client.force_authenticate(user=user)
         response = self.client.post(
             "/auth/join-structure/",
-            {
-                "siret": DUMMY_SIRET,
-            },
+            {"siret": DUMMY_SIRET, "cguVersion": "20230805"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
@@ -155,9 +145,7 @@ class AuthenticationTestCase(APITestCase):
         )
         response2 = self.client.post(
             "/auth/join-structure/",
-            {
-                "siret": DUMMY_SIRET,
-            },
+            {"siret": DUMMY_SIRET, "cguVersion": "20230805"},
         )
         self.assertEqual(response2.status_code, 200)
         self.assertEqual(
@@ -173,9 +161,7 @@ class AuthenticationTestCase(APITestCase):
         self.client.force_authenticate(user=user)
         response = self.client.post(
             "/auth/join-structure/",
-            {
-                "siret": DUMMY_SIRET,
-            },
+            {"siret": DUMMY_SIRET, "cguVersion": "20230805"},
         )
         self.assertEqual(response.status_code, 200)
 
@@ -200,9 +186,7 @@ class AuthenticationTestCase(APITestCase):
         self.client.force_authenticate(user=user2)
         response = self.client.post(
             "/auth/join-structure/",
-            {
-                "siret": DUMMY_SIRET,
-            },
+            {"siret": DUMMY_SIRET, "cguVersion": "20230805"},
         )
         self.assertEqual(response.status_code, 200)
         structure = Structure.objects.get(siret=response.data["siret"])
