@@ -155,7 +155,7 @@ class ServiceManager(models.Manager):
         return self.filter(
             status=ServiceStatus.PUBLISHED,
             modification_date__lte=timezone.now()
-            - timedelta(days=settings.NUM_DAYS_BEFORE_ADVISED_SERVICE_UPDATE),
+            - timedelta(days=settings.NUM_DAYS_BEFORE_MANDATORY_SERVICE_UPDATE),
         )
 
     def draft(self):
