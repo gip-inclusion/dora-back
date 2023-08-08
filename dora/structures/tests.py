@@ -1112,9 +1112,7 @@ class StructureMemberTestCase(APITestCase):
         self.client.force_authenticate(user=pm.user)
         response = self.client.post(
             "/auth/join-structure/",
-            {
-                "siret": structure.siret,
-            },
+            {"siret": structure.siret, "cguVersion": "20230805"},
         )
         with self.assertRaises(StructurePutativeMember.DoesNotExist):
             StructurePutativeMember.objects.get(pk=pm.pk)
@@ -1146,9 +1144,7 @@ class StructureMemberTestCase(APITestCase):
         self.client.force_authenticate(user=self.another_struct_user)
         response = self.client.post(
             "/auth/join-structure/",
-            {
-                "siret": self.my_struct.siret,
-            },
+            {"siret": self.my_struct.siret, "cguVersion": "20230805"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertGreater(len(mail.outbox), 0)
@@ -1162,9 +1158,7 @@ class StructureMemberTestCase(APITestCase):
         self.client.force_authenticate(user=user)
         response = self.client.post(
             "/auth/join-structure/",
-            {
-                "siret": self.my_struct.siret,
-            },
+            {"siret": self.my_struct.siret, "cguVersion": "20230805"},
         )
         self.assertEqual(response.status_code, 200)
         StructurePutativeMember.objects.get(

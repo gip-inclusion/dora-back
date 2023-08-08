@@ -251,7 +251,7 @@ class StructureAdminSerializer(StructureSerializer):
 
     def get_num_outdated_services(self, obj):
         return (
-            Service.objects.update_mandatory()
+            Service.objects.update_advised()
             .filter(
                 structure=obj,
             )
