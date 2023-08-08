@@ -80,6 +80,16 @@ class AuthenticationTestCase(APITestCase):
         structure = Structure.objects.get(slug=slug)
         self.assertEqual(structure.siret, DUMMY_SIRET)
 
+    def test_cgu_required(self):
+        baker.make("Establishment", siret=DUMMY_SIRET)
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/auth/join-structure/",
+            {"siret": DUMMY_SIRET},
+        )
+        self.assertEqual(response.status_code, 400)
+
     def test_user_can_join_structure(self):
         baker.make("Establishment", siret=DUMMY_SIRET)
         user = baker.make("users.User", is_valid=True)

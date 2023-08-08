@@ -74,7 +74,7 @@ class TokenSerializer(serializers.Serializer):
 class JoinStructureSerializer(serializers.Serializer):
     siret = serializers.CharField(required=False)
     structure_slug = serializers.CharField(required=False)
-    cgu_version = serializers.CharField(required=False)
+    cgu_version = serializers.CharField(required=True)
 
     def validate(self, data):
         siret = data.get("siret")
@@ -84,12 +84,6 @@ class JoinStructureSerializer(serializers.Serializer):
                 "`siret` et `structure_slug` ne peuvent être présents simultanément"
             )
         if siret:
-            cgu_version = data.get("cgu_version")
-            if not cgu_version:
-                raise serializers.ValidationError(
-                    "`cgu_version` est obligatoire si `siret` est présent"
-                )
-
             try:
                 establishment = Establishment.objects.get(siret=siret)
                 data["establishment"] = establishment
