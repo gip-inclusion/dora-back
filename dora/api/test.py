@@ -215,7 +215,7 @@ class PublicAPIServiceTestCase(APITestCase):
             CoachOrientationMode.objects.get(value="envoyer-fiche-prescription"),
         )
         service.beneficiaries_access_modes.add(
-            BeneficiaryAccessMode.objects.get(value="telephoner")
+            BeneficiaryAccessMode.objects.get(value="envoyer-courriel")
         )
 
         response = self.client.get(f"/api/v2/services/{service.id}/")
@@ -268,7 +268,7 @@ class PublicAPIServiceTestCase(APITestCase):
                     "envoyer-un-mail",
                     "envoyer-un-mail-avec-une-fiche-de-prescription",
                 ],
-                "modes_orientation_beneficiaire": ["telephoner"],
+                "modes_orientation_beneficiaire": ["envoyer-un-mail"],
             },
         )
 

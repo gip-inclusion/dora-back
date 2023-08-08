@@ -397,7 +397,16 @@ class ServiceSerializer(serializers.ModelSerializer):
         ]
 
     def get_modes_orientation_beneficiaire(self, obj):
-        return [mode.value for mode in obj.beneficiaries_access_modes.all()]
+        mapping = {
+            "autre": "autre",
+            "telephoner": "telephoner",
+            "envoyer-courriel": "envoyer-un-mail",
+            "se-presenter": "se-presenter",
+        }  # TODO: à supprimer une fois dora et data.inclusion alignés sur le référentiel
+        return [
+            mapping.get(mode.value, mode.value)
+            for mode in obj.beneficiaries_access_modes.all()
+        ]
 
 
 ############
