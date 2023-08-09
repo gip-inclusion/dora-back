@@ -1,4 +1,5 @@
 from datetime import date, datetime
+import hashlib
 from operator import itemgetter
 from typing import Optional
 
@@ -720,6 +721,9 @@ def multisort(xs, specs):
 
 
 def _sort_services(services):
+    number_of_sources = len(
+        set(service.get("di_source", "dora") for service in services)
+    )
     diffusion_zone_priority = {
         AdminDivisionType.CITY: 1,
         AdminDivisionType.EPCI: 2,
@@ -730,6 +734,18 @@ def _sort_services(services):
         service["zone_priority"] = diffusion_zone_priority.get(
             service["diffusion_zone_type"], 5
         )
+
+        # `sortable_nonce` :
+        # * a pour but de mixer les sources de données
+        # * est généré de façon déterministe à partir du slug, ce qui garantit la stabilité du tri
+        # * est constant s'il n'y a qu'une source, ce qui le rend alors transparent
+        # * peut prendre au maximum `number_of_sources` valeurs différentes,
+        # ce qui laisse une marge pour des tris supplémentaires
+        service["sortable_nonce"] = (
+            int(hashlib.md5(service["slug"].encode()).hexdigest(), 16)
+            % number_of_sources
+        )
+
         mod_date = datetime.fromisoformat(service["modification_date"])
 
         service["sortable_date"] = (
@@ -742,10 +758,25 @@ def _sort_services(services):
 
     results = multisort(
         services_on_site,
-        (("distance", False), ("zone_priority", False), ("sortable_date", True)),
-    ) + multisort(services_remote, (("zone_priority", False), ("sortable_date", True)))
+        (
+            ("distance", False),
+            ("zone_priority", False),
+            ("sortable_nonce", False),
+            ("sortable_date", True),
+        ),
+    ) + multisort(
+        services_remote,
+        (
+            ("zone_priority", False),
+            ("sortable_nonce", False),
+            ("sortable_date", True),
+        ),
+    )
+
     for result in results:
         del result["sortable_date"]
+        del result["sortable_nonce"]
+
     return results
 
 
