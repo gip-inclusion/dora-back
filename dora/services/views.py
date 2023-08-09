@@ -1,5 +1,5 @@
-from datetime import date, datetime
 import hashlib
+from datetime import date, datetime, timedelta
 from operator import itemgetter
 from typing import Optional
 
@@ -12,7 +12,6 @@ from django.db.models import IntegerField, Q, Value
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.utils.timezone import is_naive, make_aware
 from rest_framework import mixins, permissions, serializers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
@@ -720,64 +719,66 @@ def multisort(xs, specs):
     return xs
 
 
-def _sort_services(services):
-    number_of_sources = len(
-        set(service.get("di_source", "dora") for service in services)
-    )
+def bin_value(value, bins: list) -> int:
+    for i, (lower, upper) in enumerate(zip(bins[:-1], bins[1:])):
+        if lower <= value <= upper:
+            return i
+    return len(bins) - 1
+
+
+def score_service(service: dict, source_count: int) -> float:
     diffusion_zone_priority = {
         AdminDivisionType.CITY: 1,
         AdminDivisionType.EPCI: 2,
         AdminDivisionType.DEPARTMENT: 3,
         AdminDivisionType.REGION: 4,
     }
-    for service in services:
-        service["zone_priority"] = diffusion_zone_priority.get(
-            service["diffusion_zone_type"], 5
-        )
 
-        # `sortable_nonce` :
-        # * a pour but de mixer les sources de données
-        # * est généré de façon déterministe à partir du slug, ce qui garantit la stabilité du tri
-        # * est constant s'il n'y a qu'une source, ce qui le rend alors transparent
-        # * peut prendre au maximum `number_of_sources` valeurs différentes,
-        # ce qui laisse une marge pour des tris supplémentaires
-        service["sortable_nonce"] = (
-            int(hashlib.md5(service["slug"].encode()).hexdigest(), 16)
-            % number_of_sources
-        )
+    zone_priority = diffusion_zone_priority.get(service["diffusion_zone_type"], 5)
+    age_bin = bin_value(
+        timezone.now().date()
+        - datetime.fromisoformat(service["modification_date"]).date(),
+        bins=[
+            timedelta(days=0),
+            timedelta(days=90),
+            timedelta(days=180),
+            timedelta(days=365),
+        ],
+    )
 
-        mod_date = datetime.fromisoformat(service["modification_date"])
+    # `noise` :
+    # * a pour but de mixer les sources de données
+    # * est généré de façon déterministe à partir du slug, ce qui garantit la stabilité du tri
+    # * est constant s'il n'y a qu'une source, ce qui le rend alors transparent
+    # * peut prendre au maximum `number_of_sources` valeurs différentes,
+    # ce qui laisse une marge pour des tris supplémentaires
+    noise = int(hashlib.md5(service["slug"].encode()).hexdigest(), 16) % source_count
 
-        service["sortable_date"] = (
-            make_aware(mod_date) if is_naive(mod_date) else mod_date
-        )
+    return (2 * zone_priority / 5) + (2 * age_bin / 3) + (3 * noise / source_count)
+
+
+def score_distance(service: dict) -> float:
+    distance_bin = (
+        bin_value(service["distance"], bins=[0, 2, 10, 50, 100])
+        if "en-presentiel" in service["location_kinds"]
+        else 0
+    )
+
+    return distance_bin / 3
+
+
+def _sort_services(services):
+    source_count = len(set(service.get("di_source", "dora") for service in services))
+
     services_on_site = [s for s in services if "en-presentiel" in s["location_kinds"]]
     services_remote = [
         s for s in services if "en-presentiel" not in s["location_kinds"]
     ]
 
-    results = multisort(
-        services_on_site,
-        (
-            ("distance", False),
-            ("zone_priority", False),
-            ("sortable_nonce", False),
-            ("sortable_date", True),
-        ),
-    ) + multisort(
-        services_remote,
-        (
-            ("zone_priority", False),
-            ("sortable_nonce", False),
-            ("sortable_date", True),
-        ),
-    )
-
-    for result in results:
-        del result["sortable_date"]
-        del result["sortable_nonce"]
-
-    return results
+    return sorted(
+        sorted(services_on_site, key=lambda s: score_service(s, source_count)),
+        key=score_distance,
+    ) + sorted(services_remote, key=lambda s: score_service(s, source_count))
 
 
 @api_view()
