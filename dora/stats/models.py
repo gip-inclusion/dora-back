@@ -198,6 +198,12 @@ class StructureView(AbstractStructureEvent):
 
 
 class ServiceView(AbstractServiceEvent):
+    mobilisable = models.BooleanField(
+        default=False,
+        blank=True,
+        verbose_name="Service mobilisable",
+    )
+
     pass
 
 

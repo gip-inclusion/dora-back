@@ -43,6 +43,7 @@ def log_event(request):
     service_slug = request.data.get("service", "")
     structure_slug = request.data.get("structure", "")
     service = structure = orientation = None
+    service_mobilisable = request.data.get("mobilisable", "")
     orientation_id = request.data.get("orientation", "")
     num_di_results = int(request.data.get("num_di_results", "0"))
     num_di_results_top10 = int(request.data.get("num_di_results_top10", "0"))
@@ -103,6 +104,7 @@ def log_event(request):
         "update_status": service.get_update_status() if service else "",
         "status": service.status if service else "",
         "service_source": service.source.value if service and service.source else "",
+        "mobilisable": True if service_mobilisable else False,
     }
 
     di_service_data = {
