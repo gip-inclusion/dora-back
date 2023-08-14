@@ -111,7 +111,9 @@ def map_service(service_data: dict) -> dict:
         ).value
 
     credentials = None
-    if service_data["justificatifs"] not in [None, ""]:
+    if service_data["justificatifs"] == "":
+        credentials = []
+    elif service_data["justificatifs"] is not None:
         credentials = service_data["justificatifs"].split(",")
 
     fee_condition = None
@@ -119,13 +121,15 @@ def map_service(service_data: dict) -> dict:
         fee_condition = ", ".join(service_data["frais"])
 
     requirements = None
-    if service_data["pre_requis"] not in [None, ""]:
+    if service_data["pre_requis"] == "":
+        requirements = []
+    elif service_data["pre_requis"] is not None:
         requirements = service_data["pre_requis"].split(",")
 
     structure_insee_code = (
         service_data["structure"]["code_insee"]
-        if service_data["structure"]["code_insee"]
-        else service_data["structure"]["_di_geocodage_code_insee"]
+        if service_data["structure"].get("code_insee")
+        else service_data["structure"].get("_di_geocodage_code_insee")
     )
 
     structure_department = (
@@ -140,8 +144,7 @@ def map_service(service_data: dict) -> dict:
         "beneficiaries_access_modes": service_data["modes_orientation_beneficiaire"],
         "beneficiaries_access_modes_display": service_data[
             "modes_orientation_beneficiaire"
-        ]
-        or [],
+        ],
         "beneficiaries_access_modes_other": None,
         "can_write": False,
         "categories": [c.value for c in categories] if categories is not None else None,
@@ -153,11 +156,10 @@ def map_service(service_data: dict) -> dict:
         "coach_orientation_modes": service_data["modes_orientation_accompagnateur"],
         "coach_orientation_modes_display": service_data[
             "modes_orientation_accompagnateur"
-        ]
-        or [],
+        ],
         "coach_orientation_modes_other": None,
-        "concerned_public": service_data["profils"] or None,
-        "concerned_public_display": service_data["profils"] or None,
+        "concerned_public": service_data["profils"],
+        "concerned_public_display": service_data["profils"],
         "contact_email": service_data["courriel"],
         "contact_name": service_data["contact_nom_prenom"],
         "contact_phone": service_data["telephone"],
@@ -175,7 +177,7 @@ def map_service(service_data: dict) -> dict:
         if zone_diffusion_type is not None
         else "",
         "fee_condition": fee_condition,
-        "fee_details": service_data["frais_autres"] or "",
+        "fee_details": service_data["frais_autres"],
         "forms": None,
         "forms_info": None,
         "full_desc": service_data["presentation_detail"] or "",

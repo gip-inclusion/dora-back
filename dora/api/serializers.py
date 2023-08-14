@@ -206,6 +206,8 @@ class ServiceSerializer(serializers.ModelSerializer):
     zone_diffusion_type = serializers.SerializerMethodField()
     zone_diffusion_code = serializers.SerializerMethodField()
     zone_diffusion_nom = serializers.SerializerMethodField()
+    modes_orientation_accompagnateur = serializers.SerializerMethodField()
+    modes_orientation_beneficiaire = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
@@ -248,6 +250,8 @@ class ServiceSerializer(serializers.ModelSerializer):
             "zone_diffusion_code",
             "zone_diffusion_nom",
             "zone_diffusion_type",
+            "modes_orientation_accompagnateur",
+            "modes_orientation_beneficiaire",
         ]
 
     def get_id(self, obj):
@@ -378,6 +382,31 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     def get_zone_diffusion_nom(self, obj):
         return obj.get_diffusion_zone_details_display()
+
+    def get_modes_orientation_accompagnateur(self, obj):
+        mapping = {
+            "autre": "autre",
+            "telephoner": "telephoner",
+            "envoyer-formulaire": "completer-le-formulaire-dadhesion",
+            "envoyer-courriel": "envoyer-un-mail",
+            "envoyer-fiche-prescription": "envoyer-un-mail-avec-une-fiche-de-prescription",
+        }  # TODO: à supprimer une fois dora et data.inclusion alignés sur le référentiel
+        return [
+            mapping.get(mode.value, mode.value)
+            for mode in obj.coach_orientation_modes.all()
+        ]
+
+    def get_modes_orientation_beneficiaire(self, obj):
+        mapping = {
+            "autre": "autre",
+            "telephoner": "telephoner",
+            "envoyer-courriel": "envoyer-un-mail",
+            "se-presenter": "se-presenter",
+        }  # TODO: à supprimer une fois dora et data.inclusion alignés sur le référentiel
+        return [
+            mapping.get(mode.value, mode.value)
+            for mode in obj.beneficiaries_access_modes.all()
+        ]
 
 
 ############
