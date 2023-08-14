@@ -204,8 +204,6 @@ class ServiceView(AbstractServiceEvent):
         verbose_name="Service mobilisable",
     )
 
-    pass
-
 
 class DiServiceView(AbstractDiServiceEvent):
     pass
