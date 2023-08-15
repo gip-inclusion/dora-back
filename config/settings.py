@@ -242,6 +242,19 @@ AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
 AWS_STORAGE_BUCKET_NAME = os.environ["AWS_STORAGE_BUCKET_NAME"]
 AWS_QUERYSTRING_EXPIRE = 24 * 3600  # secondes
 
+MAX_UPLOAD_SIZE_MB = 6
+ALLOWED_UPLOADED_FILES_EXTENSIONS = [
+    "doc",
+    "docx",
+    "pdf",
+    "png",
+    "jpeg",
+    "jpg",
+    "odt",
+    "xls",
+    "xlsx",
+    "ods",
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
