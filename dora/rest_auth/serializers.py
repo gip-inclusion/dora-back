@@ -39,6 +39,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "short_name",
             "structures",
             "main_activity",
+            "cgu_versions_accepted",
         ]
 
     def get_structures(self, user):
@@ -73,13 +74,14 @@ class TokenSerializer(serializers.Serializer):
 class JoinStructureSerializer(serializers.Serializer):
     siret = serializers.CharField(required=False)
     structure_slug = serializers.CharField(required=False)
+    cgu_version = serializers.CharField(required=True)
 
     def validate(self, data):
         siret = data.get("siret")
         structure_slug = data.get("structure_slug")
         if siret and structure_slug:
             raise serializers.ValidationError(
-                "Expecting only one of `siret` and `structure_slug`"
+                "`siret` et `structure_slug` ne peuvent être présents simultanément"
             )
         if siret:
             try:
