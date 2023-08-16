@@ -11,6 +11,8 @@ from dora.stats.models import (
     DiMobilisationEvent,
     DiServiceView,
     MobilisationEvent,
+    OrientationContactBeneficiaryEvent,
+    OrientationContactServiceEvent,
     OrientationView,
     SearchView,
     ServiceView,
@@ -151,6 +153,22 @@ def log_event(request):
         di_view.subcategories.set(subcategories)
     elif tag == "orientation":
         OrientationView.objects.create(
+            orientation=orientation,
+            orientation_status=orientation.status,
+            **common_analytics_data,
+            **structure_data,
+            **service_data,
+        )
+    elif tag == "orientation-contact-beneficiary":
+        OrientationContactBeneficiaryEvent.objects.create(
+            orientation=orientation,
+            orientation_status=orientation.status,
+            **common_analytics_data,
+            **structure_data,
+            **service_data,
+        )
+    elif tag == "orientation-contact-service":
+        OrientationContactServiceEvent.objects.create(
             orientation=orientation,
             orientation_status=orientation.status,
             **common_analytics_data,

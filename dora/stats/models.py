@@ -233,5 +233,13 @@ class MobilisationEvent(AbstractServiceEvent):
     ab_test_groups = models.ManyToManyField(ABTestGroup, blank=True)
 
 
+class OrientationContactBeneficiaryEvent(OrientationView):
+    pass
+
+
+class OrientationContactServiceEvent(OrientationView):
+    pass
+
+
 class DiMobilisationEvent(AbstractDiServiceEvent):
     ab_test_groups = models.ManyToManyField(ABTestGroup, blank=True)
