@@ -65,7 +65,7 @@
 
                 <!-- Illustration -->
                 <mj-image src="{{ homepage_url }}/emails/illu-orientation.png"
-                          alt="Une personne souriante tape sur une machine à écrire tandis que des bulles de dialogue flottent au-dessus, représentant l'échange d'informations. Cela illustre comment une personne guide un bénéficiaire vers un service approprié."/>
+                          alt="Une personne souriante tape sur une machine à écrire tandis que des bulles de dialogue flottent au-dessus, représentant l’échange d’informations. Cela illustre comment une personne guide un bénéficiaire vers un service approprié."/>
                 <mj-spacer height="24px"/>
 
                 <!-- Texte -->
@@ -97,10 +97,10 @@
                     <div style="color: #555555; background-color: #F0F8FF; border-radius: 12px;
 padding: 16px 24px">
                         {% block support %}
-                            En cas de difficulté, n'hésitez pas à
+                            En cas de difficulté, n’hésitez pas à
                             <a style="color: #555" href="{{ support_link }}">contacter le support</a>
                             de la plateforme DORA pour obtenir de
-                            l'aide.
+                            l’aide.
                         {% endblock %}
                     </div>
                 </mj-text>
