@@ -1,7 +1,7 @@
 {% extends "email-base.mjml" %}
 
 {% block preview %}
-    La demande d'orientation pour {{ data.get_beneficiary_full_name }} est refusée.
+    La demande d’orientation pour {{ data.get_beneficiary_full_name }} est refusée.
 {% endblock %}
 
 {% block title %}
