@@ -401,10 +401,15 @@ class ServiceViewSet(
         user = self.request.user
         city_code = self.request.data.get("city_code")
         city_label = self.request.data.get("city_label")
-        category_slugs = self.request.data.get("categories")
-        subcategory_slugs = self.request.data.get("subcategories")
+
+        if not city_code or not city_label:
+            return Response(status=400)
+
+        category_slugs = self.request.data.get("categories", [])
+        subcategory_slugs = self.request.data.get("subcategories", [])
         kind_slugs = self.request.data.get("kinds")
         fee_slugs = self.request.data.get("fees")
+
         categories = ServiceCategory.objects.filter(
             value__in=category_slugs
         ).values_list("id", flat=True)
@@ -435,7 +440,6 @@ class ServiceViewSet(
             alert.kinds.set(kinds)
             should_save = True
 
-        print(fee_slugs)
         if fee_slugs:
             fees = ServiceFee.objects.filter(value__in=fee_slugs).values_list(
                 "id", flat=True

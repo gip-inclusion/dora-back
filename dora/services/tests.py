@@ -35,6 +35,7 @@ from dora.structures.models import Structure
 
 from .models import (
     AccessCondition,
+    Alert,
     LocationKind,
     Service,
     ServiceCategory,
@@ -3932,3 +3933,57 @@ class ServiceMigrationUtilsTestCase(APITestCase):
             sorted([s["value"] for s in service.subcategories.values()]),
             sorted([subcategory_value_1]),
         )
+
+
+SAVE_ALERT_ARGS = {
+    "categories": ["accompagnement-social-et-professionnel-personnalise"],
+    "subcategories": [
+        "accompagnement-social-et-professionnel-personnalise--definition-du-projet-professionnel",
+        "accompagnement-social-et-professionnel-personnalise--parcours-d-insertion-socioprofessionnel",
+    ],
+    "cityCode": "58211",
+    "cityLabel": "Poil (58)",
+    "kinds": ["aide-financiere", "aide-materielle"],
+    "fees": ["gratuit-sous-conditions", "payant"],
+}
+
+
+class ServiceAlertTestCase(APITestCase):
+    def test_cant_create_alert_if_no_logged_user(self):
+        response = self.client.post("/services/save-alert/", SAVE_ALERT_ARGS)
+        self.assertEqual(response.status_code, 401)
+
+    def test_missing_required_fields(self):
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+
+        for property in ["cityCode", "cityLabel"]:
+            args = SAVE_ALERT_ARGS.copy()
+            del args[property]
+            response = self.client.post("/services/save-alert/", args)
+            self.assertEqual(response.status_code, 400)
+
+    def test_create_alert(self):
+        self.assertEqual(Alert.objects.all().count(), 0)
+
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+        response = self.client.post("/services/save-alert/", SAVE_ALERT_ARGS)
+
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(Alert.objects.all().count(), 1)
+
+    def test_delete_alert(self):
+        user = baker.make("users.User", is_valid=True)
+        alert = baker.make(
+            "services.Alert",
+            user=user,
+            city_label=SAVE_ALERT_ARGS.get("cityLabel"),
+            city_code=SAVE_ALERT_ARGS.get("cityCode"),
+        )
+        self.assertEqual(Alert.objects.all().count(), 1)
+
+        self.client.force_authenticate(user=user)
+        response = self.client.post("/services/delete-alert/", {"alertId": alert.id})
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(Alert.objects.all().count(), 0)
