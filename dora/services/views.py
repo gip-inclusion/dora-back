@@ -29,6 +29,8 @@ from dora.services.enums import ServiceStatus
 from dora.services.models import (
     AccessCondition,
     AdminDivisionType,
+    Alert,
+    AlertFrequency,
     BeneficiaryAccessMode,
     CoachOrientationMode,
     ConcernedPublic,
@@ -386,6 +388,79 @@ class ServiceViewSet(
                 if model and service and service.can_write(user):
                     service.last_sync_checksum = model.sync_checksum
                     service.save()
+
+        return Response(status=204)
+
+    @action(
+        detail=False,
+        methods=["POST"],
+        url_path="save-alert",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def save_alert(self, request):
+        user = self.request.user
+        city_code = self.request.data.get("city_code")
+        city_label = self.request.data.get("city_label")
+        category_slugs = self.request.data.get("categories")
+        subcategory_slugs = self.request.data.get("subcategories")
+        kind_slugs = self.request.data.get("kinds")
+        fee_slugs = self.request.data.get("fees")
+        categories = ServiceCategory.objects.filter(
+            value__in=category_slugs
+        ).values_list("id", flat=True)
+        subcategories = ServiceSubCategory.objects.filter(
+            value__in=subcategory_slugs
+        ).values_list("id", flat=True)
+
+        alert = Alert.objects.create(
+            user=user,
+            city_code=city_code,
+            city_label=city_label,
+            frequency=AlertFrequency.objects.get(value="two-weeks"),
+        )
+
+        should_save = False
+        if categories:
+            alert.categories.set(categories)
+            should_save = True
+
+        if subcategories:
+            alert.subcategories.set(subcategories)
+            should_save = True
+
+        if kind_slugs:
+            kinds = ServiceKind.objects.filter(value__in=kind_slugs).values_list(
+                "id", flat=True
+            )
+            alert.kinds.set(kinds)
+            should_save = True
+
+        print(fee_slugs)
+        if fee_slugs:
+            fees = ServiceFee.objects.filter(value__in=fee_slugs).values_list(
+                "id", flat=True
+            )
+            alert.fees.set(fees)
+            should_save = True
+
+        if should_save:
+            alert.save()
+
+        return Response(status=204)
+
+    @action(
+        detail=False,
+        methods=["POST"],
+        url_path="delete-alert",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def delete_alert(self, request):
+        user = self.request.user
+        alert_id = self.request.data.get("alert_id")
+
+        alert = Alert.objects.filter(user=user, id=alert_id).first()
+        if alert:
+            alert.delete()
 
         return Response(status=204)
 

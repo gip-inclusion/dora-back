@@ -1,6 +1,14 @@
 from rest_framework import serializers
 
-from dora.services.models import Bookmark
+from dora.services.models import (
+    Alert,
+    AlertFrequency,
+    Bookmark,
+    ServiceCategory,
+    ServiceFee,
+    ServiceKind,
+    ServiceSubCategory,
+)
 from dora.services.serializers import ServiceListSerializer
 from dora.sirene.models import Establishment
 from dora.structures.models import Structure
@@ -16,12 +24,80 @@ class BookmarkListSerializer(serializers.ModelSerializer):
         fields = ["service", "creation_date"]
 
 
+class AlertListSerializer(serializers.ModelSerializer):
+    categories = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=ServiceCategory.objects.all(),
+        many=True,
+        required=False,
+    )
+    categories_display = serializers.SlugRelatedField(
+        source="categories", slug_field="label", many=True, read_only=True
+    )
+
+    subcategories = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=ServiceSubCategory.objects.all(),
+        many=True,
+        required=False,
+    )
+    subcategories_display = serializers.SlugRelatedField(
+        source="subcategories", slug_field="label", many=True, read_only=True
+    )
+
+    kinds = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=ServiceKind.objects.all(),
+        many=True,
+        required=False,
+    )
+    kinds_display = serializers.SlugRelatedField(
+        source="kinds", slug_field="label", many=True, read_only=True
+    )
+
+    fees = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=ServiceFee.objects.all(),
+        many=True,
+        required=False,
+    )
+    fees_display = serializers.SlugRelatedField(
+        source="fees", slug_field="label", many=True, read_only=True
+    )
+
+    frequency = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=AlertFrequency.objects.all(),
+        many=False,
+        required=True,
+    )
+
+    class Meta:
+        model = Alert
+        fields = [
+            "id",
+            "city_label",
+            "city_code",
+            "categories",
+            "categories_display",
+            "subcategories",
+            "subcategories_display",
+            "kinds",
+            "kinds_display",
+            "fees",
+            "fees_display",
+            "frequency",
+            "creation_date",
+        ]
+
+
 class UserInfoSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="get_full_name", read_only=True)
     short_name = serializers.CharField(source="get_short_name", read_only=True)
     structures = serializers.SerializerMethodField()
     pending_structures = serializers.SerializerMethodField()
     bookmarks = serializers.SerializerMethodField()
+    alerts = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -36,6 +112,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "last_name",
             "newsletter",
             "pending_structures",
+            "alerts",
             "short_name",
             "structures",
             "main_activity",
@@ -65,6 +142,13 @@ class UserInfoSerializer(serializers.ModelSerializer):
         else:
             qs = Bookmark.objects.filter(user=user).order_by("-creation_date")
         return BookmarkListSerializer(qs, many=True).data
+
+    def get_alerts(self, user):
+        if not user or not user.is_authenticated:
+            qs = Alert.objects.none()
+        else:
+            qs = Alert.objects.filter(user=user).order_by("-creation_date")
+        return AlertListSerializer(qs, many=True).data
 
 
 class TokenSerializer(serializers.Serializer):
