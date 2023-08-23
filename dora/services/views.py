@@ -811,6 +811,10 @@ def _get_di_results(
     if subcategories is not None:
         thematiques += [subcat for subcat in subcategories if "--autre" not in subcat]
 
+    # Cas spécifique si nous avons exclusivement un besoin `--autre`
+    if not thematiques and len(subcategories) == 1 and "--autre" in subcategories[0]:
+        thematiques = [subcategories[0].split("--")[0]]
+
     try:
         raw_di_results = di_client.search_services(
             sources=settings.DATA_INCLUSION_STREAM_SOURCES,
