@@ -463,8 +463,34 @@ class ServiceViewSet(
         alert_id = self.request.data.get("alert_id")
 
         alert = Alert.objects.filter(user=user, id=alert_id).first()
-        if alert:
-            alert.delete()
+        if not alert:
+            return Response(status=400)
+
+        alert.delete()
+
+        return Response(status=204)
+
+    @action(
+        detail=False,
+        methods=["POST"],
+        url_path="update-alert-frequency",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def update_alert_frequency(self, request):
+        user = self.request.user
+        alert_id = self.request.data.get("alert_id")
+        frequency_value = self.request.data.get("frequency")
+
+        frequency = AlertFrequency.objects.filter(value=frequency_value).first()
+        if not frequency:
+            return Response(status=400)
+
+        alert = Alert.objects.filter(user=user, id=alert_id).first()
+        if not alert:
+            return Response(status=400)
+
+        alert.frequency = frequency
+        alert.save(update_fields=["frequency"])
 
         return Response(status=204)
 

@@ -36,6 +36,7 @@ from dora.structures.models import Structure
 from .models import (
     AccessCondition,
     Alert,
+    AlertFrequency,
     LocationKind,
     Service,
     ServiceCategory,
@@ -3987,3 +3988,59 @@ class ServiceAlertTestCase(APITestCase):
         response = self.client.post("/services/delete-alert/", {"alertId": alert.id})
         self.assertEqual(response.status_code, 204)
         self.assertEqual(Alert.objects.all().count(), 0)
+
+    def test_delete_alert_not_existing(self):
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+        response = self.client.post("/services/delete-alert/", {"alertId": 123})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Alert.objects.all().count(), 0)
+
+    def test_update_alert_not_existing(self):
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/services/update-alert-frequency/", {"alertId": 123, "frequency": "never"}
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_update_frequency_not_existing(self):
+        user = baker.make("users.User", is_valid=True)
+        alert = baker.make(
+            "services.Alert",
+            user=user,
+            city_label=SAVE_ALERT_ARGS.get("cityLabel"),
+            city_code=SAVE_ALERT_ARGS.get("cityCode"),
+        )
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/services/update-alert-frequency/",
+            {"alertId": alert.id, "frequency": "xxx"},
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_update_frequency_ok(self):
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+
+        alert = baker.make(
+            "services.Alert",
+            user=user,
+            frequency=AlertFrequency.objects.filter(value="two-weeks").first(),
+            city_label=SAVE_ALERT_ARGS.get("cityLabel"),
+            city_code=SAVE_ALERT_ARGS.get("cityCode"),
+        )
+        self.assertEqual(
+            AlertFrequency.objects.get(id=alert.frequency_id).value, "two-weeks"
+        )
+
+        response = self.client.post(
+            "/services/update-alert-frequency/",
+            {"alertId": alert.id, "frequency": "never"},
+        )
+        self.assertEqual(response.status_code, 204)
+
+        alert.refresh_from_db()
+        self.assertEqual(
+            AlertFrequency.objects.get(id=alert.frequency_id).value, "never"
+        )
