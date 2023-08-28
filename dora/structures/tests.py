@@ -127,7 +127,7 @@ class StructureTestCase(APITestCase):
         )
         self.assertEqual(
             response.data.get("accesslibre_url")[0].get("message"),
-            "L'URL doit débuter par https://acceslibre.beta.gouv.fr/",
+            "L’URL doit débuter par https://acceslibre.beta.gouv.fr/",
         )
         self.assertEqual(response.status_code, 400)
 
@@ -150,7 +150,7 @@ class StructureTestCase(APITestCase):
         )
         self.assertEqual(
             response.data.get("opening_hours")[0].get("message"),
-            "Le format des horaires d'ouverture est incorrect",
+            "Le format des horaires d’ouverture est incorrect",
         )
         self.assertEqual(response.status_code, 400)
 
