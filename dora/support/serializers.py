@@ -290,7 +290,6 @@ class StructureAdminSerializer(StructureSerializer):
                 structure=obj,
                 is_admin=True,
                 invited_by_admin=True,
-                user__is_valid=True,
                 user__is_active=True,
             )
             return [a.user.email for a in admins]
