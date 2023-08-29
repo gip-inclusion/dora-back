@@ -13,12 +13,12 @@ def validate_opening_hours_str(opening_hours_str):
     try:
         OpeningHours(opening_hours_str)
     except ParseException:
-        raise ValidationError("Le format des horaires d'ouverture est incorrect")
+        raise ValidationError("Le format des horaires d’ouverture est incorrect")
 
 
 def validate_accesslibre_url(url):
     if url and not url.startswith("https://acceslibre.beta.gouv.fr/"):
-        raise ValidationError("L'URL doit débuter par https://acceslibre.beta.gouv.fr/")
+        raise ValidationError("L’URL doit débuter par https://acceslibre.beta.gouv.fr/")
 
 
 def validate_safir(safir):

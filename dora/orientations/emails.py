@@ -35,7 +35,7 @@ def send_orientation_created_emails(orientation):
     }
     # Structure porteuse
     send_mail(
-        f"{'[Envoyée - Structure porteuse] ' if settings.ORIENTATION_EMAILS_DEBUG else''}Nouvelle demande d'orientation reçue",
+        f"{'[Envoyée - Structure porteuse] ' if settings.ORIENTATION_EMAILS_DEBUG else''}Nouvelle demande d’orientation reçue",
         orientation.service.contact_email,
         mjml2html(render_to_string("orientation-created-structure.mjml", context)),
         from_email=(
@@ -59,7 +59,7 @@ def send_orientation_created_emails(orientation):
         and orientation.referent_email != orientation.prescriber.email
     ):
         send_mail(
-            f"{'[Envoyée - Conseiller référent] ' if settings.ORIENTATION_EMAILS_DEBUG else''}Notification d'une demande d'orientation",
+            f"{'[Envoyée - Conseiller référent] ' if settings.ORIENTATION_EMAILS_DEBUG else''}Notification d’une demande d’orientation",
             orientation.referent_email,
             mjml2html(render_to_string("orientation-created-referent.mjml", context)),
             tags=["orientation"],
@@ -120,7 +120,7 @@ def send_orientation_accepted_emails(
         and orientation.referent_email != orientation.prescriber.email
     ):
         send_mail(
-            f"{'[Validée - Conseiller référent] ' if settings.ORIENTATION_EMAILS_DEBUG else''}Notification de l'acceptation d'une demande d'orientation",
+            f"{'[Validée - Conseiller référent] ' if settings.ORIENTATION_EMAILS_DEBUG else''}Notification de l’acceptation d’une demande d’orientation",
             orientation.referent_email,
             mjml2html(render_to_string("orientation-accepted-referent.mjml", context)),
             from_email=(
@@ -166,7 +166,7 @@ def send_orientation_rejected_emails(orientation, message):
 
     # Prescripteur
     send_mail(
-        f"{'[Refusée - Prescripteur] ' if settings.ORIENTATION_EMAILS_DEBUG else''}Votre demande d'orientation a été refusée",
+        f"{'[Refusée - Prescripteur] ' if settings.ORIENTATION_EMAILS_DEBUG else''}Votre demande d’orientation a été refusée",
         [orientation.prescriber.email],
         mjml2html(render_to_string("orientation-rejected-prescriber.mjml", context)),
         from_email=(
@@ -183,7 +183,7 @@ def send_orientation_rejected_emails(orientation, message):
     ):
         # Referent
         send_mail(
-            f"{'[Refusée - Conseiller référent] ' if settings.ORIENTATION_EMAILS_DEBUG else''}Votre demande d'orientation a été refusée",
+            f"{'[Refusée - Conseiller référent] ' if settings.ORIENTATION_EMAILS_DEBUG else''}Votre demande d’orientation a été refusée",
             [orientation.referent_email],
             mjml2html(
                 render_to_string("orientation-rejected-prescriber.mjml", context)

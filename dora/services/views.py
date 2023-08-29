@@ -811,6 +811,11 @@ def _get_di_results(
     if subcategories is not None:
         thematiques += [subcat for subcat in subcategories if "--autre" not in subcat]
 
+    # Si on recherche uniquement des sous-catégories `autre`, la liste des thématiques va être vide et d·i renverrait
+    # *tous* les services. On renvoie donc plutôt une liste vide.
+    if not thematiques and subcategories:
+        return []
+
     try:
         raw_di_results = di_client.search_services(
             sources=settings.DATA_INCLUSION_STREAM_SOURCES,
@@ -974,7 +979,6 @@ def search(request, di_client=None):
     subcategories = request.GET.get("subs")
     kinds = request.GET.get("kinds")
     fees = request.GET.get("fees")
-    use_di = request.GET.get("di") in TRUTHY_VALUES
 
     categories_list = categories.split(",") if categories is not None else None
     subcategories_list = subcategories.split(",") if subcategories is not None else None
@@ -983,7 +987,7 @@ def search(request, di_client=None):
 
     sorted_results = _search(
         request=request,
-        di_client=di_client if use_di else None,
+        di_client=di_client,
         city_code=city_code,
         categories=categories_list,
         subcategories=subcategories_list,

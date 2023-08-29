@@ -13,7 +13,7 @@ from django.utils.text import get_valid_filename
 from furl import furl
 from rest_framework import permissions
 from rest_framework.decorators import api_view, parser_classes, permission_classes
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.parsers import FileUploadParser
 from rest_framework.response import Response
 
@@ -26,12 +26,20 @@ from dora.users.models import User
 logger = logging.getLogger(__name__)
 
 
+def _validate_upload(file_obj):
+    if file_obj.size > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
+        raise ValidationError("FILE_TOO_BIG")
+    if file_obj.name.split(".")[-1] not in settings.ALLOWED_UPLOADED_FILES_EXTENSIONS:
+        raise ValidationError("INVALID_EXTENSION")
+
+
 @api_view(["POST"])
 @parser_classes([FileUploadParser])
 @permission_classes([permissions.AllowAny])
 def upload(request, filename, structure_slug):
     structure = get_object_or_404(Structure.objects.all(), slug=structure_slug)
     file_obj = request.data["file"]
+    _validate_upload(file_obj)
     clean_filename = (
         f"{settings.ENVIRONMENT}/{structure.id}/{get_valid_filename(filename)}"
     )
@@ -44,6 +52,7 @@ def upload(request, filename, structure_slug):
 @permission_classes([permissions.AllowAny])
 def safe_upload(request, filename):
     file_obj = request.data["file"]
+    _validate_upload(file_obj)
     clean_filename = f"{settings.ENVIRONMENT}/#orientations/{get_random_string(32)}/{get_valid_filename(filename)}"
     result = default_storage.save(clean_filename, file_obj)
     return Response({"key": result}, status=201)
