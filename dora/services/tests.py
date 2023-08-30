@@ -1,8 +1,10 @@
 from datetime import timedelta
+from io import StringIO
 
 import requests
 from django.contrib.gis.geos import MultiPolygon, Point
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.test import override_settings
 from django.utils import timezone
 from model_bakery import baker
@@ -35,6 +37,7 @@ from dora.structures.models import Structure
 
 from .models import (
     AccessCondition,
+    ConcernedPublic,
     LocationKind,
     Service,
     ServiceCategory,
@@ -3922,3 +3925,92 @@ class ServiceMigrationUtilsTestCase(APITestCase):
             sorted([s["value"] for s in service.subcategories.values()]),
             sorted([subcategory_value_1]),
         )
+
+
+class CleanUpCustomizableChoiceTestCase(APITestCase):
+    def call_command(self):
+        call_command("clean_custom_options", stdout=StringIO())
+
+    def test_global_acchoice_untouched(self):
+        choice = baker.make("AccessCondition", structure=None)
+        self.call_command()
+        choice.refresh_from_db()
+
+    def test_unused_acchoice_removed(self):
+        choice = baker.make("AccessCondition", structure=make_structure())
+        self.call_command()
+        with self.assertRaises(AccessCondition.DoesNotExist):
+            choice.refresh_from_db()
+
+    def test_acchoice_in_published_service_not_removed(self):
+        struct = make_structure()
+        service = make_service(structure=struct, status=ServiceStatus.PUBLISHED)
+        choice = baker.make("AccessCondition", structure=struct)
+        service.access_conditions.add(choice)
+        self.call_command()
+        choice.refresh_from_db()
+        service.refresh_from_db()
+
+    def test_acchoice_in_draft_service_removed(self):
+        struct = make_structure()
+        service = make_service(structure=struct, status=ServiceStatus.DRAFT)
+        choice = baker.make("AccessCondition", structure=struct)
+        service.access_conditions.add(choice)
+        self.call_command()
+        with self.assertRaises(AccessCondition.DoesNotExist):
+            choice.refresh_from_db()
+        service.refresh_from_db()
+
+    def test_acchoice_in_at_least_one_published_service_removed(self):
+        struct = make_structure()
+        service1 = make_service(structure=struct, status=ServiceStatus.DRAFT)
+        service2 = make_service(structure=struct, status=ServiceStatus.PUBLISHED)
+        choice = baker.make("AccessCondition", structure=struct)
+        service1.access_conditions.add(choice)
+        service2.access_conditions.add(choice)
+        self.call_command()
+        choice.refresh_from_db()
+        service1.refresh_from_db()
+        service2.refresh_from_db()
+
+    def test_global_cpchoice_untouched(self):
+        choice = baker.make("ConcernedPublic", structure=None)
+        self.call_command()
+        choice.refresh_from_db()
+
+    def test_unused_cpchoice_removed(self):
+        choice = baker.make("ConcernedPublic", structure=make_structure())
+        self.call_command()
+        with self.assertRaises(ConcernedPublic.DoesNotExist):
+            choice.refresh_from_db()
+
+    def test_cpchoice_in_published_service_not_removed(self):
+        struct = make_structure()
+        service = make_service(structure=struct, status=ServiceStatus.PUBLISHED)
+        choice = baker.make("ConcernedPublic", structure=struct)
+        service.concerned_public.add(choice)
+        self.call_command()
+        choice.refresh_from_db()
+        service.refresh_from_db()
+
+    def test_cpchoice_in_draft_service_removed(self):
+        struct = make_structure()
+        service = make_service(structure=struct, status=ServiceStatus.DRAFT)
+        choice = baker.make("ConcernedPublic", structure=struct)
+        service.concerned_public.add(choice)
+        self.call_command()
+        with self.assertRaises(ConcernedPublic.DoesNotExist):
+            choice.refresh_from_db()
+        service.refresh_from_db()
+
+    def test_cpchoice_in_at_least_one_published_service_removed(self):
+        struct = make_structure()
+        service1 = make_service(structure=struct, status=ServiceStatus.DRAFT)
+        service2 = make_service(structure=struct, status=ServiceStatus.PUBLISHED)
+        choice = baker.make("ConcernedPublic", structure=struct)
+        service1.concerned_public.add(choice)
+        service2.concerned_public.add(choice)
+        self.call_command()
+        choice.refresh_from_db()
+        service1.refresh_from_db()
+        service2.refresh_from_db()
