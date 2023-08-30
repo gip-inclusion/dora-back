@@ -15,13 +15,13 @@ tables:
           # Preserve beta.gouv addresses
           format: "{%if prev.email is ending_with('beta.gouv.fr') %}{{_0}}{% else %}{{_1}}{% endif %}"
           rules:
-            - first_name: {}
+            - first_name: { }
       last_name:
         template:
           # Preserve beta.gouv addresses
           format: "{%if prev.email is ending_with('beta.gouv.fr') %}{{_0}}{% else %}{{_1}}{% endif %}"
           rules:
-            - last_name: {}
+            - last_name: { }
       password:
         template:
           format: "!disabled"
@@ -29,7 +29,7 @@ tables:
   - name: services_service
     rules:
       contact_name:
-        person_name: {}
+        person_name: { }
       contact_email:
         email:
           safe: true
@@ -44,24 +44,45 @@ tables:
           format: "{% raw %}{}{% endraw %}"
 
   - name: django_admin_log
-    rules: {}
+    rules: { }
     query:
       dump_condition: "FALSE"
 
   - name: django_session
-    rules: {}
+    rules: { }
     query:
       dump_condition: "FALSE"
 
   - name: rest_auth_token
-    rules: {}
+    rules: { }
     query:
       dump_condition: "FALSE"
 
   - name: authtoken_token
-    rules: {}
+    rules: { }
     query:
       dump_condition: "FALSE"
+
+  - name: orientations_orientation
+    rules: { }
+    query:
+      dump_condition: "FALSE"
+
+  - name: orientations_orientation_rejection_reasons
+    rules: { }
+    query:
+      dump_condition: "FALSE"
+
+  - name: orientations_sentcontactemail
+    rules: { }
+    query:
+      dump_condition: "FALSE"
+
+  - name: stats_orientationview
+    rules: { }
+    query:
+      dump_condition: "FALSE"
+
 
 filter:
   except:
