@@ -28,7 +28,8 @@ pip install -r requirements/dev.txt
 
 GeoDjango a besoin des _packages_ `GEOS` et `GDAL` pour fonctionner.
 
-Si Django n'arrive pas à trouver les librairies nécessaires, vous pourrez ajouter les variables d'environnement suivante à votre shell
+Si Django n'arrive pas à trouver les librairies nécessaires, vous pourrez ajouter les variables d'environnement suivante
+à votre shell
 
 ```bash
 export GDAL_LIBRARY_PATH=
