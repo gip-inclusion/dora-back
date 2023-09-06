@@ -110,9 +110,25 @@ def map_service(service_data: dict) -> dict:
             ),
         ).value
 
+    credentials = None
+    if isinstance(service_data["justificatifs"], list):
+        credentials = service_data["justificatifs"]
+    elif service_data["justificatifs"] == "":
+        credentials = []
+    elif service_data["justificatifs"] is not None:
+        credentials = service_data["justificatifs"].split(",")
+
     fee_condition = None
     if service_data["frais"] is not None:
         fee_condition = ", ".join(service_data["frais"])
+
+    requirements = None
+    if isinstance(service_data["pre_requis"], list):
+        requirements = service_data["pre_requis"]
+    elif service_data["pre_requis"] == "":
+        requirements = []
+    elif service_data["pre_requis"] is not None:
+        requirements = service_data["pre_requis"].split(",")
 
     structure_insee_code = (
         service_data["structure"]["code_insee"]
@@ -152,8 +168,8 @@ def map_service(service_data: dict) -> dict:
         "contact_name": service_data["contact_nom_prenom"],
         "contact_phone": service_data["telephone"],
         "creation_date": service_data["date_creation"],
-        "credentials": service_data["justificatifs"],
-        "credentials_display": service_data["justificatifs"],
+        "credentials": credentials,
+        "credentials_display": credentials,
         "department": department,
         "diffusion_zone_details": service_data["zone_diffusion_code"],
         "diffusion_zone_details_display": get_diffusion_zone_details_display(
@@ -194,8 +210,8 @@ def map_service(service_data: dict) -> dict:
         "qpv_or_zrr": None,
         "recurrence": service_data["recurrence"],
         "remote_url": None,
-        "requirements": service_data["pre_requis"],
-        "requirements_display": service_data["pre_requis"],
+        "requirements": requirements,
+        "requirements_display": requirements,
         "short_desc": service_data["presentation_resume"] or "",
         "slug": f"{service_data['source']}--{service_data['id']}",
         "source": service_data["source"],
