@@ -294,15 +294,13 @@ class ServiceSerializer(serializers.ModelSerializer):
         return [c.name for c in obj.concerned_public.all()]
 
     def get_pre_requis(self, obj):
-        # TODO: mapping DORA à faire
-        return ",".join([c.name for c in obj.requirements.all()])
+        return [c.name for c in obj.requirements.all()]
 
     def get_cumulable(self, obj):
         return obj.is_cumulative
 
     def get_justificatifs(self, obj):
-        # TODO: mapping DORA à faire
-        return ",".join([c.name for c in obj.credentials.all()])
+        return [c.name for c in obj.credentials.all()]
 
     def get_formulaire_en_ligne(self, obj):
         return obj.online_form if obj.online_form else None
