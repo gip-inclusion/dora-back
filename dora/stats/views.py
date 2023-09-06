@@ -103,7 +103,6 @@ def log_event(request):
         "update_status": service.get_update_status() if service else "",
         "status": service.status if service else "",
         "service_source": service.source.value if service and service.source else "",
-        "is_orientable": True if service and service.is_orientable() is True else False,
     }
 
     di_service_data = {
@@ -139,7 +138,10 @@ def log_event(request):
         StructureView.objects.create(**common_analytics_data, **structure_data)
     elif tag == "service":
         ServiceView.objects.create(
-            **common_analytics_data, **structure_data, **service_data
+            **common_analytics_data,
+            **structure_data,
+            **service_data,
+            is_orientable=service.is_orientable() is True,
         )
     elif tag == "di_service":
         di_view = DiServiceView.objects.create(

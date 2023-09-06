@@ -486,7 +486,8 @@ class Service(ModerationMixin, models.Model):
             if self.structure.siret and self.structure.siret.startswith(siren):
                 structure_blacklisted = True
         return (
-            not self.structure.disable_orientation_form
+            self.status == ServiceStatus.PUBLISHED
+            and not self.structure.disable_orientation_form
             and not structure_blacklisted
             and self.contact_email
             and (

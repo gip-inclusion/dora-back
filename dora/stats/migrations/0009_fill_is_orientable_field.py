@@ -4,6 +4,8 @@ from django.conf import settings
 from django.db import migrations
 from django.db.models import Q
 
+from dora.services.enums import ServiceStatus
+
 
 def is_orientable(service):
     structure_blacklisted = False
@@ -12,7 +14,8 @@ def is_orientable(service):
             structure_blacklisted = True
 
     return (
-        not service.structure.disable_orientation_form
+        service.status == ServiceStatus.PUBLISHED
+        and not service.structure.disable_orientation_form
         and not structure_blacklisted
         and service.contact_email != ""
         and (
