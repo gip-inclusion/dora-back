@@ -115,7 +115,14 @@ class ServiceEventAdmin(AnalyticsEventAdmin):
         "user",
         "anonymous_user_hash",
     ]
-    list_filter = ["date", "structure_department", "structure_source", "service_source"]
+    list_filter = [
+        "date",
+        "structure_department",
+        "structure_source",
+        "service_source",
+        "is_orientable",
+        "status",
+    ]
 
 
 class DiServiceEventAdmin(AnalyticsEventAdmin):

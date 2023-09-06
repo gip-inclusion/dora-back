@@ -198,7 +198,7 @@ class StructureView(AbstractStructureEvent):
 
 
 class ServiceView(AbstractServiceEvent):
-    pass
+    is_orientable = models.BooleanField(default=False, blank=True)
 
 
 class DiServiceView(AbstractDiServiceEvent):
