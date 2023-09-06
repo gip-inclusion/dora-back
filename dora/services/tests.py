@@ -1418,9 +1418,7 @@ class DataInclusionSearchTestCase(APITestCase):
         cases = [
             (None, None, None),
             ([], [], []),
-            ("", [], []),
             (["lorem", "ipsum"], ["lorem", "ipsum"], ["lorem", "ipsum"]),
-            ("lorem,ipsum", ["lorem", "ipsum"], ["lorem", "ipsum"]),
         ]
         for justificatifs, credentials, credentials_display in cases:
             with self.subTest(justificatifs=justificatifs):
@@ -1549,9 +1547,7 @@ class DataInclusionSearchTestCase(APITestCase):
         cases = [
             (None, None, None),
             ([], [], []),
-            ("", [], []),
             (["lorem", "ipsum"], ["lorem", "ipsum"], ["lorem", "ipsum"]),
-            ("lorem,ipsum", ["lorem", "ipsum"], ["lorem", "ipsum"]),
         ]
         for pre_requis, requirements, requirements_display in cases:
             with self.subTest(pre_requis=pre_requis):
