@@ -268,7 +268,9 @@ class PublicAPIServiceTestCase(APITestCase):
                     "envoyer-un-mail",
                     "envoyer-un-mail-avec-une-fiche-de-prescription",
                 ],
+                "modes_orientation_accompagnateur_autres": None,
                 "modes_orientation_beneficiaire": ["envoyer-un-mail"],
+                "modes_orientation_beneficiaire_autres": None,
             },
         )
 

@@ -207,7 +207,9 @@ class ServiceSerializer(serializers.ModelSerializer):
     zone_diffusion_code = serializers.SerializerMethodField()
     zone_diffusion_nom = serializers.SerializerMethodField()
     modes_orientation_accompagnateur = serializers.SerializerMethodField()
+    modes_orientation_accompagnateur_autres = serializers.SerializerMethodField()
     modes_orientation_beneficiaire = serializers.SerializerMethodField()
+    modes_orientation_beneficiaire_autres = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
@@ -251,7 +253,9 @@ class ServiceSerializer(serializers.ModelSerializer):
             "zone_diffusion_nom",
             "zone_diffusion_type",
             "modes_orientation_accompagnateur",
+            "modes_orientation_accompagnateur_autres",
             "modes_orientation_beneficiaire",
+            "modes_orientation_beneficiaire_autres",
         ]
 
     def get_id(self, obj):
@@ -394,6 +398,9 @@ class ServiceSerializer(serializers.ModelSerializer):
             for mode in obj.coach_orientation_modes.all()
         ]
 
+    def get_modes_orientation_accompagnateur_autres(self, obj):
+        return None
+
     def get_modes_orientation_beneficiaire(self, obj):
         mapping = {
             "autre": "autre",
@@ -405,6 +412,9 @@ class ServiceSerializer(serializers.ModelSerializer):
             mapping.get(mode.value, mode.value)
             for mode in obj.beneficiaries_access_modes.all()
         ]
+
+    def get_modes_orientation_beneficiaire_autres(self, obj):
+        return None
 
 
 ############
