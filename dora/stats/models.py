@@ -198,11 +198,7 @@ class StructureView(AbstractStructureEvent):
 
 
 class ServiceView(AbstractServiceEvent):
-    mobilisable = models.BooleanField(
-        default=False,
-        blank=True,
-        verbose_name="Service mobilisable",
-    )
+    is_orientable = models.BooleanField(default=False, blank=True)
 
 
 class DiServiceView(AbstractDiServiceEvent):
