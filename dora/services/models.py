@@ -485,6 +485,7 @@ class Service(ModerationMixin, models.Model):
         for siren in settings.ORIENTATION_SIRENE_BLACKLIST:
             if self.structure.siret and self.structure.siret.startswith(siren):
                 structure_blacklisted = True
+                break
         return (
             self.status == ServiceStatus.PUBLISHED
             and not self.structure.disable_orientation_form

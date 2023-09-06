@@ -7,22 +7,24 @@ from django.db.models import Q
 from dora.services.enums import ServiceStatus
 
 
-def is_orientable(service):
+def was_orientable(service_view):
     structure_blacklisted = False
     for siren in settings.ORIENTATION_SIRENE_BLACKLIST:
-        if service.structure.siret and service.structure.siret.startswith(siren):
+        if service_view.structure.siret and service_view.structure.siret.startswith(
+            siren
+        ):
             structure_blacklisted = True
-
+            break
     return (
-        service.status == ServiceStatus.PUBLISHED
-        and not service.structure.disable_orientation_form
+        service_view.status == ServiceStatus.PUBLISHED
+        and not service_view.structure.disable_orientation_form
         and not structure_blacklisted
-        and service.contact_email != ""
+        and service_view.service.contact_email != ""
         and (
-            service.coach_orientation_modes.filter(
+            service_view.service.coach_orientation_modes.filter(
                 Q(value="envoyer-courriel") | Q(value="envoyer-fiche-prescription")
             ).exists()
-            or service.beneficiaries_access_modes.filter(
+            or service_view.service.beneficiaries_access_modes.filter(
                 value="envoyer-courriel"
             ).exists()
         )
@@ -33,7 +35,7 @@ def migrate_mobilisable_services(apps, schema_editor):
     ServiceView = apps.get_model("stats", "ServiceView")
 
     for serviceView in ServiceView.objects.exclude(service=None):
-        serviceView.is_orientable = is_orientable(serviceView.service)
+        serviceView.is_orientable = was_orientable(serviceView)
         serviceView.save()
 
 
