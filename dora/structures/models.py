@@ -138,11 +138,12 @@ class StructureTypology(EnumModel):
 
 
 class StructureManager(models.Manager):
-    def create_from_establishment(self, establishment):
+    def create_from_establishment(self, establishment, name="", parent=None):
         data = EstablishmentSerializer(establishment).data
         structure = self.model(
             siret=data["siret"],
-            name=data["name"],
+            parent=parent,
+            name=name if name else data["name"],
             address1=data["address1"],
             address2=data["address2"],
             postal_code=data["postal_code"],
@@ -168,7 +169,6 @@ class Structure(ModerationMixin, models.Model):
         null=True,
         unique=True,
     )
-    branch_id = models.CharField(max_length=5, blank=True, default="")
     parent = models.ForeignKey(
         "self", on_delete=models.CASCADE, blank=True, null=True, related_name="branches"
     )
@@ -258,10 +258,6 @@ class Structure(ModerationMixin, models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(
-                fields=["branch_id", "parent"],
-                name="%(app_label)s_%(class)s_unique_branch_by_parent",
-            ),
             models.CheckConstraint(
                 name="%(app_label)s_%(class)s_valid_or_null_siren",
                 check=Q(siret__length=14) | Q(siret__isnull=True),
@@ -269,10 +265,6 @@ class Structure(ModerationMixin, models.Model):
             models.CheckConstraint(
                 name="%(app_label)s_%(class)s_null_siret_only_in_branches",
                 check=Q(siret__isnull=False) | Q(parent__isnull=False),
-            ),
-            models.CheckConstraint(
-                name="%(app_label)s_%(class)s_branches_have_id",
-                check=Q(parent__isnull=True) | ~Q(branch_id=""),
             ),
         ]
 
@@ -295,17 +287,9 @@ class Structure(ModerationMixin, models.Model):
     def get_absolute_url(self):
         return self.get_frontend_url()
 
-    def _make_unique_branch_id(self):
-        while True:
-            unique_id = get_random_string(5, "abcdefghijklmnopqrstuvwxyz")
-            if not self.__class__.objects.filter(branch_id=unique_id).exists():
-                return unique_id
-
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = make_unique_slug(self, self.name)
-        if self.parent and not self.branch_id:
-            self.branch_id = self._make_unique_branch_id()
         if self.city_code:
             self.department = code_insee_to_code_dept(self.city_code)
             self.city = get_clean_city_name(self.city_code)

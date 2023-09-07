@@ -1,128 +1,178 @@
 import csv
+from pprint import pformat
 
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 from rest_framework import serializers
 
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
-from dora.core.utils import normalize_description, normalize_phone_number
+from dora.services.models import ServiceModel
+from dora.services.utils import instantiate_model
 from dora.sirene.models import Establishment
 from dora.structures.emails import send_invitation_email
 from dora.structures.models import (
     Structure,
     StructureMember,
+    StructureNationalLabel,
     StructurePutativeMember,
     StructureSource,
-    StructureTypology,
 )
 from dora.users.models import User
 
-#################
+##############################################################################
+# Script d’import en masse de structure.
+# Les administrateurs proposés ne seront ajoutés que s’il n’y a pas déjà
+# un administrateur
+#
 # Format du CSV attendu:
-# | nom | siret |departement | description | courriel_structure | telephone_structure | site_web | typologie_structure | prenom_responsable | noms_responsable | courriel_responsable | fonction_responsable | telephone_responsable | courriels_administrateurs | courriels_collaborateurs | immersion_facile | parcours_rsa | financeurs |
+# | nom | siret | siret_parent | courriels_administrateurs | labels | modeles |
 
 
-class TypologySerializer(serializers.ModelSerializer):
-    # TODO
-    class Meta:
-        model = StructureTypology
+def to_string_array(strings_list):
+    clean_str = strings_list.strip()
+    if clean_str:
+        return [value.strip() for value in clean_str.split(",")]
+    return []
 
 
 class ImportSerializer(serializers.Serializer):
     name = serializers.CharField()
-    siret = serializers.CharField()
-    description = serializers.CharField(allow_blank=True)
-    email = serializers.EmailField(allow_blank=True)
-    phone = serializers.CharField(allow_blank=True)
-    url = serializers.URLField(allow_blank=True)
-    typology = serializers.CharField(allow_blank=True)
+    siret = serializers.CharField(allow_blank=True)
+    parent_siret = serializers.CharField(allow_blank=True)
     admins = serializers.ListField(child=serializers.EmailField(), allow_empty=True)
-    collabs = serializers.ListField(child=serializers.EmailField(), allow_empty=True)
+    labels = serializers.ListField(child=serializers.CharField(), allow_empty=True)
+    models = serializers.ListField(child=serializers.CharField(), allow_empty=True)
 
-    def validate_phone(self, value):
-        return normalize_phone_number(value)
+    def validate(self, data):
+        raw_siret = data.get("siret")
+        raw_parent_siret = data.get("parent_siret")
+        siret = "".join([c for c in raw_siret if c.isdigit()])
+        parent_siret = "".join([c for c in raw_parent_siret if c.isdigit()])
 
-    def validate_siret(self, value):
-        siret = "".join([c for c in value if c.isdigit()])
-        if len(siret) != 14:
-            raise serializers.ValidationError(f"Siret invalide: {value}")
+        if siret and len(siret) != 14:
+            raise serializers.ValidationError(f"Siret invalide: {raw_siret}")
 
-        try:
-            structure = Structure.objects.get(siret=siret)
-            if structure.has_admin():
-                administrators = structure.membership.filter(
-                    is_admin=True, user__is_valid=True, user__is_active=True
-                ).values_list("user__email", flat=True)
-                raise serializers.ValidationError(
-                    f"La structure {structure.name} ({siret}) a déjà les administrateurs suivants : {' '.join(administrators)}"
-                )
-        except Structure.DoesNotExist:
-            if not Establishment.objects.filter(siret=siret).exists():
-                raise serializers.ValidationError(f"Siret inconnu: {siret}")
-        return siret
+        if parent_siret and len(parent_siret) != 14:
+            raise serializers.ValidationError(
+                f"Siret parent invalide: {raw_parent_siret}"
+            )
 
+        if not siret and not parent_siret:
+            raise serializers.ValidationError("`siret` ou `parent_siret` sont requis")
 
-def to_string_array(str):
-    clean_str = str.strip()
-    if clean_str:
-        return clean_str.split(",")
-    return []
+        if (
+            siret
+            and not Structure.objects.filter(siret=siret).exists()
+            and not Establishment.objects.filter(siret=siret).exists()
+        ):
+            raise serializers.ValidationError(
+                f"Siret inconnu: https://annuaire-entreprises.data.gouv.fr/etablissement/{siret}"
+            )
+
+        if (
+            parent_siret
+            and not Structure.objects.filter(siret=parent_siret).exists()
+            and not Establishment.objects.filter(siret=parent_siret).exists()
+        ):
+            raise serializers.ValidationError(
+                f"Siret parent inconnu: https://annuaire-entreprises.data.gouv.fr/etablissement/{siret}"
+            )
+
+        if Structure.objects.filter(siret=parent_siret, parent__isnull=False).exists():
+            raise serializers.ValidationError(
+                f"Le siret {parent_siret} est une antenne, il ne peut pas être utilisé comme parent"
+            )
+
+        return super().validate(data)
+
+    def validate_labels(self, label_slugs):
+        labels = []
+        for label in label_slugs:
+            try:
+                label_obj = StructureNationalLabel.objects.get(value=label)
+                labels.append(label_obj)
+            except StructureNationalLabel.DoesNotExist:
+                raise serializers.ValidationError(f"Label inconnu {label}")
+        return labels
+
+    def validate_models(self, model_slugs):
+        models = []
+        for slug in model_slugs:
+            try:
+                model = ServiceModel.objects.get(slug=slug)
+                models.append(model)
+            except ServiceModel.DoesNotExist:
+                raise serializers.ValidationError(f"Modèle inconnu {slug}")
+        return models
 
 
 class Command(BaseCommand):
     help = "Importe une liste de structures"
+
+    def __init__(self, *args, **kwargs):
+        self.bot_user = User.objects.get_dora_bot()
+        self.source = StructureSource.objects.get(value="invitations-masse")
+        super().__init__(*args, **kwargs)
 
     def add_arguments(self, parser):
         parser.add_argument("filename")
 
     def handle(self, *args, **options):
         filename = options["filename"]
-        with open(filename) as invites_file:
-            invites = csv.reader(invites_file, delimiter=",")
-            next(invites)  # ignore l'en-tête
-            for i, row in enumerate(invites):
-                name = " ".join(row[0].split())
+        with open(filename) as structures_file:
+            reader = csv.DictReader(structures_file, delimiter=",")
+            for i, row in enumerate(reader):
+                name = " ".join(row["nom"].split())
                 self.stdout.write(
                     self.style.SUCCESS(f"{i}. Import de la structure {name}")
                 )
-                f = ImportSerializer(
+                serializer = ImportSerializer(
                     data={
-                        "name": name,
-                        "siret": row[1],
-                        "description": row[3],
-                        "email": row[4],
-                        "phone": row[5],
-                        "url": row[6],
-                        "typology": row[7],
-                        "admins": to_string_array(row[13]),
-                        "collabs": to_string_array(row[14]),
+                        "name": row["nom"],
+                        "siret": row["siret"],
+                        "parent_siret": row["siret_parent"],
+                        "admins": to_string_array(row["courriels_administrateurs"]),
+                        "labels": to_string_array(row["labels"]),
+                        "models": to_string_array(row["modeles"]),
                     }
                 )
 
-                if f.is_valid():
-                    data = f.validated_data
-                    structure = self.structure_from_siret(
-                        data["siret"],
+                if serializer.is_valid():
+                    data = serializer.validated_data
+                    structure = self.get_or_create_structure(
                         data["name"],
-                        data["description"],
-                        data["phone"],
-                        data["email"],
-                        data["url"],
+                        data["siret"],
+                        data["parent_siret"],
                     )
-                    self.stdout.write((f"{structure.get_frontend_url()}"))
-                    if data["admins"]:
-                        self.invite_users(structure, data["admins"], as_admin=True)
-                    if data["collabs"]:
-                        self.invite_users(structure, data["collabs"], as_admin=False)
+                    self.stdout.write(f"{structure.get_frontend_url()}")
+                    if not structure.has_admin():
+                        self.invite_users(structure, data["admins"])
+                    else:
+                        self.stdout.write("Cette structure a déjà un administrateur")
+                    self.add_labels(structure, data["labels"])
+                    self.create_services(structure, data["models"])
                 else:
-                    for field, errors in f.errors.items():
-                        for error in errors:
-                            self.stdout.write(
-                                self.style.ERROR(f"{field}: {str(error)}")
-                            )
+                    self.stderr.write(
+                        self.style.ERROR(pformat(serializer.errors.items()))
+                    )
 
-    def invite_users(self, structure, emails, as_admin):
+    def get_or_create_structure(
+        self,
+        name,
+        siret,
+        parent_siret,
+    ):
+        if parent_siret:
+            parent_structure = self._get_or_create_structure_from_siret(
+                parent_siret, is_parent=True
+            )
+            structure = self._get_or_create_branch(name, siret, parent_structure)
+        else:
+            structure = self._get_or_create_structure_from_siret(siret)
+
+        return structure
+
+    def invite_users(self, structure, emails):
         for email in emails:
             try:
                 user = User.objects.get(email=email)
@@ -135,14 +185,14 @@ class Command(BaseCommand):
                     user=user, structure=structure
                 )
                 self.stdout.write(self.style.WARNING(f"{email} a déjà été invité·e"))
-                if as_admin is True and not member.is_admin:
+                if not member.is_admin:
                     member.is_admin = True
                     member.save()
             except StructurePutativeMember.DoesNotExist:
                 try:
                     member = StructureMember.objects.get(user=user, structure=structure)
                     self.stdout.write(f"{email} est déjà membre de la structure")
-                    if as_admin is True and not member.is_admin:
+                    if not member.is_admin:
                         member.is_admin = True
                         member.save()
                 except StructureMember.DoesNotExist:
@@ -150,61 +200,85 @@ class Command(BaseCommand):
                         user=user,
                         structure=structure,
                         invited_by_admin=True,
-                        is_admin=as_admin,
+                        is_admin=True,
                     )
-                    if as_admin:
-                        self.stdout.write(f"{email} invité·e comme administrateur·rice")
-                    else:
-                        self.stdout.write(f"{email} invité·e comme collaborateur·rice")
+
+                    self.stdout.write(f"{email} invité·e comme administrateur·rice")
                     send_invitation_email(
                         member,
                         "L’équipe DORA",
                     )
 
-    def structure_from_siret(self, siret, name, description, phone, email, url):
-        user = User.objects.get_dora_bot()
-        try:
-            structure = Structure.objects.get(siret=siret)
-            modified = False
-            self.stdout.write(f"La structure {structure.name} ({siret}) existe déjà")
+    def add_labels(self, structure, labels):
+        for label in labels:
+            if label not in structure.national_labels.all():
+                self.stdout.write(f"Ajout du label {label.value}")
+                structure.national_labels.add(label)
 
+    def create_services(self, structure, models):
+        for model in models:
+            if not structure.services.filter(model=model).exists():
+                service = instantiate_model(model, structure, self.bot_user)
+                self.stdout.write(
+                    f"Ajout du service {service.name} ({service.get_frontend_url()})"
+                )
+
+    def _get_or_create_branch(self, name, siret, parent_structure):
+        try:
+            if siret:
+                branch = Structure.objects.get(siret=siret)
+            else:
+                branch = Structure.objects.get(parent=parent_structure, name=name)
+
+            self.stdout.write(
+                f"La branche {branch.name} ({branch.get_frontend_url()}) existe déjà"
+            )
         except Structure.DoesNotExist:
-            establishment = Establishment.objects.get(siret=siret)
-            structure = Structure.objects.create_from_establishment(establishment)
-            self.stdout.write(f"Création de la structure {structure.name} ({siret})")
-            structure.creator = user
-            structure.source = StructureSource.objects.get(value="invitations-masse")
+            if siret:
+                establishment = Establishment.objects.get(siret=siret)
+                branch = Structure.objects.create_from_establishment(
+                    establishment, name, parent_structure
+                )
+            else:
+                branch = Structure.objects.create(
+                    name=name,
+                    parent=parent_structure,
+                )
+            parent_structure.post_create_branch(branch, self.bot_user, self.source)
+
+            self.stdout.write(
+                f"Création de la branche {branch.name} ({branch.get_frontend_url()})"
+            )
             send_moderation_notification(
-                structure,
-                user,
+                branch,
+                self.bot_user,
                 "Structure créée à partir d'un import en masse",
                 ModerationStatus.VALIDATED,
             )
-            modified = True
+        return branch
 
-        short_desc, full_desc = normalize_description(description, 280)
-        if short_desc:
-            if not structure.short_desc:
-                modified = True
-                structure.short_desc = short_desc
-                if not structure.full_desc:
-                    structure.full_desc = full_desc
-
-        if phone and not structure.phone:
-            modified = True
-            structure.phone = phone
-
-        if email and not structure.email:
-            modified = True
-            structure.email = email
-
-        if url and not structure.url:
-            modified = True
-            structure.url = url
-
-        if modified:
-            structure.last_editor = user
-            structure.modification_date = timezone.now()
+    def _get_or_create_structure_from_siret(self, siret, is_parent=False):
+        try:
+            structure = Structure.objects.get(siret=siret)
+            self.stdout.write(
+                f"La structure {'parente' if is_parent else ''} {structure.name} ({structure.get_frontend_url()}) existe déjà"
+            )
+        except Structure.DoesNotExist:
+            establishment = Establishment.objects.get(siret=siret)
+            structure = Structure.objects.create_from_establishment(establishment)
+            structure.creator = self.bot_user
+            structure.last_editor = self.bot_user
+            structure.source = self.source
             structure.save()
+
+            self.stdout.write(
+                f"Création de la structure  {'parente' if is_parent else ''} {structure.name} ({structure.get_frontend_url()})"
+            )
+            send_moderation_notification(
+                structure,
+                self.bot_user,
+                "Structure créée à partir d'un import en masse",
+                ModerationStatus.VALIDATED,
+            )
 
         return structure
