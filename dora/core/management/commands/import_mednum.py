@@ -344,6 +344,7 @@ class Command(BaseCommand):
                 s.label.lower() for s in service.subcategories.all()
             )
             short_desc, _ = normalize_description(subcats_label, 280)
+            # TODO peut depasser 280 chars
             service.short_desc = (
                 f"{service.structure.name} propose des services : {short_desc}"
             )
