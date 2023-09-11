@@ -138,7 +138,10 @@ def log_event(request):
         StructureView.objects.create(**common_analytics_data, **structure_data)
     elif tag == "service":
         ServiceView.objects.create(
-            **common_analytics_data, **structure_data, **service_data
+            **common_analytics_data,
+            **structure_data,
+            **service_data,
+            is_orientable=service.is_orientable() is True,
         )
     elif tag == "di_service":
         di_view = DiServiceView.objects.create(

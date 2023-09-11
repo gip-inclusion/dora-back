@@ -111,7 +111,9 @@ def map_service(service_data: dict) -> dict:
         ).value
 
     credentials = None
-    if service_data["justificatifs"] == "":
+    if isinstance(service_data["justificatifs"], list):
+        credentials = service_data["justificatifs"]
+    elif service_data["justificatifs"] == "":
         credentials = []
     elif service_data["justificatifs"] is not None:
         credentials = service_data["justificatifs"].split(",")
@@ -121,7 +123,9 @@ def map_service(service_data: dict) -> dict:
         fee_condition = ", ".join(service_data["frais"])
 
     requirements = None
-    if service_data["pre_requis"] == "":
+    if isinstance(service_data["pre_requis"], list):
+        requirements = service_data["pre_requis"]
+    elif service_data["pre_requis"] == "":
         requirements = []
     elif service_data["pre_requis"] is not None:
         requirements = service_data["pre_requis"].split(",")
@@ -186,6 +190,7 @@ def map_service(service_data: dict) -> dict:
         "is_available": True,
         "is_contact_info_public": service_data["contact_public"],
         "is_cumulative": service_data["cumulable"],
+        "is_orientable": False,
         "kinds": [k.value for k in kinds] if kinds is not None else None,
         "kinds_display": [k.label for k in kinds] if kinds is not None else None,
         "location_kinds": [lk.value for lk in location_kinds]

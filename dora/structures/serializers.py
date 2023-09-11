@@ -50,6 +50,8 @@ class StructureSerializer(serializers.ModelSerializer):
         required=False,
     )
 
+    short_admin_names = serializers.SerializerMethodField()
+
     source = serializers.SerializerMethodField()
 
     class Meta:
@@ -94,6 +96,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "postal_code",
             "quick_start_done",
             "services",
+            "short_admin_names",
             "short_desc",
             "siret",
             "slug",
@@ -360,6 +363,21 @@ class StructureSerializer(serializers.ModelSerializer):
             if obj.source
             else None
         )
+
+    def get_short_admin_names(self, obj):
+        def get_short_name(user):
+            if user.first_name and user.last_name:
+                return f"{user.first_name[0]}. {user.last_name}"
+            else:
+                return user.email.split("@")[0]
+
+        user = self.context.get("request").user
+        if user.is_authenticated:
+            admins = StructureMember.objects.filter(
+                structure=obj, is_admin=True, user__is_valid=True, user__is_active=True
+            )
+            return [get_short_name(a.user) for a in admins]
+        return []
 
 
 class StructureListSerializer(StructureSerializer):

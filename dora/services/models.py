@@ -480,6 +480,27 @@ class Service(ModerationMixin, models.Model):
             status=self.status, modification_date=self.modification_date
         )
 
+    def is_orientable(self):
+        structure_blacklisted = False
+        for siren in settings.ORIENTATION_SIRENE_BLACKLIST:
+            if self.structure.siret and self.structure.siret.startswith(siren):
+                structure_blacklisted = True
+                break
+        return (
+            self.status == ServiceStatus.PUBLISHED
+            and not self.structure.disable_orientation_form
+            and not structure_blacklisted
+            and self.contact_email
+            and (
+                self.coach_orientation_modes.filter(
+                    Q(value="envoyer-courriel") | Q(value="envoyer-fiche-prescription")
+                ).exists()
+                or self.beneficiaries_access_modes.filter(
+                    value="envoyer-courriel"
+                ).exists()
+            )
+        )
+
 
 class ServiceModelManager(models.Manager):
     def get_queryset(self):

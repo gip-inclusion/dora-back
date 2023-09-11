@@ -123,11 +123,13 @@ def inclusion_connect_get_logout_info(request):
 @permission_classes([permissions.AllowAny])
 def inclusion_connect_get_update_info(request):
     referrer_uri = request.data.get("referrer_uri")
+    login_hint = request.data.get("login_hint", "")
 
     query = {
         "from": "dora",
         "referrer": {settings.IC_CLIENT_ID},
         "referrer_uri": referrer_uri,
+        "login_hint": login_hint,
     }
     return Response(
         {
