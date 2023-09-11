@@ -300,6 +300,25 @@ class StructuresImportTestCase(APITestCase):
         )
         self.assertEqual(branch.parent, structure)
 
+    def test_find_existing_branch(self):
+        structure = make_structure(name="My Structure", siret="12345678901234")
+        branch = baker.make("Structure", name="Foo", siret=None, parent=structure)
+        self.assertEqual(structure.branches.count(), 1)
+        self.add_row(["Foo", "", structure.siret, "foo@buzz.com", "", ""])
+        self.call_command()
+        self.assertEqual(structure.branches.count(), 1)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            StructurePutativeMember.objects.filter(
+                structure=branch, user__email="foo@buzz.com"
+            ).count(),
+            1,
+        )
+        self.assertIn(
+            f"L’équipe DORA vous a invité(e) à rejoindre la structure { branch.name }",
+            mail.outbox[0].body,
+        )
+
     def test_create_new_branch_with_siret(self):
         structure = make_structure(name="My Structure")
         baker.make("Establishment", siret="12345678901234", name="My Establishment")

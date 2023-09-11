@@ -117,8 +117,22 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("filename")
 
+        parser.add_argument(
+            "-n",
+            "--dry-run",
+            action="store_true",
+            help="Vérifie le fichier d’entrée sans modifier la base de données ni envoyer de mails",
+        )
+
     def handle(self, *args, **options):
         filename = options["filename"]
+        dry_run = options["dry_run"]
+
+        if dry_run:
+            self.stdout.write(self.style.NOTICE("DRY RUN"))
+        else:
+            self.stdout.write(self.style.WARNING("PRODUCTION RUN"))
+
         with open(filename) as structures_file:
             reader = csv.DictReader(structures_file, delimiter=",")
             for i, row in enumerate(reader):
@@ -138,22 +152,25 @@ class Command(BaseCommand):
                 )
 
                 if serializer.is_valid():
-                    data = serializer.validated_data
-                    structure = self.get_or_create_structure(
-                        data["name"],
-                        data["siret"],
-                        data["parent_siret"],
-                    )
-                    self.stdout.write(f"{structure.get_frontend_url()}")
-                    if not structure.has_admin():
-                        self.invite_users(structure, data["admins"])
-                    else:
-                        self.stdout.write("Cette structure a déjà un administrateur")
-                    self.add_labels(structure, data["labels"])
-                    self.create_services(structure, data["models"])
+                    if not dry_run:
+                        data = serializer.validated_data
+                        structure = self.get_or_create_structure(
+                            data["name"],
+                            data["siret"],
+                            data["parent_siret"],
+                        )
+                        self.stdout.write(f"{structure.get_frontend_url()}")
+                        if not structure.has_admin():
+                            self.invite_users(structure, data["admins"])
+                        else:
+                            self.stdout.write(
+                                "Cette structure a déjà un administrateur"
+                            )
+                        self.add_labels(structure, data["labels"])
+                        self.create_services(structure, data["models"])
                 else:
                     self.stderr.write(
-                        self.style.ERROR(pformat(serializer.errors.items()))
+                        self.style.ERROR(pformat(dict(serializer.errors.items())))
                     )
 
     def get_or_create_structure(
@@ -184,7 +201,7 @@ class Command(BaseCommand):
                 member = StructurePutativeMember.objects.get(
                     user=user, structure=structure
                 )
-                self.stdout.write(self.style.WARNING(f"{email} a déjà été invité·e"))
+                self.stdout.write(f"{email} a déjà été invité·e")
                 if not member.is_admin:
                     member.is_admin = True
                     member.save()
