@@ -1417,7 +1417,9 @@ class DataInclusionSearchTestCase(APITestCase):
     def test_service_di_credentials(self):
         cases = [
             (None, None, None),
+            ([], [], []),
             ("", [], []),
+            (["lorem", "ipsum"], ["lorem", "ipsum"], ["lorem", "ipsum"]),
             ("lorem,ipsum", ["lorem", "ipsum"], ["lorem", "ipsum"]),
         ]
         for justificatifs, credentials, credentials_display in cases:
@@ -1546,7 +1548,9 @@ class DataInclusionSearchTestCase(APITestCase):
     def test_service_di_requirements(self):
         cases = [
             (None, None, None),
+            ([], [], []),
             ("", [], []),
+            (["lorem", "ipsum"], ["lorem", "ipsum"], ["lorem", "ipsum"]),
             ("lorem,ipsum", ["lorem", "ipsum"], ["lorem", "ipsum"]),
         ]
         for pre_requis, requirements, requirements_display in cases:
