@@ -35,9 +35,9 @@ from dora.structures.models import Structure
 
 from .models import (
     AccessCondition,
-    Alert,
-    AlertFrequency,
     LocationKind,
+    SavedSearch,
+    SavedSearchFrequency,
     Service,
     ServiceCategory,
     ServiceFee,
@@ -3936,7 +3936,7 @@ class ServiceMigrationUtilsTestCase(APITestCase):
         )
 
 
-SAVE_ALERT_ARGS = {
+SAVE_SEARCH_ARGS = {
     "categories": ["accompagnement-social-et-professionnel-personnalise"],
     "subcategories": [
         "accompagnement-social-et-professionnel-personnalise--definition-du-projet-professionnel",
@@ -3949,9 +3949,9 @@ SAVE_ALERT_ARGS = {
 }
 
 
-class ServiceAlertTestCase(APITestCase):
-    def test_cant_create_alert_if_no_logged_user(self):
-        response = self.client.post("/services/save-alert/", SAVE_ALERT_ARGS)
+class ServiceSavedSearchTestCase(APITestCase):
+    def test_cant_create_search_if_no_logged_user(self):
+        response = self.client.post("/services/save-search/", SAVE_SEARCH_ARGS)
         self.assertEqual(response.status_code, 401)
 
     def test_missing_required_fields(self):
@@ -3959,63 +3959,68 @@ class ServiceAlertTestCase(APITestCase):
         self.client.force_authenticate(user=user)
 
         for property in ["cityCode", "cityLabel"]:
-            args = SAVE_ALERT_ARGS.copy()
+            args = SAVE_SEARCH_ARGS.copy()
             del args[property]
-            response = self.client.post("/services/save-alert/", args)
+            response = self.client.post("/services/save-search/", args)
             self.assertEqual(response.status_code, 400)
 
-    def test_create_alert(self):
-        self.assertEqual(Alert.objects.all().count(), 0)
+    def test_create_search(self):
+        self.assertEqual(SavedSearch.objects.all().count(), 0)
 
         user = baker.make("users.User", is_valid=True)
         self.client.force_authenticate(user=user)
-        response = self.client.post("/services/save-alert/", SAVE_ALERT_ARGS)
+        response = self.client.post("/services/save-search/", SAVE_SEARCH_ARGS)
 
         self.assertEqual(response.status_code, 204)
-        self.assertEqual(Alert.objects.all().count(), 1)
+        self.assertEqual(SavedSearch.objects.all().count(), 1)
 
-    def test_delete_alert(self):
+    def test_delete_search(self):
         user = baker.make("users.User", is_valid=True)
-        alert = baker.make(
-            "services.Alert",
+        saved_search = baker.make(
+            "services.SavedSearch",
             user=user,
-            city_label=SAVE_ALERT_ARGS.get("cityLabel"),
-            city_code=SAVE_ALERT_ARGS.get("cityCode"),
+            city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
+            city_code=SAVE_SEARCH_ARGS.get("cityCode"),
         )
-        self.assertEqual(Alert.objects.all().count(), 1)
+        self.assertEqual(SavedSearch.objects.all().count(), 1)
 
         self.client.force_authenticate(user=user)
-        response = self.client.post("/services/delete-alert/", {"alertId": alert.id})
+        response = self.client.post(
+            "/services/delete-saved-search/", {"savedSearchId": saved_search.id}
+        )
         self.assertEqual(response.status_code, 204)
-        self.assertEqual(Alert.objects.all().count(), 0)
+        self.assertEqual(SavedSearch.objects.all().count(), 0)
 
-    def test_delete_alert_not_existing(self):
-        user = baker.make("users.User", is_valid=True)
-        self.client.force_authenticate(user=user)
-        response = self.client.post("/services/delete-alert/", {"alertId": 123})
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(Alert.objects.all().count(), 0)
-
-    def test_update_alert_not_existing(self):
+    def test_delete_search_not_existing(self):
         user = baker.make("users.User", is_valid=True)
         self.client.force_authenticate(user=user)
         response = self.client.post(
-            "/services/update-alert-frequency/", {"alertId": 123, "frequency": "never"}
+            "/services/delete-saved-search/", {"savedSearchId": 123}
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(SavedSearch.objects.all().count(), 0)
+
+    def test_update_search_not_existing(self):
+        user = baker.make("users.User", is_valid=True)
+        self.client.force_authenticate(user=user)
+        response = self.client.post(
+            "/services/update-saved-search-frequency/",
+            {"savedSearchId": 123, "frequency": "never"},
         )
         self.assertEqual(response.status_code, 400)
 
     def test_update_frequency_not_existing(self):
         user = baker.make("users.User", is_valid=True)
-        alert = baker.make(
-            "services.Alert",
+        saved_search = baker.make(
+            "services.SavedSearch",
             user=user,
-            city_label=SAVE_ALERT_ARGS.get("cityLabel"),
-            city_code=SAVE_ALERT_ARGS.get("cityCode"),
+            city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
+            city_code=SAVE_SEARCH_ARGS.get("cityCode"),
         )
         self.client.force_authenticate(user=user)
         response = self.client.post(
-            "/services/update-alert-frequency/",
-            {"alertId": alert.id, "frequency": "xxx"},
+            "/services/update-saved-search-frequency/",
+            {"savedSearchId": saved_search.id, "frequency": "xxx"},
         )
         self.assertEqual(response.status_code, 400)
 
@@ -4023,24 +4028,26 @@ class ServiceAlertTestCase(APITestCase):
         user = baker.make("users.User", is_valid=True)
         self.client.force_authenticate(user=user)
 
-        alert = baker.make(
-            "services.Alert",
+        saved_search = baker.make(
+            "services.SavedSearch",
             user=user,
-            frequency=AlertFrequency.objects.filter(value="two-weeks").first(),
-            city_label=SAVE_ALERT_ARGS.get("cityLabel"),
-            city_code=SAVE_ALERT_ARGS.get("cityCode"),
+            frequency=SavedSearchFrequency.objects.filter(value="two-weeks").first(),
+            city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
+            city_code=SAVE_SEARCH_ARGS.get("cityCode"),
         )
         self.assertEqual(
-            AlertFrequency.objects.get(id=alert.frequency_id).value, "two-weeks"
+            SavedSearchFrequency.objects.get(id=saved_search.frequency_id).value,
+            "two-weeks",
         )
 
         response = self.client.post(
-            "/services/update-alert-frequency/",
-            {"alertId": alert.id, "frequency": "never"},
+            "/services/update-saved-search-frequency/",
+            {"savedSearchId": saved_search.id, "frequency": "never"},
         )
         self.assertEqual(response.status_code, 204)
 
-        alert.refresh_from_db()
+        saved_search.refresh_from_db()
         self.assertEqual(
-            AlertFrequency.objects.get(id=alert.frequency_id).value, "never"
+            SavedSearchFrequency.objects.get(id=saved_search.frequency_id).value,
+            "never",
         )

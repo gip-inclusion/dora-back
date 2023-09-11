@@ -1,9 +1,9 @@
 from rest_framework import serializers
 
 from dora.services.models import (
-    Alert,
-    AlertFrequency,
     Bookmark,
+    SavedSearch,
+    SavedSearchFrequency,
     ServiceCategory,
     ServiceFee,
     ServiceKind,
@@ -24,7 +24,7 @@ class BookmarkListSerializer(serializers.ModelSerializer):
         fields = ["service", "creation_date"]
 
 
-class AlertListSerializer(serializers.ModelSerializer):
+class SavedSearchListSerializer(serializers.ModelSerializer):
     categories = serializers.SlugRelatedField(
         slug_field="value",
         queryset=ServiceCategory.objects.all(),
@@ -67,13 +67,13 @@ class AlertListSerializer(serializers.ModelSerializer):
 
     frequency = serializers.SlugRelatedField(
         slug_field="value",
-        queryset=AlertFrequency.objects.all(),
+        queryset=SavedSearchFrequency.objects.all(),
         many=False,
         required=True,
     )
 
     class Meta:
-        model = Alert
+        model = SavedSearch
         fields = [
             "id",
             "city_label",
@@ -97,7 +97,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
     structures = serializers.SerializerMethodField()
     pending_structures = serializers.SerializerMethodField()
     bookmarks = serializers.SerializerMethodField()
-    alerts = serializers.SerializerMethodField()
+    saved_searchs = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -112,7 +112,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "last_name",
             "newsletter",
             "pending_structures",
-            "alerts",
+            "saved_searchs",
             "short_name",
             "structures",
             "main_activity",
@@ -143,12 +143,12 @@ class UserInfoSerializer(serializers.ModelSerializer):
             qs = Bookmark.objects.filter(user=user).order_by("-creation_date")
         return BookmarkListSerializer(qs, many=True).data
 
-    def get_alerts(self, user):
+    def get_saved_searchs(self, user):
         if not user or not user.is_authenticated:
-            qs = Alert.objects.none()
+            qs = SavedSearch.objects.none()
         else:
-            qs = Alert.objects.filter(user=user).order_by("-creation_date")
-        return AlertListSerializer(qs, many=True).data
+            qs = SavedSearch.objects.filter(user=user).order_by("-creation_date")
+        return SavedSearchListSerializer(qs, many=True).data
 
 
 class TokenSerializer(serializers.Serializer):

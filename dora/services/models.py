@@ -85,7 +85,7 @@ class ServiceFee(EnumModel):
         verbose_name = "Frais à charge"
 
 
-class AlertFrequency(EnumModel):
+class SavedSearchFrequency(EnumModel):
     class Meta:
         verbose_name = "Fréquence de l'alerte"
 
@@ -579,7 +579,7 @@ class Bookmark(models.Model):
         ]
 
 
-class Alert(models.Model):
+class SavedSearch(models.Model):
     user = models.ForeignKey("users.User", on_delete=models.CASCADE)
     creation_date = models.DateTimeField(auto_now_add=True, db_index=True)
     city_code = models.CharField(verbose_name="Code INSEE de la recherche")
@@ -599,7 +599,7 @@ class Alert(models.Model):
     )
     fees = models.ManyToManyField(ServiceFee, verbose_name="Frais à charge", blank=True)
     frequency = models.ForeignKey(
-        AlertFrequency,
+        SavedSearchFrequency,
         verbose_name="Fréquence de l'alerte",
         on_delete=models.PROTECT,
     )

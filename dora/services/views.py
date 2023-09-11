@@ -29,14 +29,14 @@ from dora.services.enums import ServiceStatus
 from dora.services.models import (
     AccessCondition,
     AdminDivisionType,
-    Alert,
-    AlertFrequency,
     BeneficiaryAccessMode,
     CoachOrientationMode,
     ConcernedPublic,
     Credential,
     LocationKind,
     Requirement,
+    SavedSearch,
+    SavedSearchFrequency,
     Service,
     ServiceCategory,
     ServiceFee,
@@ -394,10 +394,10 @@ class ServiceViewSet(
     @action(
         detail=False,
         methods=["POST"],
-        url_path="save-alert",
+        url_path="save-search",
         permission_classes=[permissions.IsAuthenticated],
     )
-    def save_alert(self, request):
+    def save_search(self, request):
         user = self.request.user
         city_code = self.request.data.get("city_code")
         city_label = self.request.data.get("city_label")
@@ -417,80 +417,80 @@ class ServiceViewSet(
             value__in=subcategory_slugs
         ).values_list("id", flat=True)
 
-        alert = Alert.objects.create(
+        saved_search = SavedSearch.objects.create(
             user=user,
             city_code=city_code,
             city_label=city_label,
-            frequency=AlertFrequency.objects.get(value="two-weeks"),
+            frequency=SavedSearchFrequency.objects.get(value="two-weeks"),
         )
 
         should_save = False
         if categories:
-            alert.categories.set(categories)
+            saved_search.categories.set(categories)
             should_save = True
 
         if subcategories:
-            alert.subcategories.set(subcategories)
+            saved_search.subcategories.set(subcategories)
             should_save = True
 
         if kind_slugs:
             kinds = ServiceKind.objects.filter(value__in=kind_slugs).values_list(
                 "id", flat=True
             )
-            alert.kinds.set(kinds)
+            saved_search.kinds.set(kinds)
             should_save = True
 
         if fee_slugs:
             fees = ServiceFee.objects.filter(value__in=fee_slugs).values_list(
                 "id", flat=True
             )
-            alert.fees.set(fees)
+            saved_search.fees.set(fees)
             should_save = True
 
         if should_save:
-            alert.save()
+            saved_search.save()
 
         return Response(status=204)
 
     @action(
         detail=False,
         methods=["POST"],
-        url_path="delete-alert",
+        url_path="delete-saved-search",
         permission_classes=[permissions.IsAuthenticated],
     )
-    def delete_alert(self, request):
+    def delete_saved_search(self, request):
         user = self.request.user
-        alert_id = self.request.data.get("alert_id")
+        saved_search_id = self.request.data.get("saved_search_id")
 
-        alert = Alert.objects.filter(user=user, id=alert_id).first()
-        if not alert:
+        saved_search = SavedSearch.objects.filter(user=user, id=saved_search_id).first()
+        if not saved_search:
             return Response(status=400)
 
-        alert.delete()
+        saved_search.delete()
 
         return Response(status=204)
 
     @action(
         detail=False,
         methods=["POST"],
-        url_path="update-alert-frequency",
+        url_path="update-saved-search-frequency",
         permission_classes=[permissions.IsAuthenticated],
     )
-    def update_alert_frequency(self, request):
+    def update_saved_search_frequency(self, request):
         user = self.request.user
-        alert_id = self.request.data.get("alert_id")
+        saved_search_id = self.request.data.get("saved_search_id")
         frequency_value = self.request.data.get("frequency")
 
-        frequency = AlertFrequency.objects.filter(value=frequency_value).first()
+        frequency = SavedSearchFrequency.objects.filter(value=frequency_value).first()
         if not frequency:
             return Response(status=400)
 
-        alert = Alert.objects.filter(user=user, id=alert_id).first()
-        if not alert:
+        saved_search = SavedSearch.objects.filter(user=user, id=saved_search_id).first()
+        if not saved_search:
             return Response(status=400)
 
-        alert.frequency = frequency
-        alert.save(update_fields=["frequency"])
+        saved_search.frequency = frequency
+        saved_search.save(update_fields=["frequency"])
 
         return Response(status=204)
 
