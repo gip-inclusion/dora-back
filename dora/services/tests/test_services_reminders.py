@@ -11,12 +11,12 @@ from dora.core.test_utils import make_service, make_structure, make_user
 from dora.services.enums import ServiceStatus
 
 
-class CheckServicesUpdateTestCase(APITestCase):
+class ServicesNotificationsTestCase(APITestCase):
     def setUp(self):
         self.structure = make_structure()
 
     def call_command(self):
-        call_command("send_services_update_reminders", stdout=StringIO())
+        call_command("send_services_reminders", stdout=StringIO())
 
     ########
     # Drafts

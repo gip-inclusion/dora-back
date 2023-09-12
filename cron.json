@@ -1,8 +1,15 @@
 {
   "jobs": [
-    { "command": "17 07-18 * * * tools/export-db-metabase.sh", "size": "S" },
     {
-      "command": "0 7 1-7 * * [ $(date +%u) = 2 ] && tools/send-reminders-emails.sh",
+      "command": "17 07-18 * * * tools/export-db-metabase.sh",
+      "size": "S"
+    },
+    {
+      "command": "15 7 1-7 * * [ $(date +%u) = 2 ] && tools/send-services-reminders-emails.sh",
+      "size": "S"
+    },
+    {
+      "command": "8 7 * * * tools/send-orientations-reminders-emails.sh",
       "size": "S"
     }
   ]
