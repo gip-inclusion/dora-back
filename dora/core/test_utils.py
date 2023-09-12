@@ -84,3 +84,14 @@ def make_model(**kwargs):
     model.sync_checksum = update_sync_checksum(model)
     model.save()
     return model
+
+
+def make_orientation(**kwargs):
+    prescriber_structure = make_structure()
+    prescriber = make_user(structure=prescriber_structure)
+    orientation = baker.make(
+        "Orientation",
+        prescriber=prescriber,
+        service=make_service(_fill_optional=["contact_email"]),
+    )
+    return orientation

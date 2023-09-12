@@ -1,6 +1,6 @@
 {% load orientation_extras %}
 
-<h2>Contact du ou de la responsable du service {{ data.service.name }}</h2>
+<h2>Contact du ou de la responsable du service « {{ data.service.name }} »</h2>
 
 <ul>
     {% if  data.service.contact_name %}
@@ -11,6 +11,8 @@
         {% if  data.service.contact_phone %}{{ data.service.contact_phone|format_phone }}{% endif %}
     </li>
 </ul>
-<p>
-    Si vous souhaitez contacter la structure, répondez directement à ce mail.
-</p>
+{% if not no_reply_msg %}
+    <p>
+        Si vous souhaitez contacter la structure, répondez directement à ce mail.
+    </p>
+{% endif %}
