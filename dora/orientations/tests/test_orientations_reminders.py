@@ -18,10 +18,6 @@ class OrientationsNotificationsTestCase(APITestCase):
     def call_command(self):
         call_command("send_orientations_reminders", stdout=StringIO())
 
-    ########
-    # Drafts
-    ########
-
     def test_old_orientations_notified(self):
         with freeze_time(timezone.now() - timedelta(days=11)):
             make_orientation()
