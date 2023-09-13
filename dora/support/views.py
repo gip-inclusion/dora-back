@@ -1,5 +1,7 @@
 from rest_framework import mixins, permissions, serializers, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.response import Response
 
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
@@ -7,7 +9,8 @@ from dora.core.pagination import OptionalPageNumberPagination
 from dora.core.utils import TRUTHY_VALUES
 from dora.services.enums import ServiceStatus
 from dora.services.models import Service
-from dora.structures.models import Structure
+from dora.structures.emails import send_invitation_email
+from dora.structures.models import Structure, StructurePutativeMember
 from dora.support.serializers import (
     ServiceAdminListSerializer,
     ServiceAdminSerializer,
@@ -19,7 +22,7 @@ from dora.support.serializers import (
 class StructureAdminPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
-        if request.method in [*permissions.SAFE_METHODS, "PATCH"]:
+        if request.method in [*permissions.SAFE_METHODS, "PATCH", "POST"]:
             return (
                 user
                 and user.is_authenticated
@@ -90,6 +93,38 @@ class StructureAdminViewSet(
         if self.action == "list":
             return StructureAdminListSerializer
         return super().get_serializer_class()
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="resend-all-invite",
+        permission_classes=[StructureAdminPermission],
+    )
+    # TODO: test permissions
+    def resend_all_admin_invites(self, request):
+        orphan_structures = Structure.objects.filter(
+            department=request.user.department
+        ).exclude(
+            membership__is_admin=True,
+            membership__user__is_valid=True,
+            membership__user__is_active=True,
+        )
+        invited_admins = StructurePutativeMember.objects.filter(
+            structure__in=orphan_structures, is_admin=True, invited_by_admin=True
+        )
+        actually_invited = []
+        too_fresh = []
+        for invited_admin in invited_admins:
+            if send_invitation_email(
+                invited_admin,
+                request.user.get_full_name(),
+            ):
+                actually_invited.append(invited_admin.user.email)
+            else:
+                too_fresh.append((invited_admin.user.email))
+        return Response(
+            {"invited_users": actually_invited, "not_reinvited_users": too_fresh}
+        )
 
 
 class ServiceAdminViewSet(

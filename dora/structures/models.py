@@ -58,8 +58,8 @@ class StructurePutativeMember(models.Model):
     )
     is_admin = models.BooleanField(default=False)
     creation_date = models.DateTimeField(auto_now_add=True)
-
     invited_by_admin = models.BooleanField(default=False)
+    last_invitation_email_sent = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         verbose_name = "Membre Potentiel"

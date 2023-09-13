@@ -318,6 +318,10 @@ EMAIL_DOMAIN = os.environ["EMAIL_DOMAIN"]
 FRONTEND_URL = os.environ["FRONTEND_URL"]
 SUPPORT_EMAIL = os.environ["SUPPORT_EMAIL"]
 
+########################
+# ORIENTATION SETTINGS #
+########################
+
 ORIENTATION_SUPPORT_LINK = os.environ["ORIENTATION_SUPPORT_LINK"]
 ORIENTATION_EMAILS_DEBUG = os.environ.get("ORIENTATION_EMAILS_DEBUG") == "true"
 ORIENTATION_SIRENE_BLACKLIST = [
@@ -463,6 +467,7 @@ DATA_INCLUSION_EMAIL = "data.inclusion@beta.gouv.fr"
 ################
 # SECURITY     #
 ################
+
 if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
@@ -490,6 +495,7 @@ CSP_EXCLUDE_URL_PREFIXES = tuple(
 ###################
 # DRF-SPECTACULAR #
 ###################
+
 SPECTACULAR_SETTINGS = {
     "TITLE": "API référentiel de l’offre d’insertion",
     "DESCRIPTION": "",
@@ -505,6 +511,7 @@ SPECTACULAR_SETTINGS = {
 ########
 # SILK #
 ########
+
 if DEBUG and PROFILE:
     SILKY_PYTHON_PROFILER = True
     INSTALLED_APPS.append("silk")
@@ -513,6 +520,7 @@ if DEBUG and PROFILE:
 ###############
 # Query Count #
 ###############
+
 if DEBUG and PROFILE:
     MIDDLEWARE = ["querycount.middleware.QueryCountMiddleware"] + MIDDLEWARE
     QUERYCOUNT = {
@@ -542,6 +550,7 @@ SIB_ONBOARDING_LIST = os.environ["SIB_ONBOARDING_LIST"]
 
 NUM_DAYS_BEFORE_DRAFT_SERVICE_NOTIFICATION = 7
 NUM_DAYS_BEFORE_ORIENTATIONS_NOTIFICATION = 10
+MIN_DAYS_BEETWEEN_INVITES = 7
 
 ######################
 # SERVICES FRESHNESS #
