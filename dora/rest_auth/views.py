@@ -1,6 +1,5 @@
 import logging
 
-from django.conf import settings
 from django.db import transaction
 from django.http.response import Http404
 from django.utils import timezone
@@ -10,7 +9,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from dora.core.models import ModerationStatus
-from dora.core.notify import send_mattermost_notification, send_moderation_notification
+from dora.core.notify import send_moderation_notification
 from dora.rest_auth.authentication import TokenAuthentication
 from dora.structures.models import (
     Structure,
@@ -66,10 +65,6 @@ def _create_structure(establishment, user):
             "Structure créée lors d'une inscription",
             ModerationStatus.VALIDATED,
         )
-        send_mattermost_notification(
-            f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{structure.get_absolute_url()}"
-        )
-
     return structure
 
 
@@ -104,9 +99,6 @@ def _add_user_to_adminless_structure(structure, user):
         user,
         "Premier administrateur ajouté (par lui-même)",
         ModerationStatus.NEED_INITIAL_MODERATION,
-    )
-    send_mattermost_notification(
-        f":adult: Premier administrateur “{user.get_full_name()}” enregistré dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
     )
 
 
