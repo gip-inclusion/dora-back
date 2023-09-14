@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/psf/black
-    rev: 23.1.0
+    rev: 23.9.1
     hooks:
       - id: black
 
@@ -10,13 +10,13 @@ repos:
       - id: isort
 
   - repo: https://github.com/pycqa/flake8
-    rev: 5.0.4
+    rev: 6.1.0
     hooks:
       - id: flake8
 
   - repo: https://github.com/gitguardian/ggshield
-    rev: v1.13.6
+    rev: v1.18.1
     hooks:
       - id: ggshield
         language_version: python3
-        stages: [commit]
+        stages: [ commit ]
