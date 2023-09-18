@@ -700,15 +700,41 @@ def _sort_services(services):
         service["sortable_date"] = (
             make_aware(mod_date) if is_naive(mod_date) else mod_date
         )
-    services_on_site = [s for s in services if "en-presentiel" in s["location_kinds"]]
-    services_remote = [
-        s for s in services if "en-presentiel" not in s["location_kinds"]
-    ]
-
-    results = multisort(
-        services_on_site,
+    on_site_services = multisort(
+        [s for s in services if "en-presentiel" in s["location_kinds"]],
         (("distance", False), ("zone_priority", False), ("sortable_date", True)),
-    ) + multisort(services_remote, (("zone_priority", False), ("sortable_date", True)))
+    )
+
+    remote_services = multisort(
+        [s for s in services if "en-presentiel" not in s["location_kinds"]],
+        (("zone_priority", False), ("sortable_date", True)),
+    )
+
+    def get_next_on_site_service():
+        for service in on_site_services:
+            yield service
+
+    def get_next_remote_services():
+        for service in remote_services:
+            yield service
+
+    results = []
+    no_more_on_site_services = False
+    no_more_remote_services = False
+    l1 = get_next_on_site_service()
+    l2 = get_next_remote_services()
+    while not no_more_on_site_services or not no_more_remote_services:
+        try:
+            results.append(next(l1))
+            results.append(next(l1))
+            results.append(next(l1))
+        except StopIteration:
+            no_more_on_site_services = True
+        try:
+            results.append(next(l2))
+        except StopIteration:
+            no_more_remote_services = True
+
     for result in results:
         del result["sortable_date"]
     return results
