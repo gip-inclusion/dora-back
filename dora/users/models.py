@@ -88,7 +88,7 @@ class User(AbstractBaseUser):
         blank=True,
     )
     date_joined = models.DateTimeField("date joined", default=timezone.now)
-    last_notification_email_sent = models.DateTimeField(blank=True, null=True)
+    last_service_reminder_email_sent = models.DateTimeField(blank=True, null=True)
     newsletter = models.BooleanField(default=False, db_index=True)
 
     bookmarks = models.ManyToManyField("services.Service", through="services.Bookmark")

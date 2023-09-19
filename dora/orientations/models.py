@@ -139,6 +139,7 @@ class Orientation(models.Model):
         choices=OrientationStatus.choices,
         default=OrientationStatus.PENDING,
     )
+    last_reminder_email_sent = models.DateTimeField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
         if not self.id:

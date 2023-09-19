@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.db import transaction
 from django.db.models.query_utils import Q
 from django.shortcuts import get_object_or_404
@@ -8,7 +7,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from dora.core.models import ModerationStatus
-from dora.core.notify import send_mattermost_notification, send_moderation_notification
+from dora.core.notify import send_moderation_notification
 from dora.core.pagination import OptionalPageNumberPagination
 from dora.services.enums import ServiceStatus
 from dora.structures.emails import send_invitation_email
@@ -118,9 +117,6 @@ class StructureViewSet(
             is_admin=True,
         )
 
-        send_mattermost_notification(
-            f":office: Nouvelle structure “{structure.name}” créée dans le departement : **{structure.department}**\n{settings.FRONTEND_URL}/structures/{structure.slug}"
-        )
         send_moderation_notification(
             structure,
             self.request.user,

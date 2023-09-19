@@ -154,7 +154,8 @@ CREATE TABLE mb_user AS
   users_user.department,
   users_user.date_joined,
   users_user.last_login,
-  users_user.last_notification_email_sent,
+  users_user.last_service_reminder_email_sent,
+  (SELECT services_service.last_service_reminder_email_sent) AS last_notification_email_sent,
   users_user.newsletter,
   users_user.main_activity,
   -- TODO: deprecated

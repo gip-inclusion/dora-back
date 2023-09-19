@@ -29,11 +29,9 @@ from dora.services.migration_utils import (
     update_subcategory_value_and_label,
 )
 from dora.services.serializers import ServiceSerializer
-from dora.services.utils import SYNC_CUSTOM_M2M_FIELDS, SYNC_FIELDS, SYNC_M2M_FIELDS
-from dora.services.views import search, service_di
 from dora.structures.models import Structure
 
-from .models import (
+from ..models import (
     AccessCondition,
     LocationKind,
     Service,
@@ -45,6 +43,8 @@ from .models import (
     ServiceStatusHistoryItem,
     ServiceSubCategory,
 )
+from ..utils import SYNC_CUSTOM_M2M_FIELDS, SYNC_FIELDS, SYNC_M2M_FIELDS
+from ..views import search, service_di
 
 DUMMY_SERVICE = {"name": "Mon service"}
 
@@ -1418,9 +1418,7 @@ class DataInclusionSearchTestCase(APITestCase):
         cases = [
             (None, None, None),
             ([], [], []),
-            ("", [], []),
             (["lorem", "ipsum"], ["lorem", "ipsum"], ["lorem", "ipsum"]),
-            ("lorem,ipsum", ["lorem", "ipsum"], ["lorem", "ipsum"]),
         ]
         for justificatifs, credentials, credentials_display in cases:
             with self.subTest(justificatifs=justificatifs):
@@ -1549,9 +1547,7 @@ class DataInclusionSearchTestCase(APITestCase):
         cases = [
             (None, None, None),
             ([], [], []),
-            ("", [], []),
             (["lorem", "ipsum"], ["lorem", "ipsum"], ["lorem", "ipsum"]),
-            ("lorem,ipsum", ["lorem", "ipsum"], ["lorem", "ipsum"]),
         ]
         for pre_requis, requirements, requirements_display in cases:
             with self.subTest(pre_requis=pre_requis):

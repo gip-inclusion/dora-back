@@ -12,4 +12,4 @@ exit 0;
 #fi
 #
 #echo "Envoi des courriels de relance"
-#python /app/manage.py send_services_update_reminders
+#python /app/manage.py send_services_reminders

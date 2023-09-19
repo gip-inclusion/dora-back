@@ -536,11 +536,12 @@ SIB_API_KEY = os.environ["SIB_API_KEY"]
 SIB_ONBOARDING_LIST = os.environ["SIB_ONBOARDING_LIST"]
 
 
-########################
-# DRAFTS NOTIFICATIONS #
-########################
+#################
+# NOTIFICATIONS #
+#################
 
 NUM_DAYS_BEFORE_DRAFT_SERVICE_NOTIFICATION = 7
+NUM_DAYS_BEFORE_ORIENTATIONS_NOTIFICATION = 10
 
 ######################
 # SERVICES FRESHNESS #
