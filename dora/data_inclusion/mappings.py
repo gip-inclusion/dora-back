@@ -42,7 +42,9 @@ def map_search_result(result: dict) -> dict:
         #
         # SearchResultSerializer
         #
-        "distance": result["distance"] or 0,  # en km
+        "distance": result["distance"]
+        if result["distance"] is not None
+        else None,  # en km
         "location": location_str,
         #
         # ServiceListSerializer
