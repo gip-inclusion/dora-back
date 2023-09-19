@@ -60,6 +60,8 @@ from .serializers import (
 )
 from .utils import update_sync_checksum
 
+MAX_DISTANCE = 100
+
 
 class ServicePermission(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -657,10 +659,7 @@ class SearchResultSerializer(ServiceListSerializer):
     def get_location(self, obj):
         if obj.location_kinds.filter(value="en-presentiel").exists():
             return f"{obj.postal_code} {obj.city}"
-        elif obj.location_kinds.filter(value="a-distance").exists():
-            return "À distance"
-        else:
-            return ""
+        return ""
 
 
 def _filter_and_annotate_dora_services(services, location):
@@ -668,11 +667,17 @@ def _filter_and_annotate_dora_services(services, location):
     services_on_site = (
         services.filter(location_kinds__value="en-presentiel")
         .annotate(distance=Distance("geom", location))
-        .filter(distance__lte=D(km=100))
+        .filter(distance__lte=D(km=MAX_DISTANCE))
     )
     # 2) services sans lieu de déroulement
-    services_remote = services.exclude(location_kinds__value="en-presentiel").annotate(
-        distance=Value(None, output_field=IntegerField())
+    services_remote = (
+        services.filter(
+            Q(location_kinds__value="a-distance")
+            | ~Q(location_kinds__value="en-presentiel")
+        )
+        .exclude(id__in=services_on_site)
+        .distinct()
+        .annotate(distance=Value(None, output_field=IntegerField()))
     )
     return list(services_on_site) + list(services_remote)
 
@@ -691,49 +696,52 @@ def _sort_services(services):
         AdminDivisionType.DEPARTMENT: 3,
         AdminDivisionType.REGION: 4,
     }
-    for service in services:
-        service["zone_priority"] = diffusion_zone_priority.get(
-            service["diffusion_zone_type"], 5
-        )
-        mod_date = datetime.fromisoformat(service["modification_date"])
 
-        service["sortable_date"] = (
-            make_aware(mod_date) if is_naive(mod_date) else mod_date
+    on_site_services = []
+    remote_services = []
+
+    for s in services:
+        s["zone_priority"] = diffusion_zone_priority.get(s["diffusion_zone_type"], 5)
+        mod_date = datetime.fromisoformat(s["modification_date"])
+        s["sortable_date"] = make_aware(mod_date) if is_naive(mod_date) else mod_date
+        if (
+            "en-presentiel" in s["location_kinds"]
+            and s["distance"] is not None
+            and s["distance"] <= MAX_DISTANCE
+        ):
+            on_site_services.append(s)
+        else:
+            remote_services.append(s)
+
+    on_site_services = iter(
+        multisort(
+            on_site_services,
+            (("distance", False), ("zone_priority", False), ("sortable_date", True)),
         )
-    on_site_services = multisort(
-        [s for s in services if "en-presentiel" in s["location_kinds"]],
-        (("distance", False), ("zone_priority", False), ("sortable_date", True)),
     )
 
-    remote_services = multisort(
-        [s for s in services if "en-presentiel" not in s["location_kinds"]],
-        (("zone_priority", False), ("sortable_date", True)),
+    remote_services = iter(
+        multisort(
+            remote_services,
+            (("zone_priority", False), ("sortable_date", True)),
+        )
     )
-
-    def get_next_on_site_service():
-        for service in on_site_services:
-            yield service
-
-    def get_next_remote_services():
-        for service in remote_services:
-            yield service
 
     results = []
-    no_more_on_site_services = False
-    no_more_remote_services = False
-    l1 = get_next_on_site_service()
-    l2 = get_next_remote_services()
-    while not no_more_on_site_services or not no_more_remote_services:
+    no_more_on_site = False
+    no_more_remote = False
+
+    while not no_more_on_site or not no_more_remote:
         try:
-            results.append(next(l1))
-            results.append(next(l1))
-            results.append(next(l1))
+            results.append(next(on_site_services))
+            results.append(next(on_site_services))
+            results.append(next(on_site_services))
         except StopIteration:
-            no_more_on_site_services = True
+            no_more_on_site = True
         try:
-            results.append(next(l2))
+            results.append(next(remote_services))
         except StopIteration:
-            no_more_remote_services = True
+            no_more_remote = True
 
     for result in results:
         del result["sortable_date"]

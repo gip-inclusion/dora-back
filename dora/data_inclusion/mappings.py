@@ -37,8 +37,6 @@ def map_search_result(result: dict) -> dict:
     if service_data["modes_accueil"]:
         if "en-presentiel" in service_data["modes_accueil"]:
             location_str = f"{service_data['code_postal']} {service_data['commune']}"
-        elif "a-distance" in service_data["modes_accueil"]:
-            location_str = "À distance"
 
     return {
         #

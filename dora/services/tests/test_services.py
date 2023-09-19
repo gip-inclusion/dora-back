@@ -2419,6 +2419,85 @@ class ServiceSearchOrderingTestCase(APITestCase):
         response = self.client.get("/search/?city=31555")
         self.assertEqual(len(response.data), 1)
 
+    def test_displayed_if_remote_and_onsite_more_than_100km(self):
+        self.assertEqual(Service.objects.all().count(), 0)
+        service = make_service(
+            slug="s1",
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            geom=self.rocamadour_center,
+        )
+        service.location_kinds.set(
+            [
+                LocationKind.objects.get(value="en-presentiel"),
+                LocationKind.objects.get(value="a-distance"),
+            ]
+        )
+
+        response = self.client.get("/search/?city=31555")
+        self.assertEqual(len(response.data), 1)
+
+    def test_displayed_only_once_if_remote_and_onsite_less_than_100km(self):
+        self.assertEqual(Service.objects.all().count(), 0)
+        service = make_service(
+            slug="s1",
+            status=ServiceStatus.PUBLISHED,
+            diffusion_zone_type=AdminDivisionType.COUNTRY,
+            geom=self.point_in_toulouse,
+        )
+        service.location_kinds.set(
+            [
+                LocationKind.objects.get(value="en-presentiel"),
+                LocationKind.objects.get(value="a-distance"),
+            ]
+        )
+
+        response = self.client.get("/search/?city=31555")
+        self.assertEqual(len(response.data), 1)
+
+    def test_intercalate_remote(self):
+        self.assertEqual(Service.objects.all().count(), 0)
+        template = {
+            "status": ServiceStatus.PUBLISHED,
+            "diffusion_zone_type": AdminDivisionType.DEPARTMENT,
+            "diffusion_zone_details": "31",
+            "geom": self.toulouse_center,
+        }
+        service1 = make_service(
+            slug="s1", **template, modification_date=timezone.now() - timedelta(days=1)
+        )
+        service1.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
+        service2 = make_service(
+            slug="s2", **template, modification_date=timezone.now() - timedelta(days=2)
+        )
+        service2.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
+        service3 = make_service(
+            slug="s3", **template, modification_date=timezone.now() - timedelta(days=3)
+        )
+        service3.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
+        service4 = make_service(
+            slug="s4", **template, modification_date=timezone.now() - timedelta(days=4)
+        )
+        service4.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
+        service5 = make_service(
+            slug="s5", **template, modification_date=timezone.now() - timedelta(days=5)
+        )
+        service5.location_kinds.set([LocationKind.objects.get(value="a-distance")])
+        service6 = make_service(
+            slug="s6", **template, modification_date=timezone.now() - timedelta(days=6)
+        )
+        service6.location_kinds.set([LocationKind.objects.get(value="a-distance")])
+
+        response = self.client.get("/search/?city=31555")
+        # on s'attend à ce que les services soient classés par date de modification décroissante
+        # avec un service à distance sur 3 intercalé
+        self.assertEqual(response.data[0]["slug"], service1.slug)
+        self.assertEqual(response.data[1]["slug"], service2.slug)
+        self.assertEqual(response.data[2]["slug"], service3.slug)
+        self.assertEqual(response.data[3]["slug"], service5.slug)
+        self.assertEqual(response.data[4]["slug"], service4.slug)
+        self.assertEqual(response.data[5]["slug"], service6.slug)
+
 
 class ServiceModelTestCase(APITestCase):
     def test_everybody_can_see_models(self):
