@@ -34,11 +34,9 @@ from dora.services.migration_utils import (
     update_subcategory_value_and_label,
 )
 from dora.services.serializers import ServiceSerializer
-from dora.services.utils import SYNC_CUSTOM_M2M_FIELDS, SYNC_FIELDS, SYNC_M2M_FIELDS
-from dora.services.views import search, service_di
 from dora.structures.models import Structure
 
-from .models import (
+from ..models import (
     AccessCondition,
     LocationKind,
     SavedSearch,
@@ -52,6 +50,8 @@ from .models import (
     ServiceStatusHistoryItem,
     ServiceSubCategory,
 )
+from ..utils import SYNC_CUSTOM_M2M_FIELDS, SYNC_FIELDS, SYNC_M2M_FIELDS
+from ..views import search, service_di
 
 DUMMY_SERVICE = {"name": "Mon service"}
 
@@ -1050,22 +1050,12 @@ class DataInclusionSearchTestCase(APITestCase):
     def get_di_id(service_data: dict) -> str:
         return service_data["source"] + "--" + service_data["id"]
 
-    def test_dont_find_services_if_di_flag_not_set(self):
-        self.make_di_service(
-            zone_diffusion_type="commune",
-            zone_diffusion_code=self.city1.code,
-        )
-        request = self.factory.get("/search/", {"city": self.city1.code})
-        response = self.search(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
-
     def test_find_services_in_city(self):
         service_data = self.make_di_service(
             zone_diffusion_type="commune",
             zone_diffusion_code=self.city1.code,
         )
-        request = self.factory.get("/search/", {"di": True, "city": self.city1.code})
+        request = self.factory.get("/search/", {"city": self.city1.code})
         response = self.search(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
@@ -1076,7 +1066,7 @@ class DataInclusionSearchTestCase(APITestCase):
             zone_diffusion_type="commune",
             zone_diffusion_code=self.city1.code,
         )
-        request = self.factory.get("/search/", {"di": True, "city": self.city2.code})
+        request = self.factory.get("/search/", {"city": self.city2.code})
         response = self.search(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
@@ -1145,7 +1135,7 @@ class DataInclusionSearchTestCase(APITestCase):
 
     def test_simple_search_with_data_inclusion(self):
         service_data = self.make_di_service(code_insee=self.city1.code)
-        request = self.factory.get("/search/", {"di": True, "city": self.city1.code})
+        request = self.factory.get("/search/", {"city": self.city1.code})
         response = self.search(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
@@ -1159,7 +1149,7 @@ class DataInclusionSearchTestCase(APITestCase):
             diffusion_zone_details=self.city1.code,
         )
         service_data = self.make_di_service(code_insee=self.city1.code)
-        request = self.factory.get("/search/", {"di": True, "city": self.city1.code})
+        request = self.factory.get("/search/", {"city": self.city1.code})
         response = self.search(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
@@ -1178,7 +1168,7 @@ class DataInclusionSearchTestCase(APITestCase):
                 raise requests.ConnectionError()
 
         di_client = FaultyDataInclusionClient()
-        request = self.factory.get("/search/", {"di": True, "city": self.city1.code})
+        request = self.factory.get("/search/", {"city": self.city1.code})
         response = search(request, di_client=di_client)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
@@ -1194,7 +1184,7 @@ class DataInclusionSearchTestCase(APITestCase):
         self.make_di_service(
             zone_diffusion_type="pays", modes_accueil=["en-presentiel"]
         )
-        request = self.factory.get("/search/", {"di": True, "city": "12345"})
+        request = self.factory.get("/search/", {"city": "12345"})
         response = self.search(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 3)
@@ -1238,7 +1228,7 @@ class DataInclusionSearchTestCase(APITestCase):
         service_data_4 = self.make_di_service(
             zone_diffusion_type="pays", modes_accueil=["en-presentiel"]
         )
-        request = self.factory.get("/search/", {"di": True, "city": toulouse.code})
+        request = self.factory.get("/search/", {"city": toulouse.code})
         response = self.search(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 4)
@@ -1251,7 +1241,7 @@ class DataInclusionSearchTestCase(APITestCase):
     def test_search_target_sources(self):
         service_data = self.make_di_service(source="foo", zone_diffusion_type="pays")
         self.make_di_service(source="bar", zone_diffusion_type="pays")
-        request = self.factory.get("/search/", {"di": True, "city": self.city1.code})
+        request = self.factory.get("/search/", {"city": self.city1.code})
         response = self.search(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
@@ -1434,8 +1424,8 @@ class DataInclusionSearchTestCase(APITestCase):
     def test_service_di_credentials(self):
         cases = [
             (None, None, None),
-            ("", [], []),
-            ("lorem,ipsum", ["lorem", "ipsum"], ["lorem", "ipsum"]),
+            ([], [], []),
+            (["lorem", "ipsum"], ["lorem", "ipsum"], ["lorem", "ipsum"]),
         ]
         for justificatifs, credentials, credentials_display in cases:
             with self.subTest(justificatifs=justificatifs):
@@ -1563,8 +1553,8 @@ class DataInclusionSearchTestCase(APITestCase):
     def test_service_di_requirements(self):
         cases = [
             (None, None, None),
-            ("", [], []),
-            ("lorem,ipsum", ["lorem", "ipsum"], ["lorem", "ipsum"]),
+            ([], [], []),
+            (["lorem", "ipsum"], ["lorem", "ipsum"], ["lorem", "ipsum"]),
         ]
         for pre_requis, requirements, requirements_display in cases:
             with self.subTest(pre_requis=pre_requis):

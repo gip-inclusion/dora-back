@@ -2,7 +2,6 @@ from datetime import date, datetime
 from operator import itemgetter
 from typing import Optional
 
-import humanize
 import requests
 from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
@@ -21,7 +20,7 @@ from dora import data_inclusion
 from dora.admin_express.models import City
 from dora.admin_express.utils import arrdt_to_main_insee_code
 from dora.core.models import ModerationStatus
-from dora.core.notify import send_mattermost_notification, send_moderation_notification
+from dora.core.notify import send_moderation_notification
 from dora.core.pagination import OptionalPageNumberPagination
 from dora.core.utils import TRUTHY_VALUES
 from dora.services.emails import send_service_feedback_email
@@ -112,7 +111,6 @@ class ServiceViewSet(
     lookup_field = "slug"
 
     def get_queryset(self):
-        qs = None
         user = self.request.user
         structure_slug = self.request.query_params.get("structure")
         published_only = self.request.query_params.get("published") in TRUTHY_VALUES
@@ -135,7 +133,6 @@ class ServiceViewSet(
                 "location_kinds",
             )
         )
-        qs = None
 
         # Everybody can see published services
         if not user or not user.is_authenticated:
@@ -224,48 +221,16 @@ class ServiceViewSet(
             modification_date=timezone.now(),
         )
 
-        if service.status == ServiceStatus.DRAFT:
-            self._send_draft_service_created_notification(service)
-        elif service.status == ServiceStatus.PUBLISHED:
-            self._send_service_published_notification(service, self.request.user)
+        if service.status == ServiceStatus.PUBLISHED:
+            send_moderation_notification(
+                service,
+                self.request.user,
+                "Service publié",
+                ModerationStatus.NEED_INITIAL_MODERATION,
+            )
         if service.model:
             service.last_sync_checksum = service.model.sync_checksum
             service.save()
-
-    def _send_draft_service_created_notification(self, service):
-        structure = service.structure
-        user = self.request.user
-        send_mattermost_notification(
-            f":tada: Nouveau brouillon “{service.name}” créé dans la structure : **{structure.name} ({structure.department})** par {user.get_full_name()}\n{settings.FRONTEND_URL}/services/{service.slug}"
-        )
-
-    def _send_service_published_notification(self, service, user):
-        structure = service.structure
-        time_elapsed = (
-            service.publication_date - service.creation_date
-            if service.publication_date > service.creation_date
-            else 0
-        )
-        humanize.i18n.activate("fr_FR")
-        time_elapsed_h = humanize.naturaldelta(time_elapsed, months=True)
-        user = self.request.user
-        send_mattermost_notification(
-            f":100: Service “{service.name}” publié dans la structure : **{structure.name} ({structure.department})** par {user.get_full_name()}, {time_elapsed_h} après sa création\n{service.get_absolute_url()}"
-        )
-        send_moderation_notification(
-            service,
-            user,
-            "Service publié",
-            ModerationStatus.NEED_INITIAL_MODERATION,
-        )
-
-    def _send_service_modified_notification(self, service, user, changed_fields):
-        send_moderation_notification(
-            service,
-            user,
-            f"Service modifié ({' / '.join(changed_fields)})",
-            ModerationStatus.NEED_NEW_MODERATION,
-        )
 
     def _log_history(self, serializer, new_status=""):
         changed_fields = []
@@ -334,10 +299,18 @@ class ServiceViewSet(
             and service.status == ServiceStatus.PUBLISHED
         )
         if newly_published:
-            self._send_service_published_notification(service, self.request.user)
+            send_moderation_notification(
+                service,
+                self.request.user,
+                "Service publié",
+                ModerationStatus.NEED_INITIAL_MODERATION,
+            )
         elif changed_fields and service.status == ServiceStatus.PUBLISHED:
-            self._send_service_modified_notification(
-                service, self.request.user, changed_fields
+            send_moderation_notification(
+                service,
+                self.request.user,
+                f"Service modifié ({' / '.join(changed_fields)})",
+                ModerationStatus.NEED_NEW_MODERATION,
             )
 
     @action(
@@ -500,8 +473,6 @@ class ModelViewSet(ServiceViewSet):
         return ServiceModelSerializer
 
     def get_queryset(self):
-        qs = None
-
         structure_slug = self.request.query_params.get("structure")
 
         all_models = (
@@ -522,8 +493,6 @@ class ModelViewSet(ServiceViewSet):
                 "location_kinds",
             )
         )
-        qs = None
-
         # Everybody can see models
 
         qs = all_models
@@ -569,10 +538,6 @@ class ModelViewSet(ServiceViewSet):
             modification_date=timezone.now(),
         )
         assert model.structure == structure
-        send_mattermost_notification(
-            f":clipboard: Nouveau modèle “{model.name}” créé dans la structure : **{structure.name} ({structure.department})**\n{settings.FRONTEND_URL}/modeles/{model.slug}"
-        )
-        # TODO "à partir du service………"
 
         # Doit être fait après la première sauvegarde pour prendre en compte
         # les champs M2M
@@ -915,6 +880,11 @@ def _get_di_results(
         thematiques += categories
     if subcategories is not None:
         thematiques += [subcat for subcat in subcategories if "--autre" not in subcat]
+
+    # Si on recherche uniquement des sous-catégories `autre`, la liste des thématiques va être vide et d·i renverrait
+    # *tous* les services. On renvoie donc plutôt une liste vide.
+    if not thematiques and subcategories:
+        return []
 
     try:
         raw_di_results = di_client.search_services(

@@ -5,14 +5,16 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from dora.core.emails import send_services_check_email
+from dora.services.emails import send_service_reminder_email
 from dora.services.models import Service, ServiceStatus
 from dora.structures.models import StructureMember
 from dora.users.models import User
 
 
 class Command(BaseCommand):
-    help = "Notifications pour les brouillons en souffrance"
+    help = (
+        "Notifications pour les brouillons en souffrance ou les services à actualiser"
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -67,13 +69,13 @@ class Command(BaseCommand):
             mails_count += 1
 
             if not dry_run:
-                send_services_check_email(
+                send_service_reminder_email(
                     user.email,
                     user.get_short_name(),
                     structures["to_update"],
                     structures["draft"],
                 )
-                user.last_notification_email_sent = timezone.now()
+                user.last_service_reminder_email_sent = timezone.now()
                 user.save()
 
         self.stdout.write(
@@ -113,8 +115,8 @@ def store_users_to_notify(services, users_to_notify, category):
 
         for user in pertinent_users:
             if service.structure.is_member(user) and (
-                not user.last_notification_email_sent
-                or user.last_notification_email_sent
+                not user.last_service_reminder_email_sent
+                or user.last_service_reminder_email_sent
                 < timezone.now() - timedelta(days=25)
             ):
                 users_to_notify[user][category].add(service.structure)
