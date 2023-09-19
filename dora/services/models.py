@@ -603,3 +603,4 @@ class SavedSearch(models.Model):
         verbose_name="Fréquence de l'alerte",
         on_delete=models.PROTECT,
     )
+    last_notification_date = models.DateField(default=datetime.now)

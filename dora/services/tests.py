@@ -1,8 +1,10 @@
 from datetime import timedelta
+from io import StringIO
 
 import requests
 from django.contrib.gis.geos import MultiPolygon, Point
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.test import override_settings
 from django.utils import timezone
 from model_bakery import baker
@@ -12,6 +14,9 @@ from dora.admin_express.models import AdminDivisionType
 from dora.core.test_utils import make_model, make_service, make_structure
 from dora.data_inclusion.test_utils import FakeDataInclusionClient, make_di_service_data
 from dora.services.enums import ServiceStatus
+from dora.services.management.commands.send_saved_alerts_notifications import (
+    get_alerts_to_send,
+)
 from dora.services.migration_utils import (
     add_categories_and_subcategories_if_subcategory,
     create_category,
@@ -4051,3 +4056,122 @@ class ServiceSavedSearchTestCase(APITestCase):
             SavedSearchFrequency.objects.get(id=saved_search.frequency_id).value,
             "never",
         )
+
+
+class ServiceSavedSearchNotificationTestCase(APITestCase):
+    def call_command(self):
+        call_command("send_saved_alerts_notifications", stdout=StringIO())
+
+    def test_get_monthly_alerts(self):
+        # ÉTANT DONNÉ un utilisateur avec deux alertes mensuelles
+        # une envoyé à J-15 et une à J-40
+        user = baker.make("users.User", is_valid=True)
+
+        baker.make(
+            "services.SavedSearch",
+            user=user,
+            frequency=SavedSearchFrequency.objects.filter(value="monthly").first(),
+            city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
+            city_code=SAVE_SEARCH_ARGS.get("cityCode"),
+            last_notification_date=timezone.now() - timedelta(days=15),
+        )
+        saved_search_2 = baker.make(
+            "services.SavedSearch",
+            user=user,
+            frequency=SavedSearchFrequency.objects.filter(value="monthly").first(),
+            city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
+            city_code=SAVE_SEARCH_ARGS.get("cityCode"),
+            last_notification_date=timezone.now() - timedelta(days=40),
+        )
+
+        # QUAND je récupère les alertes mensuelles à envoyer
+        alerts = get_alerts_to_send()
+
+        # ALORS je récupère la seconde alerte à envoyer à J-40
+        self.assertEqual(len(alerts), 1)
+        self.assertEqual(alerts[0].id, saved_search_2.id)
+
+    def test_get_two_weeks_alerts(self):
+        # ÉTANT DONNÉ un utilisateur avec deux alertes toutes les deux semaines
+        # une envoyé à J-10 et une à J-20
+        user = baker.make("users.User", is_valid=True)
+
+        baker.make(
+            "services.SavedSearch",
+            user=user,
+            frequency=SavedSearchFrequency.objects.filter(value="two-weeks").first(),
+            city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
+            city_code=SAVE_SEARCH_ARGS.get("cityCode"),
+            last_notification_date=timezone.now() - timedelta(days=10),
+        )
+        saved_search_2 = baker.make(
+            "services.SavedSearch",
+            user=user,
+            frequency=SavedSearchFrequency.objects.filter(value="two-weeks").first(),
+            city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
+            city_code=SAVE_SEARCH_ARGS.get("cityCode"),
+            last_notification_date=timezone.now() - timedelta(days=20),
+        )
+
+        # QUAND je récupère les alertes mensuelles à envoyer
+        alerts = get_alerts_to_send()
+
+        # ALORS je récupère la seconde alerte à envoyer à J-20
+        self.assertEqual(len(alerts), 1)
+        self.assertEqual(alerts[0].id, saved_search_2.id)
+
+    def test_get_two_weeks_no_alerts(self):
+        # ÉTANT DONNÉ un utilisateur avec deux alertes mensuelles
+        # une envoyé à J-5 et une à J-10
+        user = baker.make("users.User", is_valid=True)
+
+        baker.make(
+            "services.SavedSearch",
+            user=user,
+            frequency=SavedSearchFrequency.objects.filter(value="two-weeks").first(),
+            city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
+            city_code=SAVE_SEARCH_ARGS.get("cityCode"),
+            last_notification_date=timezone.now() - timedelta(days=5),
+        )
+        baker.make(
+            "services.SavedSearch",
+            user=user,
+            frequency=SavedSearchFrequency.objects.filter(value="two-weeks").first(),
+            city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
+            city_code=SAVE_SEARCH_ARGS.get("cityCode"),
+            last_notification_date=timezone.now() - timedelta(days=10),
+        )
+
+        # QUAND je récupère les alertes à 15 jours à envoyer
+        alerts = get_alerts_to_send()
+
+        # ALORS je ne récupère aucune alerte
+        self.assertEqual(len(alerts), 0)
+
+    def test_get_monthly_no_alerts(self):
+        # ÉTANT DONNÉ un utilisateur avec deux alertes mensuelles
+        # une envoyé à J-15 et une à J-20
+        user = baker.make("users.User", is_valid=True)
+
+        baker.make(
+            "services.SavedSearch",
+            user=user,
+            frequency=SavedSearchFrequency.objects.filter(value="monthly").first(),
+            city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
+            city_code=SAVE_SEARCH_ARGS.get("cityCode"),
+            last_notification_date=timezone.now() - timedelta(days=15),
+        )
+        baker.make(
+            "services.SavedSearch",
+            user=user,
+            frequency=SavedSearchFrequency.objects.filter(value="monthly").first(),
+            city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
+            city_code=SAVE_SEARCH_ARGS.get("cityCode"),
+            last_notification_date=timezone.now() - timedelta(days=20),
+        )
+
+        # QUAND je récupère les alertes mensuelles à envoyer
+        alerts = get_alerts_to_send()
+
+        # ALORS je ne récupère aucune alerte
+        self.assertEqual(len(alerts), 0)
