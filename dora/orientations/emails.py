@@ -261,16 +261,29 @@ def send_orientation_reminder_emails(orientation):
         "beneficiaries_has_alternate_contact_methods": beneficiaries_has_alternate_contact_methods(
             orientation
         ),
+        "attachments": [
+            {"name": a, "url": default_storage.url(a)}
+            for a in orientation.beneficiary_attachments
+        ],
     }
+
     send_mail(
         f"{'[Notification - Structure] ' if debug else''}Relance – Demande d’orientation en attente",
         orientation.service.contact_email,
         mjml2html(render_to_string("notification-structure.mjml", context)),
         tags=["orientation"],
     )
+    cc = []
+    if (
+        orientation.referent_email
+        and orientation.referent_email != orientation.prescriber.email
+    ):
+        cc.append(orientation.referent_email)
+
     send_mail(
         f"{'[Notification - Prescripteur] ' if debug else''}Relance envoyée – Demande d’orientation en attente",
         orientation.prescriber.email,
         mjml2html(render_to_string("notification-prescriber.mjml", context)),
         tags=["orientation"],
+        cc=cc,
     )
