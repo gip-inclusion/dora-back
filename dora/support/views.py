@@ -122,9 +122,7 @@ class StructureAdminViewSet(
                 actually_invited.append(invited_admin.user.email)
             else:
                 too_fresh.append((invited_admin.user.email))
-        return Response(
-            {"invited_users": actually_invited, "not_reinvited_users": too_fresh}
-        )
+        return Response({"reinvited": actually_invited, "blacklisted": too_fresh})
 
 
 class ServiceAdminViewSet(
