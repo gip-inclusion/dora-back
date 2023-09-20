@@ -1,0 +1,39 @@
+{% extends "email-base.mjml" %}
+
+{% block preview %}
+    Il y a de nouveaux services correspondant à votre alerte
+{% endblock %}
+
+{% block title %}
+    Il y a de nouveaux services correspondant à votre alerte
+{% endblock %}
+
+{% block content %}
+    <p>
+        <strong>Bonjour,</strong>
+    </p>
+
+    <p>
+        Il existe {{services_number}} {% if services_number > 1 %}nouveaux services{% else %}nouveau service{% endif %} correspondant à votre alerte <strong>«&nbsp;{{ search_label }}&nbsp;»</strong>&nbsp;:
+
+        <ul>
+        {% for service in updated_services %}
+            <li>
+                <a href="{{ homepage_url }}/services/{{ service.slug }}">
+                    <strong>{{ service.name }}</strong> - {{ service.structure_info.name }}
+                </a>
+            </li>
+        {% endfor %}
+
+        {% if services_number > 10 %}
+            <li>...</li>
+        {% endif %}
+
+        </ul>
+    </p>
+
+    <p>
+        Vous pouvez gérer vos alertes depuis la page «&nbsp;<a href="{{ homepage_url }}/alertes">Mes alertes</a>&nbsp;».
+    </p>
+
+{% endblock %}

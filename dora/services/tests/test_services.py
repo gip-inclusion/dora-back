@@ -3,6 +3,7 @@ from io import StringIO
 
 import requests
 from django.contrib.gis.geos import MultiPolygon, Point
+from django.core import mail
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.test import override_settings
@@ -10,12 +11,12 @@ from django.utils import timezone
 from model_bakery import baker
 from rest_framework.test import APIRequestFactory, APITestCase
 
-from dora.admin_express.models import AdminDivisionType
+from dora.admin_express.models import AdminDivisionType, City, Department
 from dora.core.test_utils import make_model, make_service, make_structure
 from dora.data_inclusion.test_utils import FakeDataInclusionClient, make_di_service_data
 from dora.services.enums import ServiceStatus
-from dora.services.management.commands.send_saved_alerts_notifications import (
-    get_alerts_to_send,
+from dora.services.management.commands.send_saved_searchs_notifications import (
+    get_saved_search_notifications_to_send,
 )
 from dora.services.migration_utils import (
     add_categories_and_subcategories_if_subcategory,
@@ -3972,7 +3973,7 @@ class ServiceSavedSearchTestCase(APITestCase):
     def test_delete_search(self):
         user = baker.make("users.User", is_valid=True)
         saved_search = baker.make(
-            "services.SavedSearch",
+            "SavedSearch",
             user=user,
             city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
             city_code=SAVE_SEARCH_ARGS.get("cityCode"),
@@ -4007,7 +4008,7 @@ class ServiceSavedSearchTestCase(APITestCase):
     def test_update_frequency_not_existing(self):
         user = baker.make("users.User", is_valid=True)
         saved_search = baker.make(
-            "services.SavedSearch",
+            "SavedSearch",
             user=user,
             city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
             city_code=SAVE_SEARCH_ARGS.get("cityCode"),
@@ -4024,7 +4025,7 @@ class ServiceSavedSearchTestCase(APITestCase):
         self.client.force_authenticate(user=user)
 
         saved_search = baker.make(
-            "services.SavedSearch",
+            "SavedSearch",
             user=user,
             frequency=SavedSearchFrequency.objects.filter(value="two-weeks").first(),
             city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
@@ -4049,16 +4050,26 @@ class ServiceSavedSearchTestCase(APITestCase):
 
 
 class ServiceSavedSearchNotificationTestCase(APITestCase):
-    def call_command(self):
-        call_command("send_saved_alerts_notifications", stdout=StringIO())
+    def setUp(self):
+        baker.make(Department, code="58", name="Nièvre")
+        baker.make(City, code="58211", name="Poil")
 
-    def test_get_monthly_alerts(self):
-        # ÉTANT DONNÉ un utilisateur avec deux alertes mensuelles
+        self.di_client = FakeDataInclusionClient()
+
+    def call_command(self):
+        call_command(
+            "send_saved_searchs_notifications",
+            di_client=self.di_client,
+            stdout=StringIO(),
+        )
+
+    def test_get_monthly_saved_searchs(self):
+        # ÉTANT DONNÉ un utilisateur avec deux notifications mensuelles
         # une envoyé à J-15 et une à J-40
         user = baker.make("users.User", is_valid=True)
 
         baker.make(
-            "services.SavedSearch",
+            "SavedSearch",
             user=user,
             frequency=SavedSearchFrequency.objects.filter(value="monthly").first(),
             city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
@@ -4066,7 +4077,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             last_notification_date=timezone.now() - timedelta(days=15),
         )
         saved_search_2 = baker.make(
-            "services.SavedSearch",
+            "SavedSearch",
             user=user,
             frequency=SavedSearchFrequency.objects.filter(value="monthly").first(),
             city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
@@ -4074,20 +4085,20 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             last_notification_date=timezone.now() - timedelta(days=40),
         )
 
-        # QUAND je récupère les alertes mensuelles à envoyer
-        alerts = get_alerts_to_send()
+        # QUAND je récupère les notifications mensuelles à envoyer
+        notifications = get_saved_search_notifications_to_send()
 
-        # ALORS je récupère la seconde alerte à envoyer à J-40
-        self.assertEqual(len(alerts), 1)
-        self.assertEqual(alerts[0].id, saved_search_2.id)
+        # ALORS je récupère la seconde notification à envoyer à J-40
+        self.assertEqual(len(notifications), 1)
+        self.assertEqual(notifications[0].id, saved_search_2.id)
 
-    def test_get_two_weeks_alerts(self):
-        # ÉTANT DONNÉ un utilisateur avec deux alertes toutes les deux semaines
+    def test_get_two_weeks_saved_searchs(self):
+        # ÉTANT DONNÉ un utilisateur avec deux notifications toutes les deux semaines
         # une envoyé à J-10 et une à J-20
         user = baker.make("users.User", is_valid=True)
 
         baker.make(
-            "services.SavedSearch",
+            "SavedSearch",
             user=user,
             frequency=SavedSearchFrequency.objects.filter(value="two-weeks").first(),
             city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
@@ -4095,7 +4106,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             last_notification_date=timezone.now() - timedelta(days=10),
         )
         saved_search_2 = baker.make(
-            "services.SavedSearch",
+            "SavedSearch",
             user=user,
             frequency=SavedSearchFrequency.objects.filter(value="two-weeks").first(),
             city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
@@ -4103,20 +4114,20 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             last_notification_date=timezone.now() - timedelta(days=20),
         )
 
-        # QUAND je récupère les alertes mensuelles à envoyer
-        alerts = get_alerts_to_send()
+        # QUAND je récupère les notifications mensuelles à envoyer
+        notifications = get_saved_search_notifications_to_send()
 
-        # ALORS je récupère la seconde alerte à envoyer à J-20
-        self.assertEqual(len(alerts), 1)
-        self.assertEqual(alerts[0].id, saved_search_2.id)
+        # ALORS je récupère la seconde notification à envoyer à J-20
+        self.assertEqual(len(notifications), 1)
+        self.assertEqual(notifications[0].id, saved_search_2.id)
 
-    def test_get_two_weeks_no_alerts(self):
-        # ÉTANT DONNÉ un utilisateur avec deux alertes mensuelles
+    def test_get_two_weeks_no_saved_searchs(self):
+        # ÉTANT DONNÉ un utilisateur avec deux notifications mensuelles
         # une envoyé à J-5 et une à J-10
         user = baker.make("users.User", is_valid=True)
 
         baker.make(
-            "services.SavedSearch",
+            "SavedSearch",
             user=user,
             frequency=SavedSearchFrequency.objects.filter(value="two-weeks").first(),
             city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
@@ -4124,7 +4135,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             last_notification_date=timezone.now() - timedelta(days=5),
         )
         baker.make(
-            "services.SavedSearch",
+            "SavedSearch",
             user=user,
             frequency=SavedSearchFrequency.objects.filter(value="two-weeks").first(),
             city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
@@ -4132,19 +4143,19 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             last_notification_date=timezone.now() - timedelta(days=10),
         )
 
-        # QUAND je récupère les alertes à 15 jours à envoyer
-        alerts = get_alerts_to_send()
+        # QUAND je récupère les notifications à 15 jours à envoyer
+        notifications = get_saved_search_notifications_to_send()
 
-        # ALORS je ne récupère aucune alerte
-        self.assertEqual(len(alerts), 0)
+        # ALORS je ne récupère aucune notification
+        self.assertEqual(len(notifications), 0)
 
-    def test_get_monthly_no_alerts(self):
-        # ÉTANT DONNÉ un utilisateur avec deux alertes mensuelles
+    def test_get_monthly_no_saved_searchs(self):
+        # ÉTANT DONNÉ un utilisateur avec deux notifications mensuelles
         # une envoyé à J-15 et une à J-20
         user = baker.make("users.User", is_valid=True)
 
         baker.make(
-            "services.SavedSearch",
+            "SavedSearch",
             user=user,
             frequency=SavedSearchFrequency.objects.filter(value="monthly").first(),
             city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
@@ -4152,7 +4163,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             last_notification_date=timezone.now() - timedelta(days=15),
         )
         baker.make(
-            "services.SavedSearch",
+            "SavedSearch",
             user=user,
             frequency=SavedSearchFrequency.objects.filter(value="monthly").first(),
             city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
@@ -4160,8 +4171,196 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             last_notification_date=timezone.now() - timedelta(days=20),
         )
 
-        # QUAND je récupère les alertes mensuelles à envoyer
-        alerts = get_alerts_to_send()
+        # QUAND je récupère les notifications mensuelles à envoyer
+        notifications = get_saved_search_notifications_to_send()
 
-        # ALORS je ne récupère aucune alerte
-        self.assertEqual(len(alerts), 0)
+        # ALORS je ne récupère aucune notification
+        self.assertEqual(len(notifications), 0)
+
+    def test_get_create_notification_location_only(self):
+        # ÉTANT DONNÉ un utilisateur avec une notification mensuelle à J-40
+        user = baker.make("users.User", is_valid=True)
+
+        self.di_client.search_services(
+            make_di_service_data(
+                nom="nom-service",
+                structure={"nom": "Rouge Empire"},
+                date_maj="2023-09-15T00:17:41.560784+01:00",
+            )
+        )
+
+        baker.make(
+            "SavedSearch",
+            user=user,
+            frequency=SavedSearchFrequency.objects.filter(value="monthly").first(),
+            city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
+            city_code=SAVE_SEARCH_ARGS.get("cityCode"),
+            last_notification_date=timezone.now() - timedelta(days=40),
+        )
+
+        # QUAND j'envoie les notifications
+        self.call_command()
+
+        # ALORS j'ai un e-mail
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            mail.outbox[0].subject,
+            "Il y a de nouveaux services correspondant à votre alerte",
+        )
+
+    def test_get_create_notification_with_categories(self):
+        # ÉTANT DONNÉ un utilisateur avec une notification mensuelle à J-40 lié à une catégorie
+        user = baker.make("users.User", is_valid=True)
+        category = baker.make("ServiceCategory", value="cat1", label="cat1")
+
+        saved_search = baker.make(
+            "SavedSearch",
+            user=user,
+            frequency=SavedSearchFrequency.objects.filter(value="monthly").first(),
+            city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
+            city_code=SAVE_SEARCH_ARGS.get("cityCode"),
+            last_notification_date=timezone.now() - timedelta(days=40),
+        )
+
+        saved_search.categories.set([category])
+
+        # QUAND j'envoie les notifications
+        self.call_command()
+
+        # ALORS j'ai un e-mail
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            mail.outbox[0].subject,
+            "Il y a de nouveaux services correspondant à votre alerte",
+        )
+        self.assertIn("pour la thématique &quot;cat1", mail.outbox[0].body)
+
+    def test_get_create_notification_with_categories_and_subcategories(self):
+        # ÉTANT DONNÉ un utilisateur avec une notification mensuelle à J-40 lié à une catégorie et deux sous-catégories
+        user = baker.make("users.User", is_valid=True)
+        category = baker.make("ServiceCategory", value="cat1", label="cat1")
+        sub_category = baker.make(
+            "ServiceSubCategory", value="cat1--sub1", label="cat1--sub1"
+        )
+        sub_category_2 = baker.make(
+            "ServiceSubCategory", value="cat1--sub2", label="cat1--sub2"
+        )
+
+        savedSearch = baker.make(
+            "SavedSearch",
+            user=user,
+            frequency=SavedSearchFrequency.objects.filter(value="monthly").first(),
+            city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
+            city_code=SAVE_SEARCH_ARGS.get("cityCode"),
+            last_notification_date=timezone.now() - timedelta(days=40),
+        )
+
+        savedSearch.categories.set([category])
+        savedSearch.subcategories.set([sub_category, sub_category_2])
+
+        # QUAND j'envoie les notifications
+        self.call_command()
+
+        # ALORS j'ai un e-mail
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            mail.outbox[0].subject,
+            "Il y a de nouveaux services correspondant à votre alerte",
+        )
+        self.assertIn("pour la thématique &quot;cat1", mail.outbox[0].body)
+        self.assertIn(
+            "pour le(s) besoin(s) : cat1--sub1, cat1--sub2", mail.outbox[0].body
+        )
+
+    def test_get_create_notification_with_categories_and_subcategories_and_kinds(self):
+        # ÉTANT DONNÉ un utilisateur avec une notification mensuelle à J-40 lié à une catégorie
+        # et deux sous-catégories et deux types de services
+        user = baker.make("users.User", is_valid=True)
+        category = baker.make("ServiceCategory", value="cat1", label="cat1")
+        sub_category = baker.make(
+            "ServiceSubCategory", value="cat1--sub1", label="cat1--sub1"
+        )
+        sub_category_2 = baker.make(
+            "ServiceSubCategory", value="cat1--sub2", label="cat1--sub2"
+        )
+        kind = baker.make("ServiceKind", value="kind1", label="kind1")
+        kind_2 = baker.make("ServiceKind", value="kind2", label="kind2")
+
+        savedSearch = baker.make(
+            "SavedSearch",
+            user=user,
+            frequency=SavedSearchFrequency.objects.filter(value="monthly").first(),
+            city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
+            city_code=SAVE_SEARCH_ARGS.get("cityCode"),
+            last_notification_date=timezone.now() - timedelta(days=40),
+        )
+
+        savedSearch.categories.set([category])
+        savedSearch.subcategories.set([sub_category, sub_category_2])
+        savedSearch.kinds.set([kind, kind_2])
+
+        # QUAND j'envoie les notifications
+        self.call_command()
+
+        # ALORS j'ai un e-mail
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            mail.outbox[0].subject,
+            "Il y a de nouveaux services correspondant à votre alerte",
+        )
+        self.assertIn("pour la thématique &quot;cat1", mail.outbox[0].body)
+        self.assertIn(
+            "pour le(s) besoin(s) : cat1--sub1, cat1--sub2", mail.outbox[0].body
+        )
+        self.assertIn(
+            "pour le(s) type(s) de service : kind1, kind2", mail.outbox[0].body
+        )
+
+    def test_get_create_notification_with_categories_and_subcategories_and_kinds_and_fee(
+        self,
+    ):
+        # ÉTANT DONNÉ un utilisateur avec une notification mensuelle à J-40 lié à une catégorie
+        # et deux sous-catégories et deux types de services et un frais à charge
+        user = baker.make("users.User", is_valid=True)
+        category = baker.make("ServiceCategory", value="cat1", label="cat1")
+        sub_category = baker.make(
+            "ServiceSubCategory", value="cat1--sub1", label="cat1--sub1"
+        )
+        sub_category_2 = baker.make(
+            "ServiceSubCategory", value="cat1--sub2", label="cat1--sub2"
+        )
+        kind = baker.make("ServiceKind", value="kind1", label="kind1")
+        kind_2 = baker.make("ServiceKind", value="kind2", label="kind2")
+        fee = baker.make("ServiceFee", value="fee", label="fee")
+
+        savedSearch = baker.make(
+            "SavedSearch",
+            user=user,
+            frequency=SavedSearchFrequency.objects.filter(value="monthly").first(),
+            city_label=SAVE_SEARCH_ARGS.get("cityLabel"),
+            city_code=SAVE_SEARCH_ARGS.get("cityCode"),
+            last_notification_date=timezone.now() - timedelta(days=40),
+        )
+
+        savedSearch.categories.set([category])
+        savedSearch.subcategories.set([sub_category, sub_category_2])
+        savedSearch.kinds.set([kind, kind_2])
+        savedSearch.fees.set([fee])
+
+        # QUAND j'envoie les notifications
+        self.call_command()
+
+        # ALORS j'ai un e-mail
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            mail.outbox[0].subject,
+            "Il y a de nouveaux services correspondant à votre alerte",
+        )
+        self.assertIn("pour la thématique &quot;cat1", mail.outbox[0].body)
+        self.assertIn(
+            "pour le(s) besoin(s) : cat1--sub1, cat1--sub2", mail.outbox[0].body
+        )
+        self.assertIn(
+            "pour le(s) type(s) de service : kind1, kind2", mail.outbox[0].body
+        )
+        self.assertIn("avec comme frais à charge : fee", mail.outbox[0].body)
