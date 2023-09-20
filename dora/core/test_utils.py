@@ -88,10 +88,22 @@ def make_model(**kwargs):
 
 def make_orientation(**kwargs):
     prescriber_structure = make_structure()
-    prescriber = make_user(structure=prescriber_structure)
+    prescriber = (
+        kwargs.pop("prescriber")
+        if "prescriber" in kwargs
+        else make_user(structure=prescriber_structure)
+    )
+    service = (
+        kwargs.pop("service")
+        if "service" in kwargs
+        else make_service(
+            _fill_optional=["contact_email"],
+        )
+    )
     orientation = baker.make(
         "Orientation",
         prescriber=prescriber,
-        service=make_service(_fill_optional=["contact_email"]),
+        service=service,
+        **kwargs,
     )
     return orientation
