@@ -735,7 +735,6 @@ def _sort_services(services):
         try:
             results.append(next(on_site_services))
             results.append(next(on_site_services))
-            results.append(next(on_site_services))
         except StopIteration:
             no_more_on_site = True
         try:
