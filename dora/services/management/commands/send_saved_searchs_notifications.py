@@ -11,8 +11,6 @@ from dora.core.emails import send_mail
 from dora.services.models import SavedSearch, SavedSearchFrequency
 from dora.services.views import _search
 
-di_client = data_inclusion.di_client_factory() if not settings.IS_TESTING else None
-
 
 def get_saved_search_notifications_to_send():
     # Notifications toutes les deux semaines
@@ -101,21 +99,24 @@ class Command(BaseCommand):
                 > saved_search.last_notification_date
             ]
 
-            # Envoi de l'email
-            context = {
-                "search_label": compute_search_label(saved_search),
-                "homepage_url": settings.FRONTEND_URL,
-                "updated_services": updated_services[:10],
-                "services_number": len(updated_services),
-            }
+            if updated_services:
+                # Envoi de l'email
+                context = {
+                    "search_label": compute_search_label(saved_search),
+                    "homepage_url": settings.FRONTEND_URL,
+                    "updated_services": updated_services[:10],
+                    "services_number": len(updated_services),
+                }
 
-            send_mail(
-                "Il y a de nouveaux services correspondant à votre alerte",
-                saved_search.user.email,
-                mjml2html(render_to_string("saved-search-notification.mjml", context)),
-                tags=["saved-search-notification"],
-            )
+                send_mail(
+                    "Il y a de nouveaux services correspondant à votre alerte",
+                    saved_search.user.email,
+                    mjml2html(
+                        render_to_string("saved-search-notification.mjml", context)
+                    ),
+                    tags=["saved-search-notification"],
+                )
 
-            # Mise à jour de la date de dernière notification
-            saved_search.last_notification_date = timezone.now()
-            saved_search.save()
+                # Mise à jour de la date de dernière notification
+                saved_search.last_notification_date = timezone.now()
+                saved_search.save()
