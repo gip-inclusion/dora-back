@@ -19,7 +19,11 @@
         <ul>
         {% for service in updated_services %}
             <li>
-                <a href="{{ homepage_url }}/services/{{ service.slug }}">
+                {% if service.type == 'di' %}
+                    <a href="{{ homepage_url }}/services/di/{{ service.slug }}">
+                {% else %}
+                    <a href="{{ homepage_url }}/services/{{ service.slug }}">
+                {% endif %}
                     <strong>{{ service.name }}</strong> - {{ service.structure_info.name }}
                 </a>
             </li>

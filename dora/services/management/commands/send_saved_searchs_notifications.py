@@ -117,6 +117,11 @@ class Command(BaseCommand):
                     tags=["saved-search-notification"],
                 )
 
+                print(
+                    "Sending email to",
+                    render_to_string("saved-search-notification.mjml", context),
+                )
+
                 # Mise à jour de la date de dernière notification
                 saved_search.last_notification_date = timezone.now()
                 saved_search.save()
