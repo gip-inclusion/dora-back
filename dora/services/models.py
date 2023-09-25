@@ -85,9 +85,10 @@ class ServiceFee(EnumModel):
         verbose_name = "Frais à charge"
 
 
-class SavedSearchFrequency(EnumModel):
-    class Meta:
-        verbose_name = "Fréquence de l'alerte"
+class SavedSearchFrequency(models.TextChoices):
+    NEVER = "NEVER", "Jamais"
+    TWO_WEEKS = "TWO_WEEKS", "Tous les 15 jours"
+    MONTHLY = "MONTHLY", "Mensuel"
 
 
 class Requirement(CustomizableChoice):
@@ -605,10 +606,11 @@ class SavedSearch(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True, db_index=True)
     city_code = models.CharField(verbose_name="Code INSEE de la recherche")
     city_label = models.CharField(verbose_name="Label de la ville")
-    categories = models.ManyToManyField(
+    category = models.ForeignKey(
         ServiceCategory,
         verbose_name="Thématiques",
-        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
     )
     subcategories = models.ManyToManyField(
         ServiceSubCategory,
@@ -619,9 +621,10 @@ class SavedSearch(models.Model):
         ServiceKind, verbose_name="Type de service", blank=True
     )
     fees = models.ManyToManyField(ServiceFee, verbose_name="Frais à charge", blank=True)
-    frequency = models.ForeignKey(
-        SavedSearchFrequency,
-        verbose_name="Fréquence de l'alerte",
-        on_delete=models.PROTECT,
+    frequency = models.CharField(
+        max_length=10,
+        choices=SavedSearchFrequency.choices,
+        default=SavedSearchFrequency.TWO_WEEKS,
+        verbose_name="Fréquence",
     )
     last_notification_date = models.DateField(default=datetime.now)

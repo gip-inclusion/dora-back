@@ -2,7 +2,7 @@
 
 ## Only run on the production app
 if [ "$ENVIRONMENT" != "production" ];then
-  echo "L'envoi des courriels des alertes sur les recherches sauvegardées ne se fait qu'en production"
+  echo "L'envoi des courriels de notification pour les recherches sauvegardées ne se fait qu'en production"
   exit 0;
 fi
 

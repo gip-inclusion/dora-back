@@ -15,13 +15,13 @@ from dora.services.views import _search
 def get_saved_search_notifications_to_send():
     # Notifications toutes les deux semaines
     two_weeks_notifications = SavedSearch.objects.filter(
-        frequency=SavedSearchFrequency.objects.filter(value="two-weeks").first(),
+        frequency=SavedSearchFrequency.TWO_WEEKS,
         last_notification_date__lte=timezone.now() - timedelta(days=14),
     )
 
     # Notifications mensuelles
     monthly_notifications = SavedSearch.objects.filter(
-        frequency=SavedSearchFrequency.objects.filter(value="monthly").first(),
+        frequency=SavedSearchFrequency.MONTHLY,
         last_notification_date__lte=timezone.now() - timedelta(days=30),
     )
 
@@ -31,8 +31,8 @@ def get_saved_search_notifications_to_send():
 def compute_search_label(saved_search):
     text = f"Services d’insertion à proximité de {saved_search.city_label}"
 
-    if saved_search.categories.exists():
-        text += f', pour la thématique "{saved_search.categories.first().label}"'
+    if saved_search.category:
+        text += f', pour la thématique "{saved_search.category.first().label}"'
 
     if saved_search.subcategories.exists():
         labels = saved_search.subcategories.values_list("label", flat=True)
@@ -62,9 +62,9 @@ class Command(BaseCommand):
         )
 
         for saved_search in saved_searchs:
-            categories = None
-            if saved_search.categories.exists():
-                categories = saved_search.categories.values_list("value", flat=True)
+            category = None
+            if saved_search.category:
+                category = saved_search.category
 
             subcategories = None
             if saved_search.subcategories.exists():
@@ -84,7 +84,7 @@ class Command(BaseCommand):
             results = _search(
                 None,
                 saved_search.city_code,
-                categories,
+                [category],
                 subcategories,
                 kinds,
                 fees,

@@ -18,6 +18,7 @@ from .models import (
     Credential,
     LocationKind,
     Requirement,
+    SavedSearch,
     Service,
     ServiceCategory,
     ServiceFee,
@@ -598,3 +599,58 @@ class FeedbackSerializer(serializers.Serializer):
     full_name = serializers.CharField()
     email = serializers.EmailField()
     message = serializers.CharField()
+
+
+class SavedSearchListSerializer(serializers.ModelSerializer):
+    category = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=ServiceCategory.objects.all(),
+        required=False,
+    )
+    category_display = serializers.SlugRelatedField(
+        source="categories", slug_field="label", many=True, read_only=True
+    )
+
+    subcategories = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=ServiceSubCategory.objects.all(),
+        many=True,
+        required=False,
+    )
+    subcategories_display = serializers.SlugRelatedField(
+        source="subcategories", slug_field="label", many=True, read_only=True
+    )
+
+    kinds = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=ServiceKind.objects.all(),
+        many=True,
+        required=False,
+    )
+    kinds_display = serializers.SlugRelatedField(
+        source="kinds", slug_field="label", many=True, read_only=True
+    )
+
+    fees = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=ServiceFee.objects.all(),
+        many=True,
+        required=False,
+    )
+    fees_display = serializers.SlugRelatedField(
+        source="fees", slug_field="label", many=True, read_only=True
+    )
+
+    class Meta:
+        model = SavedSearch
+        fields = [
+            "category",
+            "category_display",
+            "subcategories",
+            "subcategories_display",
+            "kinds",
+            "kinds_display",
+            "fees",
+            "fees_display",
+            "frequency",
+        ]

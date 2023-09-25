@@ -35,7 +35,6 @@ from dora.services.models import (
     LocationKind,
     Requirement,
     SavedSearch,
-    SavedSearchFrequency,
     Service,
     ServiceCategory,
     ServiceFee,
@@ -56,6 +55,7 @@ from .models import Bookmark
 from .serializers import (
     AnonymousServiceSerializer,
     FeedbackSerializer,
+    SavedSearchListSerializer,
     ServiceListSerializer,
     ServiceModelSerializer,
     ServiceSerializer,
@@ -364,108 +364,28 @@ class ServiceViewSet(
 
         return Response(status=204)
 
-    @action(
-        detail=False,
-        methods=["POST"],
-        url_path="save-search",
-        permission_classes=[permissions.IsAuthenticated],
-    )
-    def save_search(self, request):
+
+class SavedSearchPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        return user and user.is_authenticated
+
+
+class SavedSearchViewSet(
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    serializer_class = SavedSearchListSerializer
+    permission_classes = [SavedSearchPermission]
+
+    def get_queryset(self):
         user = self.request.user
-        city_code = self.request.data.get("city_code")
-        city_label = self.request.data.get("city_label")
+        return SavedSearch.objects.filter(user=user).order_by("-creation_date")
 
-        if not city_code or not city_label:
-            return Response(status=400)
-
-        category_slugs = self.request.data.get("categories", [])
-        subcategory_slugs = self.request.data.get("subcategories", [])
-        kind_slugs = self.request.data.get("kinds")
-        fee_slugs = self.request.data.get("fees")
-
-        categories = ServiceCategory.objects.filter(
-            value__in=category_slugs
-        ).values_list("id", flat=True)
-        subcategories = ServiceSubCategory.objects.filter(
-            value__in=subcategory_slugs
-        ).values_list("id", flat=True)
-
-        saved_search = SavedSearch.objects.create(
-            user=user,
-            city_code=city_code,
-            city_label=city_label,
-            frequency=SavedSearchFrequency.objects.get(value="two-weeks"),
-        )
-
-        should_save = False
-        if categories:
-            saved_search.categories.set(categories)
-            should_save = True
-
-        if subcategories:
-            saved_search.subcategories.set(subcategories)
-            should_save = True
-
-        if kind_slugs:
-            kinds = ServiceKind.objects.filter(value__in=kind_slugs).values_list(
-                "id", flat=True
-            )
-            saved_search.kinds.set(kinds)
-            should_save = True
-
-        if fee_slugs:
-            fees = ServiceFee.objects.filter(value__in=fee_slugs).values_list(
-                "id", flat=True
-            )
-            saved_search.fees.set(fees)
-            should_save = True
-
-        if should_save:
-            saved_search.save()
-
-        return Response(status=204)
-
-    @action(
-        detail=False,
-        methods=["POST"],
-        url_path="delete-saved-search",
-        permission_classes=[permissions.IsAuthenticated],
-    )
-    def delete_saved_search(self, request):
-        user = self.request.user
-        saved_search_id = self.request.data.get("saved_search_id")
-
-        saved_search = SavedSearch.objects.filter(user=user, id=saved_search_id).first()
-        if not saved_search:
-            return Response(status=400)
-
-        saved_search.delete()
-
-        return Response(status=204)
-
-    @action(
-        detail=False,
-        methods=["POST"],
-        url_path="update-saved-search-frequency",
-        permission_classes=[permissions.IsAuthenticated],
-    )
-    def update_saved_search_frequency(self, request):
-        user = self.request.user
-        saved_search_id = self.request.data.get("saved_search_id")
-        frequency_value = self.request.data.get("frequency")
-
-        frequency = SavedSearchFrequency.objects.filter(value=frequency_value).first()
-        if not frequency:
-            return Response(status=400)
-
-        saved_search = SavedSearch.objects.filter(user=user, id=saved_search_id).first()
-        if not saved_search:
-            return Response(status=400)
-
-        saved_search.frequency = frequency
-        saved_search.save(update_fields=["frequency"])
-
-        return Response(status=204)
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 
 class ModelViewSet(ServiceViewSet):
