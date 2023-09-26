@@ -3922,16 +3922,3 @@ class ServiceMigrationUtilsTestCase(APITestCase):
             sorted([s["value"] for s in service.subcategories.values()]),
             sorted([subcategory_value_1]),
         )
-
-
-SAVE_SEARCH_ARGS = {
-    "categories": ["accompagnement-social-et-professionnel-personnalise"],
-    "subcategories": [
-        "accompagnement-social-et-professionnel-personnalise--definition-du-projet-professionnel",
-        "accompagnement-social-et-professionnel-personnalise--parcours-d-insertion-socioprofessionnel",
-    ],
-    "city_code": "58211",
-    "city_label": "Poil (58)",
-    "kinds": ["aide-financiere", "aide-materielle"],
-    "fees": ["gratuit-sous-conditions", "payant"],
-}
