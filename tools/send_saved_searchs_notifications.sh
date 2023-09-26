@@ -7,4 +7,4 @@ if [ "$ENVIRONMENT" != "production" ];then
 fi
 
 echo "Envoi des courriels des alertes sur les recherches sauvegardées"
-python /app/manage.py send_orientations_reminders
+python /app/manage.py send_saved_searchs_notifications
