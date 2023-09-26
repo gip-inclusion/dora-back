@@ -4,6 +4,10 @@
     Il y a de nouveaux services correspondant à votre alerte
 {% endblock %}
 
+{% block illustration %}
+    <mj-image src="{{ homepage_url }}/illustrations/illu-saved-search-notification.svg" alt=""/>
+{% endblock %}
+
 {% block title %}
     Il y a de nouveaux services correspondant à votre alerte
 {% endblock %}
@@ -37,7 +41,7 @@
     </p>
 
     <p>
-        Vous pouvez gérer vos alertes depuis la page «&nbsp;<a href="{{ homepage_url }}/alertes">Mes alertes</a>&nbsp;».
+        Vous pouvez gérer vos alertes depuis la page «&nbsp;<a href="{{ homepage_url }}/mes-alertes">Mes alertes</a>&nbsp;».
     </p>
 
 {% endblock %}

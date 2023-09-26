@@ -32,7 +32,7 @@ def compute_search_label(saved_search):
     text = f"Services d’insertion à proximité de {saved_search.city_label}"
 
     if saved_search.category:
-        text += f', pour la thématique "{saved_search.category.first().label}"'
+        text += f', pour la thématique "{saved_search.category.label}"'
 
     if saved_search.subcategories.exists():
         labels = saved_search.subcategories.values_list("label", flat=True)
@@ -84,7 +84,7 @@ class Command(BaseCommand):
             results = _search(
                 None,
                 saved_search.city_code,
-                [category],
+                [category.value],
                 subcategories,
                 kinds,
                 fees,
@@ -117,6 +117,6 @@ class Command(BaseCommand):
                     tags=["saved-search-notification"],
                 )
 
-                # Mise à jour de la date de dernière notification
-                saved_search.last_notification_date = timezone.now()
-                saved_search.save()
+            # Mise à jour de la date de dernière notification
+            saved_search.last_notification_date = timezone.now()
+            saved_search.save()

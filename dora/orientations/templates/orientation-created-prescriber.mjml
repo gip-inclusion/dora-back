@@ -8,6 +8,9 @@
     Votre demande a bien été transmise&nbsp;!
 {% endblock %}
 
+{% block illustration %}
+    <mj-image src="{{ homepage_url }}/emails/illu-orientation.png" alt=""/>
+{% endblock %}
 
 {% block content %}
     <p>

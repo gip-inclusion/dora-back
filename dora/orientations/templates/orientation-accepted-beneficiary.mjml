@@ -8,6 +8,10 @@
     Votre demande a été acceptée ! 🎉
 {% endblock %}
 
+{% block illustration %}
+    <mj-image src="{{ homepage_url }}/emails/illu-orientation.png" alt=""/>
+{% endblock %}
+
 {% block content %}
     {{ beneficiary_message|linebreaks }}
 {% endblock %}

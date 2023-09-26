@@ -8,6 +8,9 @@
     {{ data.get_beneficiary_full_name }} a été orienté vers le service «&nbsp;{{ data.service.name }}&nbsp;»
 {% endblock %}
 
+{% block illustration %}
+    <mj-image src="{{ homepage_url }}/emails/illu-orientation.png" alt=""/>
+{% endblock %}
 
 {% block content %}
     <p>

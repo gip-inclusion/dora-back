@@ -8,6 +8,10 @@
     La structure {{ data.service.structure.name }} vient de vous envoyer un message.
 {% endblock %}
 
+{% block illustration %}
+    <mj-image src="{{ homepage_url }}/emails/illu-orientation.png" alt=""/>
+{% endblock %}
+
 {% block content %}
     <p>
         Le message concerne la demande d’orientation réalisée pour {{ data.get_beneficiary_full_name }} vers le service

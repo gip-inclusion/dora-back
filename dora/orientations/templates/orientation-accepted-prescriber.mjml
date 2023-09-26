@@ -8,6 +8,10 @@
     Votre demande d’orientation pour {{ data.get_beneficiary_full_name }} a été acceptée&nbsp;! 🎉
 {% endblock %}
 
+{% block illustration %}
+    <mj-image src="{{ homepage_url }}/emails/illu-orientation.png" alt=""/>
+{% endblock %}
+
 {% block content %}
     {{ prescriber_message|linebreaks }}
 {% endblock %}

@@ -8,6 +8,10 @@
     Vous venez de refuser la demande d’orientation pour {{ data.get_beneficiary_full_name }}.
 {% endblock %}
 
+{% block illustration %}
+    <mj-image src="{{ homepage_url }}/emails/illu-orientation.png" alt=""/>
+{% endblock %}
+
 {% block content %}
     <p>
         <strong>Bonjour,</strong>

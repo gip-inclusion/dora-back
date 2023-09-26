@@ -608,7 +608,7 @@ class SavedSearchListSerializer(serializers.ModelSerializer):
         required=False,
     )
     category_display = serializers.SlugRelatedField(
-        source="categories", slug_field="label", many=True, read_only=True
+        source="category", slug_field="label", read_only=True
     )
 
     subcategories = serializers.SlugRelatedField(
@@ -644,7 +644,10 @@ class SavedSearchListSerializer(serializers.ModelSerializer):
     class Meta:
         model = SavedSearch
         fields = [
+            "id",
             "category",
+            "city_label",
+            "city_code",
             "category_display",
             "subcategories",
             "subcategories_display",
@@ -653,4 +656,5 @@ class SavedSearchListSerializer(serializers.ModelSerializer):
             "fees",
             "fees_display",
             "frequency",
+            "creation_date",
         ]
