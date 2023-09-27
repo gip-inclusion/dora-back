@@ -137,12 +137,14 @@ def log_event(request):
     elif tag == "structure":
         StructureView.objects.create(**common_analytics_data, **structure_data)
     elif tag == "service":
-        ServiceView.objects.create(
+        serviceview = ServiceView.objects.create(
             **common_analytics_data,
             **structure_data,
             **service_data,
             is_orientable=service.is_orientable() is True,
         )
+        serviceview.categories.set(service.categories.all())
+        serviceview.subcategories.set(service.subcategories.all())
     elif tag == "di_service":
         di_view = DiServiceView.objects.create(
             **common_analytics_data, **di_service_data
@@ -153,17 +155,21 @@ def log_event(request):
         di_view.categories.set(categories)
         di_view.subcategories.set(subcategories)
     elif tag == "orientation":
-        OrientationView.objects.create(
+        orientationview = OrientationView.objects.create(
             orientation=orientation,
             orientation_status=orientation.status,
             **common_analytics_data,
             **structure_data,
             **service_data,
         )
+        orientationview.categories.set(service.categories.all())
+        orientationview.subcategories.set(service.subcategories.all())
     elif tag == "mobilisation":
         mev = MobilisationEvent.objects.create(
             **common_analytics_data, **structure_data, **service_data
         )
+        mev.categories.set(service.categories.all())
+        mev.subcategories.set(service.subcategories.all())
         ab_testing_group = request.data.get("ab_testing_group", "")
         if ab_testing_group:
             ab_testing_group, _created = ABTestGroup.objects.get_or_create(
