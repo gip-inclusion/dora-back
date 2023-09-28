@@ -171,7 +171,7 @@ pg_dump $DATABASE_URL -O -t mb_user -c | psql $DEST_DB_URL
 psql $SRC_DB_URL -c "DROP TABLE IF EXISTS mb_mobilisationevent_all"
 psql $SRC_DB_URL -c "
 CREATE TABLE mb_mobilisationevent_all AS
- SELECT
+SELECT
 	( SELECT 'di-' :: text || stats_dimobilisationevent.id ) AS id,
 	stats_dimobilisationevent.path,
 	stats_dimobilisationevent.date,
@@ -180,6 +180,8 @@ CREATE TABLE mb_mobilisationevent_all AS
 	stats_dimobilisationevent.is_staff,
 	stats_dimobilisationevent.is_manager,
 	stats_dimobilisationevent.is_an_admin,
+	( select false ) as is_structure_admin,
+	( select false ) as is_structure_member,
 	stats_dimobilisationevent.user_kind,
 	stats_dimobilisationevent.structure_department,
 	stats_dimobilisationevent.user_id,
@@ -195,6 +197,8 @@ SELECT
 	stats_mobilisationevent.is_staff,
 	stats_mobilisationevent.is_manager,
 	stats_mobilisationevent.is_an_admin,
+	stats_mobilisationevent.is_structure_admin,
+	stats_mobilisationevent.is_structure_member,
 	stats_mobilisationevent.user_kind,
 	stats_mobilisationevent.structure_department,
 	stats_mobilisationevent.user_id,
@@ -223,4 +227,4 @@ psql $SRC_DB_URL -c "ALTER TABLE mb_mobilisationevent_categories_all ADD PRIMARY
 pg_dump $DATABASE_URL -O -t mb_mobilisationevent_categories_all -c | psql $DEST_DB_URL
 
 
-pg_dump $DATABASE_URL -O -t orientations_orientation -t orientations_orientation_rejection_reasons -t orientations_rejectionreason -t orientations_sentcontactemail -t services_servicesource -t services_bookmark -t services_servicefee -t services_accesscondition -t services_beneficiaryaccessmode -t services_coachorientationmode -t services_concernedpublic -t services_credential -t services_locationkind -t services_requirement -t services_service_access_conditions -t services_service_beneficiaries_access_modes -t services_service_categories -t services_service_coach_orientation_modes -t services_service_concerned_public -t services_service_credentials -t services_service_kinds -t services_service_location_kinds -t services_service_requirements -t services_service_subcategories -t services_servicecategory -t services_servicekind -t services_servicemodificationhistoryitem -t services_servicestatushistoryitem -t services_servicesubcategory -t structures_structure_national_labels -t structures_structurenationallabel -t structures_structuremember -t structures_structureputativemember -t structures_structuresource -t structures_structuretypology -t stats_abtestgroup -t stats_deploymentstate -t stats_dimobilisationevent -t stats_dimobilisationevent_ab_test_groups -t stats_dimobilisationevent_categories -t stats_dimobilisationevent_subcategories -t stats_diserviceview -t stats_diserviceview_categories -t stats_diserviceview_subcategories -t stats_mobilisationevent -t stats_mobilisationevent_ab_test_groups -t stats_orientationview -t stats_pageview -t stats_searchview -t stats_searchview_categories -t stats_searchview_subcategories -t stats_serviceview -t stats_structureview  -c | psql $DEST_DB_URL
+pg_dump $DATABASE_URL -O -t orientations_orientation -t orientations_orientation_rejection_reasons -t orientations_rejectionreason -t orientations_sentcontactemail -t services_servicesource -t services_bookmark -t services_servicefee -t services_accesscondition -t services_beneficiaryaccessmode -t services_coachorientationmode -t services_concernedpublic -t services_credential -t services_locationkind -t services_requirement -t services_service_access_conditions -t services_service_beneficiaries_access_modes -t services_service_categories -t services_service_coach_orientation_modes -t services_service_concerned_public -t services_service_credentials -t services_service_kinds -t services_service_location_kinds -t services_service_requirements -t services_service_subcategories -t services_servicecategory -t services_servicekind -t services_servicemodificationhistoryitem -t services_servicestatushistoryitem -t services_servicesubcategory -t structures_structure_national_labels -t structures_structurenationallabel -t structures_structuremember -t structures_structureputativemember -t structures_structuresource -t structures_structuretypology -t stats_abtestgroup -t stats_deploymentstate -t stats_dimobilisationevent -t stats_dimobilisationevent_ab_test_groups -t stats_dimobilisationevent_categories -t stats_dimobilisationevent_subcategories -t stats_diserviceview -t stats_diserviceview_categories -t stats_diserviceview_subcategories -t stats_mobilisationevent -t stats_mobilisationevent_ab_test_groups -t stats_mobilisationevent_categories -t stats_mobilisationevent_subcategories -t stats_orientationview -t stats_orientationview_categories -t stats_orientationview_subcategories -t stats_pageview -t stats_searchview -t stats_searchview_categories -t stats_searchview_subcategories -t stats_serviceview -t stats_serviceview_categories -t stats_serviceview_subcategories -t stats_structureview  -c | psql $DEST_DB_URL
