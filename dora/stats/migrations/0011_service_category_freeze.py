@@ -9,7 +9,7 @@ def freeze_categories(apps, schema_editor):
     ServiceView = apps.get_model("stats", "ServiceView")
 
     for AnalyticsModel in [MobilisationEvent, OrientationView, ServiceView]:
-        for event in AnalyticsModel.objects.all():
+        for event in AnalyticsModel.objects.exclude(service__isnull=True):
             event.categories.set(event.service.categories.all())
             event.subcategories.set(event.service.subcategories.all())
 
