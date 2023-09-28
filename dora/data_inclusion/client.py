@@ -1,5 +1,6 @@
 import functools
 import logging
+from datetime import timedelta
 from typing import Optional
 
 import furl
@@ -21,6 +22,7 @@ def di_client_factory():
     return DataInclusionClient(
         base_url=settings.DATA_INCLUSION_URL,
         token=settings.DATA_INCLUSION_STREAM_API_KEY,
+        timeout_seconds=settings.DATA_INCLUSION_TIMEOUT_SECONDS,
     )
 
 
@@ -40,11 +42,21 @@ def log_conn_error(func):
 
 
 class DataInclusionClient:
-    def __init__(self, base_url: str, token: str) -> None:
+    def __init__(
+        self, base_url: str, token: str, timeout_seconds: Optional[int] = None
+    ) -> None:
         self.base_url = furl.furl(base_url)
         self.session = requests.Session()
         self.session.headers.update({"Authorization": f"Bearer {token}"})
         self.session.hooks["response"] = [log_and_raise]
+        self.timeout_timedelta = (
+            timedelta(seconds=timeout_seconds)
+            if timeout_seconds is not None
+            else timedelta(seconds=2)
+        )
+
+    def _get(self, url: furl.furl):
+        return self.session.get(url, timeout=self.timeout_timedelta.total_seconds())
 
     def _get_pages(self, url: furl.furl):
         page = 1
@@ -52,7 +64,7 @@ class DataInclusionClient:
 
         while True:
             next_url = url.copy().add({"page": page})
-            response = self.session.get(next_url)
+            response = self._get(next_url)
             response_data = response.json()
             data += response_data["items"]
 
@@ -78,11 +90,13 @@ class DataInclusionClient:
     def retrieve_service(self, source: str, id: str) -> Optional[dict]:
         url = self.base_url.copy()
         url = url / "services" / source / id
-        response = self.session.get(url)
+        response = self._get(url)
 
         try:
             return response.json()
         except requests.HTTPError:
+            return None
+        except requests.ReadTimeout:
             return None
 
     @log_conn_error
@@ -115,4 +129,6 @@ class DataInclusionClient:
         try:
             return self._get_pages(url)
         except requests.HTTPError:
+            return None
+        except requests.ReadTimeout:
             return None
