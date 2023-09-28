@@ -5,13 +5,22 @@ from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 
-from dora.structures.models import StructureMember
+from dora.structures.models import StructureMember, StructurePutativeMember
 
 from .models import User
 
 
 class StructureMemberInline(admin.TabularInline):
     model = StructureMember
+    readonly_fields = ["user", "structure"]
+    extra = 0
+
+    def has_add_permission(self, request, obj):
+        return False
+
+
+class StructurePutativeMemberInline(admin.TabularInline):
+    model = StructurePutativeMember
     readonly_fields = ["user", "structure"]
     extra = 0
 
@@ -130,7 +139,7 @@ class UserAdmin(BaseUserAdmin):
     readonly_fields = [has_migrated_to_ic]
     ordering = ("-date_joined",)
     filter_horizontal = ()
-    inlines = [StructureMemberInline]
+    inlines = [StructureMemberInline, StructurePutativeMemberInline]
 
 
 # Now register the new UserAdmin...
