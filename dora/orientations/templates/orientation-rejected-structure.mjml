@@ -1,68 +1,46 @@
-{% extends "email-base.mjml" %}
+{% extends "email-base.mjml" %} {% block preview %} La demande d’orientation pour {{ data.get_beneficiary_full_name }}
+est refusée. {% endblock %} {% block title %} Vous venez de refuser la demande d’orientation pour {{
+data.get_beneficiary_full_name }}. {% endblock %} {% block illustration %}
+<mj-image
+  src="{{ homepage_url }}/emails/illu-orientation.png"
+  alt="Une personne souriante tape sur une machine à écrire tandis que des bulles de dialogue flottent au-dessus, représentant l’échange d’informations. Cela illustre comment une personne guide un bénéficiaire vers un service approprié."
+/>
+{% endblock %} {% block content %}
+<p>
+  <strong>Bonjour,</strong>
+</p>
 
-{% block preview %}
-    La demande d’orientation pour {{ data.get_beneficiary_full_name }} est refusée.
-{% endblock %}
+<p>
+  {{ data.prescriber.get_full_name }} de la structure
+  <a href="{{ data.prescriber_structure.get_frontend_url }}">{{ data.prescriber_structure.name }} </a> vous a adressé un
+  bénéficiaire pour le service «&nbsp; <a href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a>&nbsp;»,
+  le {{ data.creation_date }}.
+</p>
 
-{% block title %}
-    Vous venez de refuser la demande d’orientation pour {{ data.get_beneficiary_full_name }}.
-{% endblock %}
+<p>Nous vous remercions d’avoir examiné attentivement cette demande et d’y avoir répondu.</p>
 
-{% block illustration %}
-    <mj-image src="{{ homepage_url }}/emails/illu-orientation.png" alt=""/>
-{% endblock %}
+<p>
+  Votre décision de ne pas donner suite à cette demande pour le moment a été transmis à ou aux accompagnateur(s) de {{
+  data.get_beneficiary_full_name }}. La ou les raisons spécifiques évoquées sont les suivantes :
+</p>
+<ul>
+  {% for reason in data.rejection_reasons.all %}
+  <li>{{ reason.label }}</li>
+  {% endfor %}
+</ul>
+<p>{{ other_details }}</p>
+<p>Les accompagnateurs en ont été informé au travers du message suivant&nbsp;:</p>
 
-{% block content %}
-    <p>
-        <strong>Bonjour,</strong>
-    </p>
+<p style="font-style: italic">{{ message|linebreaksbr }}</p>
 
-    <p>
-        {{ data.prescriber.get_full_name }} de la structure
-        <a href="{{ data.prescriber_structure.get_frontend_url }}">{{ data.prescriber_structure.name }}
-        </a> vous a adressé un bénéficiaire pour le service «&nbsp;
-        <a href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a>&nbsp;»,
-        le {{ data.creation_date }}.
-    </p>
+<p>
+  Il se peut que le professionnel ayant réalisé la demande souhaite vous contacter pour de plus amples informations.
+</p>
 
-    <p>
-        Nous vous remercions d’avoir examiné attentivement cette demande et d’y avoir répondu.
-    </p>
+<p>Nous vous remercions par avance pour votre engagement.</p>
 
-    <p>
-        Votre décision de ne pas donner suite à cette demande pour le moment a été transmis à ou aux accompagnateur(s)
-        de
-        {{ data.get_beneficiary_full_name }}. La ou les raisons spécifiques évoquées sont les suivantes :
-    </p>
-    <ul>
-        {% for reason in data.rejection_reasons.all %}
-            <li>{{ reason.label }}</li>
-        {% endfor %}
-    </ul>
-    <p>{{ other_details }}</p>
-    <p>
-        Les accompagnateurs en ont été informé au travers du message suivant&nbsp;:
-    </p>
-
-    <p style="font-style: italic">
-        {{ message|linebreaksbr }}
-    </p>
-
-    <p>
-        Il se peut que le professionnel ayant réalisé la demande souhaite vous contacter pour de plus amples
-        informations.
-    </p>
-
-    <p>
-        Nous vous remercions par avance pour votre engagement.
-    </p>
-
-{% endblock %}
-
-{% block cta %}
-    <mj-spacer height="24px"/>
-    <mj-button mj-class="cta" href="{{ data.get_magic_link }}">
-        Visualiser le récapitulatif de la demande
-    </mj-button>
-    <mj-spacer height="24px"/>
+{% endblock %} {% block cta %}
+<mj-spacer height="24px" />
+<mj-button mj-class="cta" href="{{ data.get_magic_link }}"> Visualiser le récapitulatif de la demande </mj-button>
+<mj-spacer height="24px" />
 {% endblock %}
