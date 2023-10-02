@@ -601,7 +601,7 @@ class FeedbackSerializer(serializers.Serializer):
     message = serializers.CharField()
 
 
-class SavedSearchListSerializer(serializers.ModelSerializer):
+class SavedSearchSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
         slug_field="value",
         queryset=ServiceCategory.objects.all(),

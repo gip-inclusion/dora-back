@@ -1,4 +1,4 @@
-from rest_framework import permissions, viewsets
+from rest_framework import mixins, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -25,7 +25,12 @@ class ServiceSuggestionValidationPermission(permissions.BasePermission):
         return request.user.is_authenticated and request.user.is_staff
 
 
-class ServiceSuggestionViewSet(viewsets.GenericViewSet):
+class ServiceSuggestionViewSet(
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
     permission_classes = [ServiceSuggestionPermission]
     serializer_class = ServiceSuggestionSerializer
 

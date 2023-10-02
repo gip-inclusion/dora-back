@@ -13,7 +13,7 @@
       "size": "S"
     },
     {
-      "command": "30 8 * * * tools/send_saved_searchs_notifications.sh",
+      "command": "30 7 * * * tools/send_saved_searchs_notifications.sh",
       "size": "S"
     }
   ]

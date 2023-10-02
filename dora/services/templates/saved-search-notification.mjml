@@ -34,7 +34,7 @@
         {% endfor %}
 
         {% if services_number > 10 %}
-            <li>...</li>
+            <li>…</li>
         {% endif %}
 
         </ul>

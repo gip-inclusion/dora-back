@@ -608,7 +608,7 @@ class SavedSearch(models.Model):
     city_label = models.CharField(verbose_name="Label de la ville")
     category = models.ForeignKey(
         ServiceCategory,
-        verbose_name="Thématiques",
+        verbose_name="Thématique",
         null=True,
         on_delete=models.CASCADE,
     )
@@ -628,3 +628,7 @@ class SavedSearch(models.Model):
         verbose_name="Fréquence",
     )
     last_notification_date = models.DateField(default=datetime.now)
+
+    class Meta:
+        verbose_name = "Recherche sauvegardé"
+        verbose_name_plural = "Recherches sauvegardées"

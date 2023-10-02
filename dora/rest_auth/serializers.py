@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from dora.services.models import Bookmark, SavedSearch
-from dora.services.serializers import SavedSearchListSerializer, ServiceListSerializer
+from dora.services.serializers import SavedSearchSerializer, ServiceListSerializer
 from dora.sirene.models import Establishment
 from dora.structures.models import Structure
 from dora.structures.serializers import StructureListSerializer
@@ -73,7 +73,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
             qs = SavedSearch.objects.none()
         else:
             qs = SavedSearch.objects.filter(user=user).order_by("-creation_date")
-        return SavedSearchListSerializer(qs, many=True).data
+        return SavedSearchSerializer(qs, many=True).data
 
 
 class TokenSerializer(serializers.Serializer):

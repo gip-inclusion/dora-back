@@ -5,6 +5,7 @@ from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 
+from dora.services.models import SavedSearch
 from dora.structures.models import StructureMember
 
 from .models import User
@@ -13,6 +14,15 @@ from .models import User
 class StructureMemberInline(admin.TabularInline):
     model = StructureMember
     readonly_fields = ["user", "structure"]
+    extra = 0
+
+    def has_add_permission(self, request, obj):
+        return False
+
+
+class SavedSearchInline(admin.TabularInline):
+    model = SavedSearch
+    readonly_fields = ["user"]
     extra = 0
 
     def has_add_permission(self, request, obj):
@@ -130,7 +140,7 @@ class UserAdmin(BaseUserAdmin):
     readonly_fields = [has_migrated_to_ic]
     ordering = ("-date_joined",)
     filter_horizontal = ()
-    inlines = [StructureMemberInline]
+    inlines = [StructureMemberInline, SavedSearchInline]
 
 
 # Now register the new UserAdmin...

@@ -55,7 +55,7 @@ from .models import Bookmark
 from .serializers import (
     AnonymousServiceSerializer,
     FeedbackSerializer,
-    SavedSearchListSerializer,
+    SavedSearchSerializer,
     ServiceListSerializer,
     ServiceModelSerializer,
     ServiceSerializer,
@@ -377,7 +377,7 @@ class SavedSearchViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
-    serializer_class = SavedSearchListSerializer
+    serializer_class = SavedSearchSerializer
     permission_classes = [SavedSearchPermission]
 
     def get_queryset(self):

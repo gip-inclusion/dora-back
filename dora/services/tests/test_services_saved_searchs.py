@@ -292,7 +292,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             name=self.service_name,
             status=ServiceStatus.PUBLISHED,
             diffusion_zone_type=AdminDivisionType.CITY,
-            modification_date=timezone.now() - timedelta(days=20),
+            publication_date=timezone.now() - timedelta(days=20),
             diffusion_zone_details=SAVE_SEARCH_ARGS.get("city_code"),
         )
 
@@ -324,7 +324,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             name=self.service_name,
             status=ServiceStatus.PUBLISHED,
             diffusion_zone_type=AdminDivisionType.CITY,
-            modification_date=timezone.now() - timedelta(days=60),
+            publication_date=timezone.now() - timedelta(days=60),
             diffusion_zone_details=SAVE_SEARCH_ARGS.get("city_code"),
         )
 
@@ -355,7 +355,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             status=ServiceStatus.PUBLISHED,
             categories="cat1",
             diffusion_zone_type=AdminDivisionType.CITY,
-            modification_date=timezone.now() - timedelta(days=20),
+            publication_date=timezone.now() - timedelta(days=20),
             diffusion_zone_details=SAVE_SEARCH_ARGS.get("city_code"),
         )
 
@@ -400,7 +400,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             categories="cat1",
             subcategories="cat1--sub1, cat1--sub2",
             diffusion_zone_type=AdminDivisionType.CITY,
-            modification_date=timezone.now() - timedelta(days=20),
+            publication_date=timezone.now() - timedelta(days=20),
             diffusion_zone_details=SAVE_SEARCH_ARGS.get("city_code"),
         )
 
@@ -453,7 +453,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             subcategories="cat1--sub1, cat1--sub2",
             kinds=[kind, kind_2],
             diffusion_zone_type=AdminDivisionType.CITY,
-            modification_date=timezone.now() - timedelta(days=20),
+            publication_date=timezone.now() - timedelta(days=20),
             diffusion_zone_details=SAVE_SEARCH_ARGS.get("city_code"),
         )
 
@@ -514,7 +514,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             kinds=[kind, kind_2],
             fee_condition=fee,
             diffusion_zone_type=AdminDivisionType.CITY,
-            modification_date=timezone.now() - timedelta(days=20),
+            publication_date=timezone.now() - timedelta(days=20),
             diffusion_zone_details=SAVE_SEARCH_ARGS.get("city_code"),
         )
 
@@ -559,7 +559,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             status=ServiceStatus.PUBLISHED,
             categories="cat1",
             diffusion_zone_type=AdminDivisionType.CITY,
-            modification_date=timezone.now() - timedelta(days=20),
+            publication_date=timezone.now() - timedelta(days=20),
             diffusion_zone_details=SAVE_SEARCH_ARGS.get("city_code"),
         )
         make_service(
@@ -567,7 +567,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             status=ServiceStatus.PUBLISHED,
             categories="cat1",
             diffusion_zone_type=AdminDivisionType.CITY,
-            modification_date=timezone.now() - timedelta(days=80),
+            publication_date=timezone.now() - timedelta(days=80),
             diffusion_zone_details=SAVE_SEARCH_ARGS.get("city_code"),
         )
 

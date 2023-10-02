@@ -58,8 +58,12 @@ class Command(BaseCommand):
         saved_searchs = get_saved_search_notifications_to_send()
 
         di_client = (
-            data_inclusion.di_client_factory() if not settings.IS_TESTING else None
+            data_inclusion.di_client_factory()
+            if not settings.IS_TESTING and settings.SAVED_SEARCH_ON_DI
+            else None
         )
+
+        print(f"{len(saved_searchs)} notifications à envoyer")
 
         for saved_search in saved_searchs:
             category = None
@@ -92,10 +96,13 @@ class Command(BaseCommand):
             )
 
             # On garde les contenus qui ont été publiés depuis la dernière notification
+            for r in results:
+                print(r["publication_date"].isoformat())
+
             updated_services = [
                 r
                 for r in results
-                if datetime.fromisoformat(r["modification_date"]).date()
+                if datetime.fromisoformat(r["publication_date"]).date()
                 > saved_search.last_notification_date
             ]
 

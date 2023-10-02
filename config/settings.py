@@ -566,3 +566,8 @@ IC_LOGOUT_URL = os.environ.get("IC_LOGOUT_URL")
 IC_ACCOUNT_URL = os.environ.get("IC_ACCOUNT_URL")
 IC_CLIENT_ID = os.environ.get("IC_CLIENT_ID")
 IC_CLIENT_SECRET = os.environ.get("IC_CLIENT_SECRET")
+
+################
+# SAVED SEARCH #
+################
+SAVED_SEARCH_ON_DI = os.environ["SAVED_SEARCH_ON_DI"] == "true"
