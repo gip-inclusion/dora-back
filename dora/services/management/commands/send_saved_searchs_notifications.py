@@ -63,8 +63,6 @@ class Command(BaseCommand):
             else None
         )
 
-        print(f"{len(saved_searchs)} notifications à envoyer")
-
         for saved_search in saved_searchs:
             category = None
             if saved_search.category:
@@ -96,9 +94,6 @@ class Command(BaseCommand):
             )
 
             # On garde les contenus qui ont été publiés depuis la dernière notification
-            for r in results:
-                print(r["publication_date"].isoformat())
-
             updated_services = [
                 r
                 for r in results

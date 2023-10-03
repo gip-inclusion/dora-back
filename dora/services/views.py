@@ -668,6 +668,7 @@ class SearchResultSerializer(ServiceListSerializer):
             "location",
             "location_kinds",
             "modification_date",
+            "publication_date",
             "name",
             "short_desc",
             "slug",
