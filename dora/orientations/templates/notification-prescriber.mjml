@@ -1,35 +1,58 @@
-{% extends "email-base.mjml" %} {% block preview %} Relance envoyée pour votre demande d’orientation en attente depuis
-{{ elapsed_days }} jours. {% endblock %} {% block title %} Relance envoyée – Demande d’orientation en attente {%
-endblock %} {% block illustration %}
-<mj-image
-  src="{{ homepage_url }}/emails/illu-orientation.png"
-  alt="Une personne souriante tape sur une machine à écrire tandis que des bulles de dialogue flottent au-dessus, représentant l’échange d’informations. Cela illustre comment une personne guide un bénéficiaire vers un service approprié."
-/>
-{% endblock %} {% block content %}
-<p>
-  <strong>Bonjour {{ data.prescriber.get_short_name }},</strong>
-</p>
+{% extends "email-base.mjml" %}
 
-<p>
-  Une relance a été envoyée à la structure
-  <a href="{{ data.service.structure.get_frontend_url }}"> {{ data.service.structure.name }} </a> dans le cadre de votre
-  demande d’orientation pour le service «&nbsp;<a href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a
-  >&nbsp;» que vous avez transmise il y a {{ elapsed_days }} jours et qui n’a, semble-t-il, pas encore été traitée.
-</p>
-<p>
-  <strong>
-    La structure <a href="{{ data.service.structure.get_frontend_url }}"> {{ data.service.structure.name }}</a> a très
-    certainement des éléments de réponse à vous transmettre.
-  </strong>
-</p>
+{% block preview %}
+    Relance envoyée pour votre demande d’orientation en attente depuis {{ elapsed_days }} jours.
+{% endblock %}
 
-<p>
-  Si une réponse vous a été apportée, n’hésitez pas à nous en faire part en nous informant si celle-ci a été validée ou
-  refusée en répondant directement à ce mail. Ces informations nous sont précieuses pour améliorer le service numérique
-  DORA et éviter des relances inappropriées.
-</p>
-Pour rappel : {% include "partials/block-beneficiary.html" %} {% include "partials/block-situation.html" %} {% include
-"partials/block-requirements.html" %} {% include "partials/block-prescriber.html" %} On pourra vous solliciter pour
-offrir plus de détails sur le ou la bénéficiaire. {% include "partials/block-orientation.html" %} {% include
-"partials/block-attachments.html" %} {% include "partials/block-service-contact.html" with no_reply_msg=True %} {%
-endblock %}
+{% block title %}
+    Relance envoyée – Demande d’orientation en attente
+{% endblock %}
+
+{% block illustration %}
+    <mj-image src="{{ homepage_url }}/emails/illu-orientation.png" alt="Une personne souriante tape sur une machine à écrire tandis que des bulles de dialogue flottent au-dessus, représentant l’échange d’informations. Cela illustre comment une personne guide un bénéficiaire vers un service approprié."/>
+{% endblock %}
+
+{% block content %}
+    <p>
+        <strong>Bonjour {{ data.prescriber.get_short_name }},</strong>
+    </p>
+
+    <p>
+        Une relance a été envoyée à la structure <a
+            href="{{ data.service.structure.get_frontend_url }}">
+        {{ data.service.structure.name }}
+    </a> dans le cadre de votre demande d’orientation pour le service «&nbsp;<a
+            href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a>&nbsp;» que vous avez transmise il y
+        a {{ elapsed_days }} jours et qui n’a, semble-t-il, pas encore été traitée.
+    </p>
+    <p>
+        <strong>
+            La structure <a href="{{ data.service.structure.get_frontend_url }}">
+            {{ data.service.structure.name }}</a> a très certainement des éléments de réponse à vous transmettre.
+        </strong>
+    </p>
+
+    <p>
+        Si une réponse vous a été apportée, n’hésitez pas à nous en faire part en nous informant si celle-ci a été
+        validée ou refusée en répondant directement à ce mail.
+        Ces informations nous sont précieuses pour améliorer le service numérique DORA et éviter des relances
+        inappropriées.
+    </p>
+    Pour rappel :
+
+    {% include "partials/block-beneficiary.html" %}
+
+    {% include "partials/block-situation.html" %}
+
+    {% include "partials/block-requirements.html" %}
+
+    {% include "partials/block-prescriber.html" %}
+    On pourra vous solliciter pour offrir plus de détails sur le ou la bénéficiaire.
+
+    {% include "partials/block-orientation.html" %}
+
+    {% include "partials/block-attachments.html" %}
+
+    {% include "partials/block-service-contact.html" with no_reply_msg=True %}
+
+{% endblock %}

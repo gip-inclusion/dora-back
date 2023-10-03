@@ -1,28 +1,44 @@
-{% extends "email-base.mjml" %} {% block preview %} La demande d’orientation pour {{ data.get_beneficiary_full_name }}
-est validée ! {% endblock %} {% block title %} Vous venez de valider la demande d’orientation pour {{
-data.get_beneficiary_full_name }} ! 🎉 {% endblock %} {% block illustration %}
-<mj-image
-  src="{{ homepage_url }}/emails/illu-orientation.png"
-  alt="Une personne souriante tape sur une machine à écrire tandis que des bulles de dialogue flottent au-dessus, représentant l’échange d’informations. Cela illustre comment une personne guide un bénéficiaire vers un service approprié."
-/>
-{% endblock %} {% block content %}
-<p>
-  <strong>Bonjour,</strong>
-</p>
-<p>
-  {{ data.prescriber.get_full_name }} de la structure
-  <a href="{{ data.prescriber_structure.get_frontend_url }}">{{ data.prescriber_structure.name }} </a> vous a adressé un
-  bénéficiaire pour le service «&nbsp; <a href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a>&nbsp;»,
-  le {{ data.creation_date|date:"j F Y" }}.
-</p>
-<p>Nous vous remercions d’avoir examiné attentivement cette demande et d’y avoir répondu favorablement.</p>
-<p>
-  Il se peut que le professionnel ayant réalisé la demande ou le ou la bénéficiaire souhaitent vous contacter pour de
-  plus amples informations pratiques.
-</p>
-<p>Nous vous remercions par avance pour votre engagement.</p>
-{% endblock %} {% block cta %}
-<mj-spacer height="24px" />
-<mj-button mj-class="cta" href="{{ data.get_magic_link }}"> Visualiser le récapitulatif de la demande </mj-button>
-<mj-spacer height="24px" />
+{% extends "email-base.mjml" %}
+
+{% block preview %}
+    La demande d’orientation pour {{ data.get_beneficiary_full_name }} est validée !
+{% endblock %}
+
+{% block title %}
+    Vous venez de valider la demande d’orientation pour {{ data.get_beneficiary_full_name }} ! 🎉
+{% endblock %}
+
+{% block illustration %}
+    <mj-image src="{{ homepage_url }}/emails/illu-orientation.png" alt="Une personne souriante tape sur une machine à écrire tandis que des bulles de dialogue flottent au-dessus, représentant l’échange d’informations. Cela illustre comment une personne guide un bénéficiaire vers un service approprié."/>
+{% endblock %}
+
+{% block content %}
+    <p>
+        <strong>Bonjour,</strong>
+    </p>
+    <p>
+        {{ data.prescriber.get_full_name }} de la structure
+        <a href="{{ data.prescriber_structure.get_frontend_url }}">{{ data.prescriber_structure.name }}
+        </a> vous a adressé un bénéficiaire pour le service «&nbsp;
+        <a href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a>&nbsp;»,
+        le {{ data.creation_date|date:"j F Y" }}.
+    </p>
+    <p>
+        Nous vous remercions d’avoir examiné attentivement cette demande et d’y avoir répondu favorablement.
+    </p>
+    <p>
+        Il se peut que le professionnel ayant réalisé la demande ou le ou la bénéficiaire souhaitent vous contacter pour
+        de plus amples informations pratiques.
+    </p>
+    <p>
+        Nous vous remercions par avance pour votre engagement.
+    </p>
+{% endblock %}
+
+{% block cta %}
+    <mj-spacer height="24px"/>
+    <mj-button mj-class="cta" href="{{ data.get_magic_link }}">
+        Visualiser le récapitulatif de la demande
+    </mj-button>
+    <mj-spacer height="24px"/>
 {% endblock %}
