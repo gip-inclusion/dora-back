@@ -659,10 +659,12 @@ def options(request):
 class SearchResultSerializer(ServiceListSerializer):
     distance = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
+    coordinates = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
         fields = [
+            "coordinates",
             "diffusion_zone_type",
             "distance",
             "location",
@@ -687,6 +689,10 @@ class SearchResultSerializer(ServiceListSerializer):
             return "À distance"
         else:
             return ""
+
+    def get_coordinates(self, obj):
+        if obj.geom:
+            return (obj.geom.x, obj.geom.y)
 
 
 def _filter_and_annotate_dora_services(services, location):
