@@ -23,6 +23,7 @@ class StructureMemberInline(admin.TabularInline):
 class SavedSearchInline(admin.TabularInline):
     model = SavedSearch
     readonly_fields = ["user"]
+    extra = 0
 
 
 class StructurePutativeMemberInline(admin.TabularInline):
