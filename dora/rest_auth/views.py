@@ -154,9 +154,12 @@ def join_structure(request):
             StructureSerializer(structure, context={"request": request}).data
         )
 
-    was_already_member_of_a_structure = StructureMember.objects.filter(
-        user=user, structure=structure
-    ).exists()
+    was_already_member_of_a_structure = (
+        StructureMember.objects.filter(user=user).exists()
+        or StructurePutativeMember.objects.filter(
+            user=user, invited_by_admin=False
+        ).exists()
+    )
 
     if not structure_has_admin:
         _add_user_to_adminless_structure(structure, user)
@@ -164,7 +167,7 @@ def join_structure(request):
         _add_user_to_structure_or_waitlist(structure, user)
 
     if not was_already_member_of_a_structure:
-        user.start_onboarding()
+        user.start_onboarding(structure, not structure_has_admin)
 
     return Response(StructureSerializer(structure, context={"request": request}).data)
 
