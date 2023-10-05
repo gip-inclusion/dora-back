@@ -59,7 +59,8 @@ class Command(BaseCommand):
 
         di_client = (
             data_inclusion.di_client_factory()
-            if not settings.IS_TESTING and settings.SAVED_SEARCH_ON_DI
+            if not settings.IS_TESTING
+            and settings.INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS
             else None
         )
 
@@ -86,7 +87,7 @@ class Command(BaseCommand):
             results = _search(
                 None,
                 saved_search.city_code,
-                [category.value],
+                [category.value] if category else None,
                 subcategories,
                 kinds,
                 fees,

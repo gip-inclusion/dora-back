@@ -571,4 +571,6 @@ IC_CLIENT_SECRET = os.environ.get("IC_CLIENT_SECRET")
 ################
 # SAVED SEARCH #
 ################
-SAVED_SEARCH_ON_DI = os.environ["SAVED_SEARCH_ON_DI"] == "true"
+INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS = (
+    os.environ["INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS"] == "true"
+)

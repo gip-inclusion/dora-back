@@ -1,4 +1,4 @@
-{% extends "email-base.mjml" %}
+{% extends "orientation-email-base.mjml" %}
 
 {% block preview %}
     Un bénéficiaire a été orienté vers votre service {{ data.service.name }}
@@ -6,10 +6,6 @@
 
 {% block title %}
     Vous avez reçu une demande d’orientation pour le service «&nbsp;{{ data.service.name }}&nbsp;»
-{% endblock %}
-
-{% block illustration %}
-    <mj-image src="{{ homepage_url }}/emails/illu-orientation.png" alt="Une personne souriante tape sur une machine à écrire tandis que des bulles de dialogue flottent au-dessus, représentant l’échange d’informations. Cela illustre comment une personne guide un bénéficiaire vers un service approprié."/>
 {% endblock %}
 
 {% block content %}

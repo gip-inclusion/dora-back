@@ -1,4 +1,4 @@
-{% extends "email-base.mjml" %}
+{% extends "orientation-email-base.mjml" %}
 
 {% block preview %}
     La demande pour {{ data.get_beneficiary_full_name }} a été acceptée&nbsp;!
@@ -6,10 +6,6 @@
 
 {% block title %}
     Votre demande d’orientation pour {{ data.get_beneficiary_full_name }} a été acceptée&nbsp;! 🎉
-{% endblock %}
-
-{% block illustration %}
-    <mj-image src="{{ homepage_url }}/emails/illu-orientation.png" alt="Une personne souriante tape sur une machine à écrire tandis que des bulles de dialogue flottent au-dessus, représentant l’échange d’informations. Cela illustre comment une personne guide un bénéficiaire vers un service approprié."/>
 {% endblock %}
 
 {% block content %}
