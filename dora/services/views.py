@@ -742,7 +742,7 @@ def _sort_services(services):
             and s["distance"] <= MAX_DISTANCE
         ):
             on_site_services.append(s)
-        else:
+        elif "a-distance" in s["location_kinds"]:
             remote_services.append(s)
 
     on_site_services = iter(
