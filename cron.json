@@ -11,6 +11,10 @@
     {
       "command": "8 7 * * * tools/send-orientations-reminders-emails.sh",
       "size": "S"
+    },
+    {
+      "command": "30 7 * * * tools/send_saved_searchs_notifications.sh",
+      "size": "S"
     }
   ]
 }

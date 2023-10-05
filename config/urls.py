@@ -36,6 +36,10 @@ router.register(
 router.register(r"services", dora.services.views.ServiceViewSet, basename="service")
 router.register(r"models", dora.services.views.ModelViewSet, basename="model")
 router.register(
+    r"saved-searchs", dora.services.views.SavedSearchViewSet, basename="saved-search"
+)
+
+router.register(
     r"services-suggestions",
     dora.service_suggestions.views.ServiceSuggestionViewSet,
     basename="service-suggestion",

@@ -32,7 +32,6 @@ def map_search_result(result: dict) -> dict:
     # (c.a.d qu'on veut un objet similaire à ce que renvoie le SearchResultSerializer)
 
     service_data = result["service"]
-
     location_str = ""
     if service_data["modes_accueil"]:
         if "en-presentiel" in service_data["modes_accueil"]:
@@ -69,6 +68,9 @@ def map_search_result(result: dict) -> dict:
         "diffusion_zone_type": DI_TO_DORA_DIFFUSION_ZONE_TYPE_MAPPING.get(
             result["service"]["zone_diffusion_type"], None
         ),
+        "coordinates": (result["service"]["longitude"], result["service"]["latitude"])
+        if result["service"]["longitude"] and result["service"]["latitude"]
+        else None,
     }
 
 
