@@ -1,4 +1,4 @@
-{% extends "email-base.mjml" %}
+{% extends "orientation-email-base.mjml" %}
 
 {% block preview %}
     Demande d’orientation non traitée depuis {{ elapsed_days }} jours.
@@ -7,7 +7,6 @@
 {% block title %}
     Relance – Demande d’orientation en attente
 {% endblock %}
-
 
 {% block content %}
     <p>
