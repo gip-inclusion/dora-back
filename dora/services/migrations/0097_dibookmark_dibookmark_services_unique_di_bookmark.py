@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("services", "0095_remove_service_is_draft_remove_service_is_suggestion"),
+        ("services", "0096_savedsearch"),
     ]
 
     operations = [
