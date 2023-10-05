@@ -593,3 +593,17 @@ class Bookmark(models.Model):
                 name="%(app_label)s_unique_bookmark",
             )
         ]
+
+
+class DiBookmark(models.Model):
+    di_id = models.CharField(max_length=50)
+    user = models.ForeignKey("users.User", on_delete=models.CASCADE)
+    creation_date = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["di_id", "user"],
+                name="%(app_label)s_unique_di_bookmark",
+            )
+        ]

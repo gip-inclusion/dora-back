@@ -29,9 +29,11 @@ from dora.services.models import (
     AccessCondition,
     AdminDivisionType,
     BeneficiaryAccessMode,
+    Bookmark,
     CoachOrientationMode,
     ConcernedPublic,
     Credential,
+    DiBookmark,
     LocationKind,
     Requirement,
     Service,
@@ -50,7 +52,6 @@ from dora.services.utils import (
 from dora.stats.models import DeploymentLevel, DeploymentState
 from dora.structures.models import Structure, StructureMember
 
-from .models import Bookmark
 from .serializers import (
     AnonymousServiceSerializer,
     FeedbackSerializer,
@@ -190,6 +191,26 @@ class ServiceViewSet(
                 bookmark = Bookmark.objects.get(service=service, user=user)
                 bookmark.delete()
             except Bookmark.DoesNotExist:
+                pass
+        return Response(status=204)
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="set-di-bookmark",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def set_di_bookmark(self, request):
+        user = self.request.user
+        di_id = self.request.data.get("di_id")
+        wanted_state = self.request.data.get("state")
+        if wanted_state:
+            DiBookmark.objects.get_or_create(di_id=di_id, user=user)
+        else:
+            try:
+                di_bookmark = DiBookmark.objects.get(di_id=di_id, user=user)
+                di_bookmark.delete()
+            except DiBookmark.DoesNotExist:
                 pass
         return Response(status=204)
 

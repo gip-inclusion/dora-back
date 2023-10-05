@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from dora.services.models import Bookmark
+from dora.services.models import Bookmark, DiBookmark
 from dora.services.serializers import ServiceListSerializer
 from dora.sirene.models import Establishment
 from dora.structures.models import Structure
@@ -16,17 +16,25 @@ class BookmarkListSerializer(serializers.ModelSerializer):
         fields = ["service", "creation_date"]
 
 
+class DiBookmarkListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DiBookmark
+        fields = ["di_id", "creation_date"]
+
+
 class UserInfoSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="get_full_name", read_only=True)
     short_name = serializers.CharField(source="get_short_name", read_only=True)
     structures = serializers.SerializerMethodField()
     pending_structures = serializers.SerializerMethodField()
     bookmarks = serializers.SerializerMethodField()
+    di_bookmarks = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             "bookmarks",
+            "di_bookmarks",
             "department",
             "email",
             "first_name",
@@ -65,6 +73,13 @@ class UserInfoSerializer(serializers.ModelSerializer):
         else:
             qs = Bookmark.objects.filter(user=user).order_by("-creation_date")
         return BookmarkListSerializer(qs, many=True).data
+
+    def get_di_bookmarks(self, user):
+        if not user or not user.is_authenticated:
+            qs = DiBookmark.objects.none()
+        else:
+            qs = DiBookmark.objects.filter(user=user).order_by("-creation_date")
+        return DiBookmarkListSerializer(qs, many=True).data
 
 
 class TokenSerializer(serializers.Serializer):
