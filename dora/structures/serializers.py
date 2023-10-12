@@ -80,6 +80,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "is_admin",
             "is_member",
             "is_pending_member",
+            "is_obsolete",
             "latitude",
             "longitude",
             "models",
@@ -372,6 +373,23 @@ class StructureSerializer(serializers.ModelSerializer):
             )
             return [a.user.get_safe_name() for a in admins]
         return []
+
+    def update(self, instance, validated_data):
+        user = self.context["request"].user
+
+        if (
+            user.is_staff
+            and validated_data.get("is_obsolete", False)
+            and not instance.is_obsolete
+        ):
+            instance.is_obsolete = True
+
+            obsolete_text = "[Obsolète] "
+            if not instance.name.startswith(obsolete_text):
+                instance.name = f"{obsolete_text} {instance.name}"
+
+        instance.save()
+        return instance
 
 
 class StructureListSerializer(StructureSerializer):
