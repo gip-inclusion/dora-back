@@ -15,6 +15,10 @@
     {
       "command": "30 7 * * * tools/send_saved_searchs_notifications.sh",
       "size": "S"
+    },
+    {
+      "command": "17 07-18 * * * tools/export-analytics-to-di.sh",
+      "size": "S"
     }
   ]
 }
