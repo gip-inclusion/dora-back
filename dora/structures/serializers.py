@@ -52,6 +52,7 @@ class StructureSerializer(serializers.ModelSerializer):
 
     short_admin_names = serializers.SerializerMethodField()
 
+    name = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
 
     class Meta:
@@ -108,6 +109,11 @@ class StructureSerializer(serializers.ModelSerializer):
         ]
         lookup_field = "slug"
         read_only_fields = ["has_been_edited", "city", "department"]
+
+    def get_name(self, obj):
+        if obj.is_obsolete:
+            return f"[Obsolète] {obj.name}"
+        return obj.name
 
     def get_has_admin(self, obj):
         return obj.has_admin()
@@ -373,23 +379,6 @@ class StructureSerializer(serializers.ModelSerializer):
             )
             return [a.user.get_safe_name() for a in admins]
         return []
-
-    def update(self, instance, validated_data):
-        user = self.context["request"].user
-
-        if (
-            user.is_staff
-            and validated_data.get("is_obsolete", False)
-            and not instance.is_obsolete
-        ):
-            instance.is_obsolete = True
-
-            obsolete_text = "[Obsolète] "
-            if not instance.name.startswith(obsolete_text):
-                instance.name = f"{obsolete_text} {instance.name}"
-
-        instance.save()
-        return instance
 
 
 class StructureListSerializer(StructureSerializer):
