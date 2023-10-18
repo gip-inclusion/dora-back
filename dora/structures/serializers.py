@@ -365,18 +365,12 @@ class StructureSerializer(serializers.ModelSerializer):
         )
 
     def get_short_admin_names(self, obj):
-        def get_short_name(user):
-            if user.first_name and user.last_name:
-                return f"{user.first_name[0]}. {user.last_name}"
-            else:
-                return user.email.split("@")[0]
-
         user = self.context.get("request").user
         if user.is_authenticated:
             admins = StructureMember.objects.filter(
                 structure=obj, is_admin=True, user__is_valid=True, user__is_active=True
             )
-            return [get_short_name(a.user) for a in admins]
+            return [a.user.get_safe_name() for a in admins]
         return []
 
 

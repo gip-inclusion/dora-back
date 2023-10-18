@@ -1,4 +1,4 @@
-{% extends "email-base.mjml" %}
+{% extends "orientation-email-base.mjml" %}
 
 {% block preview %}
     Voici un récapitulatif de la demande que vous avez envoyé à {{ data.service.structure.name }}
@@ -7,7 +7,6 @@
 {% block title %}
     Votre demande a bien été transmise&nbsp;!
 {% endblock %}
-
 
 {% block content %}
     <p>

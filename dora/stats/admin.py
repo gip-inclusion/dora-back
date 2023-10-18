@@ -123,6 +123,10 @@ class ServiceEventAdmin(AnalyticsEventAdmin):
         "is_orientable",
         "status",
     ]
+    filter_horizontal = [
+        "categories",
+        "subcategories",
+    ]
 
 
 class DiServiceEventAdmin(AnalyticsEventAdmin):
@@ -157,6 +161,10 @@ class OrientationEventAdmin(AnalyticsEventAdmin):
         "date",
         "structure_department",
     ]
+    filter_horizontal = [
+        "categories",
+        "subcategories",
+    ]
 
 
 @admin.display(description="AB groups")
@@ -175,8 +183,13 @@ class MobilisationEventAdmin(AnalyticsEventAdmin):
         "user",
         "anonymous_user_hash",
     ]
+
     list_filter = ["date", "structure_department", "ab_test_groups"]
-    filter_horizontal = ["ab_test_groups"]
+    filter_horizontal = [
+        "ab_test_groups",
+        "categories",
+        "subcategories",
+    ]
 
 
 class DiMobilisationEventAdmin(AnalyticsEventAdmin):

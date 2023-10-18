@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import CharField, Q
+from django.db.models import CharField, F, Q
 from django.db.models.functions import Length
 from django.utils import timezone
 from django.utils.crypto import get_random_string
@@ -399,3 +399,15 @@ class Structure(ModerationMixin, models.Model):
 
     def log_note(self, user, msg):
         LogItem.objects.create(structure=self, user=user, message=msg.strip())
+
+    def get_most_recently_active_admin(self):
+        return (
+            StructureMember.objects.filter(
+                structure_id=self.id,
+                user__is_active=True,
+                user__is_valid=True,
+                is_admin=True,
+            )
+            .order_by(F("user__last_login").desc(nulls_last=True))
+            .first()
+        )

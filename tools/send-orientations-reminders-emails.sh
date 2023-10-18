@@ -6,5 +6,5 @@ if [ "$ENVIRONMENT" != "production" ];then
   exit 0;
 fi
 
-echo "Envoi des courriels de relance"
+echo "Envoi des courriels de relance pour les orientations en attente"
 python /app/manage.py send_orientations_reminders

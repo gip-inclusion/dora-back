@@ -144,6 +144,10 @@ class AbstractServiceEvent(AbstractAnalyticsEvent):
         db_index=True,
         help_text="La source de l'import de ce service",
     )
+    categories = models.ManyToManyField(ServiceCategory, blank=True, related_name="+")
+    subcategories = models.ManyToManyField(
+        ServiceSubCategory, blank=True, related_name="+"
+    )
 
     class Meta:
         abstract = True

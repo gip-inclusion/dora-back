@@ -34,6 +34,7 @@ from dora.services.models import (
     Credential,
     LocationKind,
     Requirement,
+    SavedSearch,
     Service,
     ServiceCategory,
     ServiceFee,
@@ -54,6 +55,7 @@ from .models import Bookmark
 from .serializers import (
     AnonymousServiceSerializer,
     FeedbackSerializer,
+    SavedSearchSerializer,
     ServiceListSerializer,
     ServiceModelSerializer,
     ServiceSerializer,
@@ -363,6 +365,29 @@ class ServiceViewSet(
         return Response(status=204)
 
 
+class SavedSearchPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        return user and user.is_authenticated
+
+
+class SavedSearchViewSet(
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    serializer_class = SavedSearchSerializer
+    permission_classes = [SavedSearchPermission]
+
+    def get_queryset(self):
+        user = self.request.user
+        return SavedSearch.objects.filter(user=user).order_by("-creation_date")
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
 class ModelViewSet(ServiceViewSet):
     def get_serializer_class(self):
         return ServiceModelSerializer
@@ -634,15 +659,18 @@ def options(request):
 class SearchResultSerializer(ServiceListSerializer):
     distance = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
+    coordinates = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
         fields = [
+            "coordinates",
             "diffusion_zone_type",
             "distance",
             "location",
             "location_kinds",
             "modification_date",
+            "publication_date",
             "name",
             "short_desc",
             "slug",
@@ -661,6 +689,10 @@ class SearchResultSerializer(ServiceListSerializer):
             return "À distance"
         else:
             return ""
+
+    def get_coordinates(self, obj):
+        if obj.geom:
+            return (obj.geom.x, obj.geom.y)
 
 
 def _filter_and_annotate_dora_services(services, location):

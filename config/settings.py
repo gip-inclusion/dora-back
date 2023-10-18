@@ -458,6 +458,7 @@ DATA_INCLUSION_STREAM_API_KEY = os.environ.get("DATA_INCLUSION_STREAM_API_KEY")
 DATA_INCLUSION_STREAM_SOURCES = (lambda s: s.split(",") if s else None)(
     os.environ.get("DATA_INCLUSION_STREAM_SOURCES")
 )
+DATA_INCLUSION_TIMEOUT_SECONDS = os.environ.get("DATA_INCLUSION_TIMEOUT_SECONDS")
 SKIP_DI_INTEGRATION_TESTS = True
 
 # Data inclusion user account
@@ -575,3 +576,10 @@ IC_LOGOUT_URL = os.environ.get("IC_LOGOUT_URL")
 IC_ACCOUNT_URL = os.environ.get("IC_ACCOUNT_URL")
 IC_CLIENT_ID = os.environ.get("IC_CLIENT_ID")
 IC_CLIENT_SECRET = os.environ.get("IC_CLIENT_SECRET")
+
+################
+# SAVED SEARCH #
+################
+INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS = (
+    os.environ.get("INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS") == "true"
+)
