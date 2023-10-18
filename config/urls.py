@@ -34,6 +34,7 @@ router.register(
     basename="structure-putative-member",
 )
 router.register(r"services", dora.services.views.ServiceViewSet, basename="service")
+router.register(r"bookmarks", dora.services.views.BookmarkViewSet, basename="bookmark")
 router.register(r"models", dora.services.views.ModelViewSet, basename="model")
 router.register(
     r"saved-searchs", dora.services.views.SavedSearchViewSet, basename="saved-search"

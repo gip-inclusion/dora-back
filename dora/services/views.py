@@ -6,6 +6,7 @@ import requests
 from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
+from django.core.exceptions import ValidationError
 from django.db.models import IntegerField, Q, Value
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
@@ -33,7 +34,6 @@ from dora.services.models import (
     CoachOrientationMode,
     ConcernedPublic,
     Credential,
-    DiBookmark,
     LocationKind,
     Requirement,
     SavedSearch,
@@ -175,46 +175,6 @@ class ServiceViewSet(
         ):
             return ServiceSerializer
         return AnonymousServiceSerializer
-
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="set-bookmark",
-        permission_classes=[permissions.IsAuthenticated],
-    )
-    def set_bookmark(self, request, slug):
-        user = self.request.user
-        service = self.get_object()
-        wanted_state = self.request.data.get("state")
-        if wanted_state:
-            Bookmark.objects.get_or_create(service=service, user=user)
-        else:
-            try:
-                bookmark = Bookmark.objects.get(service=service, user=user)
-                bookmark.delete()
-            except Bookmark.DoesNotExist:
-                pass
-        return Response(status=204)
-
-    @action(
-        detail=False,
-        methods=["post"],
-        url_path="set-di-bookmark",
-        permission_classes=[permissions.IsAuthenticated],
-    )
-    def set_di_bookmark(self, request):
-        user = self.request.user
-        di_id = self.request.data.get("di_id")
-        wanted_state = self.request.data.get("state")
-        if wanted_state:
-            DiBookmark.objects.get_or_create(di_id=di_id, user=user)
-        else:
-            try:
-                di_bookmark = DiBookmark.objects.get(di_id=di_id, user=user)
-                di_bookmark.delete()
-            except DiBookmark.DoesNotExist:
-                pass
-        return Response(status=204)
 
     @action(
         detail=True,
@@ -383,6 +343,63 @@ class ServiceViewSet(
                     service.last_sync_checksum = model.sync_checksum
                     service.save()
 
+        return Response(status=204)
+
+
+class BookmarkPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        return user and user.is_authenticated
+
+
+class BookmarkViewSet(
+    viewsets.GenericViewSet,
+):
+    permission_classes = [BookmarkPermission]
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="set-bookmark",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def set_bookmark(self, request):
+        user = self.request.user
+        service_slug = self.request.data.get("service_slug")
+        wanted_state = self.request.data.get("state")
+
+        service = Service.objects.filter(slug=service_slug)
+        if not service.exists():
+            raise ValidationError("Service does not exist")
+
+        if wanted_state:
+            Bookmark.objects.get_or_create(service=service.first(), user=user)
+        else:
+            try:
+                bookmark = Bookmark.objects.get(service=service.first(), user=user)
+                bookmark.delete()
+            except Bookmark.DoesNotExist:
+                pass
+        return Response(status=204)
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="set-di-bookmark",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def set_di_bookmark(self, request):
+        user = self.request.user
+        di_id = self.request.data.get("di_id")
+        wanted_state = self.request.data.get("state")
+        if wanted_state:
+            Bookmark.objects.get_or_create(di_id=di_id, user=user)
+        else:
+            try:
+                di_bookmark = Bookmark.objects.get(di_id=di_id, user=user)
+                di_bookmark.delete()
+            except Bookmark.DoesNotExist:
+                pass
         return Response(status=204)
 
 

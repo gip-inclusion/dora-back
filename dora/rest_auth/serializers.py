@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from dora.services.models import Bookmark, DiBookmark, SavedSearch
-from dora.services.serializers import SavedSearchSerializer, ServiceListSerializer
+from dora.services.models import Bookmark, SavedSearch
+from dora.services.serializers import SavedSearchSerializer
 from dora.sirene.models import Establishment
 from dora.structures.models import Structure
 from dora.structures.serializers import StructureListSerializer
@@ -9,17 +9,17 @@ from dora.users.models import User
 
 
 class BookmarkListSerializer(serializers.ModelSerializer):
-    service = ServiceListSerializer(read_only=True)
+    service_slug = serializers.SerializerMethodField()
 
     class Meta:
         model = Bookmark
-        fields = ["service", "creation_date"]
+        fields = ["service_slug", "di_id", "creation_date"]
 
+    def get_service_slug(self, bookmark):
+        if bookmark.service_id:
+            return bookmark.service.slug
 
-class DiBookmarkListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DiBookmark
-        fields = ["di_id", "creation_date"]
+        return None
 
 
 class UserInfoSerializer(serializers.ModelSerializer):
@@ -28,14 +28,12 @@ class UserInfoSerializer(serializers.ModelSerializer):
     structures = serializers.SerializerMethodField()
     pending_structures = serializers.SerializerMethodField()
     bookmarks = serializers.SerializerMethodField()
-    di_bookmarks = serializers.SerializerMethodField()
     saved_searchs = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             "bookmarks",
-            "di_bookmarks",
             "department",
             "email",
             "first_name",
@@ -75,13 +73,6 @@ class UserInfoSerializer(serializers.ModelSerializer):
         else:
             qs = Bookmark.objects.filter(user=user).order_by("-creation_date")
         return BookmarkListSerializer(qs, many=True).data
-
-    def get_di_bookmarks(self, user):
-        if not user or not user.is_authenticated:
-            qs = DiBookmark.objects.none()
-        else:
-            qs = DiBookmark.objects.filter(user=user).order_by("-creation_date")
-        return DiBookmarkListSerializer(qs, many=True).data
 
     def get_saved_searchs(self, user):
         if not user or not user.is_authenticated:
