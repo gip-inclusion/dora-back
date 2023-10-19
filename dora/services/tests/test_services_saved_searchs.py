@@ -337,12 +337,12 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
     def test_get_create_notification_with_category(self):
         # ÉTANT DONNÉ un utilisateur avec une notification mensuelle à J-40 lié à une catégorie
         user = baker.make("users.User", is_valid=True)
-        baker.make("ServiceCategory", value="cat1", label="cat1")
+        cat1 = baker.make("ServiceCategory", value="cat1", label="cat1")
 
         baker.make(
             "SavedSearch",
             user=user,
-            category="cat1",
+            category=cat1,
             frequency=SavedSearchFrequency.MONTHLY,
             city_label=SAVE_SEARCH_ARGS.get("city_label"),
             city_code=SAVE_SEARCH_ARGS.get("city_code"),
