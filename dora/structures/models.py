@@ -254,7 +254,7 @@ class Structure(ModerationMixin, models.Model):
 
     disable_orientation_form = models.BooleanField(default=False)
 
-    is_obsolete = models.BooleanField(default=False)
+    is_obsolete = models.BooleanField(default=False, db_index=True)
 
     objects = StructureManager()
 
