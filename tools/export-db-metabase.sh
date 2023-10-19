@@ -222,9 +222,80 @@ SELECT
 	stats_mobilisationevent_categories.servicecategory_id
 FROM
 	stats_mobilisationevent_categories"
-psql $SRC_DB_URL -c "ALTER TABLE mb_mobilisationevent_categories_all ADD PRIMARY KEY (id)"
 
 pg_dump $DATABASE_URL -O -t mb_mobilisationevent_categories_all -c | psql $DEST_DB_URL
 
+# aggregation des tables vues de service d·i et dora
+psql $SRC_DB_URL -c "DROP TABLE IF EXISTS mb_serviceview_all"
+psql $SRC_DB_URL -c "
+CREATE TABLE mb_serviceview_all AS
+select
+	( select 'di-' :: text || disv.id ) AS id,
+	disv.path,
+	disv.date,
+	disv.anonymous_user_hash,
+	disv.is_logged,
+	disv.is_staff,
+	disv.is_manager,
+	disv.is_an_admin,
+	( select false ) as is_structure_admin,
+	( select false ) as is_structure_member,
+	disv.user_kind,
+	disv.structure_department,
+	disv.user_id,
+	disv.source,
+	( select false ) as is_orientable,
+	( select true ) AS is_di,
+	disv.service_id:: text,
+	disv.structure_id,
+	disv.service_name,
+	disv.structure_name
+from
+	stats_diserviceview disv UNION
+select
+	( select 'dora-' :: text || sv.id ) AS id,
+	sv.path,
+	sv.date,
+	sv.anonymous_user_hash,
+	sv.is_logged,
+	sv.is_staff,
+	sv.is_manager,
+	sv.is_an_admin,
+	sv.is_structure_admin,
+	sv.is_structure_member,
+	sv.user_kind,
+	sv.structure_department,
+	sv.user_id,
+	sv.service_source as source,
+	sv.is_orientable,
+	( select false ) AS is_di,
+	sv.service_id :: text,
+	sv.structure_id :: text,
+	s.name as service_name,
+	st.name as structure_name
+from
+	stats_serviceview sv
+	left join services_service s on sv.service_id  = s.id
+	left join structures_structure st on sv.structure_id = st.id
+	"
+psql $SRC_DB_URL -c "ALTER TABLE mb_serviceview_all ADD PRIMARY KEY (id)"
+
+pg_dump $DATABASE_URL -O -t mb_serviceview_all -c | psql $DEST_DB_URL
+
+psql $SRC_DB_URL -c "DROP TABLE IF EXISTS mb_serviceview_categories_all"
+psql $SRC_DB_URL -c "
+CREATE TABLE mb_serviceview_categories_all AS
+ SELECT
+	( SELECT 'di-' :: text || dic.diserviceview_id ) AS serviceview_id,
+	dic.servicecategory_id
+FROM
+	stats_diserviceview_categories dic UNION
+SELECT
+	( SELECT 'dora-' :: text || svc.serviceview_id ) AS serviceview_id,
+	svc.servicecategory_id
+FROM
+	stats_serviceview_categories svc"
+
+pg_dump $DATABASE_URL -O -t mb_serviceview_categories_all -c | psql $DEST_DB_URL
 
 pg_dump $DATABASE_URL -O -t orientations_orientation -t orientations_orientation_rejection_reasons -t orientations_rejectionreason -t orientations_sentcontactemail -t services_servicesource -t services_bookmark -t services_servicefee -t services_accesscondition -t services_beneficiaryaccessmode -t services_coachorientationmode -t services_concernedpublic -t services_credential -t services_locationkind -t services_requirement -t services_service_access_conditions -t services_service_beneficiaries_access_modes -t services_service_categories -t services_service_coach_orientation_modes -t services_service_concerned_public -t services_service_credentials -t services_service_kinds -t services_service_location_kinds -t services_service_requirements -t services_service_subcategories -t services_servicecategory -t services_servicekind -t services_servicemodificationhistoryitem -t services_servicestatushistoryitem -t services_servicesubcategory -t structures_structure_national_labels -t structures_structurenationallabel -t structures_structuremember -t structures_structureputativemember -t structures_structuresource -t structures_structuretypology -t stats_abtestgroup -t stats_deploymentstate -t stats_dimobilisationevent -t stats_dimobilisationevent_ab_test_groups -t stats_dimobilisationevent_categories -t stats_dimobilisationevent_subcategories -t stats_diserviceview -t stats_diserviceview_categories -t stats_diserviceview_subcategories -t stats_mobilisationevent -t stats_mobilisationevent_ab_test_groups -t stats_mobilisationevent_categories -t stats_mobilisationevent_subcategories -t stats_orientationview -t stats_orientationview_categories -t stats_orientationview_subcategories -t stats_pageview -t stats_searchview -t stats_searchview_categories -t stats_searchview_subcategories -t stats_serviceview -t stats_serviceview_categories -t stats_serviceview_subcategories -t stats_structureview  -c | psql $DEST_DB_URL

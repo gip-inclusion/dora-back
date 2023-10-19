@@ -170,8 +170,7 @@ def inclusion_connect_authenticate(request):
         id_token = result["id_token"]
         decoded_id_token = jwt.decode(id_token, options={"verify_signature": False})
 
-        # TODO: à rétablir après la mise en prod de la nouvelle version d'IC
-        # assert decoded_id_token["iss"] == settings.IC_ISSUER_ID
+        assert decoded_id_token["iss"] == settings.IC_ISSUER_ID
         assert settings.IC_CLIENT_ID in decoded_id_token["aud"]
         assert int(decoded_id_token["exp"]) > time.time()
         assert stored_nonce and stored_nonce == decoded_id_token["nonce"]

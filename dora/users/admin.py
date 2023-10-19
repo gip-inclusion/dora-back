@@ -146,7 +146,7 @@ class UserAdmin(BaseUserAdmin):
     readonly_fields = [has_migrated_to_ic]
     ordering = ("-date_joined",)
     filter_horizontal = ()
-    inlines = [StructureMemberInline, SavedSearchInline, StructurePutativeMemberInline]
+    inlines = [StructureMemberInline, StructurePutativeMemberInline, SavedSearchInline]
 
 
 # Now register the new UserAdmin...
