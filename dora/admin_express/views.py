@@ -54,7 +54,7 @@ def search(request):
             f"Invalid type, expected one of {AdminDivisionType.CITY}, {AdminDivisionType.EPCI}, {AdminDivisionType.DEPARTMENT}, {AdminDivisionType.REGION}"
         )
 
-    if q.isdigit():
+    if q.isdigit() or q == "2A" or q == "2B":
         qs = (
             Model.objects.filter(code__startswith=q)
             .annotate(similarity=Value(1))
