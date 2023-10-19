@@ -5,6 +5,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
 from dora.admin_express.utils import main_insee_code_to_arrdts
+from dora.structures.models import Structure
 
 from .models import Establishment
 from .serializers import EstablishmentSerializer
@@ -25,6 +26,13 @@ def search_sirene(request, citycode):
         Establishment.objects.filter(city_code__in=citycodes)
         .annotate(similarity=TrigramSimilarity("full_search_text", q))
         .order_by("-similarity")
+    )
+
+    # Exclut les structures marquées comme obsolètes
+    results = results.exclude(
+        siret__in=Structure.objects.filter(is_obsolete=True).values_list(
+            "siret", flat=True
+        )
     )
 
     return Response(

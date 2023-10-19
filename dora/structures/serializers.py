@@ -52,6 +52,7 @@ class StructureSerializer(serializers.ModelSerializer):
 
     short_admin_names = serializers.SerializerMethodField()
 
+    name = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
 
     class Meta:
@@ -80,6 +81,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "is_admin",
             "is_member",
             "is_pending_member",
+            "is_obsolete",
             "latitude",
             "longitude",
             "models",
@@ -107,6 +109,11 @@ class StructureSerializer(serializers.ModelSerializer):
         ]
         lookup_field = "slug"
         read_only_fields = ["has_been_edited", "city", "department"]
+
+    def get_name(self, obj):
+        if obj.is_obsolete:
+            return f"[Obsolète] {obj.name}"
+        return obj.name
 
     def get_has_admin(self, obj):
         return obj.has_admin()
