@@ -80,7 +80,7 @@ class Command(BaseCommand):
                 kinds = saved_search.kinds.values_list("value", flat=True)
 
             fees = None
-            if not saved_search.fees.exists():
+            if saved_search.fees.exists():
                 fees = saved_search.fees.values_list("value", flat=True)
 
             # Récupération des résultats de la recherche
