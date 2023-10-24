@@ -87,7 +87,7 @@ class Command(BaseCommand):
             results = _search(
                 None,
                 saved_search.city_code,
-                [category.value] if category else None,
+                [category.value] if category and not subcategories else None,
                 subcategories,
                 kinds,
                 fees,
