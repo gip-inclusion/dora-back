@@ -155,8 +155,8 @@ class User(AbstractBaseUser):
                 "PRENOM": self.first_name,
                 "NOM": self.last_name,
                 "PROFIL": self.main_activity,
-                "IS_ADMIN": 1 if structure.is_admin(self) else 0,
-                "IS_FIRST_ADMIN": 1 if is_first_admin else 0,
+                "IS_ADMIN": structure.is_admin(self),
+                "IS_FIRST_ADMIN": is_first_admin,
                 "URL_DORA_STRUCTURE": structure.get_frontend_url(),
                 "NEED_VALIDATION": structure.is_pending_member(self),
                 "CONTACT_ADHESION": admin_contact.user.get_safe_name()
