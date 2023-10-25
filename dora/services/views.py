@@ -6,7 +6,6 @@ import requests
 from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
-from django.core.exceptions import ValidationError
 from django.db.models import IntegerField, Q, Value
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
@@ -346,61 +345,48 @@ class ServiceViewSet(
         return Response(status=204)
 
 
-class BookmarkPermission(permissions.BasePermission):
-    def has_permission(self, request, view):
-        user = request.user
-        return user and user.is_authenticated
+# class BookmarkPermission(permissions.BasePermission):
+#     def has_permission(self, request, view):
+#         user = request.user
+#         return user and user.is_authenticated
 
 
 class BookmarkViewSet(
     viewsets.GenericViewSet,
 ):
-    permission_classes = [BookmarkPermission]
+    permission_classes = [permissions.IsAuthenticated]
 
-    @action(
-        detail=False,
-        methods=["post"],
-        url_path="set-bookmark",
-        permission_classes=[permissions.IsAuthenticated],
-    )
-    def set_bookmark(self, request):
+    def get_queryset(self):
         user = self.request.user
-        service_slug = self.request.data.get("service_slug")
-        wanted_state = self.request.data.get("state")
+        return Bookmark.objects.filter(user=user)
 
-        service = Service.objects.filter(slug=service_slug)
-        if not service.exists():
-            raise ValidationError("Service does not exist")
-
-        if wanted_state:
-            Bookmark.objects.get_or_create(service=service.first(), user=user)
+    def create(self, request):
+        slug = request.data.get("slug")
+        is_di = request.data.get("is_di")
+        if is_di:
+            Bookmark.objects.create(user=self.request.user, di_id=slug)
         else:
-            try:
-                bookmark = Bookmark.objects.get(service=service.first(), user=user)
-                bookmark.delete()
-            except Bookmark.DoesNotExist:
-                pass
-        return Response(status=204)
+            service = Service.objects.get(slug=slug)
+            Bookmark.objects.create(user=self.request.user, service=service)
+        return Response(status=status.HTTP_201_CREATED)
 
-    @action(
-        detail=False,
-        methods=["post"],
-        url_path="set-di-bookmark",
-        permission_classes=[permissions.IsAuthenticated],
-    )
-    def set_di_bookmark(self, request):
-        user = self.request.user
-        di_id = self.request.data.get("di_id")
-        wanted_state = self.request.data.get("state")
-        if wanted_state:
-            Bookmark.objects.get_or_create(di_id=di_id, user=user)
+    def destroy(self, request, slug):
+        is_di = request.data.get("is_di")
+        if is_di:
+            Bookmark.objects.get(user=self.request.user, di_id=slug).delete()
         else:
-            try:
-                di_bookmark = Bookmark.objects.get(di_id=di_id, user=user)
-                di_bookmark.delete()
-            except Bookmark.DoesNotExist:
-                pass
-        return Response(status=204)
+            Bookmark.objects.get(user=self.request.user, service__slug=slug).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def list(self, request):
+        dora_bookmarks = self.filter_queryset(self.get_queryset()).filter(
+            service__isnull=False
+        )
+        dora_services = Service.objects.filter(
+            pk__in=dora_bookmarks.values_list("service_id", flat=True)
+        )
+        # TODO: map di services here
+        return Response(ServiceListSerializer(dora_services, many=True).data)
 
 
 class SavedSearchPermission(permissions.BasePermission):

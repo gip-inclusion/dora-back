@@ -588,10 +588,24 @@ class ServiceModificationHistoryItem(models.Model):
 
 
 class Bookmark(models.Model):
-    service = models.ForeignKey("Service", on_delete=models.CASCADE, null=True)
     user = models.ForeignKey("users.User", on_delete=models.CASCADE)
+    service = models.ForeignKey("Service", on_delete=models.CASCADE, null=True)
     di_id = models.CharField(max_length=50, blank=True)
     creation_date = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "service"],
+                condition=Q(service__isnull=False),
+                name="%(app_label)s_unique_service_bookmark",
+            ),
+            models.UniqueConstraint(
+                fields=["user", "di_id"],
+                condition=~Q(di_id=""),
+                name="%(app_label)s_unique_di_bookmark",
+            ),
+        ]
 
 
 class SavedSearch(models.Model):

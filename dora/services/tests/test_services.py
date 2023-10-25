@@ -33,7 +33,6 @@ from dora.structures.models import Structure
 
 from ..models import (
     AccessCondition,
-    Bookmark,
     LocationKind,
     Service,
     ServiceCategory,
@@ -3923,42 +3922,3 @@ class ServiceMigrationUtilsTestCase(APITestCase):
             sorted([s["value"] for s in service.subcategories.values()]),
             sorted([subcategory_value_1]),
         )
-
-
-class ServiceDiBookmark(APITestCase):
-    def test_add_di_bookmark(self):
-        self.assertEqual(Bookmark.objects.count(), 0)
-        user = baker.make("users.User", is_valid=True)
-        self.client.force_authenticate(user=user)
-
-        response = self.client.post(
-            "/bookmarks/set-di-bookmark/", {"di_id": "di-123456789", "state": True}
-        )
-        self.assertEqual(response.status_code, 204)
-        self.assertEqual(Bookmark.objects.count(), 1)
-
-        di_bookmark = Bookmark.objects.get(di_id="di-123456789")
-        self.assertEqual(di_bookmark.di_id, "di-123456789")
-        self.assertEqual(di_bookmark.service_id, None)
-
-    def test_add_di_bookmark_not_logged_failed(self):
-        self.assertEqual(Bookmark.objects.count(), 0)
-
-        response = self.client.post(
-            "/bookmarks/set-di-bookmark/", {"di_id": "di-123456789", "state": True}
-        )
-        self.assertEqual(response.status_code, 401)
-        self.assertEqual(Bookmark.objects.count(), 0)
-
-    def test_remove_di_bookmark(self):
-        DI_ID = "di-123456789"
-        user = baker.make("users.User", is_valid=True)
-        self.client.force_authenticate(user=user)
-        baker.make("services.Bookmark", di_id=DI_ID, user=user)
-        self.assertEqual(Bookmark.objects.count(), 1)
-
-        response = self.client.post(
-            "/bookmarks/set-di-bookmark/", {"di_id": DI_ID, "state": False}
-        )
-        self.assertEqual(response.status_code, 204)
-        self.assertEqual(Bookmark.objects.count(), 0)
