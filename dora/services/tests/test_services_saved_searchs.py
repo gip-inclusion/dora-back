@@ -337,12 +337,12 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
     def test_get_create_notification_with_category(self):
         # ÉTANT DONNÉ un utilisateur avec une notification mensuelle à J-40 lié à une catégorie
         user = baker.make("users.User", is_valid=True)
-        baker.make("ServiceCategory", value="cat1", label="cat1")
+        cat1 = baker.make("ServiceCategory", value="cat1", label="cat1")
 
         baker.make(
             "SavedSearch",
             user=user,
-            category="cat1",
+            category=cat1,
             frequency=SavedSearchFrequency.MONTHLY,
             city_label=SAVE_SEARCH_ARGS.get("city_label"),
             city_code=SAVE_SEARCH_ARGS.get("city_code"),
@@ -398,7 +398,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             name=self.service_name,
             status=ServiceStatus.PUBLISHED,
             categories="cat1",
-            subcategories="cat1--sub1, cat1--sub2",
+            subcategories="cat1--sub1,cat1--sub2",
             diffusion_zone_type=AdminDivisionType.CITY,
             publication_date=timezone.now() - timedelta(days=20),
             diffusion_zone_details=SAVE_SEARCH_ARGS.get("city_code"),
@@ -450,7 +450,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
             name=self.service_name,
             status=ServiceStatus.PUBLISHED,
             categories="cat1",
-            subcategories="cat1--sub1, cat1--sub2",
+            subcategories="cat1--sub1,cat1--sub2",
             kinds=[kind, kind_2],
             diffusion_zone_type=AdminDivisionType.CITY,
             publication_date=timezone.now() - timedelta(days=20),
@@ -505,12 +505,12 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
         savedSearch.kinds.set([kind, kind_2])
         savedSearch.fees.set([fee])
 
-        # ET un service mis à jour à J-20 lié à la même catégorie, sous-catégories, types de service et fraius à charge
+        # ET un service mis à jour à J-20 lié à la même catégorie, sous-catégories, types de service et frais à charge
         make_service(
             name=self.service_name,
             status=ServiceStatus.PUBLISHED,
             categories="cat1",
-            subcategories="cat1--sub1, cat1--sub2",
+            subcategories="cat1--sub1,cat1--sub2",
             kinds=[kind, kind_2],
             fee_condition=fee,
             diffusion_zone_type=AdminDivisionType.CITY,
@@ -582,3 +582,116 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
         )
         self.assertIn(f"<strong>{self.service_name}</strong>", mail.outbox[0].body)
         self.assertNotIn("<strong>service_2</strong>", mail.outbox[0].body)
+
+    def test_get_create_notification_with_invalid_fee(
+        self,
+    ):
+        # ÉTANT DONNÉ un utilisateur avec une notification mensuelle à J-40 lié à une catégorie
+        # et deux sous-catégories et deux types de services et un frais à charge
+        user = baker.make("users.User", is_valid=True)
+        category = baker.make("ServiceCategory", value="cat1", label="cat1")
+        fee1 = baker.make("ServiceFee", value="fee1", label="fee1")
+        fee2 = baker.make("ServiceFee", value="fee2", label="fee2")
+
+        savedSearch = baker.make(
+            "SavedSearch",
+            user=user,
+            category=category,
+            frequency=SavedSearchFrequency.MONTHLY,
+            city_label=SAVE_SEARCH_ARGS.get("city_label"),
+            city_code=SAVE_SEARCH_ARGS.get("city_code"),
+            last_notification_date=timezone.now() - timedelta(days=40),
+        )
+        savedSearch.fees.set([fee1])
+
+        # ET un service mis à jour à J-20 lié à la même catégorie, sous-catégories, types de service et frais à charge
+        make_service(
+            name=self.service_name,
+            status=ServiceStatus.PUBLISHED,
+            categories="cat1",
+            fee_condition=fee2,
+            diffusion_zone_type=AdminDivisionType.CITY,
+            publication_date=timezone.now() - timedelta(days=20),
+            diffusion_zone_details=SAVE_SEARCH_ARGS.get("city_code"),
+        )
+
+        # QUAND j'envoie les notifications
+        self.call_command()
+
+        # ALORS je n'ai pas d'email
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_get_create_notification_with_invalid_category(
+        self,
+    ):
+        # ÉTANT DONNÉ un utilisateur avec une notification mensuelle à J-40 lié à une catégorie
+        # et deux sous-catégories et deux types de services et un frais à charge
+        user = baker.make("users.User", is_valid=True)
+        category = baker.make("ServiceCategory", value="cat1", label="cat1")
+        baker.make("ServiceCategory", value="cat2", label="cat2")
+
+        baker.make(
+            "SavedSearch",
+            user=user,
+            category=category,
+            frequency=SavedSearchFrequency.MONTHLY,
+            city_label=SAVE_SEARCH_ARGS.get("city_label"),
+            city_code=SAVE_SEARCH_ARGS.get("city_code"),
+            last_notification_date=timezone.now() - timedelta(days=40),
+        )
+
+        # ET un service mis à jour à J-20 lié à la même catégorie, sous-catégories, types de service et frais à charge
+        make_service(
+            name=self.service_name,
+            status=ServiceStatus.PUBLISHED,
+            categories="cat2",
+            diffusion_zone_type=AdminDivisionType.CITY,
+            publication_date=timezone.now() - timedelta(days=20),
+            diffusion_zone_details=SAVE_SEARCH_ARGS.get("city_code"),
+        )
+
+        # QUAND j'envoie les notifications
+        self.call_command()
+
+        # ALORS je n'ai pas d'email
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_get_create_notification_with_invalid_subcategory(
+        self,
+    ):
+        # ÉTANT DONNÉ un utilisateur avec une notification mensuelle à J-40 lié à une catégorie
+        # et deux sous-catégories et deux types de services et un frais à charge
+        user = baker.make("users.User", is_valid=True)
+        category = baker.make("ServiceCategory", value="cat1", label="cat1")
+        sub_category_1 = baker.make(
+            "ServiceSubCategory", value="cat1--sub1", label="cat1--sub1"
+        )
+        baker.make("ServiceSubCategory", value="cat1--sub2", label="cat1--sub2")
+
+        savedSearch = baker.make(
+            "SavedSearch",
+            user=user,
+            category=category,
+            frequency=SavedSearchFrequency.MONTHLY,
+            city_label=SAVE_SEARCH_ARGS.get("city_label"),
+            city_code=SAVE_SEARCH_ARGS.get("city_code"),
+            last_notification_date=timezone.now() - timedelta(days=40),
+        )
+        savedSearch.subcategories.set([sub_category_1])
+
+        # ET un service mis à jour à J-20 lié à la même catégorie, sous-catégories, types de service et frais à charge
+        make_service(
+            name=self.service_name,
+            status=ServiceStatus.PUBLISHED,
+            categories="cat1",
+            subcategories="cat1--sub2",
+            diffusion_zone_type=AdminDivisionType.CITY,
+            publication_date=timezone.now() - timedelta(days=20),
+            diffusion_zone_details=SAVE_SEARCH_ARGS.get("city_code"),
+        )
+
+        # QUAND j'envoie les notifications
+        self.call_command()
+
+        # ALORS je n'ai pas d'email
+        self.assertEqual(len(mail.outbox), 0)
