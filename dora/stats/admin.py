@@ -106,7 +106,7 @@ class StructureEventAdmin(AnalyticsEventAdmin):
 
 
 class ServiceEventAdmin(AnalyticsEventAdmin):
-    raw_id_fields = ("service", "structure", "user")
+    raw_id_fields = ("service", "structure", "user", "search_view")
     list_display = [
         "date",
         "service",
@@ -130,7 +130,7 @@ class ServiceEventAdmin(AnalyticsEventAdmin):
 
 
 class DiServiceEventAdmin(AnalyticsEventAdmin):
-    raw_id_fields = ("user",)
+    raw_id_fields = ("user", "search_view")
     list_display = [
         "date",
         "service_name",
@@ -173,7 +173,7 @@ def ab_testing_groups_display(obj):
 
 
 class MobilisationEventAdmin(AnalyticsEventAdmin):
-    raw_id_fields = ("service", "structure", "user")
+    raw_id_fields = ("service", "structure", "user", "search_view")
     list_display = [
         "date",
         ab_testing_groups_display,
@@ -193,7 +193,7 @@ class MobilisationEventAdmin(AnalyticsEventAdmin):
 
 
 class DiMobilisationEventAdmin(AnalyticsEventAdmin):
-    raw_id_fields = ("user",)
+    raw_id_fields = ("user", "search_view")
     list_display = [
         "date",
         ab_testing_groups_display,
