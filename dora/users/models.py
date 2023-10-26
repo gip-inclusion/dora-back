@@ -1,11 +1,14 @@
 # Inspired from https://docs.djangoproject.com/en/3.2/topics/auth/customizing/#a-full-example
+import logging
 
+import sib_api_v3_sdk
 from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
+from sib_api_v3_sdk.rest import ApiException as SibApiException
 
-from dora.core.utils import add_to_sib
+logger = logging.getLogger(__name__)
 
 MAIN_ACTIVITY_CHOICES = [
     ("accompagnateur", "Accompagnateur"),
@@ -131,5 +134,45 @@ class User(AbstractBaseUser):
     def get_short_name(self):
         return self.first_name or self.last_name or self.email
 
-    def start_onboarding(self):
-        add_to_sib(self)
+    def get_safe_name(self):
+        # Masque le prénom
+        if self.first_name and self.last_name:
+            return f"{self.first_name[0]}. {self.last_name}"
+        return self.email.split("@")[0]
+
+    def start_onboarding(self, structure, is_first_admin):
+        if settings.SIB_ACTIVE:
+            admin_contact = structure.get_most_recently_active_admin()
+            # Configure API key authorization: api-key
+            configuration = sib_api_v3_sdk.Configuration()
+            configuration.api_key["api-key"] = settings.SIB_API_KEY
+
+            # create an instance of the API class
+            api_instance = sib_api_v3_sdk.ContactsApi(
+                sib_api_v3_sdk.ApiClient(configuration)
+            )
+            attributes = {
+                "PRENOM": self.first_name,
+                "NOM": self.last_name,
+                "PROFIL": self.main_activity,
+                "IS_ADMIN": structure.is_admin(self),
+                "IS_FIRST_ADMIN": is_first_admin,
+                "URL_DORA_STRUCTURE": structure.get_frontend_url(),
+                "NEED_VALIDATION": structure.is_pending_member(self),
+                "CONTACT_ADHESION": admin_contact.user.get_safe_name()
+                if admin_contact and not is_first_admin
+                else "",
+            }
+            create_contact = sib_api_v3_sdk.CreateContact(
+                email=self.email,
+                attributes=attributes,
+                list_ids=[int(settings.SIB_ONBOARDING_LIST)],
+                update_enabled=False,
+            )
+
+            try:
+                # Create a contact
+                api_response = api_instance.create_contact(create_contact)
+                logger.info("User %s added to SiB: %s", self.pk, api_response)
+            except SibApiException as e:
+                logger.exception(e)

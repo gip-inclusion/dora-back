@@ -1,4 +1,4 @@
-{% extends "email-base.mjml" %}
+{% extends "orientation-email-base.mjml" %}
 
 {% block preview %}
     {{ data.prescriber.get_full_name }} vous a orienté vers un service solidaire

@@ -1,4 +1,4 @@
-{% extends "email-base.mjml" %}
+{% extends "orientation-email-base.mjml" %}
 
 {% block preview %}
     La demande pour {{ data.get_beneficiary_full_name }} à été refusée.

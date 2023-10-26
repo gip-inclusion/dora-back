@@ -1694,11 +1694,13 @@ class ServiceSearchTestCase(APITestCase):
         baker.make("ServiceCategory", value="cat1", label="cat1")
         baker.make("ServiceSubCategory", value="cat1--sub1", label="cat1--sub1")
         baker.make("ServiceSubCategory", value="cat1--sub2", label="cat1--sub2")
+        baker.make("ServiceSubCategory", value="cat1--sub3", label="cat1--sub3")
         baker.make("ServiceSubCategory", value="cat1--autre", label="cat1--autre")
         baker.make("ServiceCategory", value="cat2", label="cat2")
         baker.make("ServiceSubCategory", value="cat2--sub1", label="cat2--sub1")
         baker.make("ServiceSubCategory", value="cat2--sub2", label="cat2--sub2")
         baker.make("ServiceSubCategory", value="cat2--autre", label="cat2--autre")
+        baker.make("ServiceCategory", value="cat3", label="cat3")
 
     def test_needs_city_code(self):
         make_service(

@@ -63,11 +63,13 @@ def make_service(**kwargs):
         **kwargs,
     )
     if categories:
-        service.categories.set(ServiceCategory.objects.filter(value__in=categories))
+        db_cats = ServiceCategory.objects.filter(value__in=categories)
+        assert db_cats.count() == len(categories)
+        service.categories.set(db_cats)
     if subcategories:
-        service.subcategories.set(
-            ServiceSubCategory.objects.filter(value__in=subcategories)
-        )
+        db_subcats = ServiceSubCategory.objects.filter(value__in=subcategories)
+        assert db_subcats.count() == len(subcategories)
+        service.subcategories.set(db_subcats)
 
     return service
 

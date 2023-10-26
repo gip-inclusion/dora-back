@@ -222,7 +222,6 @@ SELECT
 	stats_mobilisationevent_categories.servicecategory_id
 FROM
 	stats_mobilisationevent_categories"
-psql $SRC_DB_URL -c "ALTER TABLE mb_mobilisationevent_categories_all ADD PRIMARY KEY (id)"
 
 pg_dump $DATABASE_URL -O -t mb_mobilisationevent_categories_all -c | psql $DEST_DB_URL
 
@@ -296,7 +295,6 @@ SELECT
 	svc.servicecategory_id
 FROM
 	stats_serviceview_categories svc"
-psql $SRC_DB_URL -c "ALTER TABLE mb_serviceview_categories_all ADD PRIMARY KEY (id)"
 
 pg_dump $DATABASE_URL -O -t mb_serviceview_categories_all -c | psql $DEST_DB_URL
 

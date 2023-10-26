@@ -1,4 +1,4 @@
-{% extends "email-base.mjml" %}
+{% extends "orientation-email-base.mjml" %}
 
 {% block preview %}
     {{ data.service.structure.name }} vient de vous envoyer un message

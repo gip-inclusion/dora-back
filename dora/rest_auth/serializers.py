@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from dora.services.models import Bookmark
-from dora.services.serializers import ServiceListSerializer
+from dora.services.models import Bookmark, SavedSearch
+from dora.services.serializers import SavedSearchSerializer, ServiceListSerializer
 from dora.sirene.models import Establishment
 from dora.structures.models import Structure
 from dora.structures.serializers import StructureListSerializer
@@ -22,6 +22,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
     structures = serializers.SerializerMethodField()
     pending_structures = serializers.SerializerMethodField()
     bookmarks = serializers.SerializerMethodField()
+    saved_searchs = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -36,6 +37,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "last_name",
             "newsletter",
             "pending_structures",
+            "saved_searchs",
             "short_name",
             "structures",
             "main_activity",
@@ -65,6 +67,13 @@ class UserInfoSerializer(serializers.ModelSerializer):
         else:
             qs = Bookmark.objects.filter(user=user).order_by("-creation_date")
         return BookmarkListSerializer(qs, many=True).data
+
+    def get_saved_searchs(self, user):
+        if not user or not user.is_authenticated:
+            qs = SavedSearch.objects.none()
+        else:
+            qs = SavedSearch.objects.filter(user=user).order_by("-creation_date")
+        return SavedSearchSerializer(qs, many=True).data
 
 
 class TokenSerializer(serializers.Serializer):
