@@ -11,6 +11,7 @@ from .models import (
     Credential,
     LocationKind,
     Requirement,
+    SavedSearch,
     Service,
     ServiceCategory,
     ServiceKind,
@@ -162,12 +163,20 @@ class ServiceModelInline(admin.TabularInline):
         "name",
         "structure",
     ]
-    readonly_fields = [
-        "slug",
-        "name",
-        "structure",
-    ]
+    readonly_fields = ["slug", "name", "structure"]
     extra = 0
+
+
+class SavedSearchAdmin(admin.ModelAdmin):
+    list_display = ("creation_date", "user", "category", "last_notification_date")
+    raw_id_fields = ["user"]
+    filter_horizontal = [
+        "subcategories",
+        "kinds",
+        "fees",
+    ]
+    readonly_fields = ["creation_date"]
+    ordering = ["-creation_date"]
 
 
 admin.site.register(Service, ServiceAdmin)
@@ -178,6 +187,7 @@ admin.site.register(Requirement, CustomizableChoiceAdmin)
 admin.site.register(Credential, CustomizableChoiceAdmin)
 admin.site.register(ServiceModificationHistoryItem, ServiceModificationHistoryItemAdmin)
 admin.site.register(ServiceStatusHistoryItem, ServiceStatusHistoryItemAdmin)
+admin.site.register(SavedSearch, SavedSearchAdmin)
 
 admin.site.register(BeneficiaryAccessMode, EnumAdmin)
 admin.site.register(CoachOrientationMode, EnumAdmin)
