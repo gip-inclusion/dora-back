@@ -46,7 +46,13 @@ def log_event(request):
     orientation_id = request.data.get("orientation", "")
     num_di_results = int(request.data.get("num_di_results", "0"))
     num_di_results_top10 = int(request.data.get("num_di_results_top10", "0"))
+    search_view = None
     search_view_id = request.data.get("search_id")
+    if search_view_id:
+        try:
+            search_view = SearchView.objects.get(id=search_view_id)
+        except (SearchView.DoesNotExist, ValueError):
+            search_view = None
 
     if orientation_id:
         orientation = get_object_or_none(Orientation, id=orientation_id)
@@ -104,7 +110,7 @@ def log_event(request):
         "update_status": service.get_update_status() if service else "",
         "status": service.status if service else "",
         "service_source": service.source.value if service and service.source else "",
-        "search_view_id": search_view_id,
+        "search_view": search_view,
     }
 
     di_service_data = {
@@ -114,7 +120,7 @@ def log_event(request):
         "service_id": request.data.get("di_service_id", ""),
         "service_name": request.data.get("di_service_name", ""),
         "source": request.data.get("di_source", ""),
-        "search_view_id": search_view_id,
+        "search_view": search_view,
     }
 
     event = None
