@@ -64,6 +64,7 @@ class Command(BaseCommand):
             and settings.INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS
             else None
         )
+
         num_emails_sent = 0
         for saved_search in saved_searchs:
             category = None
@@ -108,9 +109,10 @@ class Command(BaseCommand):
                 context = {
                     "search_label": compute_search_label(saved_search),
                     "homepage_url": settings.FRONTEND_URL,
-                    "updated_services": updated_services[:10],
+                    "updated_services": updated_services[:15],
                     "services_number": len(updated_services),
                 }
+
                 num_emails_sent += 1
                 send_mail(
                     "Il y a de nouveaux services correspondant à votre alerte",
