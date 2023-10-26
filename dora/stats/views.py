@@ -164,15 +164,15 @@ def log_event(request):
         event.categories.set(categories)
         event.subcategories.set(subcategories)
     elif tag == "orientation":
-        orientationview = OrientationView.objects.create(
+        event = OrientationView.objects.create(
             orientation=orientation,
             orientation_status=orientation.status,
             **common_analytics_data,
             **structure_data,
             **service_data,
         )
-        orientationview.categories.set(service.categories.all())
-        orientationview.subcategories.set(service.subcategories.all())
+        event.categories.set(service.categories.all())
+        event.subcategories.set(service.subcategories.all())
     elif tag == "mobilisation":
         event = MobilisationEvent.objects.create(
             **common_analytics_data, **structure_data, **service_data
