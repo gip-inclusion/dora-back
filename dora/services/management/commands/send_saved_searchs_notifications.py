@@ -55,6 +55,7 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
+        self.stdout.write("Vérification des notifications de recherches sauvegardées")
         saved_searchs = get_saved_search_notifications_to_send()
 
         di_client = (
@@ -63,7 +64,7 @@ class Command(BaseCommand):
             and settings.INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS
             else None
         )
-
+        num_emails_sent = 0
         for saved_search in saved_searchs:
             category = None
             if saved_search.category:
@@ -110,7 +111,7 @@ class Command(BaseCommand):
                     "updated_services": updated_services[:10],
                     "services_number": len(updated_services),
                 }
-
+                num_emails_sent += 1
                 send_mail(
                     "Il y a de nouveaux services correspondant à votre alerte",
                     saved_search.user.email,
@@ -123,3 +124,4 @@ class Command(BaseCommand):
             # Mise à jour de la date de dernière notification
             saved_search.last_notification_date = timezone.now()
             saved_search.save()
+        self.stdout.write(f"{num_emails_sent} courriels envoyés")
