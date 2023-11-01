@@ -89,6 +89,7 @@ class ServiceAdmin(admin.GISModelAdmin):
         "moderation_status",
         "source",
         "use_inclusion_numerique_scheme",
+        "structure__department",
     ]
     filter_horizontal = [
         "categories",
