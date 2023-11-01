@@ -1,29 +1,11 @@
 from rest_framework import serializers
 
 from dora.services.models import Bookmark, SavedSearch
-from dora.services.serializers import SavedSearchSerializer
+from dora.services.serializers import BookmarkListSerializer, SavedSearchSerializer
 from dora.sirene.models import Establishment
 from dora.structures.models import Structure
 from dora.structures.serializers import StructureListSerializer
 from dora.users.models import User
-
-
-class BookmarkListSerializer(serializers.ModelSerializer):
-    slug = serializers.SerializerMethodField()
-    is_di = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Bookmark
-        fields = ["slug", "is_di", "creation_date"]
-
-    def get_slug(self, obj):
-        if obj.service_id:
-            return obj.service.slug
-        else:
-            return obj.di_id
-
-    def get_is_di(self, obj):
-        return True if obj.di_id else False
 
 
 class UserInfoSerializer(serializers.ModelSerializer):

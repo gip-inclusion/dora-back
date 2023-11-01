@@ -459,6 +459,16 @@ class Service(ModerationMixin, models.Model):
         self.city = get_clean_city_name(self.city_code)
         return super().save(*args, **kwargs)
 
+    def can_read(self, user):
+        return self.status == ServiceStatus.PUBLISHED or (
+            user.is_authenticated
+            and (
+                user.is_staff
+                or self.structure.is_manager(user)
+                or self.structure.is_member(user)
+            )
+        )
+
     def can_write(self, user):
         return user.is_authenticated and (
             user.is_staff

@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.utils.timezone import is_naive, make_aware
 from rest_framework import mixins, permissions, serializers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.response import Response
 
 from dora import data_inclusion
@@ -54,6 +54,7 @@ from dora.structures.models import Structure, StructureMember
 
 from .serializers import (
     AnonymousServiceSerializer,
+    BookmarkSerializer,
     FeedbackSerializer,
     SavedSearchSerializer,
     ServiceListSerializer,
@@ -97,6 +98,47 @@ class ServicePermission(permissions.BasePermission):
         return service.can_write(user)
 
 
+def get_visible_services(user):
+    all_services = (
+        Service.objects.all()
+        .select_related(
+            "structure",
+        )
+        .prefetch_related(
+            "kinds",
+            "categories",
+            "subcategories",
+            "access_conditions",
+            "concerned_public",
+            "beneficiaries_access_modes",
+            "coach_orientation_modes",
+            "requirements",
+            "credentials",
+            "location_kinds",
+        )
+    )
+
+    # Everybody can see published services
+    if not user or not user.is_authenticated:
+        qs = all_services.filter(status=ServiceStatus.PUBLISHED)
+    # Staff can see everything
+    elif user.is_staff:
+        qs = all_services
+    elif user.is_manager and user.department:
+        qs = all_services.filter(
+            Q(status=ServiceStatus.PUBLISHED)
+            | Q(structure__department=user.department)
+            | Q(structure__membership__user=user)
+        )
+    else:
+        # Authentified users can see everything in their structure
+        # plus published services for other structures
+        qs = all_services.filter(
+            Q(status=ServiceStatus.PUBLISHED) | Q(structure__membership__user=user)
+        )
+    return qs.distinct()
+
+
 class ServiceViewSet(
     mixins.CreateModelMixin,
     mixins.DestroyModelMixin,
@@ -115,50 +157,15 @@ class ServiceViewSet(
         structure_slug = self.request.query_params.get("structure")
         published_only = self.request.query_params.get("published") in TRUTHY_VALUES
 
-        all_services = (
-            Service.objects.all()
-            .select_related(
-                "structure",
-            )
-            .prefetch_related(
-                "kinds",
-                "categories",
-                "subcategories",
-                "access_conditions",
-                "concerned_public",
-                "beneficiaries_access_modes",
-                "coach_orientation_modes",
-                "requirements",
-                "credentials",
-                "location_kinds",
-            )
-        )
+        qs = get_visible_services(user)
 
-        # Everybody can see published services
-        if not user or not user.is_authenticated:
-            qs = all_services.filter(status=ServiceStatus.PUBLISHED)
-        # Staff can see everything
-        elif user.is_staff:
-            qs = all_services
-        elif user.is_manager and user.department:
-            qs = all_services.filter(
-                Q(status=ServiceStatus.PUBLISHED)
-                | Q(structure__department=user.department)
-                | Q(structure__membership__user=user)
-            )
-        else:
-            # Authentified users can see everything in their structure
-            # plus published services for other structures
-            qs = all_services.filter(
-                Q(status=ServiceStatus.PUBLISHED) | Q(structure__membership__user=user)
-            )
         if structure_slug:
             qs = qs.filter(structure__slug=structure_slug)
 
         if published_only:
             qs = qs.filter(status=ServiceStatus.PUBLISHED)
 
-        return qs.order_by("-modification_date").distinct()
+        return qs.order_by("-modification_date")
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -345,48 +352,45 @@ class ServiceViewSet(
         return Response(status=204)
 
 
-# class BookmarkPermission(permissions.BasePermission):
-#     def has_permission(self, request, view):
-#         user = request.user
-#         return user and user.is_authenticated
-
-
 class BookmarkViewSet(
     viewsets.GenericViewSet,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
 ):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = BookmarkSerializer
 
     def get_queryset(self):
         user = self.request.user
-        return Bookmark.objects.filter(user=user)
+        visible_and_active_services = get_visible_services(user).exclude(
+            status=ServiceStatus.ARCHIVED
+        )
+        return Bookmark.objects.filter(
+            Q(service__isnull=True) | Q(service__in=visible_and_active_services),
+            user=user,
+        )
 
     def create(self, request):
         slug = request.data.get("slug")
         is_di = request.data.get("is_di")
-        if is_di:
-            Bookmark.objects.create(user=self.request.user, di_id=slug)
-        else:
-            service = Service.objects.get(slug=slug)
-            Bookmark.objects.create(user=self.request.user, service=service)
+        service = None
+        if slug and not is_di:
+            try:
+                service = Service.objects.get(slug=slug)
+            except Service.DoesNotExist:
+                raise NotFound
+        if service and not service.can_read(request.user):
+            raise PermissionDenied
+
+        bookmark, created = Bookmark.objects.get_or_create(
+            user=self.request.user,
+            service=service if not is_di else None,
+            di_id=slug if is_di else "",
+        )
+        if not created:
+            raise serializers.ValidationError("ce bookmark existe déjà")
+
         return Response(status=status.HTTP_201_CREATED)
-
-    def destroy(self, request, slug):
-        is_di = request.data.get("is_di")
-        if is_di:
-            Bookmark.objects.get(user=self.request.user, di_id=slug).delete()
-        else:
-            Bookmark.objects.get(user=self.request.user, service__slug=slug).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    def list(self, request):
-        dora_bookmarks = self.filter_queryset(self.get_queryset()).filter(
-            service__isnull=False
-        )
-        dora_services = Service.objects.filter(
-            pk__in=dora_bookmarks.values_list("service_id", flat=True)
-        )
-        # TODO: map di services here
-        return Response(ServiceListSerializer(dora_services, many=True).data)
 
 
 class SavedSearchPermission(permissions.BasePermission):
