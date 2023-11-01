@@ -148,6 +148,9 @@ class AbstractServiceEvent(AbstractAnalyticsEvent):
     subcategories = models.ManyToManyField(
         ServiceSubCategory, blank=True, related_name="+"
     )
+    search_view = models.ForeignKey(
+        "SearchView", on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     class Meta:
         abstract = True
@@ -165,6 +168,9 @@ class AbstractDiServiceEvent(AbstractAnalyticsEvent):
     categories = models.ManyToManyField(ServiceCategory, blank=True, related_name="+")
     subcategories = models.ManyToManyField(
         ServiceSubCategory, blank=True, related_name="+"
+    )
+    search_view = models.ForeignKey(
+        "SearchView", on_delete=models.SET_NULL, null=True, blank=True
     )
 
     class Meta:

@@ -46,6 +46,13 @@ def log_event(request):
     orientation_id = request.data.get("orientation", "")
     num_di_results = int(request.data.get("num_di_results", "0"))
     num_di_results_top10 = int(request.data.get("num_di_results_top10", "0"))
+    search_view = None
+    search_view_id = request.data.get("search_id")
+    if search_view_id:
+        try:
+            search_view = SearchView.objects.get(id=search_view_id)
+        except (SearchView.DoesNotExist, ValueError):
+            search_view = None
 
     if orientation_id:
         orientation = get_object_or_none(Orientation, id=orientation_id)
@@ -103,6 +110,7 @@ def log_event(request):
         "update_status": service.get_update_status() if service else "",
         "status": service.status if service else "",
         "service_source": service.source.value if service and service.source else "",
+        "search_view": search_view,
     }
 
     di_service_data = {
@@ -112,16 +120,19 @@ def log_event(request):
         "service_id": request.data.get("di_service_id", ""),
         "service_name": request.data.get("di_service_name", ""),
         "source": request.data.get("di_source", ""),
+        "search_view": search_view,
     }
 
+    event = None
+
     if tag == "pageview":
-        PageView.objects.create(
+        event = PageView.objects.create(
             **common_analytics_data,
             title=request.data.get("title", ""),
         )
 
     elif tag == "search":
-        searchevent = SearchView.objects.create(
+        event = SearchView.objects.create(
             **common_analytics_data,
             city_code=search_city_code,
             department=search_department,
@@ -132,53 +143,51 @@ def log_event(request):
         cats_values = request.data.get("category_ids", [])
         subcats_values = request.data.get("sub_category_ids", [])
         categories, subcategories = get_categories(cats_values, subcats_values)
-        searchevent.categories.set(categories)
-        searchevent.subcategories.set(subcategories)
+        event.categories.set(categories)
+        event.subcategories.set(subcategories)
     elif tag == "structure":
-        StructureView.objects.create(**common_analytics_data, **structure_data)
+        event = StructureView.objects.create(**common_analytics_data, **structure_data)
     elif tag == "service":
-        serviceview = ServiceView.objects.create(
+        event = ServiceView.objects.create(
             **common_analytics_data,
             **structure_data,
             **service_data,
             is_orientable=service.is_orientable() is True,
         )
-        serviceview.categories.set(service.categories.all())
-        serviceview.subcategories.set(service.subcategories.all())
+        event.categories.set(service.categories.all())
+        event.subcategories.set(service.subcategories.all())
     elif tag == "di_service":
-        di_view = DiServiceView.objects.create(
-            **common_analytics_data, **di_service_data
-        )
+        event = DiServiceView.objects.create(**common_analytics_data, **di_service_data)
         cats_values = request.data.get("di_categories", [])
         subcats_values = request.data.get("di_subcategories", [])
         categories, subcategories = get_categories(cats_values, subcats_values)
-        di_view.categories.set(categories)
-        di_view.subcategories.set(subcategories)
+        event.categories.set(categories)
+        event.subcategories.set(subcategories)
     elif tag == "orientation":
-        orientationview = OrientationView.objects.create(
+        event = OrientationView.objects.create(
             orientation=orientation,
             orientation_status=orientation.status,
             **common_analytics_data,
             **structure_data,
             **service_data,
         )
-        orientationview.categories.set(service.categories.all())
-        orientationview.subcategories.set(service.subcategories.all())
+        event.categories.set(service.categories.all())
+        event.subcategories.set(service.subcategories.all())
     elif tag == "mobilisation":
-        mev = MobilisationEvent.objects.create(
+        event = MobilisationEvent.objects.create(
             **common_analytics_data, **structure_data, **service_data
         )
-        mev.categories.set(service.categories.all())
-        mev.subcategories.set(service.subcategories.all())
+        event.categories.set(service.categories.all())
+        event.subcategories.set(service.subcategories.all())
         ab_testing_group = request.data.get("ab_testing_group", "")
         if ab_testing_group:
             ab_testing_group, _created = ABTestGroup.objects.get_or_create(
                 value=ab_testing_group
             )
-            mev.ab_test_groups.set([ab_testing_group])
+            event.ab_test_groups.set([ab_testing_group])
 
     elif tag == "di_mobilisation":
-        di_mev = DiMobilisationEvent.objects.create(
+        event = DiMobilisationEvent.objects.create(
             **common_analytics_data, **di_service_data
         )
         ab_testing_group = request.data.get("ab_testing_group", "")
@@ -186,10 +195,10 @@ def log_event(request):
             ab_testing_group, _created = ABTestGroup.objects.get_or_create(
                 value=ab_testing_group
             )
-            di_mev.ab_test_groups.set([ab_testing_group])
+            event.ab_test_groups.set([ab_testing_group])
         cats_values = request.data.get("di_categories", [])
         subcats_values = request.data.get("di_subcategories", [])
         categories, subcategories = get_categories(cats_values, subcats_values)
-        di_mev.categories.set(categories)
-        di_mev.subcategories.set(subcategories)
-    return Response(status=204)
+        event.categories.set(categories)
+        event.subcategories.set(subcategories)
+    return Response({"tag": tag, "event": event.id}, status=201)
