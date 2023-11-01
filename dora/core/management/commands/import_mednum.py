@@ -13,6 +13,7 @@ from dora.core import utils
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
 from dora.core.utils import code_insee_to_code_dept, normalize_description
+from dora.data_inclusion.mappings import DI_TO_DORA_DIFFUSION_ZONE_TYPE_MAPPING
 from dora.services.enums import ServiceStatus
 from dora.services.models import (
     BeneficiaryAccessMode,
@@ -272,7 +273,11 @@ class Command(BaseCommand):
                     contact_phone=utils.normalize_phone_number(s["telephone"]) or "",
                     contact_email=s["courriel"] or "",
                     is_contact_info_public=s["contact_public"] is True,
-                    diffusion_zone_type=s["zone_diffusion_type"] or "",
+                    diffusion_zone_type=DI_TO_DORA_DIFFUSION_ZONE_TYPE_MAPPING.get(
+                        s["zone_diffusion_type"]
+                    )
+                    if s["zone_diffusion_type"]
+                    else "",
                     diffusion_zone_details=s["zone_diffusion_code"] or "",
                     source=source,
                     creator=bot_user,
