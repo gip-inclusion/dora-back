@@ -6,6 +6,7 @@ from dora.core.admin import EnumAdmin
 from .models import (
     AccessCondition,
     BeneficiaryAccessMode,
+    Bookmark,
     CoachOrientationMode,
     ConcernedPublic,
     Credential,
@@ -167,6 +168,13 @@ class ServiceModelInline(admin.TabularInline):
     extra = 0
 
 
+class BookmarkAdmin(admin.ModelAdmin):
+    list_display = ("creation_date", "user", "service", "di_id")
+    raw_id_fields = ["user", "service"]
+    readonly_fields = ["creation_date"]
+    ordering = ["-creation_date"]
+
+
 class SavedSearchAdmin(admin.ModelAdmin):
     list_display = ("creation_date", "user", "category", "last_notification_date")
     raw_id_fields = ["user"]
@@ -187,6 +195,7 @@ admin.site.register(Requirement, CustomizableChoiceAdmin)
 admin.site.register(Credential, CustomizableChoiceAdmin)
 admin.site.register(ServiceModificationHistoryItem, ServiceModificationHistoryItemAdmin)
 admin.site.register(ServiceStatusHistoryItem, ServiceStatusHistoryItemAdmin)
+admin.site.register(Bookmark, BookmarkAdmin)
 admin.site.register(SavedSearch, SavedSearchAdmin)
 
 admin.site.register(BeneficiaryAccessMode, EnumAdmin)
