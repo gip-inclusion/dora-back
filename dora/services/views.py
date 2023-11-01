@@ -368,7 +368,7 @@ class BookmarkViewSet(
         return Bookmark.objects.filter(
             Q(service__isnull=True) | Q(service__in=visible_and_active_services),
             user=user,
-        )
+        ).order_by("-creation_date")
 
     def create(self, request):
         slug = request.data.get("slug")
