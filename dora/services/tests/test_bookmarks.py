@@ -203,7 +203,11 @@ class ServiceBookmarkTestCase(APITestCase):
         response = self.client.get("/bookmarks/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 3)
-        self.assertTrue("name" in response.data[0]["service"])
+        # Les services data·inclusion ne sont pas mockés pour l'instant
+        self.assertTrue(
+            "name" in response.data[0]["service"]
+            or "name" in response.data[1]["service"]
+        )
 
     def test_list_bookmarks_dont_show_others_bookmarks(self):
         user = make_user()
