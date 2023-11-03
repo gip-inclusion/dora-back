@@ -284,7 +284,7 @@ class ServiceTestCase(APITestCase):
         self.assertIn(self.service_31.slug, services_ids)
         self.assertIn(self.draft_31.slug, services_ids)
 
-    def test_manager_cant_sees_published_services_outside_its_department(self):
+    def test_manager_can_sees_published_services_outside_its_department(self):
         self.client.force_authenticate(user=self.manager)
         response = self.client.get("/services/")
         services_ids = [s["slug"] for s in response.data]

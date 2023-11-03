@@ -252,10 +252,7 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
             raise exceptions.NotFound
         structure = member.structure
         request_user = request.user
-        if not (
-            structure.can_edit_members(request.user)
-            or structure.can_invite_first_admin(request_user)
-        ):
+        if not structure.can_edit_members(request.user):
             raise exceptions.PermissionDenied
 
         send_invitation_email(
@@ -276,13 +273,9 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
             member = StructurePutativeMember.objects.get(id=pk)
         except StructurePutativeMember.DoesNotExist:
             raise exceptions.NotFound
-        # Ensure the requester is admin of the structure, or superuser
+        # Ensure the requester is admin of the structure, manager, or superuser
         structure = member.structure
-        request_user = request.user
-        if not (
-            structure.can_edit_members(request.user)
-            or structure.can_invite_first_admin(request_user)
-        ):
+        if not structure.can_edit_members(request.user):
             raise exceptions.PermissionDenied
 
         member.delete()
