@@ -1,11 +1,3 @@
-[tool.black]
-line-length = 88
-target-version = ['py311']
-
-[tool.isort]
-profile = "black"
-skip_gitignore = true
-
 [tool.pylint.main]
 # Files or directories to be skipped. They should be base names, not paths.
 ignore = ["CVS"]
@@ -18,35 +10,21 @@ load-plugins = "pylint_django,pylint_django.checkers.migrations"
 # user-friendly hints instead of false-positive error messages.
 # suggestion-mode = true
 
-[tool.pylint.basic]
-
-[tool.pylint.classes]
-
-[tool.pylint.design]
-
-[tool.pylint.exceptions]
-
-[tool.pylint.format]
-
-[tool.pylint.imports]
-
-[tool.pylint.logging]
-
 [tool.pylint."messages control"]
 disable = ["missing-function-docstring", "missing-module-doctstring", "missing-class-docstring"]
 
-[tool.pylint.method_args]
+[tool.ruff]
+ignore = ["E501", "E203"]
+line-length = 88
+# set to minimum compatibility with flake8, update / extend as needed
+# see rules : https://docs.astral.sh/ruff/rules/
+select = [
+    "Q",  # flake8 quotes
+    "F",  # pyflakes
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "I",  # isort
+]
 
-[tool.pylint.refactoring]
-
-[tool.pylint.reports]
-
-[tool.pylint.similarities]
-
-[tool.pylint.spelling]
-
-[tool.pylint.string]
-
-[tool.pylint.typecheck]
-
-[tool.pylint.variables]
+[tool.ruff.isort]
+known-first-party = ["dora"]
