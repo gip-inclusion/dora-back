@@ -50,3 +50,7 @@ disable = ["missing-function-docstring", "missing-module-doctstring", "missing-c
 [tool.pylint.typecheck]
 
 [tool.pylint.variables]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE="config.settings"
+python_files = ["test.py", "tests*.py", "test_*.py"]
