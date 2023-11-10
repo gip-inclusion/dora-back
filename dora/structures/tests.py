@@ -1124,12 +1124,14 @@ class StructureMemberTestCase(APITestCase):
         admin = baker.make("users.User", is_valid=True)
         structure = make_structure()
         baker.make("Establishment", siret=structure.siret)
-        structure.members.add(
-            admin,
-            through_defaults={
-                "is_admin": True,
-            },
-        ),
+        (
+            structure.members.add(
+                admin,
+                through_defaults={
+                    "is_admin": True,
+                },
+            ),
+        )
         self.client.force_authenticate(user=admin)
         response = self.client.post(
             f"/structure-putative-members/?structure={structure.slug}",

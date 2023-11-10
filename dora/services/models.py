@@ -649,3 +649,40 @@ class SavedSearch(models.Model):
     class Meta:
         verbose_name = "Recherche sauvegardé"
         verbose_name_plural = "Recherches sauvegardées"
+
+    def get_recent_services(self, cutoff_date, di_client=None):
+        category = None
+        if self.category:
+            category = self.category
+
+        subcategories = None
+        if self.subcategories.exists():
+            subcategories = self.subcategories.values_list("value", flat=True)
+
+        kinds = None
+        if self.kinds.exists():
+            kinds = self.kinds.values_list("value", flat=True)
+
+        fees = None
+        if self.fees.exists():
+            fees = self.fees.values_list("value", flat=True)
+
+        # Récupération des résultats de la recherche
+        from .search import search_services
+
+        results = search_services(
+            None,
+            self.city_code,
+            [category.value] if category and not subcategories else None,
+            subcategories,
+            kinds,
+            fees,
+            di_client,
+        )
+
+        # On garde les contenus qui ont été publiés depuis la dernière notification
+        return [
+            r
+            for r in results
+            if datetime.fromisoformat(r["publication_date"]).date() > cutoff_date
+        ]

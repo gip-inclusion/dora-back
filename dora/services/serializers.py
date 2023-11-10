@@ -731,3 +731,42 @@ class BookmarkSerializer(BookmarkListSerializer):
                 "shortDesc": di_service["presentation_resume"] or "",
                 "source": di_service["source"],
             }
+
+
+class SearchResultSerializer(ServiceListSerializer):
+    distance = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
+    coordinates = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Service
+        fields = [
+            "coordinates",
+            "diffusion_zone_type",
+            "distance",
+            "location",
+            "location_kinds",
+            "modification_date",
+            "publication_date",
+            "name",
+            "short_desc",
+            "slug",
+            "status",
+            "structure",
+            "structure_info",
+        ]
+
+    def get_distance(self, obj):
+        return obj.distance.km if obj.distance is not None else None
+
+    def get_location(self, obj):
+        if obj.location_kinds.filter(value="en-presentiel").exists():
+            return f"{obj.postal_code} {obj.city}"
+        elif obj.location_kinds.filter(value="a-distance").exists():
+            return "À distance"
+        else:
+            return ""
+
+    def get_coordinates(self, obj):
+        if obj.geom:
+            return (obj.geom.x, obj.geom.y)
