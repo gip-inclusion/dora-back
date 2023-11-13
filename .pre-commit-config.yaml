@@ -1,18 +1,12 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 23.9.1
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.4
     hooks:
-      - id: black
-
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-
-  - repo: https://github.com/pycqa/flake8
-    rev: 6.1.0
-    hooks:
-      - id: flake8
+      - id: ruff
+        name: Ruff (Flake8)
+      - id: ruff-format
+        name: Ruff format (Black + isort)
+        args: [--check]
 
   - repo: https://github.com/gitguardian/ggshield
     rev: v1.18.1
