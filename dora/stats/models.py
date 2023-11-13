@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
 from dora.orientations.models import Orientation, OrientationStatus
@@ -189,6 +190,8 @@ class AbstractSearchEvent(AbstractAnalyticsEvent):
     num_results = models.IntegerField()
     num_di_results = models.IntegerField(default=0)
     num_di_results_top10 = models.IntegerField(default=0)
+
+    results_slugs_top10 = ArrayField(models.CharField(blank=True), default=list)
 
     class Meta:
         abstract = True
