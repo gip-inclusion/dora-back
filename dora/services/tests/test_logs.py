@@ -25,8 +25,6 @@ def test_editing_log_change(api_client):
     assert hitem.user == user
     assert hitem.service == model
     assert hitem.fields == ["name"]
-
-    # flaky ou intégration ?
     assert timezone.now() - hitem.date < timedelta(seconds=1)
 
 
