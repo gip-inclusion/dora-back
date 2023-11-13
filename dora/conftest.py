@@ -1,5 +1,4 @@
 import pytest
-from model_bakery import baker as baker_
 from rest_framework.test import APIClient
 
 
@@ -17,12 +16,6 @@ def _use_db(db):
     # active automatiquement la gestion de la db
     # (ce qui n'est pas fait par défaut par pytest)
     pass
-
-
-@pytest.fixture
-def baker(db):
-    # donne accès à un objet model_bakery
-    return baker_
 
 
 @pytest.fixture

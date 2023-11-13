@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.gis.geos import Point
+from model_bakery import baker
 
 from dora.admin_express.models import City, Department
 from dora.core.test_utils import make_service, make_structure
@@ -23,14 +24,14 @@ from dora.structures.models import (
 
 
 @pytest.fixture
-def authenticated_user(api_client, baker, settings):
+def authenticated_user(api_client, settings):
     user = baker.make("users.User", is_valid=True, email=settings.DATA_INCLUSION_EMAIL)
     api_client.force_authenticate(user=user)
     return user
 
 
 @pytest.fixture
-def setup_structure_data(baker):
+def setup_structure_data():
     baker.make("structures.StructureSource", value="solidagregateur")
     baker.make("structures.StructureNationalLabel", value="MOBIN")
     baker.make("structures.StructureNationalLabel", value="AFPA")
@@ -53,6 +54,7 @@ def test_structures_api_response(authenticated_user, api_client):
     assert [] == response.data
 
 
+@pytest.mark.loaddata("structure_typology", "service_subcategory")
 def test_structures_serialization_exemple(
     setup_structure_data, authenticated_user, api_client
 ):
@@ -159,7 +161,15 @@ def test_unpublished_service_is_not_serialized(authenticated_user, api_client):
     assert 404 == response.status_code
 
 
-def test_service_serialization_exemple(authenticated_user, api_client, baker):
+@pytest.mark.loaddata(
+    "service_fee",
+    "service_subcategory",
+    "service_kind",
+    "service_location_kind",
+    "service_coach_orientation_mode",
+    "service_beneficiary_access_mode",
+)
+def test_service_serialization_exemple(authenticated_user, api_client):
     # Example adapté de la doc data·inclusion :
     # https://www.data.inclusion.beta.gouv.fr/schemas-de-donnees-de-loffre/schema-des-structures-et-services-dinsertion
     baker.make(Department, code="29", name="Finistère")
@@ -273,7 +283,7 @@ def test_service_serialization_exemple(authenticated_user, api_client, baker):
     }
 
 
-def test_service_serialization_exemple_need_di_user(api_client, baker):
+def test_service_serialization_exemple_need_di_user(api_client):
     baker.make(Department, code="29", name="Finistère")
     baker.make(City, code="29188", name="Plougasnou")
 

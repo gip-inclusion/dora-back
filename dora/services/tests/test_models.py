@@ -1,3 +1,5 @@
+from model_bakery import baker
+
 from dora.core.test_utils import make_model, make_service, make_structure
 from dora.services.enums import ServiceStatus
 from dora.services.models import (
@@ -10,7 +12,7 @@ from dora.services.models import (
 DUMMY_SERVICE = {"name": "Mon service"}
 
 
-def test_superuser_can_create_model_from_others_service(api_client, baker):
+def test_superuser_can_create_model_from_others_service(api_client):
     user = baker.make("users.User", is_valid=True, is_staff=True)
     struct = make_structure()
     service = make_service(status=ServiceStatus.PUBLISHED)
@@ -22,7 +24,7 @@ def test_superuser_can_create_model_from_others_service(api_client, baker):
     assert 201 == response.status_code
 
 
-def test_everybody_can_see_models(api_client, baker):
+def test_everybody_can_see_models(api_client):
     service = make_model()
     response = api_client.get("/models/")
 
@@ -30,7 +32,7 @@ def test_everybody_can_see_models(api_client, baker):
     assert service.slug in [s["slug"] for s in response.data]
 
 
-def test_models_not_visible_in_service_lists(api_client, baker):
+def test_models_not_visible_in_service_lists(api_client):
     service = make_model()
     response = api_client.get("/services/")
 
@@ -38,7 +40,7 @@ def test_models_not_visible_in_service_lists(api_client, baker):
     assert service.slug not in [s["slug"] for s in response.data]
 
 
-def test_is_model_param_not_visible_in_services(api_client, baker):
+def test_is_model_param_not_visible_in_services(api_client):
     service = make_service(status=ServiceStatus.PUBLISHED)
     response = api_client.get(f"/services/{service.slug}/")
 
@@ -46,7 +48,7 @@ def test_is_model_param_not_visible_in_services(api_client, baker):
     assert "is_model" not in response.data
 
 
-def test_cant_set_is_model_param_on_service(api_client, baker):
+def test_cant_set_is_model_param_on_service(api_client):
     user = baker.make("users.User", is_valid=True)
     struct = make_structure(user)
     service = make_service(structure=struct)
@@ -60,7 +62,7 @@ def test_cant_set_is_model_param_on_service(api_client, baker):
     assert not service.is_model
 
 
-def test_cant_unset_is_model_param_on_model(api_client, baker):
+def test_cant_unset_is_model_param_on_model(api_client):
     user = baker.make("users.User", is_valid=True)
     struct = make_structure(user)
     model = make_model(structure=struct)
@@ -74,7 +76,7 @@ def test_cant_unset_is_model_param_on_model(api_client, baker):
     assert model.is_model
 
 
-def test_can_create_model_from_scratch(api_client, baker):
+def test_can_create_model_from_scratch(api_client):
     user = baker.make("users.User", is_valid=True)
     struct = make_structure(user)
     api_client.force_authenticate(user=user)
@@ -85,7 +87,7 @@ def test_can_create_model_from_scratch(api_client, baker):
     ServiceModel.objects.get(slug=response.data["slug"])
 
 
-def test_can_create_model_from_my_service(api_client, baker):
+def test_can_create_model_from_my_service(api_client):
     user = baker.make("users.User", is_valid=True)
     struct = make_structure(user)
     service = make_service(status=ServiceStatus.PUBLISHED, structure=struct)
@@ -102,7 +104,7 @@ def test_can_create_model_from_my_service(api_client, baker):
     assert service.structure.pk == struct.pk
 
 
-def test_create_model_from_service_becomes_ancestor(api_client, baker):
+def test_create_model_from_service_becomes_ancestor(api_client):
     user = baker.make("users.User", is_valid=True)
     struct = make_structure(user)
     service = make_service(status=ServiceStatus.PUBLISHED, structure=struct)
@@ -124,7 +126,7 @@ def test_create_model_from_service_becomes_ancestor(api_client, baker):
     assert service.last_sync_checksum == model.sync_checksum
 
 
-def test_cant_create_model_from_others_service(api_client, baker):
+def test_cant_create_model_from_others_service(api_client):
     user = baker.make("users.User", is_valid=True)
     struct = make_structure(user)
     service = make_service(status=ServiceStatus.PUBLISHED)
@@ -138,7 +140,7 @@ def test_cant_create_model_from_others_service(api_client, baker):
     assert 403 == response.status_code
 
 
-def test_can_create_service_from_any_model(api_client, baker):
+def test_can_create_service_from_any_model(api_client):
     user = baker.make("users.User", is_valid=True)
     struct = make_structure(user)
     model = make_model(structure=struct)
@@ -156,7 +158,7 @@ def test_can_create_service_from_any_model(api_client, baker):
     assert service.model == model
 
 
-def test_manager_can_create_model_from_service_in_its_dept(api_client, baker):
+def test_manager_can_create_model_from_service_in_its_dept(api_client):
     user = baker.make("users.User", is_valid=True, is_manager=True, department="31")
     struct_src = make_structure(department="31")
     struct_dest = make_structure(department="31")
@@ -170,7 +172,7 @@ def test_manager_can_create_model_from_service_in_its_dept(api_client, baker):
     assert 201 == response.status_code
 
 
-def test_manager_cant_create_model_from_service_outside_its_dept(api_client, baker):
+def test_manager_cant_create_model_from_service_outside_its_dept(api_client):
     user = baker.make("users.User", is_valid=True, is_manager=True, department="31")
     struct_src = make_structure(department="44")
     struct_dest = make_structure(department="31")
@@ -184,7 +186,7 @@ def test_manager_cant_create_model_from_service_outside_its_dept(api_client, bak
     assert 403 == response.status_code
 
 
-def test_manager_cant_create_model_in_struct_outside_its_dept(api_client, baker):
+def test_manager_cant_create_model_in_struct_outside_its_dept(api_client):
     user = baker.make("users.User", is_valid=True, is_manager=True, department="31")
     struct_src = make_structure(department="31")
     struct_dest = make_structure(department="44")
@@ -198,7 +200,7 @@ def test_manager_cant_create_model_in_struct_outside_its_dept(api_client, baker)
     assert 403 == response.status_code
 
 
-def test_update_model_and_update_all_linked_services(api_client, baker):
+def test_update_model_and_update_all_linked_services(api_client):
     service_name = "Nom du service"
     new_model_name = "Nouveau nom du modèle"
 
@@ -231,7 +233,7 @@ def test_update_model_and_update_all_linked_services(api_client, baker):
     ), "le service doit être mis à jour avec le nouveau nom du modèle"
 
 
-def test_update_model_and_update_only_linked_services(api_client, baker):
+def test_update_model_and_update_only_linked_services(api_client):
     service_name_1 = "Nom du service 1"
     service_name_2 = "Nom du service 2"
     new_model_name = "Nouveau nom du modèle"
@@ -272,7 +274,7 @@ def test_update_model_and_update_only_linked_services(api_client, baker):
     assert service_2.name == service_name_2
 
 
-def test_update_service_from_model(api_client, baker):
+def test_update_service_from_model(api_client):
     service_name = "Nom du service"
     service_slug = "nom-du-service"
     model_name = "Nouveau nom du modèle"
@@ -306,7 +308,7 @@ def test_update_service_from_model(api_client, baker):
     assert service.name == model_name, "le nom du service doit être mis à jour"
 
 
-def test_update_service_from_model_m2m(api_client, baker):
+def test_update_service_from_model_m2m(api_client):
     service_name = "Nom du service"
     service_slug = "nom-du-service"
     model_name = "Nouveau nom du modèle"
@@ -374,7 +376,7 @@ def test_update_service_from_model_m2m(api_client, baker):
     )
 
 
-def test_update_service_from_model_wrong_permission(api_client, baker):
+def test_update_service_from_model_wrong_permission(api_client):
     service_name = "Nom du service"
     service_slug = "nom-du-service"
     model_name = "Nouveau nom du modèle"
@@ -415,7 +417,7 @@ def test_update_service_from_model_wrong_permission(api_client, baker):
     assert service.name != model_name, "le service ne doit pas avoir été mis à jour"
 
 
-def test_reject_update_service_from_model(api_client, baker):
+def test_reject_update_service_from_model(api_client):
     service_name = "Nom du service"
     service_slug = "nom-du-service"
     model_name = "Nouveau nom du modèle"
@@ -452,7 +454,7 @@ def test_reject_update_service_from_model(api_client, baker):
     assert service.last_sync_checksum == model.sync_checksum
 
 
-def test_reject_update_service_from_model_non_existing_model(api_client, baker):
+def test_reject_update_service_from_model_non_existing_model(api_client):
     service_name = "Nom du service"
     service_slug = "nom-du-service"
     model_name = "Nouveau nom du modèle"
@@ -488,7 +490,7 @@ def test_reject_update_service_from_model_non_existing_model(api_client, baker):
     assert service.last_sync_checksum != model.sync_checksum
 
 
-def test_reject_update_service_from_model_non_existing_service(api_client, baker):
+def test_reject_update_service_from_model_non_existing_service(api_client):
     service_name = "Nom du service"
     service_slug = "nom-du-service"
     model_name = "Nouveau nom du modèle"
@@ -524,7 +526,7 @@ def test_reject_update_service_from_model_non_existing_service(api_client, baker
     assert service.last_sync_checksum != model.sync_checksum
 
 
-def test_cant_instantiate_a_service(api_client, baker):
+def test_cant_instantiate_a_service(api_client):
     user = baker.make("users.User", is_valid=True)
     struct = make_structure(user)
     service = make_service(structure=struct, status=ServiceStatus.PUBLISHED)
@@ -538,7 +540,7 @@ def test_cant_instantiate_a_service(api_client, baker):
     assert response.data["model"][0]["code"] == "does_not_exist"
 
 
-def test_can_instantiate_models_in_my_structures(api_client, baker):
+def test_can_instantiate_models_in_my_structures(api_client):
     user = baker.make("users.User", is_valid=True)
     model = make_model()
     dest_struct = make_structure(user)
@@ -551,7 +553,7 @@ def test_can_instantiate_models_in_my_structures(api_client, baker):
     assert 201 == response.status_code
 
 
-def test_cant_instantiate_models_in_other_structures(api_client, baker):
+def test_cant_instantiate_models_in_other_structures(api_client):
     model = make_model()
     dest_struct = make_structure()
     user = baker.make("users.User", is_valid=True)
