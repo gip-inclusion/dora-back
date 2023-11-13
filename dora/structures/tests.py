@@ -439,7 +439,7 @@ class StructureMemberTestCase(APITestCase):
     def test_get_request_without_struct_empty(self):
         self.client.force_authenticate(user=self.me)
         response = self.client.get("/structure-members/")
-        self.assertEquals(response.status_code, 400)
+        self.assertEqual(response.status_code, 400)
 
     def test_admin_user_can_see_structure_members(self):
         self.client.force_authenticate(user=self.me)
@@ -730,7 +730,7 @@ class StructureMemberTestCase(APITestCase):
             "/structure-members/",
             {"user": {"last_name": "FOO", "email": "FOO@BAR.BUZ"}},
         )
-        self.assertEquals(response.status_code, 403)
+        self.assertEqual(response.status_code, 403)
 
     def test_admin_user_can_invite_new_user(self):
         self.client.force_authenticate(user=self.me)
@@ -1124,12 +1124,8 @@ class StructureMemberTestCase(APITestCase):
         admin = baker.make("users.User", is_valid=True)
         structure = make_structure()
         baker.make("Establishment", siret=structure.siret)
-        structure.members.add(
-            admin,
-            through_defaults={
-                "is_admin": True,
-            },
-        ),
+        structure.members.add(admin, through_defaults={"is_admin": True})
+
         self.client.force_authenticate(user=admin)
         response = self.client.post(
             f"/structure-putative-members/?structure={structure.slug}",

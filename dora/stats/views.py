@@ -121,6 +121,7 @@ def log_event(request):
         "service_name": request.data.get("di_service_name", ""),
         "source": request.data.get("di_source", ""),
         "search_view": search_view,
+        "search_view_id": search_view_id,
     }
 
     event = None
