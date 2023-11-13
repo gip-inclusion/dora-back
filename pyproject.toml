@@ -13,3 +13,7 @@ select = [
 
 [tool.ruff.isort]
 known-first-party = ["dora"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE="config.settings"
+python_files = ["test.py", "tests*.py", "test_*.py"]

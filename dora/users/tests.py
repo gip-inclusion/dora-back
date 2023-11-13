@@ -14,7 +14,7 @@ class UserTestCase(APITestCase):
             {"main_activity": main_activity},
         )
         self.assertEqual(response.status_code, 400)
-        self.assertNotEquals(self.user.main_activity, main_activity)
+        self.assertNotEqual(self.user.main_activity, main_activity)
 
     def test_main_activity_is_correctly_updated(self):
         main_activity = "offreur"

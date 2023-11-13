@@ -43,6 +43,7 @@ def make_structure(user=None, **kwargs):
     )
     if user:
         structure.members.add(user)
+
     return structure
 
 
