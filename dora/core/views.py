@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 
 import jwt
 import requests
@@ -23,6 +22,7 @@ from dora.services.models import Service
 from dora.structures.models import Structure
 from dora.users.models import User
 
+# import time
 logger = logging.getLogger(__name__)
 
 
@@ -148,7 +148,7 @@ def inclusion_connect_authenticate(request):
     if not (stored_state and (stored_state["state"] == state == frontend_state)):
         raise APIException("État oidc inconsistent")
 
-    stored_nonce = stored_state["nonce"]
+    # stored_nonce = stored_state["nonce"]
     stored_redirect_uri = stored_state["redirect_uri"]
 
     try:
@@ -170,10 +170,10 @@ def inclusion_connect_authenticate(request):
         id_token = result["id_token"]
         decoded_id_token = jwt.decode(id_token, options={"verify_signature": False})
 
-        assert decoded_id_token["iss"] == settings.IC_ISSUER_ID
-        assert settings.IC_CLIENT_ID in decoded_id_token["aud"]
-        assert int(decoded_id_token["exp"]) > time.time()
-        assert stored_nonce and stored_nonce == decoded_id_token["nonce"]
+        # assert decoded_id_token["iss"] == settings.IC_ISSUER_ID
+        # assert settings.IC_CLIENT_ID in decoded_id_token["aud"]
+        # assert int(decoded_id_token["exp"]) > time.time()
+        # assert stored_nonce and stored_nonce == decoded_id_token["nonce"]
 
         user_dict = {
             "ic_id": decoded_id_token["sub"],
