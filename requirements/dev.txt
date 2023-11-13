@@ -1,13 +1,11 @@
 -r ./base.txt
 
-black[d]==23.9.1
 django-environ==0.11.2
 django-querycount==0.8.3
 django-silk==5.0.3
-flake8==6.1.0
 freezegun==1.2.2
 ggshield==1.18.1
-isort==5.12.0
 pre-commit==3.4.0
+ruff==0.1.4
 pytest==7.4.3
 pytest-django==4.6.0
