@@ -34,11 +34,11 @@ def _filter_and_annotate_dora_services(services, location):
     return list(services_on_site) + list(services_remote)
 
 
-def multisort(xs, specs):
+def multisort(lst, specs):
     # https://docs.python.org/3/howto/sorting.html#sort-stability-and-complex-sorts
     for key, reverse in reversed(specs):
-        xs.sort(key=itemgetter(key), reverse=reverse)
-    return xs
+        lst.sort(key=itemgetter(key), reverse=reverse)
+    return lst
 
 
 def _sort_services(services):

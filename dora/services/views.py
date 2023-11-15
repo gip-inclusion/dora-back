@@ -1,7 +1,11 @@
+from datetime import timedelta
+from operator import itemgetter
+
 import requests
 from django.db.models import Q
 from django.http.response import Http404
 from django.utils import timezone
+from django.utils.timezone import now
 from rest_framework import (
     exceptions,
     mixins,
@@ -409,16 +413,13 @@ class SavedSearchViewSet(
         url_path="recent",
         permission_classes=[permissions.AllowAny],
     )
-    def get_recent_services(self, request, _slug):
+    def get_recent_services(self, request, pk):
         saved_search = self.get_object()
         if saved_search.user != request.user:
             raise exceptions.PermissionDenied()
-
-        # serializer = FeedbackSerializer(data=request.data)
-        # serializer.is_valid(raise_exception=True)
-        # d = serializer.validated_data
-        # send_service_feedback_email(service, d["full_name"], d["email"], d["message"])
-        # return Response(status=201)
+        results = saved_search.get_recent_services((now() - timedelta(days=30)).date())
+        results.sort(key=itemgetter("publication_date"), reverse=True)
+        return Response(results)
 
 
 class ModelViewSet(ServiceViewSet):
