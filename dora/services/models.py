@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
+from dora import data_inclusion
 from dora.admin_express.models import EPCI, AdminDivisionType, City, Department, Region
 from dora.admin_express.utils import get_clean_city_name
 from dora.core.models import EnumModel, LogItem, ModerationMixin
@@ -649,3 +650,47 @@ class SavedSearch(models.Model):
     class Meta:
         verbose_name = "Recherche sauvegardé"
         verbose_name_plural = "Recherches sauvegardées"
+
+    def get_recent_services(self, cutoff_date):
+        di_client = (
+            data_inclusion.di_client_factory()
+            if not settings.IS_TESTING
+            and settings.INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS
+            else None
+        )
+
+        category = None
+        if self.category:
+            category = self.category
+
+        subcategories = None
+        if self.subcategories.exists():
+            subcategories = self.subcategories.values_list("value", flat=True)
+
+        kinds = None
+        if self.kinds.exists():
+            kinds = self.kinds.values_list("value", flat=True)
+
+        fees = None
+        if self.fees.exists():
+            fees = self.fees.values_list("value", flat=True)
+
+        # Récupération des résultats de la recherche
+        from .search import search_services
+
+        results = search_services(
+            None,
+            self.city_code,
+            [category.value] if category and not subcategories else None,
+            subcategories,
+            kinds,
+            fees,
+            di_client,
+        )
+
+        # On garde les contenus qui ont été publiés depuis la dernière notification
+        return [
+            r
+            for r in results
+            if datetime.fromisoformat(r["publication_date"]).date() > cutoff_date
+        ]
