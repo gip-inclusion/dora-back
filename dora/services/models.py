@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
+from dora import data_inclusion
 from dora.admin_express.models import EPCI, AdminDivisionType, City, Department, Region
 from dora.admin_express.utils import get_clean_city_name
 from dora.core.models import EnumModel, LogItem, ModerationMixin
@@ -650,7 +651,14 @@ class SavedSearch(models.Model):
         verbose_name = "Recherche sauvegardé"
         verbose_name_plural = "Recherches sauvegardées"
 
-    def get_recent_services(self, cutoff_date, di_client=None):
+    def get_recent_services(self, cutoff_date):
+        di_client = (
+            data_inclusion.di_client_factory()
+            if not settings.IS_TESTING
+            and settings.INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS
+            else None
+        )
+
         category = None
         if self.category:
             category = self.category

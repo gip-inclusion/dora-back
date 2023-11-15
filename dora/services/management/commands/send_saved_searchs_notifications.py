@@ -6,7 +6,6 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from mjml import mjml2html
 
-from dora import data_inclusion
 from dora.core.emails import send_mail
 
 from ...models import SavedSearch, SavedSearchFrequency
@@ -58,18 +57,11 @@ class Command(BaseCommand):
         self.stdout.write("Vérification des notifications de recherches sauvegardées")
         saved_searchs = get_saved_search_notifications_to_send()
 
-        di_client = (
-            data_inclusion.di_client_factory()
-            if not settings.IS_TESTING
-            and settings.INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS
-            else None
-        )
-
         num_emails_sent = 0
         for saved_search in saved_searchs:
             # On garde les contenus qui ont été publiés depuis la dernière notification
             new_services = saved_search.get_recent_services(
-                saved_search.last_notification_date, di_client
+                saved_search.last_notification_date
             )
 
             if new_services:
