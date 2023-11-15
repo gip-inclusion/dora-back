@@ -150,8 +150,8 @@ class StructuresImportTestCase(APITestCase):
         self.assertEqual(len(mail.outbox), 1)
         out, err = self.call_command()
         self.assertIn("foo@buzz.com a déjà été invité·e", out)
-        self.assertEquals(Structure.objects.filter(siret=structure.siret).count(), 1)
-        self.assertEquals(User.objects.filter(email="foo@buzz.com").count(), 1)
+        self.assertEqual(Structure.objects.filter(siret=structure.siret).count(), 1)
+        self.assertEqual(User.objects.filter(email="foo@buzz.com").count(), 1)
         self.assertEqual(len(mail.outbox), 1)
 
     def test_invitee_is_admin(self):
@@ -173,7 +173,7 @@ class StructuresImportTestCase(APITestCase):
         out, err = self.call_command()
         self.assertIn("admins", err)
         self.assertIn("Saisissez une adresse e-mail valide.", err)
-        self.assertEquals(User.objects.filter(email="foo.buzz.com").count(), 0)
+        self.assertEqual(User.objects.filter(email="foo.buzz.com").count(), 0)
         self.assertEqual(len(mail.outbox), 0)
 
     def test_structure_name_is_valid(self):
@@ -182,7 +182,7 @@ class StructuresImportTestCase(APITestCase):
         out, err = self.call_command()
         self.assertIn("name", err)
         self.assertIn("Ce champ ne peut être vide.", err)
-        self.assertEquals(User.objects.filter(email="foo@buzz.com").count(), 0)
+        self.assertEqual(User.objects.filter(email="foo@buzz.com").count(), 0)
         self.assertEqual(len(mail.outbox), 0)
 
     def test_invitee_not_a_valid_user_yet(self):

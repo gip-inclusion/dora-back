@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 from model_bakery import baker
 
+from dora.services.enums import ServiceStatus
 from dora.services.models import ServiceCategory, ServiceSubCategory
 from dora.services.utils import update_sync_checksum
 
@@ -42,6 +43,7 @@ def make_structure(user=None, **kwargs):
     )
     if user:
         structure.members.add(user)
+
     return structure
 
 
@@ -72,6 +74,10 @@ def make_service(**kwargs):
         service.subcategories.set(db_subcats)
 
     return service
+
+
+def make_published_service(**kwargs):
+    return make_service(status=ServiceStatus.PUBLISHED, **kwargs)
 
 
 def make_model(**kwargs):

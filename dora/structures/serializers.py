@@ -25,7 +25,6 @@ class StructureSerializer(serializers.ModelSerializer):
     can_edit_informations = serializers.SerializerMethodField()
     can_view_members = serializers.SerializerMethodField()
     can_edit_members = serializers.SerializerMethodField()
-    can_invite_first_admin = serializers.SerializerMethodField()
     can_edit_services = serializers.SerializerMethodField()
 
     is_member = serializers.SerializerMethodField()
@@ -66,7 +65,6 @@ class StructureSerializer(serializers.ModelSerializer):
             "can_edit_informations",
             "can_edit_members",
             "can_edit_services",
-            "can_invite_first_admin",
             "can_view_members",
             "city",
             "city_code",
@@ -127,10 +125,6 @@ class StructureSerializer(serializers.ModelSerializer):
     def get_can_edit_services(self, obj: Structure):
         user = self.context.get("request").user
         return obj.can_edit_services(user)
-
-    def get_can_invite_first_admin(self, obj: Structure):
-        user = self.context.get("request").user
-        return obj.can_invite_first_admin(user)
 
     def get_is_member(self, obj):
         user = self.context.get("request").user

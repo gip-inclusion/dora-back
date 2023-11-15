@@ -459,6 +459,16 @@ class Service(ModerationMixin, models.Model):
         self.city = get_clean_city_name(self.city_code)
         return super().save(*args, **kwargs)
 
+    def can_read(self, user):
+        return self.status == ServiceStatus.PUBLISHED or (
+            user.is_authenticated
+            and (
+                user.is_staff
+                or self.structure.is_manager(user)
+                or self.structure.is_member(user)
+            )
+        )
+
     def can_write(self, user):
         return user.is_authenticated and (
             user.is_staff
@@ -588,16 +598,23 @@ class ServiceModificationHistoryItem(models.Model):
 
 
 class Bookmark(models.Model):
-    service = models.ForeignKey("Service", on_delete=models.CASCADE)
     user = models.ForeignKey("users.User", on_delete=models.CASCADE)
+    service = models.ForeignKey("Service", on_delete=models.CASCADE, null=True)
+    di_id = models.CharField(max_length=50, blank=True)
     creation_date = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["service", "user"],
-                name="%(app_label)s_unique_bookmark",
-            )
+                fields=["user", "service"],
+                condition=Q(service__isnull=False),
+                name="%(app_label)s_unique_service_bookmark",
+            ),
+            models.UniqueConstraint(
+                fields=["user", "di_id"],
+                condition=~Q(di_id=""),
+                name="%(app_label)s_unique_di_bookmark",
+            ),
         ]
 
 

@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.utils.timezone import is_naive, make_aware
 from rest_framework import mixins, permissions, serializers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.response import Response
 
 from dora import data_inclusion
@@ -29,6 +29,7 @@ from dora.services.models import (
     AccessCondition,
     AdminDivisionType,
     BeneficiaryAccessMode,
+    Bookmark,
     CoachOrientationMode,
     ConcernedPublic,
     Credential,
@@ -51,9 +52,9 @@ from dora.services.utils import (
 from dora.stats.models import DeploymentLevel, DeploymentState
 from dora.structures.models import Structure, StructureMember
 
-from .models import Bookmark
 from .serializers import (
     AnonymousServiceSerializer,
+    BookmarkSerializer,
     FeedbackSerializer,
     SavedSearchSerializer,
     ServiceListSerializer,
@@ -97,6 +98,47 @@ class ServicePermission(permissions.BasePermission):
         return service.can_write(user)
 
 
+def get_visible_services(user):
+    all_services = (
+        Service.objects.all()
+        .select_related(
+            "structure",
+        )
+        .prefetch_related(
+            "kinds",
+            "categories",
+            "subcategories",
+            "access_conditions",
+            "concerned_public",
+            "beneficiaries_access_modes",
+            "coach_orientation_modes",
+            "requirements",
+            "credentials",
+            "location_kinds",
+        )
+    )
+
+    # Everybody can see published services
+    if not user or not user.is_authenticated:
+        qs = all_services.filter(status=ServiceStatus.PUBLISHED)
+    # Staff can see everything
+    elif user.is_staff:
+        qs = all_services
+    elif user.is_manager and user.department:
+        qs = all_services.filter(
+            Q(status=ServiceStatus.PUBLISHED)
+            | Q(structure__department=user.department)
+            | Q(structure__membership__user=user)
+        )
+    else:
+        # Authentified users can see everything in their structure
+        # plus published services for other structures
+        qs = all_services.filter(
+            Q(status=ServiceStatus.PUBLISHED) | Q(structure__membership__user=user)
+        )
+    return qs.distinct()
+
+
 class ServiceViewSet(
     mixins.CreateModelMixin,
     mixins.DestroyModelMixin,
@@ -115,50 +157,15 @@ class ServiceViewSet(
         structure_slug = self.request.query_params.get("structure")
         published_only = self.request.query_params.get("published") in TRUTHY_VALUES
 
-        all_services = (
-            Service.objects.all()
-            .select_related(
-                "structure",
-            )
-            .prefetch_related(
-                "kinds",
-                "categories",
-                "subcategories",
-                "access_conditions",
-                "concerned_public",
-                "beneficiaries_access_modes",
-                "coach_orientation_modes",
-                "requirements",
-                "credentials",
-                "location_kinds",
-            )
-        )
+        qs = get_visible_services(user)
 
-        # Everybody can see published services
-        if not user or not user.is_authenticated:
-            qs = all_services.filter(status=ServiceStatus.PUBLISHED)
-        # Staff can see everything
-        elif user.is_staff:
-            qs = all_services
-        elif user.is_manager and user.department:
-            qs = all_services.filter(
-                Q(status=ServiceStatus.PUBLISHED)
-                | Q(structure__department=user.department)
-                | Q(structure__membership__user=user)
-            )
-        else:
-            # Authentified users can see everything in their structure
-            # plus published services for other structures
-            qs = all_services.filter(
-                Q(status=ServiceStatus.PUBLISHED) | Q(structure__membership__user=user)
-            )
         if structure_slug:
             qs = qs.filter(structure__slug=structure_slug)
 
         if published_only:
             qs = qs.filter(status=ServiceStatus.PUBLISHED)
 
-        return qs.order_by("-modification_date").distinct()
+        return qs.order_by("-modification_date")
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -174,26 +181,6 @@ class ServiceViewSet(
         ):
             return ServiceSerializer
         return AnonymousServiceSerializer
-
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="set-bookmark",
-        permission_classes=[permissions.IsAuthenticated],
-    )
-    def set_bookmark(self, request, slug):
-        user = self.request.user
-        service = self.get_object()
-        wanted_state = self.request.data.get("state")
-        if wanted_state:
-            Bookmark.objects.get_or_create(service=service, user=user)
-        else:
-            try:
-                bookmark = Bookmark.objects.get(service=service, user=user)
-                bookmark.delete()
-            except Bookmark.DoesNotExist:
-                pass
-        return Response(status=204)
 
     @action(
         detail=True,
@@ -363,6 +350,47 @@ class ServiceViewSet(
                     service.save()
 
         return Response(status=204)
+
+
+class BookmarkViewSet(
+    viewsets.GenericViewSet,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = BookmarkSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        visible_and_active_services = get_visible_services(user).exclude(
+            status=ServiceStatus.ARCHIVED
+        )
+        return Bookmark.objects.filter(
+            Q(service__isnull=True) | Q(service__in=visible_and_active_services),
+            user=user,
+        ).order_by("-creation_date")
+
+    def create(self, request):
+        slug = request.data.get("slug")
+        is_di = request.data.get("is_di")
+        service = None
+        if slug and not is_di:
+            try:
+                service = Service.objects.get(slug=slug)
+            except Service.DoesNotExist:
+                raise NotFound
+        if service and not service.can_read(request.user):
+            raise PermissionDenied
+
+        bookmark, created = Bookmark.objects.get_or_create(
+            user=self.request.user,
+            service=service if not is_di else None,
+            di_id=slug if is_di else "",
+        )
+        if not created:
+            raise serializers.ValidationError("ce bookmark existe déjà")
+
+        return Response(status=status.HTTP_201_CREATED)
 
 
 class SavedSearchPermission(permissions.BasePermission):

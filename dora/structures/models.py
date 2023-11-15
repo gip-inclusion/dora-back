@@ -308,18 +308,13 @@ class Structure(ModerationMixin, models.Model):
         )
 
     def can_edit_members(self, user: User):
-        return user.is_authenticated and (user.is_staff or self.is_admin(user))
+        return user.is_authenticated and (
+            user.is_staff or self.is_admin(user) or self.is_manager(user)
+        )
 
     def can_edit_services(self, user: User):
         return user.is_authenticated and (
             user.is_staff or self.is_manager(user) or self.is_member(user)
-        )
-
-    def can_invite_first_admin(self, user: User):
-        return (
-            user.is_authenticated
-            and not self.has_admin()
-            and (user.is_staff or self.is_admin(user) or self.is_manager(user))
         )
 
     def is_member(self, user):

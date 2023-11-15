@@ -1,19 +1,11 @@
 from rest_framework import serializers
 
 from dora.services.models import Bookmark, SavedSearch
-from dora.services.serializers import SavedSearchSerializer, ServiceListSerializer
+from dora.services.serializers import BookmarkListSerializer, SavedSearchSerializer
 from dora.sirene.models import Establishment
 from dora.structures.models import Structure
 from dora.structures.serializers import StructureListSerializer
 from dora.users.models import User
-
-
-class BookmarkListSerializer(serializers.ModelSerializer):
-    service = ServiceListSerializer(read_only=True)
-
-    class Meta:
-        model = Bookmark
-        fields = ["service", "creation_date"]
 
 
 class UserInfoSerializer(serializers.ModelSerializer):

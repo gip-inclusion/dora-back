@@ -53,7 +53,7 @@ class Command(BaseCommand):
 
         stock_file = the_dir / "StockUniteLegale_utf8.csv"
 
-        establishments_geo_file_url = "https://data.cquest.org/geo_sirene/v2019/last/StockEtablissementActif_utf8_geo.csv.gz"
+        establishments_geo_file_url = "https://files.data.gouv.fr/geo-sirene/last/StockEtablissementActif_utf8_geo.csv.gz"
         gzipped_estab_file = the_dir / "StockEtablissementActif_utf8_geo.csv.gz"
 
         if not os.path.exists(gzipped_estab_file):

@@ -74,6 +74,8 @@ def log_event(request):
     search_num_results = request.data.get("search_num_results") if is_search else None
     user = request.user
 
+    results_slugs_top10 = request.data.get("results_slugs_top10", [])
+
     common_analytics_data = {
         "path": request.data.get("path"),
         "user": user if user.is_authenticated else None,
@@ -121,6 +123,7 @@ def log_event(request):
         "service_name": request.data.get("di_service_name", ""),
         "source": request.data.get("di_source", ""),
         "search_view": search_view,
+        "search_view_id": search_view_id,
     }
 
     event = None
@@ -139,6 +142,7 @@ def log_event(request):
             num_results=search_num_results,
             num_di_results=num_di_results,
             num_di_results_top10=num_di_results_top10,
+            results_slugs_top10=results_slugs_top10,
         )
         cats_values = request.data.get("category_ids", [])
         subcats_values = request.data.get("sub_category_ids", [])

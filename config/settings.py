@@ -43,13 +43,13 @@ if "GEOS_LIBRARY_PATH" in os.environ:
     GEOS_LIBRARY_PATH = os.environ["GEOS_LIBRARY_PATH"]
 
 
-if os.environ["ENVIRONMENT"] != "local":
+if ENVIRONMENT != "local":
     sentry_sdk.init(
         dsn=os.environ["SENTRY_DSN"],
         integrations=[DjangoIntegration()],
         traces_sample_rate=0,
         send_default_pii=False,
-        environment=os.environ["ENVIRONMENT"],
+        environment=ENVIRONMENT,
     )
 
 
@@ -148,12 +148,10 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 try:
     database_url = os.environ["DATABASE_URL"]
-    DATABASES = {"default": dj_database_url.config(ssl_require=True)}
-    DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.postgis"
+    DATABASES = {"default": dj_database_url.config(ssl_require=ENVIRONMENT != "local")}
 except KeyError:
     DATABASES = {
         "default": {
-            "ENGINE": "django.contrib.gis.db.backends.postgis",
             "NAME": os.environ["POSTGRES_DB"],
             "USER": os.environ["POSTGRES_USER"],
             "PASSWORD": os.environ["POSTGRES_PASSWORD"],
@@ -161,6 +159,8 @@ except KeyError:
             "PORT": os.environ["POSTGRES_PORT"],
         }
     }
+
+DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.postgis"
 
 
 # Cache
@@ -253,7 +253,6 @@ ALLOWED_UPLOADED_FILES_EXTENSIONS = [
     "odt",
     "xls",
     "xlsx",
-    "ods",
 ]
 
 # Default primary key field type
@@ -521,13 +520,6 @@ if DEBUG and PROFILE:
         "IGNORE_REQUEST_PATTERNS": [r"/silk/"],
     }
 
-#########
-# Tests #
-#########
-
-TEST_RUNNER = "dora.core.test_runner.MyTestRunner"
-
-
 ################
 # SEND_IN_BLUE #
 ################
@@ -535,7 +527,6 @@ TEST_RUNNER = "dora.core.test_runner.MyTestRunner"
 SIB_ACTIVE = os.environ["SIB_ACTIVE"] == "true"
 SIB_API_KEY = os.environ["SIB_API_KEY"]
 SIB_ONBOARDING_LIST = os.environ["SIB_ONBOARDING_LIST"]
-
 
 #################
 # NOTIFICATIONS #

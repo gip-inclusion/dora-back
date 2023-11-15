@@ -1,10 +1,13 @@
 import logging
 
+import requests
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from rest_framework import exceptions, serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 
+from dora import data_inclusion
 from dora.core.utils import code_insee_to_code_dept
 from dora.services.enums import ServiceStatus
 from dora.structures.models import Structure, StructureMember
@@ -13,6 +16,7 @@ from .models import (
     AccessCondition,
     AdminDivisionType,
     BeneficiaryAccessMode,
+    Bookmark,
     CoachOrientationMode,
     ConcernedPublic,
     Credential,
@@ -658,3 +662,72 @@ class SavedSearchSerializer(serializers.ModelSerializer):
             "kinds",
             "kinds_display",
         ]
+
+
+class BookmarkListSerializer(serializers.ModelSerializer):
+    slug = serializers.SerializerMethodField()
+    is_di = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Bookmark
+        fields = ["id", "slug", "is_di", "creation_date"]
+
+    def get_slug(self, obj):
+        if obj.service_id:
+            return obj.service.slug
+        else:
+            return obj.di_id
+
+    def get_is_di(self, obj):
+        return True if obj.di_id else False
+
+
+class BookmarkSerializer(BookmarkListSerializer):
+    service = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Bookmark
+        fields = [
+            "id",
+            "slug",
+            "is_di",
+            "creation_date",
+            "service",
+        ]
+
+    def get_service(self, obj):
+        service = obj.service
+        if service:
+            return {
+                "structure_slug": obj.service.structure.slug,
+                "structure_name": obj.service.structure.name,
+                "postal_code": obj.service.postal_code,
+                "city": obj.service.city,
+                "name": obj.service.name,
+                "shortDesc": obj.service.short_desc,
+                "source": obj.service.source,
+            }
+        else:
+            source_di, di_service_id = obj.di_id.split("--")
+            di_client = (
+                data_inclusion.di_client_factory() if not settings.IS_TESTING else None
+            )
+
+            try:
+                di_service = (
+                    di_client.retrieve_service(source=source_di, id=di_service_id)
+                    if di_client is not None
+                    else None
+                )
+            except requests.ConnectionError:
+                return {}
+            if di_service is None:
+                return {}
+            return {
+                "structure_name": di_service["structure"]["nom"],
+                "postal_code": di_service["code_postal"],
+                "city": di_service["commune"],
+                "name": di_service["nom"],
+                "shortDesc": di_service["presentation_resume"] or "",
+                "source": di_service["source"],
+            }
