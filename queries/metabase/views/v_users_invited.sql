@@ -1,18 +1,22 @@
 -- utilisateurs : 
 -- membres d'une structure ou en attente, avec infos complémentaires
 
-DROP VIEW IF EXISTS v_users_invited;
+drop view if exists v_users_invited;
 
-CREATE VIEW v_users_invited AS
-SELECT 
-id "ID utilisateur", 
-email "E-mail", 
-date_joined "Date de création",
-mu.is_valid "Valide",
-(SELECT ic_id IS not NULL) "Inscrit IC",
-(SELECT date_joined < '2022-10-03') "Créé avant MEP IC",
-(SELECT id IN (SELECT user_id FROM structures_structuremember ss)) "Membre d'une structure",
-(SELECT id IN (SELECT user_id FROM structures_structureputativemember ss)) "En attente de rattachement"
-FROM mb_user mu
-WHERE not mu.is_staff 
-ORDER by date_joined desc;
+create view v_users_invited as
+select
+    mu.id                               as "ID utilisateur",
+    mu.email                            as "E-mail",
+    mu.date_joined                      as "Date de création",
+    mu.is_valid                         as "Valide",
+    (select ic_id is not null)          as "Inscrit IC",
+    (select date_joined < '2022-10-03') as "Créé avant MEP IC",
+    (
+        select id in (select user_id from structures_structuremember)
+    )                                   as "Membre d'une structure",
+    (
+        select id in (select user_id from structures_structureputativemember)
+    )                                   as "En attente de rattachement"
+from mb_user as mu
+where not mu.is_staff
+order by mu.date_joined desc;
