@@ -17,3 +17,38 @@ known-first-party = ["dora"]
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE="config.settings"
 python_files = ["test.py", "tests*.py", "test_*.py"]
+
+[tool.sqlfluff.core]
+dialect = "postgres"
+sql_file_exts = ".sql"
+
+[tool.sqlfluff.layout.type.alias_expression]
+# https://docs.sqlfluff.com/en/stable/layout.html#aligned-elements
+# We want non-default spacing _before_ the alias expressions.
+spacing_before = "align"
+# We want to align them within the next outer select clause.
+# This means for example that alias expressions within the FROM
+# or JOIN clause would _not_ be aligned with them.
+align_within = "select_clause"
+# The point at which to stop searching outward for siblings, which
+# in this example would likely be the boundary of a CTE. Stopping
+# when we hit brackets is usually a good rule of thumb for this
+# configuration.
+align_scope = "bracketed"
+
+# For sqlfluff rules, see:  
+# - https://docs.sqlfluff.com/en/stable/rules.html
+# For in-file config directives see: 
+# - https://docs.sqlfluff.com/en/stable/configuration.html#in-file-configuration-directives
+[tool.sqlfluff.rules.capitalisation.keywords]
+capitalisation_policy = "lower"
+
+[tool.sqlfluff.rules.capitalisation.functions]
+extended_capitalisation_policy = "lower"
+
+[tool.sqlfluff.rules.capitalisation.literals]
+capitalisation_policy = "lower"
+
+[tool.sqlfluff.rules.references.special_chars]
+# Useful for Metabase field aliases
+additional_allowed_characters = "àéè '-"
