@@ -1,9 +1,9 @@
 -- membres d'une structure : 
 -- invité en tant que membre de structure, validé ou non
 
-drop view if exists v_members_invited;
+drop table if exists mb_members_invited;
 
-create or replace view v_members_invited as
+create table mb_members_invited as
 select
     mu.id               as "ID utilisateur",
     mu.email            as "E-mail",
@@ -26,3 +26,19 @@ inner join structures_structureputativemember as ss on mu.id = ss.user_id
 left join mb_structure as ms on ss.structure_id = ms.id
 where not mu.is_staff
 order by mu.date_joined desc;
+
+
+-- Indexes et PK
+
+alter table public.mb_members_invited add constraint mb_members_invited_pk primary key ( -- noqa: LT05
+    "ID utilisateur"
+);
+create index mb_members_invited_valide_idx on public.mb_members_invited (
+    "Valide"
+);
+create index mb_members_invited_date_joined_idx on public.mb_users_invited (
+    "Date de création"
+);
+create index mb_members_invited_dpt_idx on public.mb_members_invited (
+    "Département"
+);

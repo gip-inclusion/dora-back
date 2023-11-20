@@ -1,9 +1,9 @@
 -- utilisateurs : 
 -- membres d'une structure ou en attente, avec infos complémentaires
 
-drop view if exists v_users_invited;
+drop table if exists mb_users_invited;
 
-create view v_users_invited as
+create table mb_users_invited as
 select
     mu.id                               as "ID utilisateur",
     mu.email                            as "E-mail",
@@ -20,3 +20,13 @@ select
 from mb_user as mu
 where not mu.is_staff
 order by mu.date_joined desc;
+
+-- Indexes et PK
+
+alter table public.mb_users_invited add constraint mb_users_invited_pk primary key ( -- noqa: LT05
+    "ID utilisateur"
+);
+create index mb_users_invited_valide_idx on public.mb_users_invited ("Valide");
+create index mb_users_invited_date_joined_idx on public.mb_users_invited (
+    "Date de création"
+);
