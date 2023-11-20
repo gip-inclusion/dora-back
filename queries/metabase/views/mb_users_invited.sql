@@ -7,8 +7,9 @@ create table mb_users_invited as
 select
     mu.id                               as "ID utilisateur",
     mu.email                            as "E-mail",
+    mu.is_valid                         as "E-mail validé",
     mu.date_joined                      as "Date de création",
-    mu.is_valid                         as "Valide",
+    mu.last_login                       as "Dernière connexion",
     (select ic_id is not null)          as "Inscrit IC",
     (select date_joined < '2022-10-03') as "Créé avant MEP IC",
     (
