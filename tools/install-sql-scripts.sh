@@ -1,13 +1,11 @@
 #!/bin/bash
 
 # Only run on the local app (for now)
-if [ "$ENVIRONMENT" != "local" ];then exit 0; fi
+if [ "$ENVIRONMENT" != "production" ];then exit 0; fi
 
-# Install the latest psql client
-# dbclient-fetcher psql
+# DO NOT USE DIRECTLY (unless you know what you're doing)
+# This script is launched by `update-metabase-db.sh`
 
-# TODO: Discussion : put in on source and dump it, or directly on target (metabase)
-# target directly metabase for now ...
 export SRC_DB_URL=$DATABASE_URL
 export DEST_DB_URL=$METABASE_DB_URL
 
@@ -17,8 +15,12 @@ function walkDirs() {
         if [ -d "$f" ]; then
              walkDirs "$f"
         elif [ "${f##*.}" = "sql" ]; then
-            echo "Installing: $f"
-  	    psql $DEST_DB_URL -f "$f"
+            echo "Installing: '$f' on source DB"
+  	    psql $SRC_DB_URL -f "$f"
+            
+	    tblname=$(basename "$f" .sql)
+	    echo "Dumping and exporting table: '$tblname' on destination DB"
+	    pg_dump $SRC_DB_URL -O -t "$tblname" -c | psql $DEST_DB_URL
         fi
     done
 }
