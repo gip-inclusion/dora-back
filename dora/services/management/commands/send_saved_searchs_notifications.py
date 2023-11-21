@@ -69,8 +69,8 @@ class Command(BaseCommand):
                 context = {
                     "search_label": compute_search_label(saved_search),
                     "homepage_url": settings.FRONTEND_URL,
-                    "updated_services": new_services[:15],
-                    "services_number": len(new_services),
+                    "updated_services": new_services,
+                    "alert_link": f"{settings.FRONTEND_URL}/mes-alertes/{saved_search.id}",
                 }
 
                 num_emails_sent += 1
