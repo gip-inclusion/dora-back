@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# Only run on the production app
+# Exécution seulement sur l'environnement de production 
 if [ "$ENVIRONMENT" != "production" ];then exit 0; fi
 
-# Check for Metabase endpoint
-if [ -z "$METABASE_DB_URL" ];then echo "Pas de serveur Metabase connu ; export abandonnée."; exit 0; fi
+# Vérification de la présence du endpoint Metabase dans l'environnement 
+if [ -z "$METABASE_DB_URL" ];then echo "Pas de serveur Metabase connu ; export abandonné."; exit 0; fi
 
-# Install the latest psql client
+# Installe la dernière version de psql 
 dbclient-fetcher psql
 
-# Install SQL queries in folder `queries`
-tools/install-sql-scripts.sh queries 
+# Installe et exporte les requêtes SQL du dossier `queries` 
+tools/lib/install-sql-scripts.sh queries 
 
-# Export remaining prod tables to METABASE
-tools/export-db-metabase.sh
+# Exporte les tables de production restantes vers Metabase
+tools/lib/export-db-metabase.sh
