@@ -206,15 +206,7 @@ def inclusion_connect_authenticate(request):
                 # via son email, puis on le migre
                 user = User.objects.get(email=user_dict["email"])
                 if user.ic_id is not None:
-                    logging.error(
-                        "Conflit avec Keycloak",
-                        extra={
-                            # Potentiel problème RGPD; en attente d'un avis du DPO.
-                            # new_ic_id: user_dict["ic_id"],
-                            # email: user.email,
-                            # old_ic_id: user.ic_id
-                        },
-                    )
+                    logging.error("Conflit avec Keycloak")
                     return APIException("Conflit avec le fournisseur d'identité")
                 user.ic_id = user_dict["ic_id"]
                 user.first_name = user_dict["first_name"]
