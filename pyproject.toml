@@ -1,13 +1,13 @@
 [tool.ruff]
 ignore = ["E501", "E203"]
 line-length = 88
-# set to minimum compatibility with flake8, update / extend as needed
-# see rules : https://docs.astral.sh/ruff/rules/
+# Compatibilité minimale avec flake8, à faire évoluer si nécessaire
+# voir les règles de lint : https://docs.astral.sh/ruff/rules/
 select = [
-    "Q",  # flake8 quotes
+    "Q",  # flake8 : quotes
     "F",  # pyflakes
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
+    "E",  # pycodestyle : erreurs
+    "W",  # pycodestyle : avertissements
     "I",  # isort
 ]
 
@@ -18,27 +18,24 @@ known-first-party = ["dora"]
 DJANGO_SETTINGS_MODULE="config.settings"
 python_files = ["test.py", "tests*.py", "test_*.py"]
 
+# Note : la plupart des éléments de configuration de sqlfluff
+# sont basés sur les recommandantions et usages de Data-Inclusion
 [tool.sqlfluff.core]
 dialect = "postgres"
 sql_file_exts = ".sql"
 
 [tool.sqlfluff.layout.type.alias_expression]
+# Alignement vertical pour les aliases
 # https://docs.sqlfluff.com/en/stable/layout.html#aligned-elements
-# We want non-default spacing _before_ the alias expressions.
 spacing_before = "align"
-# We want to align them within the next outer select clause.
-# This means for example that alias expressions within the FROM
-# or JOIN clause would _not_ be aligned with them.
+# Aliases alignés dans la clause SELECT
 align_within = "select_clause"
-# The point at which to stop searching outward for siblings, which
-# in this example would likely be the boundary of a CTE. Stopping
-# when we hit brackets is usually a good rule of thumb for this
-# configuration.
+# Alignement des éléments entre parenthèses : 
 align_scope = "bracketed"
 
-# For sqlfluff rules, see:  
+# Pour les règles de sqlfluff, voir :  
 # - https://docs.sqlfluff.com/en/stable/rules.html
-# For in-file config directives see: 
+# Pour les directives de configuration dans les fichiers : 
 # - https://docs.sqlfluff.com/en/stable/configuration.html#in-file-configuration-directives
 [tool.sqlfluff.rules.capitalisation.keywords]
 capitalisation_policy = "lower"
@@ -50,5 +47,5 @@ extended_capitalisation_policy = "lower"
 capitalisation_policy = "lower"
 
 [tool.sqlfluff.rules.references.special_chars]
-# Useful for Metabase field aliases
+# Utiles pour les aliases de champs Metabase
 additional_allowed_characters = "àéè '-"
