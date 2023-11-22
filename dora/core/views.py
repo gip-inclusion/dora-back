@@ -169,7 +169,7 @@ def inclusion_connect_authenticate(request):
 
         id_token = result["id_token"]
         decoded_id_token = jwt.decode(id_token, options={"verify_signature": False})
-        code_safir = decoded_id_token["structure_pe"]
+        code_safir = decoded_id_token.get("structure_pe")
 
         assert decoded_id_token["iss"] == settings.IC_ISSUER_ID
         assert settings.IC_CLIENT_ID in decoded_id_token["aud"]

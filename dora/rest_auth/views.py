@@ -142,9 +142,14 @@ def join_structure(request):
     structure = data.get("structure")
     siret = establishment.siret if establishment else structure.siret
 
-    if siret.startswith(SIREN_POLE_EMPLOI) and user.email.split("@")[0] not in (
-        "pole-emploi.fr",
-        "beta.gouv.fr",
+    if (
+        siret
+        and siret.startswith(SIREN_POLE_EMPLOI)
+        and user.email.split("@")[0]
+        not in (
+            "pole-emploi.fr",
+            "beta.gouv.fr",
+        )
     ):
         raise exceptions.PermissionDenied(
             "Seuls les agents Pôle emploi peuvent se rattacher à une agence Pôle emploi"
