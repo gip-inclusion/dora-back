@@ -169,6 +169,7 @@ def inclusion_connect_authenticate(request):
 
         id_token = result["id_token"]
         decoded_id_token = jwt.decode(id_token, options={"verify_signature": False})
+        code_safir = decoded_id_token["structure_pe"]
 
         assert decoded_id_token["iss"] == settings.IC_ISSUER_ID
         assert settings.IC_CLIENT_ID in decoded_id_token["aud"]
@@ -220,7 +221,9 @@ def inclusion_connect_authenticate(request):
         token = Token.objects.filter(user=user).first()
         if not token:
             token = Token.objects.create(user=user)
-        return Response({"token": token.key, "valid_user": True})
+        return Response(
+            {"token": token.key, "valid_user": True, "code_safir": code_safir}
+        )
     except requests.exceptions.RequestException as e:
         logging.exception(e)
         raise APIException("Erreur de communication avec le fournisseur d'identité")
