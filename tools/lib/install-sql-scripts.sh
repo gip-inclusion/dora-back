@@ -23,10 +23,11 @@ function walkDirs() {
 	    echo "--"
         fi
     done
-    echo "Export du dump vers la DB de destination"
-    pg_dump $SRC_DB_URL -O -c --if-exists $tables_stmt | psql -q $DEST_DB_URL
-    echo "--"
-    echo "Terminé!"
+    if [ -n "$tables_stmt" ]; then
+	    echo "Export du dump vers la DB de destination"
+	    pg_dump $SRC_DB_URL -O -c --if-exists $tables_stmt | psql -q $DEST_DB_URL
+	    echo "Dump exporté"
+    fi
 }
 
 if [ $# -ne 1 ]; then
@@ -40,3 +41,5 @@ if [ ! -d "$1" ]; then
 fi
 
 walkDirs "$1"
+echo "--"
+echo "Terminé!"
