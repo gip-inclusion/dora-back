@@ -15,9 +15,9 @@ function walkDirs() {
         elif [ "${f##*.}" = "sql" ]; then
             echo "Exécution de '$f' sur la DB source"
   	    psql $SRC_DB_URL -q -f "$f"
-            # Nommage des fichiers : nnn_nom_de_table.sql            
+	    # Nommage des fichiers : (/d+_)nom_de_table(.sql)            
 	    tblname=$(basename "$f" .sql)
-	    tblname=${tblname:4}
+	    tblname=$(echo $tblname | cut -d"_" -f2-)
 	    echo "Ajout de '$tblname' pour le dump vers DB destination"
 	    tables_stmt+="-t $tblname "
 	    echo "--"

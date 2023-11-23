@@ -3,9 +3,9 @@
 
 -- noqa: disable=LT05
 
-drop table if exists mb_users_before_ic;
+drop table if exists q_users_before_ic;
 
-create table mb_users_before_ic as
+create table q_users_before_ic as
 select
     mu.id          as "ID utilisateur",
     mu.email       as "E-mail",
@@ -13,7 +13,7 @@ select
     (
         case
             when mu.last_login is null then true
-            else mu.last_login < now() - interval '18 months'
+            else mu.last_login < now() - interval '24 months'
         end
     )              as "Compte inactif"
 from mb_user as mu
@@ -25,11 +25,11 @@ order by mu.date_joined desc;
 
 -- Indexes et PK
 
-alter table public.mb_users_before_ic add constraint mb_users_before_ic_pk primary key ( -- noqa: LT05
+alter table public.q_users_before_ic add constraint q_users_before_ic_pk primary key ( -- noqa: LT05
     "ID utilisateur"
 );
-create index mb_users_before_ic_date_joined_idx on public.mb_users_before_ic (
+create index q_users_before_ic_date_joined_idx on public.q_users_before_ic (
     "Date de création"
 );
 
-comment on table mb_users_before_ic is 'Utilisateurs sans validation créé avant IC';
+comment on table q_users_before_ic is 'Utilisateurs avec e-mail non validé, créés avant IC';

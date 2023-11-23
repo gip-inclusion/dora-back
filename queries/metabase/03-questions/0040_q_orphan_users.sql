@@ -3,9 +3,9 @@
 
 -- noqa: disable=LT05
 
-drop table if exists mb_orphan_users;
+drop table if exists q_orphan_users;
 
-create table mb_orphan_users as
+create table q_orphan_users as
 select
     mu.id                               as "ID utilisateur",
     mu.email                            as "E-mail",
@@ -15,7 +15,7 @@ select
     (
         case
             when mu.last_login is null then true
-            else mu.last_login < now() - interval '18 months'
+            else mu.last_login < now() - interval '24 months'
         end
     )                                   as "Compte inactif",
     (select ic_id is not null)          as "Inscrit IC",
@@ -29,14 +29,14 @@ order by mu.date_joined desc;
 
 -- Indexes et PK
 
-alter table public.mb_orphan_users add constraint mb_orphan_users_pk primary key ( -- noqa: LT05
+alter table public.q_orphan_users add constraint q_orphan_users_pk primary key ( -- noqa: LT05
     "ID utilisateur"
 );
-create index mb_orphan_users_valide_idx on public.mb_orphan_users (
+create index q_orphan_users_valide_idx on public.q_orphan_users (
     "E-mail validé"
 );
-create index mb_orphan_users_date_joined_idx on public.mb_orphan_users (
+create index q_orphan_users_date_joined_idx on public.q_orphan_users (
     "Date de création"
 );
 
-comment on table mb_orphan_users is 'Détails du rattachement des utilisateurs à une structure';
+comment on table q_orphan_users is 'Liste des utilisateurs non rattachés à une structure et sans invitation';

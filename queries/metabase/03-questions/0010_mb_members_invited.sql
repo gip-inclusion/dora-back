@@ -1,10 +1,9 @@
 -- Utilisateurs invités en tant que membre de structure,
 -- en attente de validation de rattachement,
--- emails validés.
 
 -- noqa: disable=LT05
 
-drop table if exists mb_members_invited;
+drop table if exists mb_members_invited cascade;
 
 create table mb_members_invited as
 select
@@ -21,24 +20,26 @@ select
     (
         case
             when mu.last_login is null then true
-            else mu.last_login < now() - interval '18 months'
+            else mu.last_login < now() - interval '24 months'
         end
     )                as "Compte inactif",
+    -- TODO: un refactor avec une table utilitaire pour éviter les jointures ?
     (
-        select count(*) > 0
+        select count(*)
         from structures_structuremember as ssm
         inner join mb_user as mu2 on ssm.user_id = mu2.id and mu2.is_valid
         where ssm.is_admin and ssm.structure_id = ms.id
-    )                as "Structure avec admin actif",
-    (
-        select count(*) from
-            structures_structuremember as ss3
-        where ss3.structure_id = ss.structure_id and ss3.is_admin
     )                as "Nombre d'admins dans la structure",
     (
-        select count(*) = 0 from
-            structures_structuremember as ss3
-        where ss3.structure_id = ss.structure_id and ss3.is_admin
+        ss.is_admin
+        and (
+            select count(*) = 0 from
+                structures_structuremember as ssm
+            inner join mb_user as mu2 on ssm.user_id = mu2.id and mu2.is_valid
+            where
+                ssm.structure_id = ss.structure_id
+                and ssm.is_admin
+        )
     )                as "Premier admin de la structure",
     (
         select count(*)
@@ -51,7 +52,7 @@ inner join structures_structureputativemember as ss on mu.id = ss.user_id
 left join mb_structure as ms on ss.structure_id = ms.id
 where
     not mu.is_staff
-    and mu.is_valid
+    -- invité : l'utilisateur ne s'est pas rattaché lui-même à la structure 
     and ss.invited_by_admin
 order by mu.date_joined desc;
 
@@ -63,5 +64,8 @@ create index mb_members_invited_date_joined_idx on public.mb_members_invited (
 create index mb_members_invited_dpt_idx on public.mb_members_invited (
     "Département"
 );
+create index mb_members_invited_dpt_is_valid on public.mb_members_invited (
+    "E-mail validé"
+);
 
-comment on table mb_members_invited is 'Liste des membres invités avec e-mail validé en attente de validation';
+comment on table mb_members_invited is 'Liste des membres invités en attente de validation';
