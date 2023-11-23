@@ -1,6 +1,6 @@
 -- Utilisateurs invités en tant que membre de structure,
 -- en attente de validation de rattachement,
--- emails validés.
+-- emails *NON* validés.
 
 -- noqa: disable=LT05
 
@@ -51,7 +51,7 @@ inner join structures_structureputativemember as ss on mu.id = ss.user_id
 left join mb_structure as ms on ss.structure_id = ms.id
 where
     not mu.is_staff
-    and mu.is_valid
+    and not mu.is_valid
     and ss.invited_by_admin
 order by mu.date_joined desc;
 
@@ -64,4 +64,4 @@ create index mb_members_invited_dpt_idx on public.mb_members_invited (
     "Département"
 );
 
-comment on table mb_members_invited is 'Liste des membres invités avec e-mail validé en attente de validation';
+comment on table mb_members_invited is 'Liste des membres invités, avec e-mail non-validé, en attente de validation';
