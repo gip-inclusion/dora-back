@@ -10,7 +10,7 @@ from rest_framework.test import APITestCase
 from dora.admin_express.models import AdminDivisionType, City, Department
 from dora.core.test_utils import make_service
 from dora.services.enums import ServiceStatus
-from dora.services.management.commands.send_saved_searchs_notifications import (
+from dora.services.management.commands.send_saved_searches_notifications import (
     get_saved_search_notifications_to_send,
 )
 
@@ -31,7 +31,7 @@ SAVE_SEARCH_ARGS = {
 
 class ServiceSavedSearchTestCase(APITestCase):
     def test_cant_create_search_if_no_logged_user(self):
-        response = self.client.post("/saved-searchs/", SAVE_SEARCH_ARGS)
+        response = self.client.post("/saved-searches/", SAVE_SEARCH_ARGS)
         self.assertEqual(response.status_code, 401)
 
     def test_missing_required_fields(self):
@@ -41,7 +41,7 @@ class ServiceSavedSearchTestCase(APITestCase):
         for property in ["city_code", "city_label"]:
             args = SAVE_SEARCH_ARGS.copy()
             del args[property]
-            response = self.client.post("/saved-searchs/", args)
+            response = self.client.post("/saved-searches/", args)
             self.assertEqual(response.status_code, 400)
 
     def test_create_search(self):
@@ -60,7 +60,7 @@ class ServiceSavedSearchTestCase(APITestCase):
 
         user = baker.make("users.User", is_valid=True)
         self.client.force_authenticate(user=user)
-        response = self.client.post("/saved-searchs/", SAVE_SEARCH_ARGS)
+        response = self.client.post("/saved-searches/", SAVE_SEARCH_ARGS)
         self.assertEqual(response.status_code, 201)
         self.assertEqual(SavedSearch.objects.all().count(), 1)
 
@@ -75,7 +75,7 @@ class ServiceSavedSearchTestCase(APITestCase):
         self.assertEqual(SavedSearch.objects.all().count(), 1)
 
         self.client.force_authenticate(user=user)
-        response = self.client.delete(f"/saved-searchs/{saved_search.id}/")
+        response = self.client.delete(f"/saved-searches/{saved_search.id}/")
         self.assertEqual(SavedSearch.objects.all().count(), 0)
         self.assertEqual(response.status_code, 204)
 
@@ -91,7 +91,7 @@ class ServiceSavedSearchTestCase(APITestCase):
         self.assertEqual(SavedSearch.objects.all().count(), 1)
 
         self.client.force_authenticate(user=user2)
-        response = self.client.delete(f"/saved-searchs/{saved_search.id}/")
+        response = self.client.delete(f"/saved-searches/{saved_search.id}/")
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(SavedSearch.objects.all().count(), 1)
@@ -99,14 +99,14 @@ class ServiceSavedSearchTestCase(APITestCase):
     def test_delete_search_not_existing(self):
         user = baker.make("users.User", is_valid=True)
         self.client.force_authenticate(user=user)
-        response = self.client.delete("/saved-searchs/123/")
+        response = self.client.delete("/saved-searches/123/")
         self.assertEqual(SavedSearch.objects.all().count(), 0)
         self.assertEqual(response.status_code, 404)
 
     def test_update_search_not_existing(self):
         user = baker.make("users.User", is_valid=True)
         self.client.force_authenticate(user=user)
-        response = self.client.patch("/saved-searchs/xxx/", {"frequency": "NEVER"})
+        response = self.client.patch("/saved-searches/xxx/", {"frequency": "NEVER"})
         self.assertEqual(response.status_code, 404)
 
     def test_update_frequency_not_existing(self):
@@ -119,7 +119,7 @@ class ServiceSavedSearchTestCase(APITestCase):
         )
         self.client.force_authenticate(user=user)
         response = self.client.patch(
-            f"/saved-searchs/{saved_search.id}/",
+            f"/saved-searches/{saved_search.id}/",
             {"frequency": "xxx"},
         )
         self.assertEqual(response.status_code, 400)
@@ -141,7 +141,7 @@ class ServiceSavedSearchTestCase(APITestCase):
         )
 
         response = self.client.patch(
-            f"/saved-searchs/{saved_search.id}/",
+            f"/saved-searches/{saved_search.id}/",
             {"frequency": "NEVER"},
         )
         self.assertEqual(response.status_code, 200)
@@ -160,9 +160,9 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
         self.service_name = "serviceName"
 
     def call_command(self):
-        call_command("send_saved_searchs_notifications", stdout=StringIO())
+        call_command("send_saved_searches_notifications", stdout=StringIO())
 
-    def test_get_monthly_saved_searchs(self):
+    def test_get_monthly_saved_searches(self):
         # ÉTANT DONNÉ un utilisateur avec deux notifications mensuelles
         # envoyée à J-15 puis J-40
         user = baker.make("users.User", is_valid=True)
@@ -190,7 +190,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
         self.assertEqual(len(notifications), 1)
         self.assertEqual(notifications[0].id, saved_search_2.id)
 
-    def test_get_two_weeks_saved_searchs(self):
+    def test_get_two_weeks_saved_searches(self):
         # ÉTANT DONNÉ un utilisateur avec deux notifications toutes les deux semaines
         # envoyée à J-10 puis J-20
         user = baker.make("users.User", is_valid=True)
@@ -219,7 +219,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
         self.assertEqual(len(notifications), 1)
         self.assertEqual(notifications[0].id, saved_search_2.id)
 
-    def test_get_two_weeks_no_saved_searchs(self):
+    def test_get_two_weeks_no_saved_searches(self):
         # ÉTANT DONNÉ un utilisateur avec deux notifications mensuelles
         # envoyée à J-5 puis J-10
         user = baker.make("users.User", is_valid=True)
@@ -247,7 +247,7 @@ class ServiceSavedSearchNotificationTestCase(APITestCase):
         # ALORS je ne récupère aucune notification
         self.assertEqual(len(notifications), 0)
 
-    def test_get_monthly_no_saved_searchs(self):
+    def test_get_monthly_no_saved_searches(self):
         # ÉTANT DONNÉ un utilisateur avec deux notifications mensuelles
         # envoyée à J-15 puis J-20
         user = baker.make("users.User", is_valid=True)

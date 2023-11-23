@@ -2,6 +2,7 @@ from datetime import timedelta
 from operator import itemgetter
 
 import requests
+from django.conf import settings
 from django.db.models import Q
 from django.http.response import Http404
 from django.utils import timezone
@@ -394,6 +395,7 @@ class BookmarkViewSet(
 class SavedSearchViewSet(
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
+    mixins.ListModelMixin,
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
@@ -403,6 +405,13 @@ class SavedSearchViewSet(
     def get_queryset(self):
         user = self.request.user
         return SavedSearch.objects.filter(user=user).order_by("-creation_date")
+
+    def get_serializer(self, *args, **kwargs):
+        if self.action == "list":
+            serializer_class = self.get_serializer_class()
+            kwargs.setdefault("context", self.get_serializer_context())
+            return serializer_class(with_new_services_count=True, *args, **kwargs)
+        return super().get_serializer(*args, **kwargs)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -417,7 +426,9 @@ class SavedSearchViewSet(
         saved_search = self.get_object()
         if saved_search.user != request.user:
             raise exceptions.PermissionDenied()
-        results = saved_search.get_recent_services((now() - timedelta(days=30)).date())
+        results = saved_search.get_recent_services(
+            (now() - timedelta(days=settings.RECENT_SERVICES_CUTOFF_DAYS)).date()
+        )
         results.sort(key=itemgetter("publication_date"), reverse=True)
         return Response(results)
 

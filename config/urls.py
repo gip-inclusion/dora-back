@@ -37,7 +37,7 @@ router.register(r"services", dora.services.views.ServiceViewSet, basename="servi
 router.register(r"bookmarks", dora.services.views.BookmarkViewSet, basename="bookmark")
 router.register(r"models", dora.services.views.ModelViewSet, basename="model")
 router.register(
-    r"saved-searchs", dora.services.views.SavedSearchViewSet, basename="saved-search"
+    r"saved-searches", dora.services.views.SavedSearchViewSet, basename="saved-search"
 )
 
 router.register(

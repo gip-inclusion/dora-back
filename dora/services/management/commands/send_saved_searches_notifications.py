@@ -55,10 +55,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write("Vérification des notifications de recherches sauvegardées")
-        saved_searchs = get_saved_search_notifications_to_send()
+        saved_searches = get_saved_search_notifications_to_send()
 
         num_emails_sent = 0
-        for saved_search in saved_searchs:
+        for saved_search in saved_searches:
             # On garde les contenus qui ont été publiés depuis la dernière notification
             new_services = saved_search.get_recent_services(
                 saved_search.last_notification_date
