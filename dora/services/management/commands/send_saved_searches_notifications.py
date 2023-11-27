@@ -56,7 +56,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write("Vérification des notifications de recherches sauvegardées")
         saved_searches = get_saved_search_notifications_to_send()
-
+        tracking_params = (
+            "mtm_campaign=MailsTransactionnels&mtm_kwd=AlertesNouveauxServices"
+        )
         num_emails_sent = 0
         for saved_search in saved_searches:
             # On garde les contenus qui ont été publiés depuis la dernière notification
@@ -71,6 +73,7 @@ class Command(BaseCommand):
                     "homepage_url": settings.FRONTEND_URL,
                     "updated_services": new_services,
                     "alert_link": f"{settings.FRONTEND_URL}/mes-alertes/{saved_search.id}",
+                    "tracking_params": tracking_params,
                 }
 
                 num_emails_sent += 1
