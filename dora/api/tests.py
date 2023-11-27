@@ -198,6 +198,7 @@ def test_service_serialization_exemple(authenticated_user, api_client):
         geom=Point(3.76855, 23.88654, srid=4326),
         recurrence="Tu 09:00-12:00;We 14:00-17:00",
         coach_orientation_modes_other="Mêmes modalités que pour les bénéficiaires",
+        beneficiaries_access_modes_other="Contacter conseiller(e) Pôle Emploi",
     )
 
     service.subcategories.add(
@@ -280,7 +281,7 @@ def test_service_serialization_exemple(authenticated_user, api_client):
         ],
         "modes_orientation_accompagnateur_autres": "Mêmes modalités que pour les bénéficiaires",
         "modes_orientation_beneficiaire": ["envoyer-un-mail"],
-        "modes_orientation_beneficiaire_autres": None,
+        "modes_orientation_beneficiaire_autres": "Contacter conseiller(e) Pôle Emploi",
     }
 
 
