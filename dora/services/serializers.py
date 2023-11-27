@@ -1,9 +1,11 @@
 import logging
+from datetime import timedelta
 
 import requests
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
+from django.utils.timezone import now
 from rest_framework import exceptions, serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 
@@ -606,6 +608,16 @@ class FeedbackSerializer(serializers.Serializer):
 
 
 class SavedSearchSerializer(serializers.ModelSerializer):
+    def __init__(self, *args, **kwargs):
+        # Don't pass the 'fields' arg up to the superclass
+        with_counts = kwargs.pop("with_new_services_count", None)
+
+        # Instantiate the superclass normally
+        super().__init__(*args, **kwargs)
+
+        if not with_counts:
+            self.fields.pop("new_services_count")
+
     category = serializers.SlugRelatedField(
         slug_field="value",
         queryset=ServiceCategory.objects.all(),
@@ -645,6 +657,8 @@ class SavedSearchSerializer(serializers.ModelSerializer):
         source="fees", slug_field="label", many=True, read_only=True
     )
 
+    new_services_count = serializers.SerializerMethodField()
+
     class Meta:
         model = SavedSearch
         fields = [
@@ -661,7 +675,15 @@ class SavedSearchSerializer(serializers.ModelSerializer):
             "subcategories_display",
             "kinds",
             "kinds_display",
+            "new_services_count",
         ]
+
+    def get_new_services_count(self, obj):
+        return len(
+            obj.get_recent_services(
+                (now() - timedelta(days=settings.RECENT_SERVICES_CUTOFF_DAYS)).date()
+            )
+        )
 
 
 class BookmarkListSerializer(serializers.ModelSerializer):
@@ -731,3 +753,42 @@ class BookmarkSerializer(BookmarkListSerializer):
                 "shortDesc": di_service["presentation_resume"] or "",
                 "source": di_service["source"],
             }
+
+
+class SearchResultSerializer(ServiceListSerializer):
+    distance = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
+    coordinates = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Service
+        fields = [
+            "coordinates",
+            "diffusion_zone_type",
+            "distance",
+            "location",
+            "location_kinds",
+            "modification_date",
+            "publication_date",
+            "name",
+            "short_desc",
+            "slug",
+            "status",
+            "structure",
+            "structure_info",
+        ]
+
+    def get_distance(self, obj):
+        return obj.distance.km if obj.distance is not None else None
+
+    def get_location(self, obj):
+        if obj.location_kinds.filter(value="en-presentiel").exists():
+            return f"{obj.postal_code} {obj.city}"
+        elif obj.location_kinds.filter(value="a-distance").exists():
+            return "À distance"
+        else:
+            return ""
+
+    def get_coordinates(self, obj):
+        if obj.geom:
+            return (obj.geom.x, obj.geom.y)

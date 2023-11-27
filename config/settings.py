@@ -21,7 +21,6 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 logger = logging.getLogger(__name__)
 
-
 random.seed()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -33,7 +32,6 @@ if os.path.isdir(BASE_DIR / "envs"):
     environ.Env.read_env(os.path.join(BASE_DIR / "envs", "dev.env"))
     environ.Env.read_env(os.path.join(BASE_DIR / "envs", "secrets.env"))
 
-
 ENVIRONMENT = os.environ["ENVIRONMENT"]
 IS_TESTING = False
 
@@ -41,7 +39,6 @@ if "GDAL_LIBRARY_PATH" in os.environ:
     GDAL_LIBRARY_PATH = os.environ["GDAL_LIBRARY_PATH"]
 if "GEOS_LIBRARY_PATH" in os.environ:
     GEOS_LIBRARY_PATH = os.environ["GEOS_LIBRARY_PATH"]
-
 
 if ENVIRONMENT != "local":
     sentry_sdk.init(
@@ -51,7 +48,6 @@ if ENVIRONMENT != "local":
         send_default_pii=False,
         environment=ENVIRONMENT,
     )
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -142,7 +138,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
@@ -161,7 +156,6 @@ except KeyError:
     }
 
 DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.postgis"
-
 
 # Cache
 # https://docs.djangoproject.com/en/4.0/topics/cache/
@@ -200,7 +194,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
@@ -214,13 +207,11 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-
 
 # User uploaded files
 # https://django-storages.readthedocs.io/en/latest/backends/azure.html
@@ -259,7 +250,6 @@ ALLOWED_UPLOADED_FILES_EXTENSIONS = [
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
 
 # Rest Framework
 # https://www.django-rest-framework.org/api-guide/settings/
@@ -438,7 +428,7 @@ ORIENTATION_SIRENE_BLACKLIST = [
 
 # Services
 DEFAULT_SEARCH_RADIUS = 15  # in km
-
+RECENT_SERVICES_CUTOFF_DAYS = 30
 # Bot user
 DORA_BOT_USER = "dora-bot@dora.beta.gouv.fr"
 
@@ -458,7 +448,6 @@ SKIP_DI_INTEGRATION_TESTS = True
 
 # Data inclusion user account
 DATA_INCLUSION_EMAIL = "data.inclusion@beta.gouv.fr"
-
 
 ################
 # SECURITY     #
@@ -486,7 +475,6 @@ CSP_EXCLUDE_URL_PREFIXES = tuple(
     ]
 )
 
-
 ###################
 # DRF-SPECTACULAR #
 ###################
@@ -500,7 +488,6 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_NO_READ_ONLY_REQUIRED": True,
 }
-
 
 ########
 # SILK #
