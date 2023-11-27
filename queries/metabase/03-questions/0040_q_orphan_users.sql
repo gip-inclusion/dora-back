@@ -14,6 +14,7 @@ select
     mu.last_login                       as "Dernière connexion",
     (
         case
+            when mu.date_joined > now() - interval '24 months' then false
             when mu.last_login is null then true
             else mu.last_login < now() - interval '24 months'
         end
