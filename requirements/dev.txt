@@ -9,3 +9,4 @@ pre-commit==3.4.0
 ruff==0.1.4
 pytest==7.4.3
 pytest-django==4.6.0
+sqlfluff==2.3.5

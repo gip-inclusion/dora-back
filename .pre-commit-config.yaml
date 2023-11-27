@@ -8,6 +8,12 @@ repos:
         name: Ruff format (Black + isort)
         args: [--check]
 
+  - repo: https://github.com/sqlfluff/sqlfluff
+    rev: 2.3.5
+    hooks:
+      - id: sqlfluff-lint
+        name: Sqlfluff (postgres)
+
   - repo: https://github.com/gitguardian/ggshield
     rev: v1.18.1
     hooks:
