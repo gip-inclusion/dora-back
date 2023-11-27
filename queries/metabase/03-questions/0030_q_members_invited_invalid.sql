@@ -26,4 +26,4 @@ select
 from mb_members_invited
 where not "E-mail validé";
 
-comment on table mb_members_invited is 'Liste des membres invités en attente de validation : e-mail non validé';
+comment on table q_members_invited_invalid is 'Liste des membres invités en attente de validation : e-mail non validé';
