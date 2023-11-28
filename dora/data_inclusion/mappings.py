@@ -4,6 +4,8 @@ from dora.admin_express.models import AdminDivisionType
 from dora.core.utils import code_insee_to_code_dept
 from dora.services.enums import ServiceStatus
 from dora.services.models import (
+    BeneficiaryAccessMode,
+    CoachOrientationMode,
     LocationKind,
     ServiceCategory,
     ServiceKind,
@@ -126,16 +128,54 @@ def map_service(service_data: dict) -> dict:
         code_insee_to_code_dept(structure_insee_code) if structure_insee_code else ""
     )
 
+    beneficiaries_access_modes = None
+    if service_data["modes_orientation_beneficiaire"] is not None:
+        mapping = {
+            "autre": "autre",
+            "telephoner": "telephoner",
+            "envoyer-un-mail": "envoyer-courriel",
+            "se-presenter": "se-presenter",
+        }  # TODO: à supprimer une fois dora et data.inclusion alignés sur le référentiel
+        mapped_modes = [
+            mapping.get(mode, mode)
+            for mode in service_data["modes_orientation_beneficiaire"]
+        ]
+        beneficiaries_access_modes = BeneficiaryAccessMode.objects.filter(
+            value__in=mapped_modes
+        )
+
+    coach_orientation_modes = None
+    if service_data["modes_orientation_accompagnateur"] is not None:
+        mapping = {
+            "autre": "autre",
+            "telephoner": "telephoner",
+            "envoyer-un-mail": "envoyer-courriel",
+            "envoyer-fiche-prescription": "envoyer-un-mail-avec-une-fiche-de-prescription",
+        }  # TODO: à supprimer une fois dora et data.inclusion alignés sur le référentiel
+        mapped_modes = [
+            mapping.get(mode, mode)
+            for mode in service_data["modes_orientation_accompagnateur"]
+        ]
+        coach_orientation_modes = CoachOrientationMode.objects.filter(
+            value__in=mapped_modes
+        )
+
     return {
         "access_conditions": None,
         "access_conditions_display": None,
         "address1": service_data["adresse"],
         "address2": service_data["complement_adresse"],
-        "beneficiaries_access_modes": service_data["modes_orientation_beneficiaire"],
-        "beneficiaries_access_modes_display": service_data[
-            "modes_orientation_beneficiaire"
+        "beneficiaries_access_modes": [m.value for m in beneficiaries_access_modes]
+        if beneficiaries_access_modes is not None
+        else None,
+        "beneficiaries_access_modes_display": [
+            m.label for m in beneficiaries_access_modes
+        ]
+        if beneficiaries_access_modes is not None
+        else None,
+        "beneficiaries_access_modes_other": service_data[
+            "modes_orientation_beneficiaire_autres"
         ],
-        "beneficiaries_access_modes_other": None,
         "can_write": False,
         "categories": [c.value for c in categories] if categories is not None else None,
         "categories_display": [c.label for c in categories]
@@ -143,11 +183,15 @@ def map_service(service_data: dict) -> dict:
         else None,
         "city": service_data["commune"],
         "city_code": service_data["code_insee"],
-        "coach_orientation_modes": service_data["modes_orientation_accompagnateur"],
-        "coach_orientation_modes_display": service_data[
-            "modes_orientation_accompagnateur"
+        "coach_orientation_modes": [m.value for m in coach_orientation_modes]
+        if coach_orientation_modes is not None
+        else None,
+        "coach_orientation_modes_display": [m.label for m in coach_orientation_modes]
+        if coach_orientation_modes is not None
+        else None,
+        "coach_orientation_modes_other": service_data[
+            "modes_orientation_accompagnateur_autres"
         ],
-        "coach_orientation_modes_other": None,
         "concerned_public": service_data["profils"],
         "concerned_public_display": service_data["profils"],
         "contact_email": service_data["courriel"],
