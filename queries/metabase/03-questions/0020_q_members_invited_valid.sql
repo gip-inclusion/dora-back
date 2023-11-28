@@ -24,4 +24,4 @@ select
 from mb_members_invited
 where "E-mail validé";
 
-comment on table q_members_invited_valid is 'Liste des membres invités en attente de validation : e-mail validé';
+comment on view q_members_invited_valid is 'Liste des membres invités en attente de validation : e-mail validé';
