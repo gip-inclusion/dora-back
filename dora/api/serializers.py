@@ -377,7 +377,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         if obj.diffusion_zone_type == "region":
             return "region"
         if obj.diffusion_zone_type == "country":
-            return None
+            return "pays"
 
     def get_zone_diffusion_code(self, obj):
         return obj.diffusion_zone_details
@@ -399,7 +399,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         ]
 
     def get_modes_orientation_accompagnateur_autres(self, obj):
-        return None
+        return obj.coach_orientation_modes_other
 
     def get_modes_orientation_beneficiaire(self, obj):
         mapping = {
@@ -414,7 +414,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         ]
 
     def get_modes_orientation_beneficiaire_autres(self, obj):
-        return None
+        return obj.beneficiaries_access_modes_other
 
 
 ############
