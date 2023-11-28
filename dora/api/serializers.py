@@ -377,7 +377,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         if obj.diffusion_zone_type == "region":
             return "region"
         if obj.diffusion_zone_type == "country":
-            return None
+            return "pays"
 
     def get_zone_diffusion_code(self, obj):
         return obj.diffusion_zone_details
