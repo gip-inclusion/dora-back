@@ -2,6 +2,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.encoding import iri_to_uri
 from furl import furl
+from mjml import mjml2html
 
 from dora.core.emails import send_mail
 
@@ -124,4 +125,22 @@ def send_branch_created_notification(structure, branch, admin_user):
         admin_user.email,
         body,
         tags=["branch-created"],
+    )
+
+
+def send_orphan_structure_notification(structure):
+    context = {
+        "recipient_email": structure.email,
+        "structure_name": structure.name,
+        # TODO: settings ?
+        "dora_doc_link": "https://aide.dora.inclusion.beta.gouv.fr/fr/article/decouvrir-et-faire-decouvrir-dora-1nyj6f1/",
+        "webinar_link": "https://app.livestorm.co/dora-1/presentation-dora",
+        "cta_link": f"{settings.FRONTEND_URL}/structures/{structure.slug}",
+    }
+
+    send_mail(
+        f"Votre structure n’a pas encore de membre actif sur Dora ({structure.name})",
+        structure.email,
+        mjml2html(render_to_string("notification-orphan-structure.mjml", context)),
+        tags=["orphan-structure"],
     )
