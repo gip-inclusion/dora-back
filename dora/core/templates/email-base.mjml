@@ -48,7 +48,7 @@
         <!-- Logo -->
         <mj-section>
             <mj-column padding="32px 40px">
-                <mj-image src="{{ homepage_url }}/emails/logo-dora-email-new.png"
+                <mj-image src="{% frontend_url %}/emails/logo-dora-email-new.png"
                           height="60px" width="238px"
                           align="left" alt=""/>
             </mj-column>

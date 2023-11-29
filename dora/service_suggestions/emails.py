@@ -9,7 +9,6 @@ def send_suggestion_validated_new_structure_email(email, structure):
     params = {
         "structure": structure,
         "cta_link": f"{settings.FRONTEND_URL}/auth/rattachement?siret={structure.siret}&login_hint={iri_to_uri(email)}",
-        "homepage_url": settings.FRONTEND_URL,
     }
     body = render_to_string("new_structure.html", params)
 
