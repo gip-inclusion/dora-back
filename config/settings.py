@@ -130,7 +130,9 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "dora.core.context_processors.environment",
+            ],
+            "builtins": [
+                "dora.core.templatetags.globals",
             ],
         },
     },

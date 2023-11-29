@@ -58,7 +58,6 @@ def send_service_reminder_email(
         "recipient_name": recipient_name,
         "structures_to_update": structures_to_update,
         "structures_with_drafts": structures_with_drafts,
-        "homepage_url": settings.FRONTEND_URL,
     }
     body = render_to_string("email_services_check.html", params)
     send_mail(

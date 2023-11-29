@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block illustration %}
-  <mj-image src="{{ homepage_url }}/emails/illu-saved-search-notification.png" alt=""/>
+  <mj-image src="{% frontend_url %}/emails/illu-saved-search-notification.png" alt=""/>
 {% endblock %}
 
 {% block title %}
@@ -25,9 +25,9 @@
     {% for service in updated_services|slice:":5" %}
       <li>
         {% if service.type == 'di' %}
-          <a href="{{ homepage_url }}/services/di/{{ service.slug }}?{{ tracking_params }}">
+          <a href="{% frontend_url %}/services/di/{{ service.slug }}?{{ tracking_params }}">
         {% else %}
-          <a href="{{ homepage_url }}/services/{{ service.slug }}?{{ tracking_params }}">
+          <a href="{% frontend_url %}/services/{{ service.slug }}?{{ tracking_params }}">
         {% endif %}
         <strong>{{ service.name }}</strong> - {{ service.structure_info.name }}
       </a>
@@ -45,7 +45,7 @@
   <mj-spacer height="24px"/>
   <mj-text>
     Vous pouvez gérer vos alertes depuis la page «&nbsp;<a
-      href="{{ homepage_url }}/mes-alertes?{{ tracking_params }}">Mes alertes</a>&nbsp;».
+      href="{% frontend_url %}/mes-alertes?{{ tracking_params }}">Mes alertes</a>&nbsp;».
   </mj-text>
   <mj-spacer height="24px"/>
 {% endblock %}

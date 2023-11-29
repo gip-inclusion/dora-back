@@ -46,13 +46,13 @@
 
   <mj-body background-color="#F5F5F5" width="600px">
         <!-- Logo -->
-    <mj-section>
-      <mj-column padding="32px 40px">
-        <mj-image src="{{ homepage_url }}/emails/logo-dora-email-new.png"
-                  height="60px" width="238px"
-                  align="left" alt=""/>
-      </mj-column>
-    </mj-section>
+        <mj-section>
+            <mj-column padding="32px 40px">
+                <mj-image src="{% frontend_url %}/emails/logo-dora-email-new.png"
+                          height="60px" width="238px"
+                          align="left" alt=""/>
+            </mj-column>
+        </mj-section>
 
         <!-- Contenu -->
     <mj-section padding-bottom="40px">

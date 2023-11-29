@@ -70,7 +70,6 @@ class Command(BaseCommand):
                 # Envoi de l'email
                 context = {
                     "search_label": compute_search_label(saved_search),
-                    "homepage_url": settings.FRONTEND_URL,
                     "updated_services": new_services,
                     "alert_link": f"{settings.FRONTEND_URL}/mes-alertes/{saved_search.id}",
                     "tracking_params": tracking_params,
