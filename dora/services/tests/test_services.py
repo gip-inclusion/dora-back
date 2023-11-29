@@ -33,6 +33,8 @@ from dora.structures.models import Structure
 
 from ..models import (
     AccessCondition,
+    BeneficiaryAccessMode,
+    CoachOrientationMode,
     LocationKind,
     Service,
     ServiceCategory,
@@ -1308,10 +1310,18 @@ class DataInclusionSearchTestCase(APITestCase):
                 )
 
     def test_service_di_beneficiaries_access_modes(self):
+        courriel_mode_instance = BeneficiaryAccessMode.objects.get(
+            value="envoyer-courriel"
+        )
+
         cases = [
             (None, None, None),
             ([], [], []),
-            (["envoyer-un-mail"], ["envoyer-un-mail"], ["envoyer-un-mail"]),
+            (
+                ["envoyer-un-mail"],
+                [courriel_mode_instance.value],
+                [courriel_mode_instance.label],
+            ),
         ]
         for (
             modes_orientation_beneficiaire,
@@ -1337,11 +1347,31 @@ class DataInclusionSearchTestCase(APITestCase):
                     beneficiaries_access_modes_display,
                 )
 
+    def test_service_di_beneficiaries_access_modes_other(self):
+        service_data = self.make_di_service(
+            modes_orientation_beneficiaire_autres="Nous consulter"
+        )
+        di_id = self.get_di_id(service_data)
+        request = self.factory.get(f"/service-di/{di_id}/")
+        response = service_di(request, di_id=di_id, di_client=self.di_client)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data["beneficiaries_access_modes_other"], "Nous consulter"
+        )
+
     def test_service_di_coach_orientation_modes(self):
+        courriel_mode_instance = CoachOrientationMode.objects.get(
+            value="envoyer-courriel"
+        )
+
         cases = [
             (None, None, None),
             ([], [], []),
-            (["envoyer-un-mail"], ["envoyer-un-mail"], ["envoyer-un-mail"]),
+            (
+                ["envoyer-un-mail"],
+                [courriel_mode_instance.value],
+                [courriel_mode_instance.label],
+            ),
         ]
         for (
             modes_orientation_accompagnateur,
@@ -1365,6 +1395,18 @@ class DataInclusionSearchTestCase(APITestCase):
                     response.data["coach_orientation_modes_display"],
                     coach_orientation_modes_display,
                 )
+
+    def test_service_di_coach_orientation_modes_other(self):
+        service_data = self.make_di_service(
+            modes_orientation_accompagnateur_autres="Nous consulter"
+        )
+        di_id = self.get_di_id(service_data)
+        request = self.factory.get(f"/service-di/{di_id}/")
+        response = service_di(request, di_id=di_id, di_client=self.di_client)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data["coach_orientation_modes_other"], "Nous consulter"
+        )
 
     def test_service_di_concerned_public(self):
         cases = [
