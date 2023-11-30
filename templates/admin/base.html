@@ -1,12 +1,12 @@
 {% extends 'admin/base.html' %}
 
 {% block extrahead %}
-{{ block.super }}
-<style nonce="{{request.csp_nonce}}">
-  #branding h1::before {
-    font-weight: bold;
-    text-transform: uppercase;
-    content: "[{{ENVIRONMENT}}] ";
-  }
-</style>
+  {{ block.super }}
+  <style nonce="{{request.csp_nonce}}">
+    #branding h1::before {
+      font-weight: bold;
+      text-transform: uppercase;
+      content: "[{{ENVIRONMENT}}] ";
+    }
+  </style>
 {% endblock %}
