@@ -31,7 +31,7 @@ def send_orientation_created_emails(orientation):
         "data": orientation,
         "ContactPreference": ContactPreference,
         "support_email": settings.SUPPORT_EMAIL,
-        "support_link": settings.ORIENTATION_SUPPORT_LINK,
+        "orientation_support_link": settings.ORIENTATION_SUPPORT_LINK,
         "beneficiaries_has_alternate_contact_methods": beneficiaries_has_alternate_contact_methods(
             orientation
         ),
@@ -95,7 +95,7 @@ def send_orientation_accepted_emails(
     context = {
         "data": orientation,
         "support_email": settings.SUPPORT_EMAIL,
-        "support_link": settings.ORIENTATION_SUPPORT_LINK,
+        "orientation_support_link": settings.ORIENTATION_SUPPORT_LINK,
         "prescriber_message": prescriber_message,
         "beneficiary_message": beneficiary_message,
     }
@@ -157,7 +157,7 @@ def send_orientation_rejected_emails(orientation, message):
     context = {
         "data": orientation,
         "support_email": settings.SUPPORT_EMAIL,
-        "support_link": settings.ORIENTATION_SUPPORT_LINK,
+        "orientation_support_link": settings.ORIENTATION_SUPPORT_LINK,
         "message": message,
     }
 
@@ -207,7 +207,7 @@ def send_message_to_prescriber(orientation, message, cc):
         "data": orientation,
         "message": message,
         "support_email": settings.SUPPORT_EMAIL,
-        "support_link": settings.ORIENTATION_SUPPORT_LINK,
+        "orientation_support_link": settings.ORIENTATION_SUPPORT_LINK,
     }
     send_mail(
         f"{'[Contact - Prescripteur] ' if debug else ''}Vous avez un nouveau message 📩",
@@ -228,7 +228,7 @@ def send_message_to_beneficiary(orientation, message, cc):
         "data": orientation,
         "message": message,
         "support_email": settings.SUPPORT_EMAIL,
-        "support_link": settings.ORIENTATION_SUPPORT_LINK,
+        "orientation_support_link": settings.ORIENTATION_SUPPORT_LINK,
     }
 
     send_mail(
@@ -249,7 +249,7 @@ def send_orientation_reminder_emails(orientation):
     context = {
         "data": orientation,
         "support_email": settings.SUPPORT_EMAIL,
-        "support_link": settings.ORIENTATION_SUPPORT_LINK,
+        "orientation_support_link": settings.ORIENTATION_SUPPORT_LINK,
         "elapsed_days": (timezone.now() - orientation.creation_date).days,
         "ContactPreference": ContactPreference,
         "beneficiaries_has_alternate_contact_methods": beneficiaries_has_alternate_contact_methods(

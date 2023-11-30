@@ -98,7 +98,7 @@
             {% block support %}
               En cas de difficulté, n’hésitez pas à
               <a style="color: #555"
-                 href="{{ support_link|default:"https://aide.dora.inclusion.beta.gouv.fr" }}">contacter le
+                 href="{% support_link %}">contacter le
                 support</a>
               de la plateforme DORA pour obtenir de
               l’aide.
