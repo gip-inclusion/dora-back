@@ -48,7 +48,7 @@
         <!-- Logo -->
     <mj-section>
       <mj-column padding="32px 40px">
-        <mj-image src="{{ homepage_url }}/emails/logo-dora-email-new.png"
+        <mj-image src="{% frontend_url %}/emails/logo-dora-email-new.png"
                   height="60px" width="238px"
                   align="left" alt=""/>
       </mj-column>
@@ -98,7 +98,7 @@
             {% block support %}
               En cas de difficulté, n’hésitez pas à
               <a style="color: #555"
-                 href="{{ support_link|default:"https://aide.dora.inclusion.beta.gouv.fr" }}">contacter le
+                 href="{% support_link %}">contacter le
                 support</a>
               de la plateforme DORA pour obtenir de
               l’aide.

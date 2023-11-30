@@ -4,7 +4,7 @@
 
 {% block cta_description %}
   <p>
-    <a href="{{ homepage_url }}">DORA</a> est un service public numérique national
+    <a href="{% frontend_url %}">DORA</a> est un service public numérique national
     qui référence l’offre d’insertion sociale et professionnelle.
   </p>
 
@@ -25,7 +25,7 @@
 
 {% block cta_text %}Rejoindre cette structure{% endblock %}
 
-{%block after_cta_content %}
+{% block after_cta_content %}
   <p>
     Étant engagés dans une démarche Open Data, nous rendons disponibles nos
     données à travers un référentiel commun — partagé par toutes les plateformes
@@ -35,8 +35,8 @@
 
   <p>
     Pour en savoir plus, vous pouvez visiter
-    <a href="{{ homepage_url }}">notre site</a> ou bien
-    <a href="https://aide.dora.inclusion.beta.gouv.fr/fr/">notre documentation</a
+    <a href="{% frontend_url %}">notre site</a> ou bien
+    <a href="{% support_link %}">notre documentation</a
       >. Nous restons à votre disposition pour toute question.
     </p>
 
