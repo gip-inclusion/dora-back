@@ -141,11 +141,10 @@ def join_structure(request):
     establishment = data.get("establishment")
     structure = data.get("structure")
     siret = establishment.siret if establishment else structure.siret
-
     if (
         siret
         and siret.startswith(SIREN_POLE_EMPLOI)
-        and user.email.split("@")[0]
+        and user.email.split("@")[1]
         not in (
             "pole-emploi.fr",
             "beta.gouv.fr",

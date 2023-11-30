@@ -21,7 +21,6 @@ def send_invitation_email(member, host_fullname):
         "host_name": host_fullname,
         "structure_name": structure.name,
         "cta_link": invitation_link,
-        "homepage_url": settings.FRONTEND_URL,
     }
     body = render_to_string("invitation.html", params)
 
@@ -40,7 +39,6 @@ def send_invitation_accepted_notification(member, admin_user):
         "new_member_full_name": member.user.get_full_name(),
         "new_member_email": member.user.email,
         "structure_name": member.structure.name,
-        "homepage_url": settings.FRONTEND_URL,
     }
 
     body = render_to_string("notification-invitation-accepted.html", params)
@@ -61,7 +59,6 @@ def send_access_requested_notification(member, admin_user):
         "new_member_email": member.user.email,
         "structure_name": member.structure.name,
         "cta_link": f"{settings.FRONTEND_URL}/structures/{member.structure.slug}",
-        "homepage_url": settings.FRONTEND_URL,
     }
 
     body = render_to_string("notification-access-request.html", params)
@@ -78,7 +75,6 @@ def send_access_granted_notification(member):
     params = {
         "structure_name": member.structure.name,
         "cta_link": f"{settings.FRONTEND_URL}/structures/{member.structure.slug}",
-        "homepage_url": settings.FRONTEND_URL,
     }
 
     body = render_to_string("notification-access-granted.html", params)
@@ -94,7 +90,6 @@ def send_access_granted_notification(member):
 def send_access_rejected_notification(member):
     params = {
         "structure_name": member.structure.name,
-        "homepage_url": settings.FRONTEND_URL,
     }
 
     body = render_to_string("notification-access-rejected.html", params)
@@ -114,7 +109,6 @@ def send_branch_created_notification(structure, branch, admin_user):
         "structure_name": structure.name,
         "cta_link": f"{settings.FRONTEND_URL}/structures/{branch.slug}",
         "branch_name": branch.name,
-        "homepage_url": settings.FRONTEND_URL,
     }
 
     body = render_to_string("notification-branch-created.html", params)
