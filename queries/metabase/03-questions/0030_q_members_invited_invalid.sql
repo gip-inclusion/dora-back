@@ -24,6 +24,6 @@ select
     "Premier admin de la structure",
     "Membre d'autres structures"
 from mb_members_invited
-where not "E-mail validé";
+where "E-mail validé" and not "Invitation par un admin";
 
 comment on view q_members_invited_invalid is 'Liste des membres invités en attente de validation : e-mail non validé';

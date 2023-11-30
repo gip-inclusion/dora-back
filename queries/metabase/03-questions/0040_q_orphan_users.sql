@@ -26,6 +26,7 @@ where
     not mu.is_staff
     and mu.id not in (select user_id from structures_structuremember)
     and mu.id not in (select user_id from structures_structureputativemember)
+    and mu.id not in (select "ID utilisateur" from q_users_before_ic)
 order by mu.date_joined desc;
 
 -- Indexes et PK
