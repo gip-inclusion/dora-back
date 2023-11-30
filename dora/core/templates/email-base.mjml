@@ -133,17 +133,12 @@
             {% block legal %}
               <p style="font-size: 13px; color: #777777; line-height: 21px">
                 Nous avons accès à vos données à caractère personnel conformément aux missions d’intérêt public du GIP
-                de
-                l’inclusion et des acteurs publics de l’insertion professionnelle. Conformément à l’article L. 35-4 du
-                Code
-                des postes et communications électroniques, vous bénéficiez d’un droit d’opposition que vous pouvez
-                utiliser à
-                tout moment via cette adresse : contact@dora.inclusion.beta.gouv.fr.<br>
+                de l’inclusion et des acteurs publics de l’insertion professionnelle. Conformément à l’article L. 35-4
+                du Code des postes et communications électroniques, vous bénéficiez d’un droit d’opposition que vous
+                pouvez utiliser à tout moment via cette adresse : contact@dora.inclusion.beta.gouv.fr.<br>
                 Votre adresse e-mail sera, dès lors supprimée de notre base de données et vous ne serez plus contactés.
-                Si vous
-                estimez que vos droits ne sont pas respectés, vous pouvez à tout moment introduire une réclamation
-                auprès de
-                la CNIL.
+                Si vous estimez que vos droits ne sont pas respectés, vous pouvez à tout moment introduire une
+                réclamation auprès de la CNIL.
               </p>
             {% endblock %}
           </mj-text>
