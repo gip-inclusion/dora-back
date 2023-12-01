@@ -1412,7 +1412,8 @@ class DataInclusionSearchTestCase(APITestCase):
         cases = [
             (None, None, None),
             ([], [], []),
-            (["adultes"], ["adultes"], ["adultes"]),
+            (["valeur-inconnue"], [], []),
+            (["jeunes-16-26"], ["jeunes-16-26"], ["Jeunes (16-26 ans)"]),
         ]
         for profils, concerned_public, concerned_public_display in cases:
             with self.subTest(profils=profils):
