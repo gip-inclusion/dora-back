@@ -161,6 +161,13 @@ def map_service(service_data: dict) -> dict:
             value__in=mapped_modes
         )
 
+    profils = None
+    if service_data["profils"] is not None:
+        profils = [
+            Profil(p)
+            for p in (set(service_data["profils"]) & {p.value for p in Profil})
+        ]
+
     return {
         "access_conditions": None,
         "access_conditions_display": None,
@@ -193,9 +200,9 @@ def map_service(service_data: dict) -> dict:
         "coach_orientation_modes_other": service_data[
             "modes_orientation_accompagnateur_autres"
         ],
-        "concerned_public": service_data["profils"],
-        "concerned_public_display": [Profil(p).label for p in service_data["profils"]]
-        if service_data["profils"] is not None
+        "concerned_public": [p.value for p in profils] if profils is not None else None,
+        "concerned_public_display": [p.label for p in profils]
+        if profils is not None
         else None,
         "contact_email": service_data["courriel"],
         "contact_name": service_data["contact_nom_prenom"],
