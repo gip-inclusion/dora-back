@@ -1,3 +1,4 @@
+from data_inclusion.schema import Profil
 from django.utils import dateparse, timezone
 
 from dora.admin_express.models import AdminDivisionType
@@ -193,7 +194,9 @@ def map_service(service_data: dict) -> dict:
             "modes_orientation_accompagnateur_autres"
         ],
         "concerned_public": service_data["profils"],
-        "concerned_public_display": service_data["profils"],
+        "concerned_public_display": [Profil(p).label for p in service_data["profils"]]
+        if service_data["profils"] is not None
+        else None,
         "contact_email": service_data["courriel"],
         "contact_name": service_data["contact_nom_prenom"],
         "contact_phone": service_data["telephone"],
