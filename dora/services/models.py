@@ -626,6 +626,7 @@ class SavedSearch(models.Model):
     category = models.ForeignKey(
         ServiceCategory,
         verbose_name="Thématique",
+        blank=True,
         null=True,
         on_delete=models.CASCADE,
     )
