@@ -6,12 +6,14 @@ from django.utils import timezone
 from django.views.decorators.debug import sensitive_post_parameters
 from rest_framework import exceptions, permissions
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from dora.core.constants import SIREN_POLE_EMPLOI
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
 from dora.rest_auth.authentication import TokenAuthentication
+from dora.sirene.models import Establishment
 from dora.structures.models import (
     Structure,
     StructureMember,
@@ -19,7 +21,9 @@ from dora.structures.models import (
     StructureSource,
 )
 from dora.structures.serializers import StructureSerializer
+from dora.users.models import User
 
+from ..structures.emails import send_invitation_email
 from .serializers import JoinStructureSerializer, TokenSerializer, UserInfoSerializer
 
 logger = logging.getLogger(__name__)
@@ -51,7 +55,7 @@ def user_info(request):
     return Response(UserInfoSerializer(user, context={"token": token}).data, status=200)
 
 
-def _create_structure(establishment, user):
+def _create_structure(establishment, user, reason):
     try:
         structure = Structure.objects.get(siret=establishment.siret)
     except Structure.DoesNotExist:
@@ -63,7 +67,7 @@ def _create_structure(establishment, user):
         send_moderation_notification(
             structure,
             user,
-            "Structure créée lors d'une inscription",
+            reason,
             ModerationStatus.VALIDATED,
         )
     return structure
@@ -155,7 +159,9 @@ def join_structure(request):
         )
 
     if establishment:
-        structure = _create_structure(establishment, user)
+        structure = _create_structure(
+            establishment, user, "Structure créée lors d'une inscription"
+        )
 
     structure_has_admin = structure.has_admin()
 
@@ -183,6 +189,90 @@ def join_structure(request):
         user.start_onboarding(structure, not structure_has_admin)
 
     return Response(StructureSerializer(structure, context={"request": request}).data)
+
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+@transaction.atomic
+def invite_admin(request):
+    inviter = request.user
+    if not (inviter.is_staff or (inviter.is_manager and inviter.department)):
+        raise exceptions.PermissionDenied
+    siret = request.data.get("siret")
+    if not siret:
+        raise ValidationError("SIRET requis")
+    invitee_email = request.data.get("invitee_email")
+    if not invitee_email:
+        raise ValidationError("invitee_email requis")
+    try:
+        establishment = Establishment.objects.get(siret=siret)
+    except Establishment.DoesNotExist:
+        raise ValidationError("SIRET inconnu")
+
+    if (
+        siret
+        and siret.startswith(SIREN_POLE_EMPLOI)
+        and invitee_email.split("@")[1]
+        not in (
+            "pole-emploi.fr",
+            "beta.gouv.fr",
+        )
+    ):
+        raise exceptions.PermissionDenied(
+            "Seuls les agents Pôle emploi peuvent se rattacher à une agence Pôle emploi"
+        )
+
+    if establishment:
+        structure = _create_structure(
+            establishment, inviter, "Structure créée lors d'une invitation"
+        )
+
+    # structure_has_admin = structure.has_admin()
+    # if structure_has_admin:
+    #     raise ValidationError("Cette structure a déjà un administrateur")
+
+    if True:  # not structure_has_admin:
+        try:
+            invitee = User.objects.get(email=invitee_email)
+        except User.DoesNotExist:
+            invitee = User.objects.create_user(
+                invitee_email,
+            )
+
+        try:
+            member = StructurePutativeMember.objects.get(
+                user=invitee, structure=structure
+            )
+            if member.invited_by_admin:
+                print(f"{invitee_email} a déjà été invité·e")
+            else:
+                print(f"{invitee_email} était en attente")
+
+            if not member.is_admin:
+                member.is_admin = True
+                member.save()
+        except StructurePutativeMember.DoesNotExist:
+            try:
+                member = StructureMember.objects.get(user=invitee, structure=structure)
+                print(f"{invitee_email} est déjà membre de la structure")
+                if not member.is_admin:
+                    member.is_admin = True
+                    member.save()
+            except StructureMember.DoesNotExist:
+                member = StructurePutativeMember.objects.create(
+                    user=invitee,
+                    structure=structure,
+                    invited_by_admin=True,
+                    is_admin=True,
+                )
+
+                print(f"{invitee_email} invité·e comme administrateur·rice")
+                send_invitation_email(
+                    member,
+                    inviter.get_full_name(),
+                )
+
+    return Response(status=201)
 
 
 @api_view(["POST"])
