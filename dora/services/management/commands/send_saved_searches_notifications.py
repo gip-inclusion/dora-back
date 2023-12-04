@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -6,10 +6,9 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from mjml import mjml2html
 
-from dora import data_inclusion
 from dora.core.emails import send_mail
-from dora.services.models import SavedSearch, SavedSearchFrequency
-from dora.services.views import _search
+
+from ...models import SavedSearch, SavedSearchFrequency
 
 
 def get_saved_search_notifications_to_send():
@@ -56,61 +55,24 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write("Vérification des notifications de recherches sauvegardées")
-        saved_searchs = get_saved_search_notifications_to_send()
-
-        di_client = (
-            data_inclusion.di_client_factory()
-            if not settings.IS_TESTING
-            and settings.INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS
-            else None
+        saved_searches = get_saved_search_notifications_to_send()
+        tracking_params = (
+            "mtm_campaign=MailsTransactionnels&mtm_kwd=AlertesNouveauxServices"
         )
-
         num_emails_sent = 0
-        for saved_search in saved_searchs:
-            category = None
-            if saved_search.category:
-                category = saved_search.category
-
-            subcategories = None
-            if saved_search.subcategories.exists():
-                subcategories = saved_search.subcategories.values_list(
-                    "value", flat=True
-                )
-
-            kinds = None
-            if saved_search.kinds.exists():
-                kinds = saved_search.kinds.values_list("value", flat=True)
-
-            fees = None
-            if saved_search.fees.exists():
-                fees = saved_search.fees.values_list("value", flat=True)
-
-            # Récupération des résultats de la recherche
-            results = _search(
-                None,
-                saved_search.city_code,
-                [category.value] if category and not subcategories else None,
-                subcategories,
-                kinds,
-                fees,
-                di_client,
+        for saved_search in saved_searches:
+            # On garde les contenus qui ont été publiés depuis la dernière notification
+            new_services = saved_search.get_recent_services(
+                saved_search.last_notification_date
             )
 
-            # On garde les contenus qui ont été publiés depuis la dernière notification
-            updated_services = [
-                r
-                for r in results
-                if datetime.fromisoformat(r["publication_date"]).date()
-                > saved_search.last_notification_date
-            ]
-
-            if updated_services:
+            if new_services:
                 # Envoi de l'email
                 context = {
                     "search_label": compute_search_label(saved_search),
-                    "homepage_url": settings.FRONTEND_URL,
-                    "updated_services": updated_services[:15],
-                    "services_number": len(updated_services),
+                    "updated_services": new_services,
+                    "alert_link": f"{settings.FRONTEND_URL}/mes-alertes/{saved_search.id}",
+                    "tracking_params": tracking_params,
                 }
 
                 num_emails_sent += 1

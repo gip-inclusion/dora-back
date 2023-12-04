@@ -14,7 +14,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
     structures = serializers.SerializerMethodField()
     pending_structures = serializers.SerializerMethodField()
     bookmarks = serializers.SerializerMethodField()
-    saved_searchs = serializers.SerializerMethodField()
+    saved_searches = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -29,7 +29,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "last_name",
             "newsletter",
             "pending_structures",
-            "saved_searchs",
+            "saved_searches",
             "short_name",
             "structures",
             "main_activity",
@@ -60,7 +60,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
             qs = Bookmark.objects.filter(user=user).order_by("-creation_date")
         return BookmarkListSerializer(qs, many=True).data
 
-    def get_saved_searchs(self, user):
+    def get_saved_searches(self, user):
         if not user or not user.is_authenticated:
             qs = SavedSearch.objects.none()
         else:

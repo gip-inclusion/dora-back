@@ -23,4 +23,4 @@ def validate_accesslibre_url(url):
 
 def validate_safir(safir):
     if not safir.isdigit() or len(safir) != 5:
-        raise ValidationError("Le code SAFIR doit être composé de 14 chiffres.")
+        raise ValidationError("Le code SAFIR doit être composé de 5 chiffres.")

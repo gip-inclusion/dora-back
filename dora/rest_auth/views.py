@@ -8,6 +8,7 @@ from rest_framework import exceptions, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
+from dora.core.constants import SIREN_POLE_EMPLOI
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
 from dora.rest_auth.authentication import TokenAuthentication
@@ -138,11 +139,23 @@ def join_structure(request):
     serializer.is_valid(raise_exception=True)
     data = serializer.validated_data
     establishment = data.get("establishment")
+    structure = data.get("structure")
+    siret = establishment.siret if establishment else structure.siret
+    if (
+        siret
+        and siret.startswith(SIREN_POLE_EMPLOI)
+        and user.email.split("@")[1]
+        not in (
+            "pole-emploi.fr",
+            "beta.gouv.fr",
+        )
+    ):
+        raise exceptions.PermissionDenied(
+            "Seuls les agents Pôle emploi peuvent se rattacher à une agence Pôle emploi"
+        )
 
     if establishment:
         structure = _create_structure(establishment, user)
-    else:
-        structure = data.get("structure")
 
     structure_has_admin = structure.has_admin()
 

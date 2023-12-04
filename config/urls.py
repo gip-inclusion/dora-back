@@ -37,7 +37,7 @@ router.register(r"services", dora.services.views.ServiceViewSet, basename="servi
 router.register(r"bookmarks", dora.services.views.BookmarkViewSet, basename="bookmark")
 router.register(r"models", dora.services.views.ModelViewSet, basename="model")
 router.register(
-    r"saved-searchs", dora.services.views.SavedSearchViewSet, basename="saved-search"
+    r"saved-searches", dora.services.views.SavedSearchViewSet, basename="saved-search"
 )
 
 router.register(
@@ -130,6 +130,7 @@ private_api_patterns = [
     ),
     path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
     path("search-siret/", dora.sirene.views.search_siret),
+    path("search-safir/", dora.sirene.views.search_safir),
     path("search-all-sirene/", dora.sirene.views.search_all_sirene),
     path("services-options/", dora.services.views.options),
     path("siret-claimed/<siret:siret>/", dora.structures.views.siret_was_claimed),

@@ -1,47 +1,53 @@
 {% extends "email-base.mjml" %}
 
 {% block preview %}
-    Il y a de nouveaux services correspondant à votre alerte
+  Il y a de nouveaux services correspondant à votre alerte
 {% endblock %}
 
 {% block illustration %}
-    <mj-image src="{{ homepage_url }}/emails/illu-saved-search-notification.png" alt=""/>
+  <mj-image src="{% frontend_url %}/emails/illu-saved-search-notification.png" alt=""/>
 {% endblock %}
 
 {% block title %}
-    Il y a de nouveaux services correspondant à votre alerte
+  Il y a de nouveaux services correspondant à votre alerte
 {% endblock %}
 
 {% block content %}
-    <p>
-        <strong>Bonjour,</strong>
-    </p>
+  <p>
+    <strong>Bonjour,</strong>
+  </p>
 
-    <p>
-        Il existe {{services_number}} {% if services_number > 1 %}nouveaux services{% else %}nouveau service{% endif %} correspondant à votre alerte <strong>«&nbsp;{{ search_label }}&nbsp;»</strong>&nbsp;:
-
-        <ul>
-        {% for service in updated_services %}
-            <li>
-                {% if service.type == 'di' %}
-                    <a href="{{ homepage_url }}/services/di/{{ service.slug }}">
-                {% else %}
-                    <a href="{{ homepage_url }}/services/{{ service.slug }}">
-                {% endif %}
-                    <strong>{{ service.name }}</strong> - {{ service.structure_info.name }}
-                </a>
-            </li>
-        {% endfor %}
-
-        {% if services_number > 10 %}
-            <li>…</li>
+  <p>
+    Il existe de nouveaux services correspondant à votre alerte <strong>«&nbsp;{{ search_label }}&nbsp;»</strong>&nbsp;:
+  </p>
+  <ul>
+    {% for service in updated_services|slice:":5" %}
+      <li>
+        {% if service.type == 'di' %}
+          <a href="{% frontend_url %}/services/di/{{ service.slug }}?{{ tracking_params }}">
+        {% else %}
+          <a href="{% frontend_url %}/services/{{ service.slug }}?{{ tracking_params }}">
         {% endif %}
+        <strong>{{ service.name }}</strong> - {{ service.structure_info.name }}
+      </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}
 
-        </ul>
-    </p>
-
-    <p>
-        Vous pouvez gérer vos alertes depuis la page «&nbsp;<a href="{{ homepage_url }}/mes-alertes">Mes alertes</a>&nbsp;».
-    </p>
-
+{% block cta %}
+  {% if updated_services|length > 5 %}
+    <mj-button mj-class="cta" href="{{ alert_link }}?{{ tracking_params }}"
+               background-color="white" color="#5B12EB"
+               border-radius="4px" border="1px solid #5B12EB"
+    >
+      Voir tous les services ajoutés dans les 30 derniers jours
+    </mj-button>
+  {% endif %}
+  <mj-spacer height="24px"/>
+  <mj-text>
+    Vous pouvez gérer vos alertes depuis la page «&nbsp;<a
+      href="{% frontend_url %}/mes-alertes?{{ tracking_params }}">Mes alertes</a>&nbsp;».
+  </mj-text>
+  <mj-spacer height="24px"/>
 {% endblock %}
