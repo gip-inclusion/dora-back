@@ -8,12 +8,15 @@ drop view if exists q_members_invited_valid;
 create view q_members_invited_valid as
 select
     "ID utilisateur",
+    "Nom",
+    "Prénom",
     "E-mail",
     "E-mail validé",
     "Date de création",
     "Dernière connexion",
     "Nom de la structure",
     "URL Dora",
+    "SLUG",
     "Département",
     "Date d'invitation",
     "Invitation en tant qu'admin",

@@ -8,11 +8,14 @@ drop table if exists mb_members_invited cascade;
 create table mb_members_invited as
 select
     mu.id               as "ID utilisateur",
+    mu.first_name       as "Nom",
+    mu.last_name        as "Prénom",
     mu.email            as "E-mail",
     mu.is_valid         as "E-mail validé",
     mu.date_joined      as "Date de création",
     mu.last_login       as "Dernière connexion",
     ms.name             as "Nom de la structure",
+    ms.slug             as "SLUG",
     ms.dora_url         as "URL Dora",
     ms.department       as "Département",
     ss.creation_date    as "Date d'invitation",

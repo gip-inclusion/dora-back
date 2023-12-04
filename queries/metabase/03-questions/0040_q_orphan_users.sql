@@ -9,6 +9,8 @@ create table q_orphan_users as
 select
     mu.id                               as "ID utilisateur",
     mu.email                            as "E-mail",
+    mu.first_name                       as "Nom",
+    mu.last_name                        as "Prénom",
     mu.is_valid                         as "E-mail validé",
     mu.date_joined                      as "Date de création",
     mu.last_login                       as "Dernière connexion",
