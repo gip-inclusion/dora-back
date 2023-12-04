@@ -25,6 +25,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("PRODUCTION RUN"))
 
         orphan_structures = Structure.objects.exclude(email="").filter(members=None)
+        # FIXME : à retirer après la phase de test, ou on ciblera un public restreint ...
         orphan_structures = orphan_structures.order_by("?")[:1]
 
         self.stdout.write(f"{orphan_structures.count()} structures concernées")
