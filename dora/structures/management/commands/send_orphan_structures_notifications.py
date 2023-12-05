@@ -24,7 +24,9 @@ class Command(BaseCommand):
         else:
             self.stdout.write(self.style.WARNING("PRODUCTION RUN"))
 
-        orphan_structures = Structure.objects.exclude(email="").filter(members=None)
+        orphan_structures = Structure.objects.exclude(email="").filter(
+            members=None, putative_membership=None
+        )
         # FIXME : à retirer après la phase de test, ou on ciblera un public restreint ...
         orphan_structures = orphan_structures.order_by("?")[:1]
 

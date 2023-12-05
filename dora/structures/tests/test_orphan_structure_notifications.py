@@ -26,7 +26,7 @@ def test_notify_orphan_structure():
     assert mail.outbox[0].to == [structure.email]
     assert (
         mail.outbox[0].subject
-        == f"Votre structure n’a pas encore de membre actif sur Dora ({structure.name})"
+        == f"Votre structure n’a pas encore de membre actif sur DORA ({structure.name})"
     )
     assert structure.name in mail.outbox[0].body
     assert f"/structures/{structure.slug}" in mail.outbox[0].body
@@ -35,6 +35,16 @@ def test_notify_orphan_structure():
 def test_do_not_notify_structures_with_members():
     make_structure(
         user=baker.make("users.user", is_valid=True), email="buzz@lightyear.com"
+    )
+    run_management_command(wet_run=True)
+
+    assert len(mail.outbox) == 0
+
+
+def test_do_not_notify_structures_with_putative_memberships():
+    make_structure(
+        putative_member=baker.make("users.user", is_valid=True),
+        email="buzz@lightyear.com",
     )
     run_management_command(wet_run=True)
 
