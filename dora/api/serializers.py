@@ -199,8 +199,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     lien_source = serializers.SerializerMethodField()
     telephone = serializers.SerializerMethodField()
     courriel = serializers.SerializerMethodField()
-    contact_nom = serializers.SerializerMethodField()
-    contact_prenom = serializers.SerializerMethodField()
+    contact_nom_prenom = serializers.SerializerMethodField()
     contact_public = serializers.SerializerMethodField()
     modes_accueil = serializers.SerializerMethodField()
     zone_diffusion_type = serializers.SerializerMethodField()
@@ -220,8 +219,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "code_postal",
             "commune",
             "complement_adresse",
-            "contact_nom",
-            "contact_prenom",
+            "contact_nom_prenom",
             "contact_public",
             "courriel",
             "cumulable",
@@ -353,13 +351,9 @@ class ServiceSerializer(serializers.ModelSerializer):
         assert self.context.get("request").user.email == settings.DATA_INCLUSION_EMAIL
         return obj.contact_email
 
-    def get_contact_nom(self, obj):
+    def get_contact_nom_prenom(self, obj):
         assert self.context.get("request").user.email == settings.DATA_INCLUSION_EMAIL
         return obj.contact_name
-
-    def get_contact_prenom(self, obj):
-        assert self.context.get("request").user.email == settings.DATA_INCLUSION_EMAIL
-        return None
 
     def get_contact_public(self, obj):
         return obj.is_contact_info_public
