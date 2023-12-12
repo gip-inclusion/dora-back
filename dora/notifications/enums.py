@@ -3,7 +3,7 @@ from django.db import models
 
 class NotificationStatus(models.IntegerChoices):
     PENDING = 1
-    PROCESSED = 2
+    COMPLETE = 2
     EXPIRED = 3
 
 

@@ -1,8 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from dora.notifications.enums import TaskType
-from dora.notifications.models import Notification
-from dora.notifications.tasks import OrphanStructuresTask
+from dora.notifications.tasks.core import Task
 
 """
 Lancement / activation des notifications :
@@ -33,30 +31,31 @@ class Command(BaseCommand):
         else:
             self.stdout.write(self.style.NOTICE("DRY-RUN"))
 
-        self.stdout.write("Envoi des notifications")
+        if not Task.registered():
+            self.stdout.write(" > aucune tâche enregistrée!")
+            return
 
-        if notifications_pendings := Notification.objects.pending().should_trigger():
-            if limit:
-                notifications_pendings = notifications_pendings[:limit]
+        for task_class in Task.registered():
+            self.stdout.write(f"> {task_class.__name__} :")
 
-            for notification in notifications_pendings:
-                if not wet_run:
-                    continue
-                match notification.task_type:
-                    case TaskType.ORPHAN_STRUCTURES:
-                        try:
-                            # par ex. appeler l'envoi d'email avec la structure contenue dans la tache
-                            OrphanStructuresTask.run(notification)
-                        except Exception:
-                            # log me
-                            pass
-                        else:
-                            # en fin de tache:
-                            notification.complete()
+            ok, errors, obsolete = task_class().run(
+                strict=True, dry_run=not wet_run, limit=limit
+            )
 
-                    case _:
-                        pass
-            self.stdout.write(f"{len(notifications_pendings)} notifications traitées")
+            if ok:
+                self.stdout.write(f"{ok} notification(s) traitée(s)")
+            else:
+                self.stdout.write(" > aucune notification traitée")
+
+            if errors:
+                self.stdout.write(f" > {errors} notification(s) en erreur")
+            else:
+                self.stdout.write(" > aucune erreur")
+
+            if obsolete:
+                self.stdout.write(f" > {obsolete} notification(s) obsolètes modifiées")
+            else:
+                self.stdout.write(" > aucune notification obsolète")
 
         self.stdout.write("Terminé!")
 
