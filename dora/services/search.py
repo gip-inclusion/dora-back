@@ -1,4 +1,5 @@
-from datetime import date, datetime
+import random
+from datetime import date
 from typing import Optional
 
 import requests
@@ -9,11 +10,10 @@ from django.contrib.gis.measure import D
 from django.db.models import IntegerField, Q, Value
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.utils.timezone import is_naive, make_aware
 
 import dora.services.models as models
 from dora import data_inclusion
-from dora.admin_express.models import AdminDivisionType, City
+from dora.admin_express.models import City
 from dora.admin_express.utils import arrdt_to_main_insee_code
 
 from .serializers import SearchResultSerializer
@@ -42,32 +42,18 @@ def multisort(lst, specs):
 
 
 def _sort_services(services):
-    diffusion_zone_priority = {
-        AdminDivisionType.CITY: 1,
-        AdminDivisionType.EPCI: 2,
-        AdminDivisionType.DEPARTMENT: 3,
-        AdminDivisionType.REGION: 4,
-    }
-    for service in services:
-        service["zone_priority"] = diffusion_zone_priority.get(
-            service["diffusion_zone_type"], 5
-        )
-        mod_date = datetime.fromisoformat(service["modification_date"])
-
-        service["sortable_date"] = (
-            make_aware(mod_date) if is_naive(mod_date) else mod_date
-        )
     services_on_site = [s for s in services if "en-presentiel" in s["location_kinds"]]
+    random.shuffle(services_on_site)
     services_remote = [
         s for s in services if "en-presentiel" not in s["location_kinds"]
     ]
+    random.shuffle(services_remote)
 
-    results = multisort(
-        services_on_site,
-        (("distance", False), ("zone_priority", False), ("sortable_date", True)),
-    ) + multisort(services_remote, (("zone_priority", False), ("sortable_date", True)))
-    for result in results:
-        del result["sortable_date"]
+    results = (
+        sorted(services_on_site, key=itemgetter("distance"), reverse=True)
+        + services_remote
+    )
+
     return results
 
 
