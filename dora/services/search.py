@@ -49,10 +49,7 @@ def _sort_services(services):
     ]
     random.shuffle(services_remote)
 
-    results = (
-        sorted(services_on_site, key=itemgetter("distance"), reverse=True)
-        + services_remote
-    )
+    results = sorted(services_on_site, key=itemgetter("distance")) + services_remote
 
     return results
 
