@@ -72,4 +72,4 @@ create index mb_putative_members_dpt_is_valid on public.mb_putative_members (
     "E-mail validé"
 );
 
-comment on table mb_putative_members is 'Liste des membres invités en attente de rattachement';
+comment on table mb_putative_members is 'Liste des membres en attente de rattachement';

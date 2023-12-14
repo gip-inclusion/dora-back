@@ -1,5 +1,5 @@
 -- Question : 
--- liste des membres invités
+-- liste des membres invités, avec e-mail validé, 
 
 -- noqa: disable=LT05
 
@@ -25,6 +25,6 @@ select
     "Premier admin de la structure",
     "Membre d'autres structures"
 from mb_putative_members
-where "Invitation par un admin";
+where "E-mail validé" and "Invitation par un admin";
 
-comment on view q_members_invited_valid is 'Liste des membres invités en attente de rattachement';
+comment on view q_members_invited_valid is 'Liste des membres invités en attente de rattachement : e-mail validé';
