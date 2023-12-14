@@ -1,5 +1,5 @@
 -- Question : 
--- liste des membres invités, avec e-mail validé, en attente de validation 
+-- liste des membres invités
 
 -- noqa: disable=LT05
 
