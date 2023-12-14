@@ -4,8 +4,12 @@ from dora.notifications.tasks.core import Task
 
 """
 Lancement / activation des notifications :
-    Contrairement à la création, lancement à intervalle régulier dans la journée (2h?),
-    si il y a une granularité de planification inférieure au jour.
+    - récupère la liste des tâches actuellement enregitrées
+    - effectue un `run()` sur chaque tâche (rafraichissement, purge, et actions)
+
+Limite d'enregistrement à traiter possible et dry-run par défaut.
+
+La planification de cette commande reste à définir (1x/j a priori).
 """
 
 
@@ -26,37 +30,45 @@ class Command(BaseCommand):
         wet_run = options["wet_run"]
         limit = options["limit"]
 
+        self.stdout.write(self.help + " :")
+
         if wet_run:
             self.stdout.write(self.style.WARNING("PRODUCTION RUN"))
         else:
             self.stdout.write(self.style.NOTICE("DRY-RUN"))
 
-        if not Task.registered():
+        if not Task.registered_tasks():
             self.stdout.write(" > aucune tâche enregistrée!")
             return
 
-        for task_class in Task.registered():
-            self.stdout.write(f"> {task_class.__name__} :")
+        for task_class in Task.registered_tasks():
+            self.stdout.write(self.style.NOTICE(f"> {task_class.__name__} :"))
 
             ok, errors, obsolete = task_class().run(
                 strict=True, dry_run=not wet_run, limit=limit
             )
 
             if ok:
-                self.stdout.write(f"{ok} notification(s) traitée(s)")
+                self.stdout.write(
+                    self.style.SUCCESS(f" > {ok} notification(s) traitée(s)")
+                )
             else:
                 self.stdout.write(" > aucune notification traitée")
 
             if errors:
-                self.stdout.write(f" > {errors} notification(s) en erreur")
+                self.stdout.write(
+                    self.style.ERROR(f" > {errors} notification(s) en erreur")
+                )
             else:
                 self.stdout.write(" > aucune erreur")
 
             if obsolete:
-                self.stdout.write(f" > {obsolete} notification(s) obsolètes modifiées")
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f" > {obsolete} notification(s) obsolètes modifiées"
+                    )
+                )
             else:
                 self.stdout.write(" > aucune notification obsolète")
 
-        self.stdout.write("Terminé!")
-
-    # TODO : timers
+        self.stdout.write(self.style.NOTICE("Terminé!"))

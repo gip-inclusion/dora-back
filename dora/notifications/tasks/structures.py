@@ -16,7 +16,7 @@ class OrphanStructuresTask(Task):
 
     @classmethod
     def candidates(cls):
-        return Structure.objects.orphans()
+        return Structure.objects.orphans().exclude(email="")
 
     @classmethod
     def should_trigger(cls, notification: Notification) -> bool:
@@ -26,13 +26,13 @@ class OrphanStructuresTask(Task):
         # une notification tout de suite, puis 3 notifications à 2 semaines d'intervalle
         match notification.counter:
             case 0:
-                return notification.updated_at < now
+                return notification.created_at < now
             case 1:
-                return notification.updated_at + timedelta(weeks=2) <= now
+                return notification.created_at + timedelta(weeks=2) <= now
             case 2:
-                return notification.updated_at + timedelta(weeks=4) <= now
+                return notification.created_at + timedelta(weeks=4) <= now
             case 3:
-                return notification.updated_at + timedelta(weeks=6) <= now
+                return notification.created_at + timedelta(weeks=6) <= now
             case _:
                 return False
 

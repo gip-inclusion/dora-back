@@ -1,10 +1,10 @@
 from django.db import models
 
 
-class NotificationStatus(models.IntegerChoices):
-    PENDING = 1
-    COMPLETE = 2
-    EXPIRED = 3
+class NotificationStatus(models.TextChoices):
+    PENDING = "pending"
+    COMPLETE = "complete"
+    EXPIRED = "expired"
 
 
 class TaskType(models.TextChoices):

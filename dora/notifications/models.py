@@ -25,22 +25,35 @@ class NotificationQueryset(models.QuerySet):
 
 
 class Notification(models.Model):
-    # TODO: verbose_name
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    status = models.IntegerField(
-        choices=NotificationStatus.choices, default=NotificationStatus.PENDING
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name="Date de création"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, verbose_name="Date de modification"
+    )
+    status = models.CharField(
+        choices=NotificationStatus.choices,
+        default=NotificationStatus.PENDING,
+        verbose_name="Statut",
     )
 
-    task_type = models.CharField(choices=TaskType.choices)
-    counter = models.IntegerField(default=0)
-    expires_at = models.DateTimeField(null=True, blank=True)
+    task_type = models.CharField(choices=TaskType.choices, verbose_name="Type de tâche")
+    counter = models.IntegerField(default=0, verbose_name="Compteur d'exécution")
+    expires_at = models.DateTimeField(
+        null=True, blank=True, verbose_name="Date d'expiration"
+    )
 
-    # propriétaires potentiels
+    # propriétaires potentiels :
+    # chaque type de propriétaire de notification doit avoir :
+    # - une définition de FK associée au modèle de notification
+    # - nommée `owner_nom_du_modele_cible` (important)
     owner_structure = models.ForeignKey(
-        Structure, null=True, blank=True, on_delete=models.CASCADE
+        Structure,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        verbose_name="Structure propriétaire",
     )
     ...
 

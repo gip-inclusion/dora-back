@@ -181,5 +181,5 @@ class Task(abc.ABC):
         cls._registered_tasks.remove(class_)
 
     @classmethod
-    def registered(cls) -> set["Task"]:
+    def registered_tasks(cls) -> set["Task"]:
         return cls._registered_tasks
