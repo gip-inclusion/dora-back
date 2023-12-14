@@ -2,6 +2,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.encoding import iri_to_uri
 from furl import furl
+from mjml import mjml2html
 
 from dora.core.emails import send_mail
 
@@ -19,11 +20,12 @@ def send_invitation_email(member, host_fullname):
         "recipient_email": member.user.email,
         "recipient_name": member.user.get_short_name(),
         "host_name": host_fullname,
-        "structure_name": structure.name,
+        "structure": structure,
         "cta_link": invitation_link,
-        "homepage_url": settings.FRONTEND_URL,
+        "with_legal_info": True,
+        "with_dora_info": True,
     }
-    body = render_to_string("invitation.html", params)
+    body = mjml2html(render_to_string("invitation.mjml", params))
 
     send_mail(
         "[DORA] Votre invitation sur DORA",
@@ -40,7 +42,6 @@ def send_invitation_accepted_notification(member, admin_user):
         "new_member_full_name": member.user.get_full_name(),
         "new_member_email": member.user.email,
         "structure_name": member.structure.name,
-        "homepage_url": settings.FRONTEND_URL,
     }
 
     body = render_to_string("notification-invitation-accepted.html", params)
@@ -61,7 +62,6 @@ def send_access_requested_notification(member, admin_user):
         "new_member_email": member.user.email,
         "structure_name": member.structure.name,
         "cta_link": f"{settings.FRONTEND_URL}/structures/{member.structure.slug}",
-        "homepage_url": settings.FRONTEND_URL,
     }
 
     body = render_to_string("notification-access-request.html", params)
@@ -78,7 +78,6 @@ def send_access_granted_notification(member):
     params = {
         "structure_name": member.structure.name,
         "cta_link": f"{settings.FRONTEND_URL}/structures/{member.structure.slug}",
-        "homepage_url": settings.FRONTEND_URL,
     }
 
     body = render_to_string("notification-access-granted.html", params)
@@ -94,7 +93,6 @@ def send_access_granted_notification(member):
 def send_access_rejected_notification(member):
     params = {
         "structure_name": member.structure.name,
-        "homepage_url": settings.FRONTEND_URL,
     }
 
     body = render_to_string("notification-access-rejected.html", params)
@@ -114,7 +112,6 @@ def send_branch_created_notification(structure, branch, admin_user):
         "structure_name": structure.name,
         "cta_link": f"{settings.FRONTEND_URL}/structures/{branch.slug}",
         "branch_name": branch.name,
-        "homepage_url": settings.FRONTEND_URL,
     }
 
     body = render_to_string("notification-branch-created.html", params)

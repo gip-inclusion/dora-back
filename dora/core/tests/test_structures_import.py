@@ -1,6 +1,7 @@
 import csv
 import tempfile
 from io import StringIO
+from urllib.parse import quote
 
 from django.core import mail
 from django.core.management import call_command
@@ -102,7 +103,7 @@ class StructuresImportTestCase(APITestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "[DORA] Votre invitation sur DORA")
         self.assertIn(
-            "foo@buzz.com",
+            quote("foo@buzz.com"),
             mail.outbox[0].body,
         )
         self.assertIn(
@@ -218,7 +219,7 @@ class StructuresImportTestCase(APITestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "[DORA] Votre invitation sur DORA")
         self.assertIn(
-            user.get_short_name(),
+            quote(user.email),
             mail.outbox[0].body,
         )
         self.assertEqual(
