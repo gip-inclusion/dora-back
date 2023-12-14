@@ -24,7 +24,7 @@ select
     "Nombre d'admins dans la structure",
     "Premier admin de la structure",
     "Membre d'autres structures"
-from mb_members_invited
+from mb_putative_members
 where "Invitation par un admin";
 
-comment on view q_members_invited_valid is 'Liste des membres invités en attente de validation : e-mail validé';
+comment on view q_members_invited_valid is 'Liste des membres invités en attente de rattachement';

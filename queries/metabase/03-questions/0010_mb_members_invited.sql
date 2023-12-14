@@ -1,11 +1,11 @@
--- Utilisateurs invités en tant que membre de structure,
--- en attente de validation de rattachement,
+-- Utilisateurs en attente de rattachement
+-- (extension des données de `structures_structureputativemember`)
 
 -- noqa: disable=LT05
 
-drop table if exists mb_members_invited cascade;
+drop table if exists mb_putative_members cascade;
 
-create table mb_members_invited as
+create table mb_putative_members as
 select
     mu.id               as "ID utilisateur",
     mu.first_name       as "Nom",
@@ -62,14 +62,14 @@ order by mu.date_joined desc;
 
 -- Indexes 
 
-create index mb_members_invited_date_joined_idx on public.mb_members_invited (
+create index mb_putative_members_date_joined_idx on public.mb_members_invited (
     "Date de création"
 );
-create index mb_members_invited_dpt_idx on public.mb_members_invited (
+create index mb_putative_members_dpt_idx on public.mb_members_invited (
     "Département"
 );
-create index mb_members_invited_dpt_is_valid on public.mb_members_invited (
+create index mb_putative_members_dpt_is_valid on public.mb_members_invited (
     "E-mail validé"
 );
 
-comment on table mb_members_invited is 'Liste des membres invités en attente de validation';
+comment on table mb_putative_members is 'Liste des membres invités en attente de validation';

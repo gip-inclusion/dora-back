@@ -24,7 +24,7 @@ where
     not mu.is_staff
     -- adresse e-mail non validée :
     and not mu.is_valid
-    -- aucune invitation en attente : 
+    -- aucun rattachement en attente : 
     and mu.id not in (select user_id from structures_structureputativemember where not invited_by_admin)
     -- aucune connexion IC :
     and mu.ic_id is null
