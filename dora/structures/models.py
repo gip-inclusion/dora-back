@@ -336,9 +336,12 @@ class Structure(ModerationMixin, models.Model):
         )
 
     def has_admin(self):
+        return bool(self.num_admins())
+
+    def num_admins(self):
         return self.membership.filter(
             is_admin=True, user__is_valid=True, user__is_active=True
-        ).exists()
+        ).count()
 
     def is_pending_member(self, user):
         return StructurePutativeMember.objects.filter(

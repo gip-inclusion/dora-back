@@ -227,52 +227,43 @@ def invite_admin(request):
             establishment, inviter, "Structure créée lors d'une invitation"
         )
 
-    # structure_has_admin = structure.has_admin()
-    # if structure_has_admin:
-    #     raise ValidationError("Cette structure a déjà un administrateur")
-
-    if True:  # not structure_has_admin:
+    structure_has_admin = structure.has_admin()
+    if structure_has_admin:
+        raise ValidationError("Cette structure a déjà un administrateur")
+    else:
         try:
             invitee = User.objects.get(email=invitee_email)
         except User.DoesNotExist:
             invitee = User.objects.create_user(
                 invitee_email,
             )
+        try:
+            StructurePutativeMember.objects.get(
+                user=invitee, structure=structure
+            ).delete()
+        except StructurePutativeMember.DoesNotExist:
+            pass
 
         try:
-            member = StructurePutativeMember.objects.get(
-                user=invitee, structure=structure
-            )
-            if member.invited_by_admin:
-                print(f"{invitee_email} a déjà été invité·e")
-            else:
-                print(f"{invitee_email} était en attente")
-
+            member = StructureMember.objects.get(user=invitee, structure=structure)
             if not member.is_admin:
                 member.is_admin = True
                 member.save()
-        except StructurePutativeMember.DoesNotExist:
-            try:
-                member = StructureMember.objects.get(user=invitee, structure=structure)
-                print(f"{invitee_email} est déjà membre de la structure")
-                if not member.is_admin:
-                    member.is_admin = True
-                    member.save()
-            except StructureMember.DoesNotExist:
-                member = StructurePutativeMember.objects.create(
-                    user=invitee,
-                    structure=structure,
-                    invited_by_admin=True,
-                    is_admin=True,
-                )
+        except StructureMember.DoesNotExist:
+            member = StructurePutativeMember.objects.create(
+                user=invitee,
+                structure=structure,
+                invited_by_admin=True,
+                is_admin=True,
+            )
+            send_invitation_email(
+                member,
+                inviter.get_full_name(),
+            )
 
-                print(f"{invitee_email} invité·e comme administrateur·rice")
-                send_invitation_email(
-                    member,
-                    inviter.get_full_name(),
-                )
-
-    return Response(status=201)
+    return Response(
+        StructureSerializer(structure, context={"request": request}).data, status=201
+    )
 
 
 @api_view(["POST"])

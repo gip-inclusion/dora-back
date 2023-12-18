@@ -149,7 +149,7 @@ def test_can_invite_pe_agents_to_pe_structure(api_client):
     assert len(mail.outbox) == 1
 
 
-def test_can_invite_other_admins(api_client):
+def test_cant_invite_other_admins(api_client):
     structure = make_structure(siret=TEST_SIRET)
     make_user(structure=structure, is_staff=False, is_manager=False, is_admin=True)
     user = make_user(is_staff=False, is_manager=True, department=31)
@@ -158,33 +158,14 @@ def test_can_invite_other_admins(api_client):
         "/auth/invite-admin/",
         {"siret": TEST_SIRET, "invitee_email": "foo@bar.com"},
     )
+    assert response.status_code == 400
+    print(response.data)
     print(response.content)
-    assert response.status_code == 201
-    assert len(mail.outbox) == 1
-
-
-def test_dont_notify_already_invited_admin(api_client):
-    admin = make_user(is_staff=False, is_manager=False)
-    structure = make_structure(siret=TEST_SIRET)
-    baker.make(
-        "StructurePutativeMember",
-        structure=structure,
-        user=admin,
-        invited_by_admin=True,
-        is_admin=True,
-    )
-    user = make_user(is_staff=False, is_manager=True, department=31)
-    api_client.force_authenticate(user=user)
-    response = api_client.post(
-        "/auth/invite-admin/",
-        {"siret": TEST_SIRET, "invitee_email": admin.email},
-    )
-    print(response.content)
-    assert response.status_code == 201
+    assert "Cette structure a déjà un administrateur" in response.content.decode()
     assert len(mail.outbox) == 0
 
 
-def test_dont_notify_already_existing_admin(api_client):
+def test_cant_reinvite_already_existing_admin(api_client):
     structure = make_structure(siret=TEST_SIRET)
     admin = make_user(
         structure=structure, is_staff=False, is_manager=False, is_admin=True
@@ -195,12 +176,38 @@ def test_dont_notify_already_existing_admin(api_client):
         "/auth/invite-admin/",
         {"siret": TEST_SIRET, "invitee_email": admin.email},
     )
-    assert response.status_code == 201
+    assert response.status_code == 400
+    assert "Cette structure a déjà un administrateur" in response.content.decode()
     assert len(mail.outbox) == 0
 
 
 def test_promote_already_invited_user(api_client):
-    assert False
+    existing_user = make_user(is_staff=False, is_manager=False)
+    structure = make_structure(siret=TEST_SIRET)
+    assert (
+        StructurePutativeMember.objects.filter(
+            structure=structure, user=existing_user
+        ).exists()
+        is False
+    )
+    baker.make(
+        "StructurePutativeMember",
+        structure=structure,
+        user=existing_user,
+        invited_by_admin=True,
+        is_admin=False,
+    )
+    user = make_user(is_staff=False, is_manager=True, department=31)
+    api_client.force_authenticate(user=user)
+    response = api_client.post(
+        "/auth/invite-admin/",
+        {"siret": TEST_SIRET, "invitee_email": existing_user.email},
+    )
+    assert response.status_code == 201
+    pm = StructurePutativeMember.objects.get(structure=structure, user=existing_user)
+    assert pm.is_admin is True
+    assert pm.is_admin is True
+    assert len(mail.outbox) == 1
 
 
 def test_promote_already_existing_member(api_client):
@@ -228,4 +235,28 @@ def test_promote_already_existing_member(api_client):
 
 
 def test_accept_and_promote_waiting_member(api_client):
-    assert False
+    existing_user = make_user(is_staff=False, is_manager=False)
+    structure = make_structure(siret=TEST_SIRET)
+    assert (
+        StructurePutativeMember.objects.filter(
+            structure=structure, user=existing_user
+        ).exists()
+        is False
+    )
+    baker.make(
+        StructurePutativeMember,
+        structure=structure,
+        user=existing_user,
+        invited_by_admin=False,
+    )
+    user = make_user(is_staff=False, is_manager=True, department=31)
+    api_client.force_authenticate(user=user)
+    response = api_client.post(
+        "/auth/invite-admin/",
+        {"siret": TEST_SIRET, "invitee_email": existing_user.email},
+    )
+    assert response.status_code == 201
+    pm = StructurePutativeMember.objects.get(structure=structure, user=existing_user)
+    assert pm.is_admin is True
+    assert pm.invited_by_admin is True
+    assert len(mail.outbox) == 1
