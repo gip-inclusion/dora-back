@@ -1,21 +1,22 @@
 -- Question : 
--- liste des membres invités, 
--- avec e-mail *NON* validé, 
--- en attente de validation 
+-- liste des membres invités
 
 -- noqa: disable=LT05
 
-drop view if exists q_members_invited_invalid;
+drop view if exists q_members_invited;
 
-create view q_members_invited_invalid as
+create view q_members_invited as
 select
     "ID utilisateur",
+    "Nom",
+    "Prénom",
     "E-mail",
     "E-mail validé",
     "Date de création",
     "Dernière connexion",
     "Nom de la structure",
     "URL Dora",
+    "SLUG",
     "Département",
     "Date d'invitation",
     "Invitation en tant qu'admin",
@@ -23,7 +24,7 @@ select
     "Nombre d'admins dans la structure",
     "Premier admin de la structure",
     "Membre d'autres structures"
-from mb_members_invited
-where not "E-mail validé";
+from mb_putative_members
+where "Invitation par un admin";
 
-comment on view q_members_invited_invalid is 'Liste des membres invités en attente de validation : e-mail non validé';
+comment on view q_members_invited is 'Liste des membres invités en attente de rattachement';
