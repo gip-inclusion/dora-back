@@ -160,12 +160,7 @@ class Command(BaseCommand):
                             data["parent_siret"],
                         )
                         self.stdout.write(f"{structure.get_frontend_url()}")
-                        if not structure.has_admin():
-                            self.invite_users(structure, data["admins"])
-                        else:
-                            self.stdout.write(
-                                "Cette structure a déjà un administrateur"
-                            )
+                        self.invite_users(structure, data["admins"])
                         self.add_labels(structure, data["labels"])
                         self.create_services(structure, data["models"])
                 else:
