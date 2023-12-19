@@ -121,14 +121,14 @@ class StructuresImportTestCase(APITestCase):
         self.assertTrue(User.objects.filter(email="bar@buzz.com").exists())
         self.assertEqual(len(mail.outbox), 2)
 
-    def test_can_invite_more_than_one_admin(self):
+    def test_can_invite_even_if_theres_already_an_admin(self):
         structure = make_structure()
         user = make_user()
         baker.make(StructureMember, user=user, structure=structure, is_admin=True)
         self.add_row([structure.name, structure.siret, "", "foo@buzz.com", "", ""])
         out, err = self.call_command()
         self.assertTrue(
-            StructureMember.objects.filter(
+            StructurePutativeMember.objects.filter(
                 user__email="foo@buzz.com", structure=structure
             ).exists()
         )
