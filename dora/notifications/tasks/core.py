@@ -1,5 +1,7 @@
 import abc
 
+from django.db import models
+
 from dora.notifications.enums import NotificationStatus, TaskType
 from dora.notifications.models import Notification
 
@@ -49,40 +51,20 @@ class Task(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def process(
-        cls, notification: Notification, strict=True, dry_run=False
-    ) -> tuple[int, int]:
+    def process(cls, notification: Notification):
         # précise quelle est l'action à effectuer pour un type de notification donné
-        #  - `strict`: lève une exception à la première erreur de traitement (par défaut)
-        #  - `dry_run`: un tour pour pour rien
-        # retourne le nombre de notifications correctement traitées, en erreur et obsolètes
         pass
 
-    def __init__(self, limit=None, *args, **kwargs):
-        # mise en cache
-        self._candidates = self.candidates()
-
+    def __init__(self, *args, limit=None, **kwargs):
         # le type de l'objet à récupérer est déduit du nom de la FK
-        model_key = f"owner_{self._candidates.model.__name__}_id".lower()
+        model_key = f"owner_{self.candidates().model.__name__}_id".lower()
 
         if model_key not in Notification.__dict__:
             raise TaskError(
                 f"Le champ '{model_key}' n'existe pas dans le modèle de notification"
             )
 
-        # liste des objets déjà rattachés à une notification
-        already_created_pks = (
-            Notification.objects.pending()
-            .filter(task_type=self.task_type())
-            .values_list(model_key, flat=True)
-        )
-        already_created = self._candidates.filter(pk__in=already_created_pks)
-
-        # liste des objets plus concernés par une notification
-        self._obsolete = already_created.difference(self._candidates)
-
-        # liste des objets pour lesquels une notification doit être créée
-        self._to_create = self._candidates.difference(already_created)
+        self._model_key = model_key
 
     def _check(self, notification: Notification) -> Notification:
         # permet, au besoin, de vérifier l'état de la notification avant traitement
@@ -103,11 +85,11 @@ class Task(abc.ABC):
 
         return notification
 
-    def _new_notification(cls, owner) -> Notification:
+    def _new_notification(cls, owner, **kwargs) -> Notification:
         if not owner:
             raise TaskError("Pas de propriétaire défini")
 
-        n = Notification(task_type=cls.task_type())
+        n = Notification(task_type=cls.task_type(), **kwargs)
         owner_field = f"owner_{type(owner).__name__}".lower()
 
         if not hasattr(n, owner_field):
@@ -119,33 +101,74 @@ class Task(abc.ABC):
 
         return n
 
+    def _create_run_querysets(self) -> tuple[models.QuerySet, models.QuerySet]:
+        # création des querysets nécessaires à l'execution
+        # le plus tard possible pour éviter des modifications entre
+        # la création de la tâche et l'exécution proprement dites
+        current_candidates = self.candidates()
+
+        # liste des objets déjà rattachés à une notification active :
+        notifications_already_created = Notification.objects.filter(
+            task_type=self.task_type()
+        )
+        objects_with_notification = models.QuerySet(
+            model=current_candidates.model
+        ).filter(
+            pk__in=notifications_already_created.values_list(self._model_key, flat=True)
+        )
+
+        # liste des objets non concernés par une notification :
+        obsolete_objects = objects_with_notification.difference(
+            current_candidates
+        ).values_list("pk", flat=True)
+        # le queryset est filtré dynamiquement sur le type de modèles des objets candidats
+        diff = {self._model_key + "__in": obsolete_objects}
+        obsolete_notifications = notifications_already_created.filter(**diff)
+
+        # notifications à créer pour les nouveaux candidats :
+        new_candidates = [
+            self._new_notification(obj)
+            for obj in current_candidates.difference(objects_with_notification)
+        ]
+
+        # - les notifications devant être créées
+        # - les notifications actuellement obsolètes (à clore)
+        return new_candidates, obsolete_notifications
+
     def run(
         self, *, strict=True, dry_run=False, limit=None, **kwargs
     ) -> tuple[int, int, int]:
+        # - `strict`: lève une exception à la première erreur de traitement (par défaut)
+        # - `dry_run`: un tour pour pour rien
+        # - `limit` : nombre de notifications à traiter (toutes par défaut)
+        # retourne le nombre de notifications correctement traitées, en erreur et obsolètes
         if limit is not None:
             if not isinstance(limit, int):
                 raise TaskError("'limit' doit être entier")
 
-        if not dry_run:
-            # traitement des notifications obsolètes
-            if self._obsolete:
-                self._obsolete.update(status=NotificationStatus.COMPLETE)
+        # récupération des différentes données à traiter :
+        new_candidates, obsolete_notifications = self._create_run_querysets()
+        errors = ok = nb_obsolete = 0
 
-            # création des nouvelles notifications
-            if self._to_create:
-                Notification.objects.bulk_create(
-                    [self._new_notification(obj) for obj in self._to_create]
+        if not dry_run:
+            # clôture des notifications obsolètes
+            if obsolete_notifications:
+                nb_obsolete = obsolete_notifications.update(
+                    status=NotificationStatus.COMPLETE
                 )
 
-        # traitement des notification actives et en attente
-        errors = ok = 0
+            # création des nouvelles notifications
+            if new_candidates:
+                Notification.objects.bulk_create(new_candidates)
 
-        # ordonnées par date de maj en cas d'utilisation de la limite
+        # traitement des notifications actives et en attente :
         notifications = (
             Notification.objects.pending()
             .filter(task_type=self.task_type())
             .order_by("updated_at")
         )
+
+        # notifications ordonnées par date de maj en cas d'utilisation de la limite
         notifications = notifications[:limit] if limit else notifications
 
         for n in notifications:
@@ -155,16 +178,20 @@ class Task(abc.ABC):
                         self.process(self._check(n))
                 except Exception as ex:
                     if strict:
+                        # mode strict (par défaut) : on sort à la première exception
                         raise TaskError(
-                            f"Erreur d'exécution de l'action pour :{n}"
+                            f"Erreur d'exécution de l'action pour : {n}"
                         ) from ex
                     errors += 1
                 else:
-                    n.trigger()
+                    if not dry_run:
+                        # si tout s'est bien passé, on marque la notification comme ayant
+                        # été activée (incrément du compteur)
+                        n.trigger()
                     ok += 1
 
-        # traitées correctement, en erreur, obsolètes / ancien objet candidat sorti du scope
-        return ok, errors, len(self._obsolete)
+        # (traitées correctement, en erreur, obsolètes / objet candidat sorti du scope)
+        return ok, errors, nb_obsolete
 
     @classmethod
     def register(cls, class_):
