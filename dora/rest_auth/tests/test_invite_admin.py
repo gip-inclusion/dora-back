@@ -21,7 +21,7 @@ def test_manager_can_invite(api_client):
     user = make_user(is_staff=False, is_manager=True, department=31)
     api_client.force_authenticate(user=user)
     response = api_client.post(
-        "/auth/invite-admin/",
+        "/auth/invite-first-admin/",
         {"siret": TEST_SIRET, "invitee_email": "foo@bar.com"},
     )
     assert response.status_code == 201
@@ -46,10 +46,9 @@ def test_can_invite_to_existing_structure(api_client):
     user = make_user(is_staff=False, is_manager=True, department=31)
     api_client.force_authenticate(user=user)
     response = api_client.post(
-        "/auth/invite-admin/",
+        "/auth/invite-first-admin/",
         {"siret": TEST_SIRET, "invitee_email": "foo@bar.com"},
     )
-    print(response.content)
     assert response.status_code == 201
     assert len(mail.outbox) == 1
 
@@ -57,7 +56,7 @@ def test_can_invite_to_existing_structure(api_client):
 def test_anonymous_cant_invite(api_client):
     api_client.force_authenticate(user=None)
     response = api_client.post(
-        "/auth/invite-admin/",
+        "/auth/invite-first-admin/",
         {"siret": TEST_SIRET, "invitee_email": "foo@bar.com"},
     )
     assert response.status_code == 401
@@ -68,7 +67,7 @@ def test_normal_user_cant_invite(api_client):
     user = make_user(is_staff=False, is_manager=False)
     api_client.force_authenticate(user=user)
     response = api_client.post(
-        "/auth/invite-admin/",
+        "/auth/invite-first-admin/",
         {"siret": TEST_SIRET, "invitee_email": "foo@bar.com"},
     )
     assert response.status_code == 403
@@ -83,7 +82,7 @@ def test_admin_cant_invite(api_client):
 
     api_client.force_authenticate(user=user)
     response = api_client.post(
-        "/auth/invite-admin/",
+        "/auth/invite-first-admin/",
         {"siret": TEST_SIRET, "invitee_email": "foo@bar.com"},
     )
     assert response.status_code == 403
@@ -94,7 +93,7 @@ def test_superuser_can_invite(api_client):
     user = make_user(is_staff=True)
     api_client.force_authenticate(user=user)
     response = api_client.post(
-        "/auth/invite-admin/",
+        "/auth/invite-first-admin/",
         {"siret": TEST_SIRET, "invitee_email": "foo@bar.com"},
     )
     assert response.status_code == 201
@@ -105,7 +104,7 @@ def test_siret_is_mandatory(api_client):
     user = make_user(is_staff=False, is_manager=True, department=31)
     api_client.force_authenticate(user=user)
     response = api_client.post(
-        "/auth/invite-admin/",
+        "/auth/invite-first-admin/",
         {"invitee_email": "foo@bar.com"},
     )
     assert response.status_code == 400
@@ -116,7 +115,7 @@ def test_invitee_email_is_mandatory(api_client):
     user = make_user(is_staff=False, is_manager=True, department=31)
     api_client.force_authenticate(user=user)
     response = api_client.post(
-        "/auth/invite-admin/",
+        "/auth/invite-first-admin/",
         {"siret": TEST_SIRET},
     )
     assert response.status_code == 400
@@ -129,7 +128,7 @@ def test_cant_invite_non_pe_agents_to_pe_structure(api_client):
     baker.make("Establishment", siret=siret_pe)
     api_client.force_authenticate(user=user)
     response = api_client.post(
-        "/auth/invite-admin/",
+        "/auth/invite-first-admin/",
         {"siret": siret_pe, "invitee_email": "foo@bar.com"},
     )
     assert response.status_code == 403
@@ -142,7 +141,7 @@ def test_can_invite_pe_agents_to_pe_structure(api_client):
     baker.make("Establishment", siret=siret_pe)
     api_client.force_authenticate(user=user)
     response = api_client.post(
-        "/auth/invite-admin/",
+        "/auth/invite-first-admin/",
         {"siret": siret_pe, "invitee_email": "foo@pole-emploi.fr"},
     )
     assert response.status_code == 201
@@ -155,12 +154,10 @@ def test_cant_invite_other_admins(api_client):
     user = make_user(is_staff=False, is_manager=True, department=31)
     api_client.force_authenticate(user=user)
     response = api_client.post(
-        "/auth/invite-admin/",
+        "/auth/invite-first-admin/",
         {"siret": TEST_SIRET, "invitee_email": "foo@bar.com"},
     )
     assert response.status_code == 400
-    print(response.data)
-    print(response.content)
     assert "Cette structure a déjà un administrateur" in response.content.decode()
     assert len(mail.outbox) == 0
 
@@ -173,7 +170,7 @@ def test_cant_reinvite_already_existing_admin(api_client):
     user = make_user(is_staff=False, is_manager=True, department=31)
     api_client.force_authenticate(user=user)
     response = api_client.post(
-        "/auth/invite-admin/",
+        "/auth/invite-first-admin/",
         {"siret": TEST_SIRET, "invitee_email": admin.email},
     )
     assert response.status_code == 400
@@ -200,7 +197,7 @@ def test_promote_already_invited_user(api_client):
     user = make_user(is_staff=False, is_manager=True, department=31)
     api_client.force_authenticate(user=user)
     response = api_client.post(
-        "/auth/invite-admin/",
+        "/auth/invite-first-admin/",
         {"siret": TEST_SIRET, "invitee_email": existing_user.email},
     )
     assert response.status_code == 201
@@ -222,10 +219,9 @@ def test_promote_already_existing_member(api_client):
     user = make_user(is_staff=False, is_manager=True, department=31)
     api_client.force_authenticate(user=user)
     response = api_client.post(
-        "/auth/invite-admin/",
+        "/auth/invite-first-admin/",
         {"siret": TEST_SIRET, "invitee_email": existing_user.email},
     )
-    print(response.content)
     assert response.status_code == 201
     assert (
         StructureMember.objects.get(structure=structure, user=existing_user).is_admin
@@ -252,7 +248,7 @@ def test_accept_and_promote_waiting_member(api_client):
     user = make_user(is_staff=False, is_manager=True, department=31)
     api_client.force_authenticate(user=user)
     response = api_client.post(
-        "/auth/invite-admin/",
+        "/auth/invite-first-admin/",
         {"siret": TEST_SIRET, "invitee_email": existing_user.email},
     )
     assert response.status_code == 201

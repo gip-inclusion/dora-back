@@ -194,7 +194,7 @@ def join_structure(request):
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 @transaction.atomic
-def invite_admin(request):
+def invite_first_admin(request):
     inviter = request.user
     if not (inviter.is_staff or (inviter.is_manager and inviter.department)):
         raise exceptions.PermissionDenied
@@ -222,13 +222,11 @@ def invite_admin(request):
             "Seuls les agents Pôle emploi peuvent se rattacher à une agence Pôle emploi"
         )
 
-    if establishment:
-        structure = _create_structure(
-            establishment, inviter, "Structure créée lors d'une invitation"
-        )
+    structure = _create_structure(
+        establishment, inviter, "Structure créée lors d'une invitation"
+    )
 
-    structure_has_admin = structure.has_admin()
-    if structure_has_admin:
+    if structure.has_admin():
         raise ValidationError("Cette structure a déjà un administrateur")
     else:
         try:
