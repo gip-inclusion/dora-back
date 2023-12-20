@@ -39,9 +39,18 @@ class OrphanStructuresTask(Task):
     @classmethod
     def process(cls, notification: Notification):
         # remplacer par l'implémentation (envoi de mail dans ce cas)
-        print(
-            f"Envoi de l'email pour : {notification.owner_structure.email} ({notification.owner_structure})"
-        )
+
+        try:
+            print(
+                f"Envoi de l'email ({1 + notification.counter}) pour : {notification.owner_structure.email} ({notification.owner_structure})"
+            )
+        except Exception:
+            # traitement approprié à définir ...
+            pass
+        else:
+            if notification.counter == 3:
+                # cloturée au bout de 4 envois
+                notification.complete()
 
 
 Task.register(OrphanStructuresTask)
