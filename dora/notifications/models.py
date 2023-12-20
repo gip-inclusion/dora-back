@@ -60,7 +60,7 @@ class Notification(models.Model):
     objects = NotificationQueryset.as_manager()
 
     def __str__(self):
-        return f"[{self.__class__}] ID:{self.pk}, STATUS:{self.status}"
+        return f"ID:{self.pk}, TASK_TYPE:{self.task_type}, STATUS:{self.status}"
 
     class Meta:
         # ajouter des contraintes pour chaque type de propriètaire possible
@@ -81,13 +81,16 @@ class Notification(models.Model):
         unique_together = [("task_type", "owner_structure_id")]
 
     def clean(self):
+        # essentiellement pour vérification de la présence des FK,
+        # mais peut être agrementé
         match self.task_type:
             case TaskType.ORPHAN_STRUCTURES:
                 if not self.owner_structure_id:
                     raise ValidationError("Aucune structure attachée")
                 ...
-            case _:
-                raise ValidationError("Type de notification inconnu")
+
+        if self.task_type not in TaskType.values:
+            raise ValidationError("Type de notification inconnu")
 
     def trigger(self):
         self.full_clean()
@@ -96,6 +99,9 @@ class Notification(models.Model):
         self.save()
 
     def complete(self):
+        if self.status in (NotificationStatus.COMPLETE, NotificationStatus.EXPIRED):
+            return
+
         self.full_clean()
         self.updated_at = timezone.now()
         self.status = NotificationStatus.COMPLETE
