@@ -102,6 +102,7 @@ INSTALLED_APPS = [
     "dora.support",
     "dora.admin_express",
     "dora.stats",
+    "dora.notifications",
 ]
 
 MIDDLEWARE = [
@@ -130,7 +131,9 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "dora.core.context_processors.environment",
+            ],
+            "builtins": [
+                "dora.core.templatetags.globals",
             ],
         },
     },
@@ -307,6 +310,7 @@ EMAIL_DOMAIN = os.environ["EMAIL_DOMAIN"]
 FRONTEND_URL = os.environ["FRONTEND_URL"]
 SUPPORT_EMAIL = os.environ["SUPPORT_EMAIL"]
 
+SUPPORT_LINK = "https://aide.dora.inclusion.beta.gouv.fr"
 ORIENTATION_SUPPORT_LINK = os.environ["ORIENTATION_SUPPORT_LINK"]
 ORIENTATION_EMAILS_DEBUG = os.environ.get("ORIENTATION_EMAILS_DEBUG") == "true"
 ORIENTATION_SIRENE_BLACKLIST = [

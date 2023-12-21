@@ -1,4 +1,5 @@
-from datetime import date, datetime
+import random
+from datetime import date
 from typing import Optional
 
 import requests
@@ -9,15 +10,16 @@ from django.contrib.gis.measure import D
 from django.db.models import IntegerField, Q, Value
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.utils.timezone import is_naive, make_aware
 
 import dora.services.models as models
 from dora import data_inclusion
-from dora.admin_express.models import AdminDivisionType, City
+from dora.admin_express.models import City
 from dora.admin_express.utils import arrdt_to_main_insee_code
 
 from .serializers import SearchResultSerializer
 from .utils import filter_services_by_city_code
+
+MAX_DISTANCE = 100
 
 
 def _filter_and_annotate_dora_services(services, location):
@@ -25,49 +27,55 @@ def _filter_and_annotate_dora_services(services, location):
     services_on_site = (
         services.filter(location_kinds__value="en-presentiel")
         .annotate(distance=Distance("geom", location))
-        .filter(distance__lte=D(km=100))
+        .filter(distance__lte=D(km=MAX_DISTANCE))
     )
     # 2) services sans lieu de déroulement
-    services_remote = services.exclude(location_kinds__value="en-presentiel").annotate(
-        distance=Value(None, output_field=IntegerField())
+    services_remote = (
+        services.filter(
+            Q(location_kinds__value="a-distance")
+            | ~Q(location_kinds__value="en-presentiel")
+        )
+        .exclude(id__in=services_on_site)
+        .distinct()
+        .annotate(distance=Value(None, output_field=IntegerField()))
     )
     return list(services_on_site) + list(services_remote)
 
 
-def multisort(lst, specs):
-    # https://docs.python.org/3/howto/sorting.html#sort-stability-and-complex-sorts
-    for key, reverse in reversed(specs):
-        lst.sort(key=itemgetter(key), reverse=reverse)
-    return lst
-
-
 def _sort_services(services):
-    diffusion_zone_priority = {
-        AdminDivisionType.CITY: 1,
-        AdminDivisionType.EPCI: 2,
-        AdminDivisionType.DEPARTMENT: 3,
-        AdminDivisionType.REGION: 4,
-    }
-    for service in services:
-        service["zone_priority"] = diffusion_zone_priority.get(
-            service["diffusion_zone_type"], 5
-        )
-        mod_date = datetime.fromisoformat(service["modification_date"])
+    on_site_services = []
+    remote_services = []
 
-        service["sortable_date"] = (
-            make_aware(mod_date) if is_naive(mod_date) else mod_date
-        )
-    services_on_site = [s for s in services if "en-presentiel" in s["location_kinds"]]
-    services_remote = [
-        s for s in services if "en-presentiel" not in s["location_kinds"]
-    ]
+    for s in services:
+        if (
+            "en-presentiel" in s["location_kinds"]
+            and s["distance"] is not None
+            and s["distance"] <= MAX_DISTANCE
+        ):
+            on_site_services.append(s)
+        elif "a-distance" in s["location_kinds"] or s["location_kinds"] == []:
+            remote_services.append(s)
+    random.seed(date.today().isoformat())
+    random.shuffle(on_site_services)
+    on_site_services = sorted(on_site_services, key=itemgetter("distance"))
+    on_site_services = iter(on_site_services)
 
-    results = multisort(
-        services_on_site,
-        (("distance", False), ("zone_priority", False), ("sortable_date", True)),
-    ) + multisort(services_remote, (("zone_priority", False), ("sortable_date", True)))
-    for result in results:
-        del result["sortable_date"]
+    random.shuffle(remote_services)
+    remote_services = iter(remote_services)
+
+    results = []
+    no_more_on_site = False
+    no_more_remote = False
+    while not no_more_on_site or not no_more_remote:
+        try:
+            results.append(next(on_site_services))
+            results.append(next(on_site_services))
+        except StopIteration:
+            no_more_on_site = True
+        try:
+            results.append(next(remote_services))
+        except StopIteration:
+            no_more_remote = True
     return results
 
 
