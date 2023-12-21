@@ -157,6 +157,9 @@ class StructureManager(models.Manager):
         structure.save()
         return structure
 
+    def orphans(self):
+        return self.filter(membership=None, putative_membership=None)
+
 
 class Structure(ModerationMixin, models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
