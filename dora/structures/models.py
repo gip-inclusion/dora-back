@@ -158,7 +158,7 @@ class StructureManager(models.Manager):
         return structure
 
     def orphans(self):
-        return self.filter(membership=None, putative_membership=None).exclude(email="")
+        return self.filter(membership=None, putative_membership=None)
 
 
 class Structure(ModerationMixin, models.Model):
