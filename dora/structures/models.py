@@ -157,6 +157,9 @@ class StructureManager(models.Manager):
         structure.save()
         return structure
 
+    def orphans(self):
+        return self.filter(membership=None, putative_membership=None)
+
 
 class Structure(ModerationMixin, models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -336,9 +339,12 @@ class Structure(ModerationMixin, models.Model):
         )
 
     def has_admin(self):
+        return bool(self.num_admins())
+
+    def num_admins(self):
         return self.membership.filter(
             is_admin=True, user__is_valid=True, user__is_active=True
-        ).exists()
+        ).count()
 
     def is_pending_member(self, user):
         return StructurePutativeMember.objects.filter(

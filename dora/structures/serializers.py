@@ -34,6 +34,7 @@ class StructureSerializer(serializers.ModelSerializer):
     branches = serializers.SerializerMethodField()
 
     has_admin = serializers.SerializerMethodField()
+    num_admins = serializers.SerializerMethodField()
 
     num_services = serializers.SerializerMethodField()
     services = serializers.SerializerMethodField()
@@ -85,6 +86,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "modification_date",
             "name",
             "national_labels",
+            "num_admins",
             "num_models",
             "num_services",
             "opening_hours",
@@ -107,8 +109,12 @@ class StructureSerializer(serializers.ModelSerializer):
         lookup_field = "slug"
         read_only_fields = ["has_been_edited", "city", "department"]
 
+    # TODO: utiliser !!numAdmins coté front pour se débarasser de cette methode
     def get_has_admin(self, obj):
         return obj.has_admin()
+
+    def get_num_admins(self, obj):
+        return obj.num_admins()
 
     def get_can_edit_informations(self, obj: Structure):
         user = self.context.get("request").user
@@ -382,13 +388,6 @@ class StructureListSerializer(StructureSerializer):
             "typology_display",
         ]
         lookup_field = "slug"
-
-
-class SiretClaimedSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Structure
-        fields = ["siret", "slug"]
-        lookup_field = "siret"
 
 
 class UserSerializer(serializers.ModelSerializer):

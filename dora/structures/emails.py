@@ -7,7 +7,7 @@ from mjml import mjml2html
 from dora.core.emails import send_mail
 
 
-def send_invitation_email(member, host_fullname):
+def send_invitation_email(member, inviter_name):
     structure = member.structure
     invitation_link = furl(settings.FRONTEND_URL).add(
         path="/auth/invitation",
@@ -19,7 +19,7 @@ def send_invitation_email(member, host_fullname):
     params = {
         "recipient_email": member.user.email,
         "recipient_name": member.user.get_short_name(),
-        "host_name": host_fullname,
+        "inviter_name": inviter_name,
         "structure": structure,
         "cta_link": invitation_link,
         "with_legal_info": True,
