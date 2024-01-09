@@ -12,7 +12,6 @@ def test_send_orphan_structure_notification():
 
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == [structure.email]
-    assert mail.outbox[0].to == [structure.email]
     assert (
         mail.outbox[0].subject
         == f"Votre structure n’a pas encore de membre actif sur DORA ({structure.name})"
