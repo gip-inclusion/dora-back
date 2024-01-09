@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pytest
+from django.core import mail
 from django.utils import timezone
 from freezegun import freeze_time
 
@@ -75,6 +76,14 @@ def test_orphan_structure_test_should_trigger(orphan_structure_task):
 
 
 def test_process_orphan_structures(orphan_structure_task):
-    # le test d'envoi de mail est dans une autre branche pour l'instant
-    # sera cherry-pick ou intégré après validation des notifications
-    assert False, "Non implémenté"
+    structure = make_structure(email="jessie@pixar.com")
+
+    ok, _, _ = orphan_structure_task.run()
+
+    assert ok == 1
+
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == [structure.email]
+
+    # des tests plus complets concernant la structure et le contenu de l'email
+    # sont effectués dans le module `dora.structures.tests.test_emails`

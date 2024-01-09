@@ -22,7 +22,7 @@ def make_user(structure=None, is_valid=True, is_admin=False, **kwargs):
     return user
 
 
-def make_structure(user=None, **kwargs):
+def make_structure(user=None, putative_member=None, **kwargs):
     siret = kwargs.pop("siret", None)
     if not siret:
         siret = get_random_string(14, "0123456789")
@@ -43,6 +43,13 @@ def make_structure(user=None, **kwargs):
     )
     if user:
         structure.members.add(user)
+
+    if putative_member:
+        structure.putative_membership.add(
+            baker.make(
+                "StructurePutativeMember", user=putative_member, structure=structure
+            )
+        )
 
     return structure
 
