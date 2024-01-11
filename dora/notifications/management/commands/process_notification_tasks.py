@@ -1,3 +1,5 @@
+import time
+
 from django.core.management.base import BaseCommand
 
 from dora.notifications.tasks.core import Task
@@ -36,22 +38,30 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("PRODUCTION RUN"))
         else:
             self.stdout.write(self.style.NOTICE("DRY-RUN"))
+            self.stdout.write("Les notifications ne sont pas créées dans ce mode")
 
         if not Task.registered_tasks():
             self.stdout.write(" > aucune tâche enregistrée!")
             return
 
+        total_timer = 0
+
         for task_class in Task.registered_tasks():
             self.stdout.write(self.style.NOTICE(f"> {task_class.__name__} :"))
 
+            timer = time.time()
             ok, errors, obsolete = task_class().run(
                 strict=True, dry_run=not wet_run, limit=limit
             )
+            timer = time.time() - timer
 
             if ok:
                 self.stdout.write(
-                    self.style.SUCCESS(f" > {ok} notification(s) traitée(s)")
+                    self.style.SUCCESS(
+                        f" > {ok} notification(s) traitée(s) en {timer:.2f}s"
+                    )
                 )
+                total_timer += timer
             else:
                 self.stdout.write(" > aucune notification traitée")
 
@@ -71,4 +81,4 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(" > aucune notification obsolète")
 
-        self.stdout.write(self.style.NOTICE("Terminé!"))
+        self.stdout.write(self.style.NOTICE(f"Terminé en {total_timer:.2f}s !"))
