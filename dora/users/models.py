@@ -17,6 +17,8 @@ MAIN_ACTIVITY_CHOICES = [
     ("autre", "Autre"),
 ]
 
+IC_PRODUCTION_DATE = timezone.make_aware(timezone.datetime(2022, 10, 3))
+
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -43,6 +45,26 @@ class UserManager(BaseUserManager):
 
     def get_dora_bot(self):
         return self.get(email=settings.DORA_BOT_USER)
+
+    def orphans(self):
+        # utilisateurs sans structure et sans invitation
+        return self.filter(putative_membership=None, membership=None, is_staff=False)
+
+    def to_delete(self):
+        return self.filter(putative_membership=None).filter(
+            # non validés avant IC
+            models.Q(is_valid=False, date_joined__lt=IC_PRODUCTION_DATE)
+            # non validés et sans identifiant IC
+            | models.Q(is_valid=False, ic_id=None)
+        )
+
+    def members_invited(self):
+        # invités par un admin de structure, en attente
+        return (
+            self.exclude(putative_membership=None)
+            .filter(putative_membership__invited_by_admin=True)
+            .prefetch_related("putative_membership")
+        )
 
 
 class User(AbstractBaseUser):

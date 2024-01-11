@@ -144,8 +144,14 @@ def send_orphan_structure_notification(structure):
 def send_admin_invited_users_20_notification(structure, user):
     # utilisateurs invités en attente :
     # notification envoyée aux admins de la structure - 20j
-    context = {}
     for admin in structure.admins:
+        context = {
+            "structure": structure,
+            "user": user,
+            "admin": admin,
+            "contact_link": "https://aide.dora.inclusion.beta.gouv.fr/",
+            "help_link": "https://aide.dora.inclusion.beta.gouv.fr/fr/article/gerer-le-compte-de-ses-collaborateurs-en-tant-quadministrateur-xkonvm/",
+        }
         send_mail(
             "Invitation non acceptée : Action requise",
             admin.email,
@@ -158,12 +164,16 @@ def send_admin_invited_users_20_notification(structure, user):
 def send_admin_invited_users_90_notification(structure, user):
     # utilisateurs invités en attente :
     # notification envoyée aux admins de la structure - 90j
-    context = {}
     for admin in structure.admins:
+        context = {
+            "structure": structure,
+            "user": user,
+            "admin": admin,
+        }
         send_mail(
             "Action requise : une de vos invitations sera bientôt désactivée",
             admin.email,
             mjml2html(
-                render_to_string("notification-invitation-stalled-20.mjml", context)
+                render_to_string("notification-invitation-stalled-90.mjml", context)
             ),
         )
