@@ -159,11 +159,11 @@ class StructureAdmin(admin.ModelAdmin):
     list_filter = [
         IsBranchListFilter,
         "moderation_status",
+        "creation_date",
+        "modification_date",
         "source",
         "typology",
         "department",
-        "creation_date",
-        "modification_date",
     ]
     search_fields = (
         "name",

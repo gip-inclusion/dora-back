@@ -138,7 +138,9 @@ class StructureTypology(EnumModel):
 
 
 class StructureManager(models.Manager):
-    def create_from_establishment(self, establishment, name="", parent=None):
+    def create_from_establishment(
+        self, establishment, name="", parent=None, structure_id=None
+    ):
         data = EstablishmentSerializer(establishment).data
         structure = self.model(
             siret=data["siret"],
@@ -154,6 +156,8 @@ class StructureManager(models.Manager):
             latitude=data["latitude"],
             modification_date=timezone.now(),
         )
+        if structure_id:
+            structure.id = structure_id
         structure.save()
         return structure
 

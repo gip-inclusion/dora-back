@@ -18,6 +18,7 @@ from .models import (
     ServiceKind,
     ServiceModel,
     ServiceModificationHistoryItem,
+    ServiceSource,
     ServiceStatusHistoryItem,
     ServiceSubCategory,
 )
@@ -86,6 +87,7 @@ class ServiceAdmin(admin.GISModelAdmin):
     ]
     list_filter = [
         "status",
+        "creation_date",
         "moderation_status",
         "source",
         "use_inclusion_numerique_scheme",
@@ -205,3 +207,4 @@ admin.site.register(LocationKind, EnumAdmin)
 admin.site.register(ServiceCategory, EnumAdmin)
 admin.site.register(ServiceKind, EnumAdmin)
 admin.site.register(ServiceSubCategory, EnumAdmin)
+admin.site.register(ServiceSource, EnumAdmin)
