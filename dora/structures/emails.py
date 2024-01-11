@@ -139,3 +139,31 @@ def send_orphan_structure_notification(structure):
         mjml2html(render_to_string("notification-orphan-structure.mjml", context)),
         tags=["orphan-structure"],
     )
+
+
+def send_admin_invited_users_20_notification(structure, user):
+    # utilisateurs invités en attente :
+    # notification envoyée aux admins de la structure - 20j
+    context = {}
+    for admin in structure.admins:
+        send_mail(
+            "Invitation non acceptée : Action requise",
+            admin.email,
+            mjml2html(
+                render_to_string("notification-invitation-stalled-20.mjml", context)
+            ),
+        )
+
+
+def send_admin_invited_users_90_notification(structure, user):
+    # utilisateurs invités en attente :
+    # notification envoyée aux admins de la structure - 90j
+    context = {}
+    for admin in structure.admins:
+        send_mail(
+            "Action requise : une de vos invitations sera bientôt désactivée",
+            admin.email,
+            mjml2html(
+                render_to_string("notification-invitation-stalled-20.mjml", context)
+            ),
+        )
