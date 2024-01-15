@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Synchronisation des schémas Metabase :
+# Synchronisation des schémas et champs Metabase :
 #
 # nécessite la présence des variables d'environnement suivantes:
 # - METABASE_API_URL          : endpoint de l'API (normallement URL de base + '/api' )
@@ -11,7 +11,7 @@
 #                               l'ID est affiché dans l'URL
 
 
-echo "Synchronisation des schémas Metabase"
+echo "Synchronisation des schémas et champs Metabase"
 
 if [ -z ${METABASE_API_URL} ]; then
 	echo " > l'URL de l'API Metabase n'est pas défini"
@@ -33,7 +33,11 @@ echo " > connexion à : $METABASE_API_URL"
 # récupération de l'ID de session
 METABASE_SESSION_ID=$(curl -X POST -H "Content-Type: application/json" -d '{"username":"'"$METABASE_SERVICE_EMAIL"'","password":"'"$METABASE_SERVICE_PASSWORD"'"}' $METABASE_API_URL/session | jq -r ."id")
 
+# Schémas :
 curl -X POST -H "X-Metabase-Session: $METABASE_SESSION_ID" $METABASE_API_URL/database/$METABASE_DB_ID/sync_schema
+#
+# Indexation des champs :
+curl -X POST -H "X-Metabase-Session: $METABASE_SESSION_ID" $METABASE_API_URL/database/$METABASE_DB_ID/rescan_values
 
 # par défault le token reste valable 2 semaines, mais autant clôturer la session et le recréer à chaque utilisation
 curl -X DELETE -H "X-Metabase-Session: $METABASE_SESSION_ID"  $METABASE_API_URL/session
