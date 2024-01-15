@@ -1,4 +1,5 @@
 import csv
+import io
 import json
 import re
 import time
@@ -106,11 +107,37 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         structures_file = options["structures_file"]
         services_file = options["services_file"]
+
         try:
             id_to_struct = self.import_structures(structures_file)
-            self.import_services(services_file, id_to_struct)
+            structures_with_new_services = self.import_services(
+                services_file, id_to_struct
+            )
+            self.write_results(structures_with_new_services)
+
         except requests.exceptions.RequestException as e:
             self.stderr.write(self.style.ERROR(e))
+
+    def write_results(self, structures):
+        output = io.StringIO()
+        writer = csv.writer(output, delimiter=",")
+        writer.writerow(["nom", "url", "email", "admins"])
+        for structure in structures:
+            writer.writerow(
+                [
+                    structure.name,
+                    structure.get_frontend_url(),
+                    structure.email,
+                    ",".join(
+                        structure.membership.filter(
+                            user__is_active=True,
+                            user__is_valid=True,
+                            is_admin=True,
+                        ).values_list("user__email", flat=True)
+                    ),
+                ]
+            )
+        self.stdout.write(output.getvalue())
 
     def import_structures(self, filename):
         num_imported = 0
@@ -192,6 +219,7 @@ class Command(BaseCommand):
 
     def import_services(self, filename, id_to_struct):
         num_imported = 0
+        structures_with_new_services = set()
         with open(filename) as services_file:
             reader = csv.DictReader(services_file, delimiter=",")
 
@@ -201,9 +229,11 @@ class Command(BaseCommand):
                     continue
 
                 if self.create_service(structure, row):
+                    structures_with_new_services.add(structure)
                     num_imported += 1
 
         self.stdout.write(self.style.SUCCESS(f"{num_imported} services importés"))
+        return structures_with_new_services
 
     def create_service(self, structure, row):
         if structure.siret and structure.siret.startswith(SIREN_POLE_EMPLOI):
@@ -212,6 +242,11 @@ class Command(BaseCommand):
             return False
 
         tel = row["telephone"].split("\n")[0]
+        suspension_date = (
+            timezone.make_aware(dateparse.parse_datetime(row["date_suspension"]))
+            if row["date_suspension"]
+            else None
+        )
         service = Service.objects.create(
             id=row["id"],
             structure=structure,
@@ -221,11 +256,7 @@ class Command(BaseCommand):
             fee_condition=FEE_NONFREE if row["frais"] == "true" else FEE_FREE,
             fee_details=row["frais_autres"],
             recurrence=clean_field(row["recurrence"], 140, ""),
-            suspension_date=timezone.make_aware(
-                dateparse.parse_datetime(row["date_suspension"])
-            )
-            if row["date_suspension"]
-            else None,
+            suspension_date=suspension_date,
             contact_name=row["contact_nom_prenom"].split("\n")[0] or "",
             contact_phone=utils.normalize_phone_number(tel or ""),
             contact_email=row["courriel"].split("\n")[0] or "",
@@ -268,7 +299,11 @@ class Command(BaseCommand):
         service.beneficiaries_access_modes_other = row[
             "modes_orientation_beneficiaire_autres"
         ][:280]
-        service.status = ServiceStatus.PUBLISHED
+        if suspension_date and suspension_date <= timezone.now():
+            service.status = ServiceStatus.DRAFT
+        else:
+            service.status = ServiceStatus.PUBLISHED
+
         service.publication_date = timezone.now()
 
         concerned_publics = cust_choice_to_objects(
