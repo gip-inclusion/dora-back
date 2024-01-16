@@ -1,0 +1,78 @@
+import time
+import uuid
+
+import jwt
+import pytest
+from django.conf import settings
+from django.core.cache import cache
+from django.db.utils import IntegrityError
+from requests_mock import Mocker
+
+from dora.core.test_utils import make_user
+
+
+@pytest.fixture
+def client_with_cache(client):
+    cache.set(
+        "oidc-state-foo",
+        {
+            "state": "foo",
+            "nonce": "bar",
+            "redirect_uri": "/",
+        },
+    )
+    return client
+
+
+def make_ic_token(**kwargs):
+    token = jwt.encode(
+        payload={
+            "iss": settings.IC_ISSUER_ID,
+            "aud": [settings.IC_CLIENT_ID],
+            "exp": time.time() + 10000,
+            # "sub": str(ic_user.ic_id),
+            # "email": invited_user.email,
+            # "given_name": invited_user.first_name,
+            # "family_name": invited_user.last_name,
+            "nonce": "bar",
+            **kwargs,
+        },
+        key="foo_key",
+    )
+    return token
+
+
+def test_login_ic_user_with_updated_email(client_with_cache, settings, requests_mock):
+    # création d'un utilisateur DORA, par ex. suite à une invitation
+    invited_user = make_user()
+
+    # création un utilisateur déjà connecté à IC
+    ic_user = make_user(ic_id=uuid.uuid4())
+
+    with Mocker() as m:
+        # connexion IC avec un e-mail mis à jour :
+        token = make_ic_token(
+            sub=str(ic_user.ic_id),
+            email=invited_user.email,
+            given_name=invited_user.first_name,
+            family_name=invited_user.last_name,
+        )
+        # on détourne l'URL d'obtention du token IC
+        m.post(settings.IC_TOKEN_URL, json={"id_token": token})
+
+        try:
+            response = client_with_cache.post(
+                "/inclusion-connect-authenticate/",
+                data={
+                    "code": "anycode",
+                    "state": "foo",
+                    "frontend_state": "foo",
+                },
+                follow=True,
+            )
+        except IntegrityError:
+            pytest.fail(
+                "Problème d'intégrité de l'e-mail IC mis à jour toujours présent"
+            )
+
+        assert False, f"Redirect non testé {response}"

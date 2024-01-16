@@ -16,6 +16,7 @@ import dora.structures.views
 import dora.support.views
 import dora.users.views
 from dora import data_inclusion
+from dora.oidc.urls import oidc_patterns
 
 from .url_converters import InseeCodeConverter, SiretConverter
 
@@ -140,27 +141,16 @@ private_api_patterns = [
     path("admin/", admin.site.urls),
     path("ping/", dora.core.views.ping),
     path("sentry-debug/", dora.core.views.trigger_error),
-    path(
-        "inclusion-connect-get-login-info/",
-        dora.core.views.inclusion_connect_get_login_info,
-    ),
-    path(
-        "inclusion-connect-get-logout-info/",
-        dora.core.views.inclusion_connect_get_logout_info,
-    ),
-    path(
-        "inclusion-connect-get-update-info/",
-        dora.core.views.inclusion_connect_get_update_info,
-    ),
-    path(
-        "inclusion-connect-authenticate/",
-        dora.core.views.inclusion_connect_authenticate,
-    ),
     path("", include(router.urls)),
     path("profile/main-activity/", dora.users.views.update_main_activity),
 ]
 
-urlpatterns = [*private_api_patterns, *public_api_patterns, *spectacular_patterns]
+urlpatterns = [
+    *private_api_patterns,
+    *public_api_patterns,
+    *spectacular_patterns,
+    *oidc_patterns,
+]
 
 if settings.PROFILE:
     urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
