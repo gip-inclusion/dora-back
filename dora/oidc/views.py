@@ -16,6 +16,8 @@ from dora.rest_auth.models import Token
 from dora.rest_auth.views import update_last_login
 from dora.users.models import User
 
+from .utils import updated_ic_user
+
 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
@@ -99,9 +101,6 @@ def inclusion_connect_authenticate(request):
     try:
         result = requests.post(
             url=settings.IC_TOKEN_URL,
-            # headers={
-            #     "Content-Type": "application/x-www-form-urlencoded",
-            # },
             data={
                 "client_id": settings.IC_CLIENT_ID,
                 "client_secret": settings.IC_CLIENT_SECRET,
@@ -129,11 +128,10 @@ def inclusion_connect_authenticate(request):
         }
         try:
             # On essaye de récupérer un utilisateur déjà migré
-            user = User.objects.get(ic_id=user_dict["ic_id"])
+            user = updated_ic_user(
+                User.objects.get(ic_id=user_dict["ic_id"]), user_dict["email"]
+            )
             should_save = False
-            if user.email != user_dict["email"]:
-                user.email = user_dict["email"]
-                should_save = True
             if user.first_name != user_dict["first_name"]:
                 user.first_name = user_dict["first_name"]
                 should_save = True

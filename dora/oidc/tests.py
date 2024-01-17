@@ -8,7 +8,10 @@ from django.core.cache import cache
 from django.db.utils import IntegrityError
 from requests_mock import Mocker
 
-from dora.core.test_utils import make_user
+from dora.core.test_utils import make_structure, make_user
+from dora.structures.models import StructurePutativeMember
+
+from .utils import updated_ic_user
 
 
 @pytest.fixture
@@ -30,10 +33,6 @@ def make_ic_token(**kwargs):
             "iss": settings.IC_ISSUER_ID,
             "aud": [settings.IC_CLIENT_ID],
             "exp": time.time() + 10000,
-            # "sub": str(ic_user.ic_id),
-            # "email": invited_user.email,
-            # "given_name": invited_user.first_name,
-            # "family_name": invited_user.last_name,
             "nonce": "bar",
             **kwargs,
         },
@@ -42,10 +41,28 @@ def make_ic_token(**kwargs):
     return token
 
 
+def test_updated_ic_user():
+    invited_user = make_user()
+    invitation = StructurePutativeMember(user=invited_user, structure=make_structure())
+    invitation.save()
+    invited_user.putative_membership.add(invitation)
+
+    ic_user = make_user(ic_id=uuid.uuid4())
+
+    # cas "normal" : aucun changement de l'email de d'utilisateur
+    assert updated_ic_user(ic_user, ic_user.email).email == ic_user.email
+
+    # cas à gérer : changement de l'email de l'utilisateur IC par un email d'utilisateur invité
+    assert updated_ic_user(ic_user, invited_user.email).email == invited_user.email
+
+    # migration des invitations
+    invitation.refresh_from_db()
+    assert invitation.user == ic_user
+
+
 def test_login_ic_user_with_updated_email(client_with_cache, settings, requests_mock):
     # création d'un utilisateur DORA, par ex. suite à une invitation
     invited_user = make_user()
-
     # création un utilisateur déjà connecté à IC
     ic_user = make_user(ic_id=uuid.uuid4())
 
@@ -68,11 +85,11 @@ def test_login_ic_user_with_updated_email(client_with_cache, settings, requests_
                     "state": "foo",
                     "frontend_state": "foo",
                 },
-                follow=True,
             )
+
+            assert 200 == response.status_code
         except IntegrityError:
+            # le cas d'erreur à traiter
             pytest.fail(
                 "Problème d'intégrité de l'e-mail IC mis à jour toujours présent"
             )
-
-        assert False, f"Redirect non testé {response}"
