@@ -95,6 +95,9 @@ class InvitedUsersTask(Task):
 
     @classmethod
     def post_process(cls, notification: Notification):
+        # cette partie est en "post-process", puisque l'on va détruire le propriétaire de la notification
+        # si on effectue cette partie pendant le traitement des tâches,
+        # le traitement va planter puisque la notification n'existe plus (détruite en CASCADE).
         if notification.is_complete:
             user = notification.owner_structureputativemember.user
 
