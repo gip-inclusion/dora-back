@@ -143,7 +143,7 @@ class StructureManager(models.Manager):
     ):
         data = EstablishmentSerializer(establishment).data
         structure = self.model(
-            siret=data["siret"],
+            siret=data["siret"] if not parent else None,
             parent=parent,
             name=name if name else data["name"],
             address1=data["address1"],

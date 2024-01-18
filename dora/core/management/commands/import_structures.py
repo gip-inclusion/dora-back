@@ -21,6 +21,7 @@ from dora.users.models import User
 
 ##############################################################################
 # Script d’import en masse de structure.
+# TODO: est-ce que c'est toujours vrai?
 # Les administrateurs proposés ne seront ajoutés que s’il n’y a pas déjà
 # un administrateur
 #
