@@ -142,8 +142,9 @@ class StructureManager(models.Manager):
         self, establishment, name="", parent=None, structure_id=None
     ):
         data = EstablishmentSerializer(establishment).data
+        siret = data["siret"]
         structure = self.model(
-            siret=data["siret"] if not parent else None,
+            siret=siret if not parent or parent.siret != siret else None,
             parent=parent,
             name=name if name else data["name"],
             address1=data["address1"],
