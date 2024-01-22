@@ -50,10 +50,14 @@ def test_updated_ic_user():
     ic_user = make_user(ic_id=uuid.uuid4())
 
     # cas "normal" : aucun changement de l'email de d'utilisateur
-    assert updated_ic_user(ic_user, ic_user.email).email == ic_user.email
+    user, should_update = updated_ic_user(ic_user, ic_user.email)
+    assert not should_update
+    assert user.email == ic_user.email
 
     # cas à gérer : changement de l'email de l'utilisateur IC par un email d'utilisateur invité
-    assert updated_ic_user(ic_user, invited_user.email).email == invited_user.email
+    user, should_update = updated_ic_user(ic_user, invited_user.email)
+    assert should_update
+    assert user.email == invited_user.email
 
     # migration des invitations
     invitation.refresh_from_db()

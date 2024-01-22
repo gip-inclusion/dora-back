@@ -5,6 +5,7 @@ import jwt
 import requests
 from django.conf import settings
 from django.core.cache import cache
+from django.db import transaction
 from django.utils.crypto import get_random_string
 from furl import furl
 from rest_framework import permissions
@@ -126,38 +127,38 @@ def inclusion_connect_authenticate(request):
             "last_name": decoded_id_token["family_name"],
             "is_valid": True,
         }
-        try:
-            # On essaye de récupérer un utilisateur déjà migré
-            user = updated_ic_user(
-                User.objects.get(ic_id=user_dict["ic_id"]), user_dict["email"]
-            )
-            should_save = False
-            if user.first_name != user_dict["first_name"]:
-                user.first_name = user_dict["first_name"]
-                should_save = True
-            if user.last_name != user_dict["last_name"]:
-                user.last_name = user_dict["last_name"]
-                should_save = True
-            if user.is_valid != user_dict["is_valid"]:
-                user.is_valid = user_dict["is_valid"]
-                should_save = True
-            if should_save:
-                user.save()
-        except User.DoesNotExist:
+        with transaction.atomic():
             try:
-                # On essaye de faire la correspondance avec un utilisateur existant
-                # via son email, puis on le migre
-                user = User.objects.get(email=user_dict["email"])
-                if user.ic_id is not None:
-                    logging.error("Conflit avec Keycloak")
-                    return APIException("Conflit avec le fournisseur d'identité")
-                user.ic_id = user_dict["ic_id"]
-                user.first_name = user_dict["first_name"]
-                user.last_name = user_dict["last_name"]
-                user.is_valid = user_dict["is_valid"]
-                user.save()
+                # On essaye de récupérer un utilisateur déjà migré
+                user, should_save = updated_ic_user(
+                    User.objects.get(ic_id=user_dict["ic_id"]), user_dict["email"]
+                )
+                if user.first_name != user_dict["first_name"]:
+                    user.first_name = user_dict["first_name"]
+                    should_save = True
+                if user.last_name != user_dict["last_name"]:
+                    user.last_name = user_dict["last_name"]
+                    should_save = True
+                if user.is_valid != user_dict["is_valid"]:
+                    user.is_valid = user_dict["is_valid"]
+                    should_save = True
+                if should_save:
+                    user.save()
             except User.DoesNotExist:
-                user = User.objects.create(**user_dict)
+                try:
+                    # On essaye de faire la correspondance avec un utilisateur existant
+                    # via son email, puis on le migre
+                    user = User.objects.get(email=user_dict["email"])
+                    if user.ic_id is not None:
+                        logging.error("Conflit avec Keycloak")
+                        return APIException("Conflit avec le fournisseur d'identité")
+                    user.ic_id = user_dict["ic_id"]
+                    user.first_name = user_dict["first_name"]
+                    user.last_name = user_dict["last_name"]
+                    user.is_valid = user_dict["is_valid"]
+                    user.save()
+                except User.DoesNotExist:
+                    user = User.objects.create(**user_dict)
 
         update_last_login(user)
         token = Token.objects.filter(user=user).first()
