@@ -26,7 +26,6 @@ from dora.structures.permissions import (
 )
 
 from .serializers import (
-    SiretClaimedSerializer,
     StructureListSerializer,
     StructureMemberSerializer,
     StructurePutativeMemberSerializer,
@@ -340,7 +339,7 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
 @permission_classes([permissions.AllowAny])
 def siret_was_claimed(request, siret):
     structure = get_object_or_404(Structure.objects.all(), siret=siret)
-    serializer = SiretClaimedSerializer(structure, context={"request": request})
+    serializer = StructureSerializer(structure, context={"request": request})
     return Response(serializer.data)
 
 

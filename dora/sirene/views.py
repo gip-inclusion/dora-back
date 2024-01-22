@@ -87,15 +87,15 @@ def search_safir(request):
         pe_structure = Structure.objects.get(code_safir_pe=safir)
     except Structure.DoesNotExist:
         raise NotFound
-    try:
-        establishment = Establishment.objects.get(siret=pe_structure.siret)
-        establishment.name = pe_structure.name
-        establishment.address1 = pe_structure.address1
-        establishment.address2 = pe_structure.address2
-        establishment.city = pe_structure.city
-        establishment.postal_code = pe_structure.postal_code
-    except Establishment.DoesNotExist:
-        raise NotFound
     return Response(
-        EstablishmentSerializer(establishment, context={"request": request}).data
+        {
+            "address1": pe_structure.address1,
+            "address2": pe_structure.address2,
+            "city": pe_structure.city,
+            "name": pe_structure.name,
+            "postal_code": pe_structure.postal_code,
+            "siret": pe_structure.siret
+            or (pe_structure.parent.siret if pe_structure.parent else ""),
+            "slug": pe_structure.slug,
+        }
     )

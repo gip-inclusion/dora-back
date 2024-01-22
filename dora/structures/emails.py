@@ -7,7 +7,7 @@ from mjml import mjml2html
 from dora.core.emails import send_mail
 
 
-def send_invitation_email(member, host_fullname):
+def send_invitation_email(member, inviter_name):
     structure = member.structure
     invitation_link = furl(settings.FRONTEND_URL).add(
         path="/auth/invitation",
@@ -19,7 +19,7 @@ def send_invitation_email(member, host_fullname):
     params = {
         "recipient_email": member.user.email,
         "recipient_name": member.user.get_short_name(),
-        "host_name": host_fullname,
+        "inviter_name": inviter_name,
         "structure": structure,
         "cta_link": invitation_link,
         "with_legal_info": True,
@@ -121,4 +121,21 @@ def send_branch_created_notification(structure, branch, admin_user):
         admin_user.email,
         body,
         tags=["branch-created"],
+    )
+
+
+def send_orphan_structure_notification(structure):
+    context = {
+        "recipient_email": structure.email,
+        "structure_name": structure.name,
+        "doc_link": "https://aide.dora.inclusion.beta.gouv.fr/fr/article/decouvrir-et-faire-decouvrir-dora-1nyj6f1/",
+        "webinar_link": "https://app.livestorm.co/dora-1/presentation-dora",
+        "cta_link": f"{settings.FRONTEND_URL}/structures/{structure.slug}?mtm_campaign=MailsTransactionnels&mtm_kwd=InvitationStructuresOrphelines",
+    }
+
+    send_mail(
+        f"Votre structure n’a pas encore de membre actif sur DORA ({structure.name})",
+        structure.email,
+        mjml2html(render_to_string("notification-orphan-structure.mjml", context)),
+        tags=["orphan-structure"],
     )

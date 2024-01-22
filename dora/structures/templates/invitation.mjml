@@ -1,7 +1,7 @@
 {% extends "email-base.mjml" %}
 
 {% block preview %}
-  {{ host_name }} vous a invité(e) à rejoindre la structure {{ structure.name }} sur DORA
+  {{ inviter_name }} vous a invité(e) à rejoindre la structure {{ structure.name }} sur DORA
 {% endblock %}
 
 {% block title %}
@@ -19,7 +19,7 @@
   </p>
 
   <p>
-    {{ host_name }} vous a invité(e) à rejoindre la structure
+    {{ inviter_name }} vous a invité(e) à rejoindre la structure
     <a href="{{ structure.get_frontend_url }}">{{ structure.name }}</a>
     sur la plate-forme <a href="{% frontend_url %}">DORA</a>. Cliquez sur le bouton ci-dessous pour créer votre
     compte et accéder à votre espace :

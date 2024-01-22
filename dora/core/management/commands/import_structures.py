@@ -21,6 +21,7 @@ from dora.users.models import User
 
 ##############################################################################
 # Script d’import en masse de structure.
+# TODO: est-ce que c'est toujours vrai?
 # Les administrateurs proposés ne seront ajoutés que s’il n’y a pas déjà
 # un administrateur
 #
@@ -160,12 +161,7 @@ class Command(BaseCommand):
                             data["parent_siret"],
                         )
                         self.stdout.write(f"{structure.get_frontend_url()}")
-                        if not structure.has_admin():
-                            self.invite_users(structure, data["admins"])
-                        else:
-                            self.stdout.write(
-                                "Cette structure a déjà un administrateur"
-                            )
+                        self.invite_users(structure, data["admins"])
                         self.add_labels(structure, data["labels"])
                         self.create_services(structure, data["models"])
                 else:

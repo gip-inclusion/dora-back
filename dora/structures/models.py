@@ -138,10 +138,12 @@ class StructureTypology(EnumModel):
 
 
 class StructureManager(models.Manager):
-    def create_from_establishment(self, establishment, name="", parent=None):
+    def create_from_establishment(
+        self, establishment, name="", parent=None, structure_id=None
+    ):
         data = EstablishmentSerializer(establishment).data
         structure = self.model(
-            siret=data["siret"],
+            siret=data["siret"] if not parent else None,
             parent=parent,
             name=name if name else data["name"],
             address1=data["address1"],
@@ -154,8 +156,13 @@ class StructureManager(models.Manager):
             latitude=data["latitude"],
             modification_date=timezone.now(),
         )
+        if structure_id:
+            structure.id = structure_id
         structure.save()
         return structure
+
+    def orphans(self):
+        return self.filter(membership=None, putative_membership=None)
 
 
 class Structure(ModerationMixin, models.Model):
@@ -336,9 +343,12 @@ class Structure(ModerationMixin, models.Model):
         )
 
     def has_admin(self):
+        return bool(self.num_admins())
+
+    def num_admins(self):
         return self.membership.filter(
             is_admin=True, user__is_valid=True, user__is_active=True
-        ).exists()
+        ).count()
 
     def is_pending_member(self, user):
         return StructurePutativeMember.objects.filter(

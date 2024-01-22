@@ -9,6 +9,8 @@ create table q_orphan_users as
 select
     mu.id                               as "ID utilisateur",
     mu.email                            as "E-mail",
+    mu.first_name                       as "Nom",
+    mu.last_name                        as "Prénom",
     mu.is_valid                         as "E-mail validé",
     mu.date_joined                      as "Date de création",
     mu.last_login                       as "Dernière connexion",
@@ -26,6 +28,7 @@ where
     not mu.is_staff
     and mu.id not in (select user_id from structures_structuremember)
     and mu.id not in (select user_id from structures_structureputativemember)
+    and mu.id not in (select "ID utilisateur" from q_users_before_ic)
 order by mu.date_joined desc;
 
 -- Indexes et PK
