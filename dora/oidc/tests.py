@@ -11,6 +11,7 @@ from requests_mock import Mocker
 from dora.core.test_utils import make_structure, make_user
 from dora.structures.models import StructurePutativeMember
 
+from . import OIDCError
 from .utils import updated_ic_user
 
 
@@ -62,6 +63,15 @@ def test_updated_ic_user():
     # migration des invitations
     invitation.refresh_from_db()
     assert invitation.user == ic_user
+
+
+def test_updated_user_member_of_structure(client_with_cache, settings):
+    member_user = make_user(structure=make_structure())
+    ic_user = make_user(ic_id=uuid.uuid4())
+
+    # doit retourner une erreur si on essaye de modifier un utilisateur membre d'une structure
+    with pytest.raises(OIDCError):
+        _, _ = updated_ic_user(ic_user, member_user.email)
 
 
 def test_login_ic_user_with_updated_email(client_with_cache, settings, requests_mock):
