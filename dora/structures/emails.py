@@ -128,9 +128,9 @@ def send_orphan_structure_notification(structure):
     context = {
         "recipient_email": structure.email,
         "structure_name": structure.name,
-        "doc_link": "https://aide.dora.inclusion.beta.gouv.fr/fr/article/decouvrir-et-faire-decouvrir-dora-1nyj6f1/",
+        "dora_doc_link": "https://aide.dora.inclusion.beta.gouv.fr/fr/article/decouvrir-et-faire-decouvrir-dora-1nyj6f1/",
         "webinar_link": "https://app.livestorm.co/dora-1/presentation-dora",
-        "cta_link": f"{settings.FRONTEND_URL}/structures/{structure.slug}?mtm_campaign=MailsTransactionnels&mtm_kwd=InvitationStructuresOrphelines",
+        "cta_link": f"{settings.FRONTEND_URL}/auth/rattachement?siret={structure.siret}&mtm_campaign=MailsTransactionnels&mtm_kwd=InvitationStructuresOrphelines",
     }
 
     send_mail(
