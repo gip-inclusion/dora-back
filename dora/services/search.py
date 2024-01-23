@@ -87,6 +87,8 @@ def _get_di_results(
     subcategories: Optional[list[str]] = None,
     kinds: Optional[list[str]] = None,
     fees: Optional[list[str]] = None,
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
 ) -> list:
     """Search data.inclusion services.
 
@@ -127,6 +129,8 @@ def _get_di_results(
             thematiques=thematiques if len(thematiques) > 0 else None,
             types=kinds,
             frais=fees,
+            lat=lat,
+            lon=lon,
         )
     except requests.ConnectionError:
         return []
@@ -262,9 +266,8 @@ def search_services(
             city_code=city_code,
             kinds=kinds,
             fees=fees,
-            # TODO pas encore supporté par l'api di.
-            # lat=lat,
-            # lon=lon
+            lat=lat,
+            lon=lon,
         )
         if di_client is not None
         else []
