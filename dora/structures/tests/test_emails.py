@@ -17,7 +17,7 @@ def test_send_orphan_structure_notification():
         == f"Votre structure n’a pas encore de membre actif sur DORA ({structure.name})"
     )
     assert structure.name in mail.outbox[0].body
-    assert f"/auth/rattachement?siret={structure.siret}" in mail.outbox[0].body
+    assert f"/auth/invitation?structure={structure.slug}" in mail.outbox[0].body
     assert "mtm_campaign=MailsTransactionnels" in mail.outbox[0].body
     assert "mtm_kwd=InvitationStructuresOrphelines" in mail.outbox[0].body
     assert "https://aide.dora.inclusion.beta.gouv.fr" in mail.outbox[0].body
