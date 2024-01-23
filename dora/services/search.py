@@ -6,6 +6,7 @@ import requests
 from _operator import itemgetter
 from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
 from django.db.models import IntegerField, Q, Value
 from django.shortcuts import get_object_or_404
@@ -86,6 +87,8 @@ def _get_di_results(
     subcategories: Optional[list[str]] = None,
     kinds: Optional[list[str]] = None,
     fees: Optional[list[str]] = None,
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
 ) -> list:
     """Search data.inclusion services.
 
@@ -126,6 +129,8 @@ def _get_di_results(
             thematiques=thematiques if len(thematiques) > 0 else None,
             types=kinds,
             frais=fees,
+            lat=lat,
+            lon=lon,
         )
     except requests.ConnectionError:
         return []
@@ -170,6 +175,8 @@ def _get_dora_results(
     subcategories: Optional[list[str]] = None,
     kinds: Optional[list[str]] = None,
     fees: Optional[list[str]] = None,
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
 ):
     services = (
         models.Service.objects.published()
@@ -221,9 +228,10 @@ def _get_dora_results(
         Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
     ).distinct()
 
+    print(lon, lat)
     results = _filter_and_annotate_dora_services(
         services_to_display,
-        city.geom,
+        city.geom if not lat or not lon else Point(float(lon), float(lat), srid=4326),
     )
 
     return SearchResultSerializer(results, many=True, context={"request": request}).data
@@ -237,6 +245,8 @@ def search_services(
     kinds: Optional[list[str]] = None,
     fees: Optional[list[str]] = None,
     di_client: Optional[data_inclusion.DataInclusionClient] = None,
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
 ) -> list[dict]:
     """Search services from all available repositories.
 
@@ -256,6 +266,8 @@ def search_services(
             city_code=city_code,
             kinds=kinds,
             fees=fees,
+            lat=lat,
+            lon=lon,
         )
         if di_client is not None
         else []
@@ -268,6 +280,8 @@ def search_services(
         city_code=city_code,
         kinds=kinds,
         fees=fees,
+        lat=lat,
+        lon=lon,
     )
 
     all_results = [*dora_results, *di_results]

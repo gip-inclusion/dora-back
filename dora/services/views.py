@@ -736,6 +736,8 @@ def search(request, di_client=None):
     subcategories = request.GET.get("subs")
     kinds = request.GET.get("kinds")
     fees = request.GET.get("fees")
+    lat = request.GET.get("lat")
+    lon = request.GET.get("lon")
 
     categories_list = categories.split(",") if categories is not None else None
     subcategories_list = subcategories.split(",") if subcategories is not None else None
@@ -751,6 +753,8 @@ def search(request, di_client=None):
         subcategories=subcategories_list,
         kinds=kinds_list,
         fees=fees_list,
+        lat=lat,
+        lon=lon,
     )
 
     return Response(sorted_results)
