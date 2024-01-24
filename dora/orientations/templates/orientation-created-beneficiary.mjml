@@ -18,9 +18,7 @@
       href="{{ data.prescriber_structure.get_frontend_url }}">{{ data.prescriber_structure.name }}
     </a>
     a réalisé une
-    prescription en votre nom, pour le service «&nbsp;<a
-      href="{{ data.service.get_frontend_url }}">{{ data.service.name }}
-    </a>&nbsp;».
+    prescription en votre nom, pour le service {% include "partials/service-link.html" %}.
     Voici un récapitulatif de la demande&nbsp;:
   </p>
 
@@ -28,13 +26,13 @@
 
   <ul>
     <li>Service&nbsp;:
-      <a href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a>
+      {% include "partials/service-link.html" %}
     </li>
     <li>Structure&nbsp;:
-      <a href="{{ data.service.structure.get_frontend_url }}">{{ data.service.structure.name }}</a>
+      {% include "partials/structure-link.html" %}
     </li>
-    {% if  data.service.contact_name %}
-      <li>Responsable du service&nbsp;: {{ data.service.contact_name }}</li>
+    {% if  data.get_contact_name %}
+      <li>Responsable du service&nbsp;: {{ data.get_contact_name }}</li>
     {% endif %}
   </ul>
 
@@ -50,7 +48,7 @@
 
   <p>
     La structure
-    <a href="{{ data.service.structure.get_frontend_url }}">{{ data.service.structure.name }}</a>
+    {% include "partials/structure-link.html" %}
     ou la
     personne qui vous accompagne vous contacteront pour donner suite à la demande.
   </p>

@@ -43,7 +43,7 @@ def send_orientation_created_emails(orientation):
     # Structure porteuse
     send_mail(
         f"{'[Envoyée - Structure porteuse] ' if debug else ''}Nouvelle demande d’orientation reçue",
-        orientation.service.contact_email,
+        orientation.get_contact_email(),
         mjml2html(render_to_string("orientation-created-structure.mjml", context)),
         from_email=(
             f"{orientation.prescriber.get_full_name()} via DORA",
@@ -58,7 +58,7 @@ def send_orientation_created_emails(orientation):
         orientation.prescriber.email,
         mjml2html(render_to_string("orientation-created-prescriber.mjml", context)),
         tags=["orientation"],
-        reply_to=[orientation.service.contact_email],
+        reply_to=[orientation.get_contact_email()],
     )
     # Référent
     if (
@@ -103,7 +103,7 @@ def send_orientation_accepted_emails(
     # Structure
     send_mail(
         f"{'[Validée - Structure porteuse] ' if debug else ''}Vous venez de valider une demande 🎉",
-        [orientation.service.contact_email],
+        [orientation.get_contact_email()],
         mjml2html(render_to_string("orientation-accepted-structure.mjml", context)),
         tags=["orientation"],
     )
@@ -114,11 +114,11 @@ def send_orientation_accepted_emails(
         orientation.prescriber.email,
         mjml2html(render_to_string("orientation-accepted-prescriber.mjml", context)),
         from_email=(
-            f"{orientation.service.structure.name} via DORA",
+            f"{orientation.get_structure_name()} via DORA",
             settings.DEFAULT_FROM_EMAIL,
         ),
         tags=["orientation"],
-        reply_to=[orientation.service.contact_email],
+        reply_to=[orientation.get_contact_email()],
     )
     # Référent
     if (
@@ -130,7 +130,7 @@ def send_orientation_accepted_emails(
             orientation.referent_email,
             mjml2html(render_to_string("orientation-accepted-referent.mjml", context)),
             from_email=(
-                f"{orientation.service.structure.name} via DORA",
+                f"{orientation.get_structure_name()} via DORA",
                 settings.DEFAULT_FROM_EMAIL,
             ),
             tags=["orientation"],
@@ -145,11 +145,11 @@ def send_orientation_accepted_emails(
                 render_to_string("orientation-accepted-beneficiary.mjml", context)
             ),
             from_email=(
-                f"{orientation.service.structure.name} via DORA",
+                f"{orientation.get_structure_name()} via DORA",
                 settings.DEFAULT_FROM_EMAIL,
             ),
             tags=["orientation"],
-            reply_to=[orientation.service.contact_email],
+            reply_to=[orientation.get_contact_email()],
         )
 
 
@@ -164,7 +164,7 @@ def send_orientation_rejected_emails(orientation, message):
     # Structure
     send_mail(
         f"{'[Refusée - Structure porteuse] ' if debug else ''}Vous venez de refuser une demande",
-        [orientation.service.contact_email],
+        [orientation.get_contact_email()],
         mjml2html(render_to_string("orientation-rejected-structure.mjml", context)),
         tags=["orientation"],
     )
@@ -175,11 +175,11 @@ def send_orientation_rejected_emails(orientation, message):
         [orientation.prescriber.email],
         mjml2html(render_to_string("orientation-rejected-prescriber.mjml", context)),
         from_email=(
-            f"{orientation.service.structure.name} via DORA",
+            f"{orientation.get_structure_name()} via DORA",
             settings.DEFAULT_FROM_EMAIL,
         ),
         tags=["orientation"],
-        reply_to=[orientation.service.contact_email],
+        reply_to=[orientation.get_contact_email()],
     )
 
     if (
@@ -194,11 +194,11 @@ def send_orientation_rejected_emails(orientation, message):
                 render_to_string("orientation-rejected-prescriber.mjml", context)
             ),
             from_email=(
-                f"{orientation.service.structure.name} via DORA",
+                f"{orientation.get_structure_name()} via DORA",
                 settings.DEFAULT_FROM_EMAIL,
             ),
             tags=["orientation"],
-            reply_to=[orientation.service.contact_email],
+            reply_to=[orientation.get_contact_email()],
         )
 
 
@@ -214,11 +214,11 @@ def send_message_to_prescriber(orientation, message, cc):
         orientation.prescriber.email,
         mjml2html(render_to_string("contact-prescriber.mjml", context)),
         from_email=(
-            f"{orientation.service.structure.name} via DORA",
+            f"{orientation.get_structure_name()} via DORA",
             settings.DEFAULT_FROM_EMAIL,
         ),
         tags=["orientation"],
-        reply_to=[orientation.service.contact_email],
+        reply_to=[orientation.get_contact_email()],
         cc=cc,
     )
 
@@ -236,11 +236,11 @@ def send_message_to_beneficiary(orientation, message, cc):
         orientation.beneficiary_email,
         mjml2html(render_to_string("contact-beneficiary.mjml", context)),
         from_email=(
-            f"{orientation.service.structure.name} via DORA",
+            f"{orientation.get_structure_name()} via DORA",
             settings.DEFAULT_FROM_EMAIL,
         ),
         tags=["orientation"],
-        reply_to=[orientation.service.contact_email],
+        reply_to=[orientation.get_contact_email()],
         cc=cc,
     )
 
@@ -263,7 +263,7 @@ def send_orientation_reminder_emails(orientation):
 
     send_mail(
         f"{'[Notification - Structure] ' if debug else ''}Relance – Demande d’orientation en attente",
-        orientation.service.contact_email,
+        orientation.get_contact_email(),
         mjml2html(render_to_string("notification-structure.mjml", context)),
         tags=["orientation"],
     )

@@ -1,11 +1,11 @@
 {% extends "orientation-email-base.mjml" %}
 
 {% block preview %}
-  Un bénéficiaire a été orienté vers votre service {{ data.service.name }}
+  Un bénéficiaire a été orienté vers votre service {{ data.get_service_name }}
 {% endblock %}
 
 {% block title %}
-  Vous avez reçu une demande d’orientation pour le service «&nbsp;{{ data.service.name }}&nbsp;»
+  Vous avez reçu une demande d’orientation pour le service «&nbsp;{{ data.get_service_name }}&nbsp;»
 {% endblock %}
 
 {% block content %}
@@ -18,7 +18,7 @@
     </a>
     vous a adressé un
     bénéficiaire pour le
-    service «&nbsp;<a href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a>&nbsp;». Voici un
+    service {% include "partials/service-link.html" %}. Voici un
     récapitulatif de la demande&nbsp;:
   </p>
 

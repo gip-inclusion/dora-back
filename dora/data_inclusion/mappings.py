@@ -230,7 +230,7 @@ def map_service(service_data: dict) -> dict:
         "is_available": True,
         "is_contact_info_public": service_data["contact_public"],
         "is_cumulative": service_data["cumulable"],
-        "is_orientable": False,
+        "is_orientable": True,
         "kinds": [k.value for k in kinds] if kinds is not None else None,
         "kinds_display": [k.label for k in kinds] if kinds is not None else None,
         "location_kinds": [lk.value for lk in location_kinds]

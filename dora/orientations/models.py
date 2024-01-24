@@ -122,6 +122,14 @@ class Orientation(models.Model):
         related_name="+",
         null=True,
     )
+
+    di_service_id = models.TextField(blank=True, default="")
+    di_service_name = models.TextField(blank=True, default="")
+    di_contact_email = models.TextField(blank=True, default="")
+    di_contact_name = models.TextField(blank=True, default="")
+    di_contact_phone = models.TextField(blank=True, default="")
+    di_structure_name = models.TextField(blank=True, default="")
+
     original_service_name = models.CharField(
         verbose_name="Nom original", max_length=140, default="", editable=False
     )
@@ -143,7 +151,7 @@ class Orientation(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.id:
-            self.original_service_name = self.service.name
+            self.original_service_name = self.get_service_name()
         return super().save(*args, **kwargs)
 
     def __str__(self):
@@ -175,6 +183,63 @@ class Orientation(models.Model):
             )
             return full_name.strip()
         return self.referent_email
+
+    # Permet de renvoyer au besoin les valeurs dora ou d·i
+    def get_service_name(self):
+        return (
+            self.service.name
+            if self.service
+            else self.di_service_name
+            if self.di_service_id
+            else self.original_service_name
+        )
+
+    def get_contact_email(self):
+        return (
+            self.service.contact_email
+            if self.service
+            else self.di_contact_email
+            if self.di_service_id
+            else ""
+        )
+
+    def get_contact_name(self):
+        return (
+            self.service.contact_name
+            if self.service
+            else self.di_contact_name
+            if self.di_service_id
+            else ""
+        )
+
+    def get_contact_phone(self):
+        return (
+            self.service.contact_phone
+            if self.service
+            else self.di_contact_phone
+            if self.di_service_id
+            else ""
+        )
+
+    def get_structure_name(self):
+        return (
+            self.service.structure.name
+            if self.service
+            else self.di_structure_name
+            if self.di_service_id
+            else ""
+        )
+
+    def get_structure_frontend_url(self):
+        return self.service.structure.get_frontend_url if self.service else ""
+
+    def get_service_frontend_url(self):
+        if self.service:
+            return self.service.get_frontend_url()
+        elif self.di_service_id:
+            f"{settings.FRONTEND_URL}/services/di--{self.di_service_id}"
+        else:
+            return ""
 
 
 class ContactRecipient(models.TextChoices):
