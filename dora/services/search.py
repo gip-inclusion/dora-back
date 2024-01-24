@@ -228,7 +228,6 @@ def _get_dora_results(
         Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
     ).distinct()
 
-    print(lon, lat)
     results = _filter_and_annotate_dora_services(
         services_to_display,
         city.geom if not lat or not lon else Point(float(lon), float(lat), srid=4326),

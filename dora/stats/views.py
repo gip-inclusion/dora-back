@@ -67,11 +67,6 @@ def log_event(request):
         structure = get_object_or_none(Structure, slug=structure_slug)
 
     is_search = tag == "search"
-    search_city_code = request.data.get("search_city_code", "") if is_search else ""
-    search_department = (
-        code_insee_to_code_dept(search_city_code) if search_city_code else ""
-    )
-    search_num_results = request.data.get("search_num_results") if is_search else None
     user = request.user
 
     results_slugs_top10 = request.data.get("results_slugs_top10", [])
@@ -135,11 +130,14 @@ def log_event(request):
         )
 
     elif tag == "search":
+        city_code = request.data.get("search_city_code", "")
+        department = code_insee_to_code_dept(city_code) if city_code else ""
+        num_results = request.data.get("search_num_results") if is_search else None
         event = SearchView.objects.create(
             **common_analytics_data,
-            city_code=search_city_code,
-            department=search_department,
-            num_results=search_num_results,
+            city_code=city_code,
+            department=department,
+            num_results=num_results,
             num_di_results=num_di_results,
             num_di_results_top10=num_di_results_top10,
             results_slugs_top10=results_slugs_top10,
