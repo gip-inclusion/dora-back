@@ -19,7 +19,7 @@
     <li>rendre vos services disponibles sur nos sites partenaires via notre démarche d’Open Data</li>
   </ul>
 
-  <p>Nous vous invitons ainsi à rejoindre la structure <strong>{{ structure_name }}</strong> sur la plateforme afin de publier vos services en cliquant sur le bouton ci-dessous.</p>
+  <p>Nous vous invitons ainsi à rejoindre la structure <strong>{{ structure.name }}</strong> sur la plateforme afin de publier vos services en cliquant sur le bouton ci-dessous.</p>
 
   <p>Pour en savoir plus, vous pouvez visiter notre site et notre <a href="{{ dora_doc_link }}">documentation</a> ou bien vous inscrire à <a href="{{ webinar_link }}">un webinaire de présentation</a>.</p>
 
