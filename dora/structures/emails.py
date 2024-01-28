@@ -125,6 +125,7 @@ def send_branch_created_notification(structure, branch, admin_user):
 
 
 def send_orphan_structure_notification(structure):
+    # notification aux structures "orphelines" (pas de membre actif)
     cta_link = furl(settings.FRONTEND_URL) / "auth" / "invitation"
     cta_link.add(
         {
@@ -141,8 +142,40 @@ def send_orphan_structure_notification(structure):
     }
 
     send_mail(
-        f"Votre structure n’a pas encore de membre actif sur DORA ({structure.name})",
+        f"Votre structure n’a pas encore de membre actif sur DORA ({
+            structure.name})",
         structure.email,
         mjml2html(render_to_string("notification-orphan-structure.mjml", context)),
         tags=["orphan-structure"],
     )
+
+
+def send_structure_activation_notification(structure):
+    # notification envoyée aux administrateurs de structure
+    # pour une première activation de service
+    cta_link = furl(settings.FRONTEND_URL) / "auth" / "invitation"
+    cta_link.add(
+        {
+            "structure": structure.slug,
+            "mtm_campaign": "MailsTransactionnels",
+            "mtm_kwd": "RelanceActivationService",
+        }
+    )
+    context = {
+        "structure": structure,
+        "dora_doc_link": "https://aide.dora.inclusion.beta.gouv.fr/fr/article/referencer-son-offre-de-service-xpivaw/",
+        "webinar_link": "https://app.livestorm.co/dora-1/presentation-dora",
+        "cta_link": cta_link.url,
+    }
+    for pm in structure.putative_membership.filter(is_admin=True).select_related(
+        "user"
+    ):
+        send_mail(
+            f"Votre structure n’a pas encore publié de service sur DORA ({
+                structure.name})",
+            pm.user.email,
+            mjml2html(
+                render_to_string("notification-service-activation.mjml", context),
+            ),
+            tags=["structure-service-activation"],
+        )

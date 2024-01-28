@@ -9,6 +9,7 @@ class NotificationStatus(models.TextChoices):
 
 class TaskType(models.TextChoices):
     ORPHAN_STRUCTURES = "orphan_structures"
+    SERVICE_ACTIVATION = "service_activation"
     ...
 
     # catch-all: pour des cas de tests, ou "one-shot"

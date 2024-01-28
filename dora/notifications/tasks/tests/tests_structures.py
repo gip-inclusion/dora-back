@@ -1,16 +1,17 @@
 from datetime import timedelta
 
 import pytest
+from dateutil.relativedelta import relativedelta
 from django.core import mail
 from django.utils import timezone
 from freezegun import freeze_time
 
-from dora.core.test_utils import make_structure
+from dora.core.test_utils import make_structure, make_user
 from dora.notifications.enums import NotificationStatus, TaskType
 from dora.notifications.models import Notification
 
 from ..core import Task
-from ..structures import OrphanStructuresTask
+from ..structures import OrphanStructuresTask, StructureServiceActivationTask
 
 # note : le test des méthodes `candidates` peut aussi être fait au niveau
 # du modèle propriétaire si la méthode consiste en un simple queryset.
@@ -30,8 +31,6 @@ def test_orphan_structures_registered():
 def test_orphan_structure_test_should_trigger(orphan_structure_task):
     # créée telle quelle, une structure est orpheline
     make_structure(email="test@test.com")
-
-    print("k", orphan_structure_task._model_key)
 
     ok, _, _ = orphan_structure_task.run()
     n = Notification.objects.pending().first()
@@ -81,9 +80,87 @@ def test_process_orphan_structures(orphan_structure_task):
     ok, _, _ = orphan_structure_task.run()
 
     assert ok == 1
-
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == [structure.email]
 
     # des tests plus complets concernant la structure et le contenu de l'email
     # sont effectués dans le module `dora.structures.tests.test_emails`
+
+
+@pytest.fixture
+def structure_service_activation_task():
+    return StructureServiceActivationTask()
+
+
+@pytest.fixture
+def structure_with_pending_admin():
+    with freeze_time(timezone.now() - timedelta(days=42)):
+        structure = make_structure(putative_member=make_user())
+
+    invitation = structure.putative_membership.first()
+    invitation.is_admin = True
+    invitation.save()
+
+    return structure
+
+
+def test_structure_service_activation_task_registered():
+    assert StructureServiceActivationTask in Task.registered_tasks()
+
+
+def test_structure_service_activation_task_should_trigger(
+    structure_with_pending_admin, structure_service_activation_task
+):
+    ok, _, _ = structure_service_activation_task.run()
+    n = Notification.objects.pending().first()
+
+    # premier déclenchement immédiat
+    assert ok
+    assert n.task_type == TaskType.SERVICE_ACTIVATION
+    assert n.counter == 1
+
+    ok, _, _ = structure_service_activation_task.run()
+    n = Notification.objects.pending().first()
+
+    # plus rien à traiter maitenant (un mois d'attente)
+    assert not ok
+
+    for in_months in (1, 2, 3, 4):
+        # déclenchements toutes les mois pendant 4 mois
+        with freeze_time(timezone.now() + relativedelta(months=in_months)):
+            ok, _, _ = structure_service_activation_task.run()
+            expected_count = 1 + in_months
+            n.refresh_from_db()
+
+            # la notification a bien été déclenchée
+            assert ok, f"failed for month: {in_months}, {
+                expected_count}, {n.counter}"
+            assert n.counter == expected_count
+
+            ok, _, _ = structure_service_activation_task.run()
+            n.refresh_from_db()
+
+            # à la même date :
+            # une nouvelle exécution ne déclenche pas de nouvelle notification
+            assert not ok
+            assert n.counter == expected_count
+
+    # à ce point la seule notification doit être clôturée
+    assert len(Notification.objects.pending()) == 0
+    assert n.status == NotificationStatus.COMPLETE
+
+    ok, _, _ = structure_service_activation_task.run()
+
+    assert not ok
+
+
+def test_process_structure_service_activation_task(
+    structure_service_activation_task, structure_with_pending_admin
+):
+    ok, _, _ = structure_service_activation_task.run()
+
+    assert ok == 1
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == [
+        structure_with_pending_admin.putative_membership.first().user.email
+    ]
