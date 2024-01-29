@@ -87,6 +87,8 @@ class FakeDataInclusionClient:
         thematiques: Optional[list[str]] = None,
         types: Optional[list[str]] = None,
         frais: Optional[list[str]] = None,
+        lat: Optional[float] = None,
+        lon: Optional[float] = None,
     ) -> Optional[list[dict]]:
         services = self.services
 
