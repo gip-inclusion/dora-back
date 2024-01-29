@@ -237,7 +237,7 @@ class Orientation(models.Model):
         if self.service:
             return self.service.get_frontend_url()
         elif self.di_service_id:
-            f"{settings.FRONTEND_URL}/services/di--{self.di_service_id}"
+            return f"{settings.FRONTEND_URL}/services/di--{self.di_service_id}"
         else:
             return ""
 
