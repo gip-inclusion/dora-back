@@ -135,7 +135,7 @@ def send_orphan_structure_notification(structure):
     )
     context = {
         "structure": structure,
-        "dora_doc_link": "https://aide.dora.inclusion.beta.gouv.fr/fr/article/decouvrir-et-faire-decouvrir-dora-1nyj6f1/",
+        "dora_doc_link": "https://aide.dora.inclusion.beta.gouv.fr/fr/",
         "webinar_link": "https://app.livestorm.co/dora-1/presentation-dora",
         "cta_link": cta_link.url,
     }
