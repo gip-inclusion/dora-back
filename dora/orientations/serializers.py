@@ -12,7 +12,10 @@ class OrientationSerializer(serializers.ModelSerializer):
         slug_field="slug",
         queryset=Service.objects.all(),
         write_only=True,
+        required=False,
+        allow_null=True,
     )
+
     prescriber_structure_slug = serializers.SlugRelatedField(
         source="prescriber_structure",
         slug_field="slug",
@@ -40,6 +43,12 @@ class OrientationSerializer(serializers.ModelSerializer):
             "beneficiary_other_contact_method",
             "beneficiary_phone",
             "creation_date",
+            "di_service_id",
+            "di_service_name",
+            "di_contact_email",
+            "di_contact_name",
+            "di_contact_phone",
+            "di_structure_name",
             "id",
             "orientation_reasons",
             "prescriber",
@@ -61,17 +70,17 @@ class OrientationSerializer(serializers.ModelSerializer):
         extra_kwargs = {"beneficiary_attachments": {"write_only": True}}
 
     def get_service(self, orientation):
-        if orientation.service:
-            return {
-                "contact_email": orientation.service.contact_email,
-                "contact_name": orientation.service.contact_name,
-                "contact_phone": orientation.service.contact_phone,
-                "structure_name": orientation.service.structure.name,
-                "name": orientation.service.name,
-                "slug": orientation.service.slug,
-            }
-        else:
-            return {"name": orientation.original_service_name}
+        return {
+            "contact_email": orientation.get_contact_email(),
+            "contact_name": orientation.get_contact_name(),
+            "contact_phone": orientation.get_contact_phone(),
+            "structure_name": orientation.get_structure_name(),
+            "name": orientation.get_service_name(),
+            "slug": orientation.service.slug
+            if orientation.service
+            else f"di--{orientation.di_service_id}",
+            "is_di": bool(orientation.di_service_id),
+        }
 
     def get_prescriber_structure(self, orientation):
         return {

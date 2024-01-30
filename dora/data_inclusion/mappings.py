@@ -1,4 +1,5 @@
 from data_inclusion.schema import Profil
+from django.conf import settings
 from django.utils import dateparse, timezone
 
 from dora.admin_express.models import AdminDivisionType
@@ -75,6 +76,18 @@ def map_search_result(result: dict) -> dict:
         if result["service"]["longitude"] and result["service"]["latitude"]
         else None,
     }
+
+
+def is_orientable(service_data: dict) -> bool:
+    siren = (
+        service_data["structure"]["siret"][:9]
+        if service_data["structure"].get("siret")
+        else None
+    )
+    blacklisted = siren in settings.ORIENTATION_SIRENE_BLACKLIST
+    blacklisted |= service_data["source"] == "soliguide"
+    blacklisted |= not service_data["courriel"]
+    return not blacklisted
 
 
 def map_service(service_data: dict) -> dict:
@@ -230,7 +243,7 @@ def map_service(service_data: dict) -> dict:
         "is_available": True,
         "is_contact_info_public": service_data["contact_public"],
         "is_cumulative": service_data["cumulable"],
-        "is_orientable": False,
+        "is_orientable": is_orientable(service_data),
         "kinds": [k.value for k in kinds] if kinds is not None else None,
         "kinds_display": [k.label for k in kinds] if kinds is not None else None,
         "location_kinds": [lk.value for lk in location_kinds]

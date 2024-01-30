@@ -22,9 +22,7 @@
     <a href="{{ data.prescriber_structure.get_frontend_url }}">
       {{ data.prescriber_structure.name }}
     </a>.
-    Le service concerné : « <a href="{{ data.service.get_frontend_url }}">
-      {{ data.service.name }}
-    </a> ».
+    Le service concerné : {% include "partials/service-link.html" %}.
   </p>
 {% endblock %}
 
