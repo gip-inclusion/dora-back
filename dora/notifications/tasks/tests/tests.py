@@ -222,3 +222,18 @@ def test_should_trigger(structure_task, counter, expected):
     n = structure_task._new_notification(owner=make_structure(), counter=counter)
 
     assert structure_task.should_trigger(n) == expected
+
+
+def test_post_process(structure_task):
+    # le processus de validation des notifications doit appeler `post_process`
+    # après avoir appelé `trigger`
+
+    # ne doit rien faire
+    n = structure_task._new_notification(owner=make_structure(), counter=1)
+    structure_task.post_process(n)
+
+    # doit lever une exception pour cette valeur de compteur
+    # (voir conftest)
+    n = structure_task._new_notification(owner=make_structure(), counter=43)
+    with pytest.raises(Exception, match="post-process failed"):
+        structure_task.post_process(n)

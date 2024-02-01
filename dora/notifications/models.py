@@ -4,7 +4,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
-from dora.structures.models import Structure
+from dora.structures.models import Structure, StructurePutativeMember
+from dora.users.models import User
 
 from .enums import NotificationStatus, TaskType
 
@@ -55,6 +56,20 @@ class Notification(models.Model):
         on_delete=models.CASCADE,
         verbose_name="Structure propriétaire",
     )
+    owner_user = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        verbose_name="Utilisateur propriétaire",
+    )
+    owner_structureputativemember = models.ForeignKey(
+        StructurePutativeMember,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        verbose_name="Invitation propriétaire",
+    )
     ...
 
     objects = NotificationQueryset.as_manager()
@@ -66,10 +81,25 @@ class Notification(models.Model):
         # ajouter des contraintes pour chaque type de propriètaire possible
         constraints = [
             models.CheckConstraint(
-                name="check_structure",
-                check=~models.Q(owner_structure=None),
+                name="check_owner",
+                check=~models.Q(owner_structure=None)
+                | ~models.Q(owner_user=None)
+                | ~models.Q(owner_structureputativemember=None),
                 # | ~models.Q(owner_other_model=None) ...
                 # ajouter une contrainte pour chaque type de propriétaire
+            ),
+            # par définition, une seule définition par propriétaire pour un type de táche donné
+            # préferable à `unique_together` si plusieurs contraintes du type
+            models.UniqueConstraint(
+                name="unique_task_for_structure",
+                fields=["task_type", "owner_structure"],
+            ),
+            models.UniqueConstraint(
+                name="unique_task_for_user", fields=["task_type", "owner_user"]
+            ),
+            models.UniqueConstraint(
+                name="unique_task_for_invitation",
+                fields=["task_type", "owner_structureputativemember"],
             ),
         ]
         indexes = [
@@ -77,20 +107,29 @@ class Notification(models.Model):
             models.Index(fields=("status",)),
             models.Index(fields=("updated_at",)),
         ]
-        # par définition, une seule définition par propriétaire pour un type de táche donné
-        unique_together = [("task_type", "owner_structure_id")]
+
+    def _owners(self):
+        # liste des propriétaires définis pour la notification
+        # incohérent si plus de 1 élément dans la liste
+        return [
+            getattr(self, f.name)
+            for f in self._meta.fields
+            if f.name.startswith("owner_") and getattr(self, f.name)
+        ]
 
     def clean(self):
-        # essentiellement pour vérification de la présence des FK,
-        # mais peut être agrementé
+        # quelques vérifications de base pour la présence des FKs
+        if len(self._owners()) != 1:
+            raise ValidationError("Aucun objet propriétaire attaché")
+
+        if self.task_type not in TaskType.values:
+            raise ValidationError("Type de notification inconnu")
+
         match self.task_type:
             case TaskType.ORPHAN_STRUCTURES:
                 if not self.owner_structure_id:
                     raise ValidationError("Aucune structure attachée")
                 ...
-
-        if self.task_type not in TaskType.values:
-            raise ValidationError("Type de notification inconnu")
 
     def trigger(self):
         self.full_clean()
@@ -109,15 +148,22 @@ class Notification(models.Model):
 
     @property
     def owner(self):
-        if self.owner_structure_id:
-            return self.owner_structure
-
-        # ajouter autant de modèles que de propriétaire possible
-        ...
-
-        # ne devrait pas être possible avec la contrainte,
-        # sauf si la notification n'est oas sauvegardée
-        raise NotificationError("Aucun propriétaire défini pour la notification")
+        owners = self._owners()
+        match len(owners):
+            case 0:
+                # ne devrait pas être possible avec la contrainte,
+                # sauf si la notification n'est pas sauvegardée
+                raise NotificationError(
+                    "Aucun propriétaire défini pour la notification"
+                )
+            case 1:
+                [owner] = owners
+                return owner
+            case _:
+                # ne devrait pas être possible avec la contrainte
+                raise NotificationError(
+                    f"Plusieurs propriétaires définis pour la notification : {owners}"
+                )
 
     @property
     def is_pending(self):

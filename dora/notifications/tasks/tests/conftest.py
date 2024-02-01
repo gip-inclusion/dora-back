@@ -47,6 +47,12 @@ class StructureTask(Task):
             raise Exception("process failed")
         print("processed structure!")
 
+    @classmethod
+    def post_process(cls, notification):
+        if notification.counter == 43:
+            raise Exception("post-process failed")
+        print("post-processed structure!")
+
 
 @pytest.fixture
 def fake_task():
