@@ -17,9 +17,4 @@
 {% block cta %}
   <mj-button mj-class="cta" href="{{ cta_link }}">Accepter l'invitation</mj-button>
   <mj-spacer height="24px"/>
-  <mj-text>
-    <p>
-      Si le bouton n'est pas visible ou ne fonctionne pas, veuillez copier et coller ce lien dans la barre d'adresse de votre navigateur : <strong>{{ cta_link }}</strong>
-    </p>
-  </mj-text>
 {% endblock %}
