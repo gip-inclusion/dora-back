@@ -36,10 +36,6 @@ def map_search_result(result: dict) -> dict:
     # (c.a.d qu'on veut un objet similaire à ce que renvoie le SearchResultSerializer)
 
     service_data = result["service"]
-    location_str = ""
-    if service_data["modes_accueil"]:
-        if "en-presentiel" in service_data["modes_accueil"]:
-            location_str = f"{service_data['code_postal']} {service_data['commune']}"
 
     return {
         #
@@ -48,7 +44,10 @@ def map_search_result(result: dict) -> dict:
         "distance": result["distance"]
         if result["distance"] is not None
         else None,  # en km
-        "location": location_str,
+        "address1": service_data["adresse"],
+        "address2": service_data["complement_adresse"],
+        "city": service_data["commune"],
+        "postal_code": service_data["code_postal"],
         #
         # ServiceListSerializer
         #

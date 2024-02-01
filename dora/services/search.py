@@ -20,11 +20,11 @@ from dora.admin_express.utils import arrdt_to_main_insee_code
 from .serializers import SearchResultSerializer
 from .utils import filter_services_by_city_code
 
-MAX_DISTANCE = 100
+MAX_DISTANCE = 50
 
 
 def _filter_and_annotate_dora_services(services, location):
-    # 1) services ayant un lieu de déroulement, à moins de 100km
+    # 1) services ayant un lieu de déroulement, à moins de MAX_DISTANCE km
     services_on_site = (
         services.filter(location_kinds__value="en-presentiel")
         .annotate(distance=Distance("geom", location))
@@ -163,6 +163,22 @@ def _get_di_results(
 
     mapped_di_results = [
         data_inclusion.map_search_result(result) for result in raw_di_results
+    ]
+
+    # FIXME: exclu les services uniquement en présentiel à plus de MAX_DISTANCE
+    # du lieu de recherche (ainsi que ceux qui ne retournent pas d'information de distance).
+    # À terme il faudra passer par un rayon configurable
+    mapped_di_results = [
+        result
+        for result in mapped_di_results
+        if (
+            (
+                "a-distance" not in result["location_kinds"]
+                and result.get("distance") is not None
+                and result["distance"] <= MAX_DISTANCE
+            )
+            or "a-distance" in result["location_kinds"]
+        )
     ]
 
     return mapped_di_results
