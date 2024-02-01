@@ -58,7 +58,7 @@ def log_event(request):
         orientation = get_object_or_none(Orientation, id=orientation_id)
         if orientation:
             service = orientation.service
-            structure = orientation.service.structure
+            structure = orientation.service.structure if service else None
     if not service and service_slug:
         service = get_object_or_none(Service, slug=service_slug)
         if service:
@@ -166,15 +166,21 @@ def log_event(request):
         event.categories.set(categories)
         event.subcategories.set(subcategories)
     elif tag == "orientation":
+        is_di = not service
         event = OrientationView.objects.create(
             orientation=orientation,
             orientation_status=orientation.status,
             **common_analytics_data,
             **structure_data,
             **service_data,
+            is_di=is_di,
+            di_structure_name=request.data.get("di_structure_name", ""),
+            di_service_id=request.data.get("di_service_id", ""),
+            di_service_name=request.data.get("di_service_name", ""),
         )
-        event.categories.set(service.categories.all())
-        event.subcategories.set(service.subcategories.all())
+        if not is_di:
+            event.categories.set(service.categories.all())
+            event.subcategories.set(service.subcategories.all())
     elif tag == "mobilisation":
         event = MobilisationEvent.objects.create(
             **common_analytics_data, **structure_data, **service_data
