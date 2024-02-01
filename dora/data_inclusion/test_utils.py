@@ -39,7 +39,7 @@ def make_di_service_data(**kwargs) -> dict:
             "contact_public": False,
             "contact_nom_prenom": "David Rocher",
             "date_maj": "2023-01-01",
-            "modes_accueil": [],
+            "modes_accueil": ["en-presentiel"],
             "modes_orientation_accompagnateur": ["telephoner", "autre"],
             "modes_orientation_accompagnateur_autres": "Mêmes modalités que pour les bénéficiaires",
             "modes_orientation_beneficiaire": ["telephoner", "autre"],
@@ -87,6 +87,8 @@ class FakeDataInclusionClient:
         thematiques: Optional[list[str]] = None,
         types: Optional[list[str]] = None,
         frais: Optional[list[str]] = None,
+        lat: Optional[float] = None,
+        lon: Optional[float] = None,
     ) -> Optional[list[dict]]:
         services = self.services
 
@@ -122,14 +124,12 @@ class FakeDataInclusionClient:
             ]
 
             return [
-                # overly simple distance for tests. avoid corsica
+                # overly simple distance for tests.
                 {
-                    "distance": abs(int(code_insee) - int(s["code_insee"]))
-                    if s["code_insee"] is not None
-                    else None,
+                    "distance": 30 if code_insee != s["code_insee"] else 0,
                     "service": s,
                 }
                 for s in services
             ]
         else:
-            return [{"distance": None, "service": s} for s in services]
+            return [{"distance": 30, "service": s} for s in services]

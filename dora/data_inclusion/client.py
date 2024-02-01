@@ -107,6 +107,8 @@ class DataInclusionClient:
         thematiques: Optional[list[str]] = None,
         types: Optional[list[str]] = None,
         frais: Optional[list[str]] = None,
+        lat: Optional[float] = None,
+        lon: Optional[float] = None,
     ) -> Optional[list[dict]]:
         url = self.base_url.copy()
         url = url / "search/services"
@@ -125,6 +127,11 @@ class DataInclusionClient:
 
         if frais is not None:
             url.args["frais"] = frais
+
+        if lat is not None:
+            url.args["lat"] = lat
+        if lon is not None:
+            url.args["lon"] = lon
 
         try:
             return self._get_pages(url)

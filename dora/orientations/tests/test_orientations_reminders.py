@@ -28,7 +28,7 @@ class OrientationsNotificationsTestCase(APITestCase):
         with freeze_time(timezone.now() - timedelta(days=11)):
             orientation = make_orientation()
         self.call_command()
-        self.assertEqual(mail.outbox[0].to, [orientation.service.contact_email])
+        self.assertEqual(mail.outbox[0].to, [orientation.get_contact_email()])
         self.assertEqual(
             mail.outbox[0].subject, "Relance – Demande d’orientation en attente"
         )

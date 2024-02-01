@@ -235,6 +235,15 @@ class OrientationView(AbstractServiceEvent):
         default="",
         blank=True,
     )
+    # À l'usage, la séparation des événements en dora vs di n'est pas pratique.
+    # Donc plutot que de créer une classe DiOrientationView, on rajoute juste un booleen ici,
+    # et on va se débrouiller pour rajouter les informations nécessaires du service d·i dans
+    # ici, plutot que d'heriter de AbstractDiServiceEvent.
+    # À terme il faudrait faire ça pour les autres classes aussi, et se débarasser de l'AbstractDiServiceEvent
+    is_di = models.BooleanField(default=False, db_index=True)
+    di_structure_name = models.CharField(max_length=255, default="")
+    di_service_id = models.CharField(max_length=255, default="")
+    di_service_name = models.CharField(max_length=255, default="")
 
 
 #############################################################################################

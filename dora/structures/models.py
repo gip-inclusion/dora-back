@@ -152,10 +152,13 @@ class StructureTypology(EnumModel):
 
 
 class StructureManager(models.Manager):
-    def create_from_establishment(self, establishment, name="", parent=None):
+    def create_from_establishment(
+        self, establishment, name="", parent=None, structure_id=None
+    ):
         data = EstablishmentSerializer(establishment).data
+        siret = data["siret"]
         structure = self.model(
-            siret=data["siret"],
+            siret=siret if not parent or parent.siret != siret else None,
             parent=parent,
             name=name if name else data["name"],
             address1=data["address1"],
@@ -168,6 +171,8 @@ class StructureManager(models.Manager):
             latitude=data["latitude"],
             modification_date=timezone.now(),
         )
+        if structure_id:
+            structure.id = structure_id
         structure.save()
         return structure
 
