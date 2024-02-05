@@ -11,3 +11,6 @@ tools/utils/install-sql-scripts.sh queries
 
 # Exporte les tables de production restantes vers Metabase
 tools/utils/export-db-metabase.sh
+
+# Synchronise le schéma de la base de données
+tools/utils/sync-metabase-schemas.sh

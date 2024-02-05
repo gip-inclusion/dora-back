@@ -6,6 +6,7 @@ import requests
 from _operator import itemgetter
 from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
 from django.db.models import IntegerField, Q, Value
 from django.shortcuts import get_object_or_404
@@ -19,11 +20,11 @@ from dora.admin_express.utils import arrdt_to_main_insee_code
 from .serializers import SearchResultSerializer
 from .utils import filter_services_by_city_code
 
-MAX_DISTANCE = 100
+MAX_DISTANCE = 50
 
 
 def _filter_and_annotate_dora_services(services, location):
-    # 1) services ayant un lieu de déroulement, à moins de 100km
+    # 1) services ayant un lieu de déroulement, à moins de MAX_DISTANCE km
     services_on_site = (
         services.filter(location_kinds__value="en-presentiel")
         .annotate(distance=Distance("geom", location))
@@ -86,6 +87,8 @@ def _get_di_results(
     subcategories: Optional[list[str]] = None,
     kinds: Optional[list[str]] = None,
     fees: Optional[list[str]] = None,
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
 ) -> list:
     """Search data.inclusion services.
 
@@ -126,6 +129,8 @@ def _get_di_results(
             thematiques=thematiques if len(thematiques) > 0 else None,
             types=kinds,
             frais=fees,
+            lat=lat,
+            lon=lon,
         )
     except requests.ConnectionError:
         return []
@@ -160,6 +165,22 @@ def _get_di_results(
         data_inclusion.map_search_result(result) for result in raw_di_results
     ]
 
+    # FIXME: exclu les services uniquement en présentiel à plus de MAX_DISTANCE
+    # du lieu de recherche (ainsi que ceux qui ne retournent pas d'information de distance).
+    # À terme il faudra passer par un rayon configurable
+    mapped_di_results = [
+        result
+        for result in mapped_di_results
+        if (
+            (
+                "a-distance" not in result["location_kinds"]
+                and result.get("distance") is not None
+                and result["distance"] <= MAX_DISTANCE
+            )
+            or "a-distance" in result["location_kinds"]
+        )
+    ]
+
     return mapped_di_results
 
 
@@ -170,6 +191,8 @@ def _get_dora_results(
     subcategories: Optional[list[str]] = None,
     kinds: Optional[list[str]] = None,
     fees: Optional[list[str]] = None,
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
 ):
     services = (
         models.Service.objects.published()
@@ -223,7 +246,7 @@ def _get_dora_results(
 
     results = _filter_and_annotate_dora_services(
         services_to_display,
-        city.geom,
+        city.geom if not lat or not lon else Point(float(lon), float(lat), srid=4326),
     )
 
     return SearchResultSerializer(results, many=True, context={"request": request}).data
@@ -237,6 +260,8 @@ def search_services(
     kinds: Optional[list[str]] = None,
     fees: Optional[list[str]] = None,
     di_client: Optional[data_inclusion.DataInclusionClient] = None,
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
 ) -> list[dict]:
     """Search services from all available repositories.
 
@@ -256,6 +281,8 @@ def search_services(
             city_code=city_code,
             kinds=kinds,
             fees=fees,
+            lat=lat,
+            lon=lon,
         )
         if di_client is not None
         else []
@@ -268,6 +295,8 @@ def search_services(
         city_code=city_code,
         kinds=kinds,
         fees=fees,
+        lat=lat,
+        lon=lon,
     )
 
     all_results = [*dora_results, *di_results]

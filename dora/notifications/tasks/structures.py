@@ -4,9 +4,10 @@ from django.utils import timezone
 
 from dora.notifications.enums import TaskType
 from dora.notifications.models import Notification
+from dora.structures.emails import send_orphan_structure_notification
 from dora.structures.models import Structure
 
-from .core import Task
+from .core import Task, TaskError
 
 
 class OrphanStructuresTask(Task):
@@ -38,15 +39,10 @@ class OrphanStructuresTask(Task):
 
     @classmethod
     def process(cls, notification: Notification):
-        # remplacer par l'implémentation (envoi de mail dans ce cas)
-
         try:
-            print(
-                f"Envoi de l'email ({1 + notification.counter}) pour : {notification.owner_structure.email} ({notification.owner_structure})"
-            )
-        except Exception:
-            # traitement approprié à définir ...
-            pass
+            send_orphan_structure_notification(notification.owner_structure)
+        except Exception as ex:
+            raise TaskError(f"Erreur d'envoi du mail ({notification}) : {ex}") from ex
         else:
             if notification.counter == 3:
                 # cloturée au bout de 4 envois

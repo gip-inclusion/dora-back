@@ -1,11 +1,11 @@
 {% extends "orientation-email-base.mjml" %}
 
 {% block preview %}
-  {{ data.get_beneficiary_full_name }} a été orienté·e vers {{ data.service.name }}
+  {{ data.get_beneficiary_full_name }} a été orienté·e vers {{ data.get_service_name }}
 {% endblock %}
 
 {% block title %}
-  {{ data.get_beneficiary_full_name }} a été orienté vers le service «&nbsp;{{ data.service.name }}&nbsp;»
+  {{ data.get_beneficiary_full_name }} a été orienté vers le service «&nbsp;{{ data.get_service_name }}&nbsp;»
 {% endblock %}
 
 {% block content %}
@@ -19,7 +19,7 @@
     </a>
     a orienté
     {{ data.get_beneficiary_full_name }} vers le
-    service «&nbsp;<a href="{{ data.service.get_frontend_url }}">{{ data.service.name }}</a>&nbsp;».
+    service {% include "partials/service-link.html" %}.
     Voici un récapitulatif de la demande&nbsp;:
   </p>
 
@@ -38,7 +38,7 @@
 
   {% include "partials/block-service-contact.html" %}
   <p>
-    <strong>La structure {{ data.service.structure.name }} va traiter la demande et y apportera une réponse.
+    <strong>La structure {{ data.get_structure_name }} va traiter la demande et y apportera une réponse.
     </strong>
   </p>
 {% endblock %}

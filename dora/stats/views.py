@@ -58,7 +58,7 @@ def log_event(request):
         orientation = get_object_or_none(Orientation, id=orientation_id)
         if orientation:
             service = orientation.service
-            structure = orientation.service.structure
+            structure = orientation.service.structure if service else None
     if not service and service_slug:
         service = get_object_or_none(Service, slug=service_slug)
         if service:
@@ -67,11 +67,6 @@ def log_event(request):
         structure = get_object_or_none(Structure, slug=structure_slug)
 
     is_search = tag == "search"
-    search_city_code = request.data.get("search_city_code", "") if is_search else ""
-    search_department = (
-        code_insee_to_code_dept(search_city_code) if search_city_code else ""
-    )
-    search_num_results = request.data.get("search_num_results") if is_search else None
     user = request.user
 
     results_slugs_top10 = request.data.get("results_slugs_top10", [])
@@ -135,11 +130,14 @@ def log_event(request):
         )
 
     elif tag == "search":
+        city_code = request.data.get("search_city_code", "")
+        department = code_insee_to_code_dept(city_code) if city_code else ""
+        num_results = request.data.get("search_num_results") if is_search else None
         event = SearchView.objects.create(
             **common_analytics_data,
-            city_code=search_city_code,
-            department=search_department,
-            num_results=search_num_results,
+            city_code=city_code,
+            department=department,
+            num_results=num_results,
             num_di_results=num_di_results,
             num_di_results_top10=num_di_results_top10,
             results_slugs_top10=results_slugs_top10,
@@ -168,15 +166,21 @@ def log_event(request):
         event.categories.set(categories)
         event.subcategories.set(subcategories)
     elif tag == "orientation":
+        is_di = not service
         event = OrientationView.objects.create(
             orientation=orientation,
             orientation_status=orientation.status,
             **common_analytics_data,
             **structure_data,
             **service_data,
+            is_di=is_di,
+            di_structure_name=request.data.get("di_structure_name", ""),
+            di_service_id=request.data.get("di_service_id", ""),
+            di_service_name=request.data.get("di_service_name", ""),
         )
-        event.categories.set(service.categories.all())
-        event.subcategories.set(service.subcategories.all())
+        if not is_di:
+            event.categories.set(service.categories.all())
+            event.subcategories.set(service.subcategories.all())
     elif tag == "mobilisation":
         event = MobilisationEvent.objects.create(
             **common_analytics_data, **structure_data, **service_data

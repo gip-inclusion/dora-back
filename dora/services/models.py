@@ -359,10 +359,10 @@ class Service(ModerationMixin, models.Model):
     qpv_or_zrr = models.BooleanField(default=False)
 
     # Duration
-    recurrence = models.CharField(verbose_name="Autre", max_length=140, blank=True)
+    recurrence = models.CharField(verbose_name="Récurrence", max_length=140, blank=True)
 
     suspension_date = models.DateField(
-        verbose_name="À partir d’une date", null=True, blank=True, db_index=True
+        verbose_name="Jusqu’au", null=True, blank=True, db_index=True
     )
 
     ##########
