@@ -5,6 +5,7 @@ from . import views
 
 router = SimpleRouter()
 router.register(r"structures", views.StructureViewSet, basename="structure")
+router.register(r"public-structures", views.StructureOpenViewSet, basename="public-structure")
 router.register(r"services", views.ServiceViewSet, basename="service")
 
 urlpatterns = [

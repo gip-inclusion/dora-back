@@ -20,6 +20,34 @@ from dora.structures.models import Structure, StructureSource, StructureTypology
 ############
 
 
+class StructureOpenSerializer(serializers.ModelSerializer):
+    latitude = serializers.SerializerMethodField()
+    geocoding_score = serializers.SerializerMethodField()
+    longitude = serializers.SerializerMethodField()
+    nom = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Structure
+
+        fields = [
+            "geocoding_score",
+            "latitude",
+            "longitude",
+            "nom",
+        ]
+
+    def get_geocoding_score(self, obj):
+        return obj.geocoding_score or 0.6
+
+    def get_latitude(self, obj):
+        return obj.latitude
+
+    def get_nom(self, obj):
+        return obj.name or None
+
+    def get_longitude(self, obj):
+        return obj.longitude
+
 class StructureSerializer(serializers.ModelSerializer):
     accessibilite = serializers.SerializerMethodField()
     adresse = serializers.SerializerMethodField()

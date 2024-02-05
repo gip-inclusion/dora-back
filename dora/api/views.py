@@ -38,6 +38,7 @@ from .serializers import (
     StructureSerializerV1,
     StructureSourceSerializerV1,
     StructureTypologySerializerV1,
+    StructureOpenSerializer,
 )
 
 
@@ -57,17 +58,17 @@ class APIPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
         return (
-            user.is_authenticated
-            and user.email == settings.DATA_INCLUSION_EMAIL
-            and request.method in permissions.SAFE_METHODS
+                user.is_authenticated
+                and user.email == settings.DATA_INCLUSION_EMAIL
+                and request.method in permissions.SAFE_METHODS
         )
 
     def has_object_permission(self, request, view, service):
         user = request.user
         return (
-            user.is_authenticated
-            and user.email == settings.DATA_INCLUSION_EMAIL
-            and request.method in permissions.SAFE_METHODS
+                user.is_authenticated
+                and user.email == settings.DATA_INCLUSION_EMAIL
+                and request.method in permissions.SAFE_METHODS
         )
 
 
@@ -94,6 +95,22 @@ class StructureViewSet(viewsets.ReadOnlyModelViewSet):
         structures = structures.exclude(
             Q(membership=None) & Q(source__value__startswith="di-")
         )
+        return structures.order_by("pk")
+
+
+class StructureOpenViewSet(viewsets.ReadOnlyModelViewSet):
+    versioning_class = NamespaceVersioning
+    permission_classes = []
+    serializer_class = StructureOpenSerializer
+    renderer_classes = [PrettyJSONRenderer]
+    pagination_class = OptionalPageNumberPagination
+
+    def get_queryset(self):
+        structures = (
+            Structure.objects
+            .filter(Q(geocoding_score__gt=0.5) | Q(geocoding_score=None))
+        )
+
         return structures.order_by("pk")
 
 

@@ -13,7 +13,7 @@ from .models import (
     StructureSource,
     StructureTypology,
 )
-
+from import_export.admin import ImportExportModelAdmin
 
 class StructurePutativeMemberAdmin(admin.ModelAdmin):
     search_fields = (
@@ -143,7 +143,7 @@ class ServiceInline(admin.TabularInline):
     extra = 0
 
 
-class StructureAdmin(admin.ModelAdmin):
+class StructureAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     list_display = [
         "name",
         "slug",
