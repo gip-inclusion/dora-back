@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pytest
+from dateutil.relativedelta import relativedelta
 from django.core import mail
 from django.utils import timezone
 from freezegun import freeze_time
@@ -11,7 +12,7 @@ from dora.notifications.models import Notification
 from dora.users.models import User
 
 from ..core import Task
-from ..invitations import InvitedUsersTask
+from ..invitations import InvitedUsersTask, SelfInvitedUsersTask
 
 
 @pytest.fixture
@@ -128,3 +129,70 @@ def test_invited_user_task_should_trigger(invited_users_task):
     # le membre invité également
     with pytest.raises(User.DoesNotExist):
         user.refresh_from_db()
+
+
+@pytest.fixture
+def self_invited_users_task():
+    return SelfInvitedUsersTask()
+
+
+def test_self_invited_users_task_registered():
+    assert SelfInvitedUsersTask in Task.registered_tasks()
+
+
+def test_self_invited_user_task_should_not_trigger(self_invited_users_task):
+    make_structure(user=make_user())
+
+    # pas de rattachement en attente
+    ok, _, _ = self_invited_users_task.run()
+    assert not ok
+
+    # l'utilisateur n'a pas validé son adresse e-mail
+    with freeze_time(timezone.now() + relativedelta(day=2)):
+        make_structure(putative_member=make_user(is_valid=False))
+        ok, _, _ = self_invited_users_task.run()
+        assert not ok
+
+    # les notifications ne se déclenchent qu'après un jour
+    make_structure(putative_member=make_user())
+    ok, _, _ = self_invited_users_task.run()
+    assert not ok
+
+
+def test_self_invited_user_task_should_trigger(self_invited_users_task):
+    structure = make_structure(putative_member=make_user())
+    make_user(structure, is_admin=True, is_active=True)
+
+    pm = structure.putative_membership.first()
+    pm.invited_by_admin = False
+    pm.save()
+    structure.refresh_from_db()
+
+    assert len(self_invited_users_task.candidates())
+    assert structure.has_admin()
+
+    # juste pour créer la notification
+    self_invited_users_task.run()
+    notification = Notification.objects.first()
+
+    for idx, day in enumerate([1, 3, 5, 7]):
+        with freeze_time(timezone.now() + relativedelta(days=day)):
+            ok, _, _ = self_invited_users_task.run()
+
+            assert ok
+            assert len(mail.outbox) == idx + 1
+            assert mail.outbox[idx].to == [structure.admins[0].email]
+
+            notification.refresh_from_db()
+
+            assert notification.counter == idx + 1
+
+            # dans l'intervalle des compteurs, pas de déclenchement
+            with freeze_time(timezone.now() + relativedelta(days=1)):
+                ok, _, _ = self_invited_users_task.run()
+
+                assert not ok
+
+    notification.refresh_from_db()
+
+    assert notification.is_complete
