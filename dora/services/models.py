@@ -600,7 +600,7 @@ class ServiceModificationHistoryItem(models.Model):
 class Bookmark(models.Model):
     user = models.ForeignKey("users.User", on_delete=models.CASCADE)
     service = models.ForeignKey("Service", on_delete=models.CASCADE, null=True)
-    di_id = models.CharField(max_length=50, blank=True)
+    di_id = models.TextField(blank=True)
     creation_date = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
