@@ -23,9 +23,11 @@ class InvitedUsersTask(Task):
     def candidates(cls):
         # CAT 1 :
         # - les invitations à une structure en attente depuis moins de 6 mois
+        # - les utilisateurs invités n'ont pas validé leur e-mail
         # filtrée sur les anciens enregistrements (+6 mois)
         return StructurePutativeMember.objects.filter(
             invited_by_admin=True,
+            user__is_valid=False,
             creation_date__gt=timezone.now() - relativedelta(months=6),
         )
 
