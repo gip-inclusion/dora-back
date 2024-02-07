@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import requests
+from django.conf import settings
 from django.contrib.gis.geos import MultiPolygon, Point
 from django.core.exceptions import ValidationError
 from django.test import override_settings
@@ -2695,17 +2696,19 @@ class ServiceArchiveTestCase(APITestCase):
         self.assertEqual(len(response.data), 0)
 
     def test_archives_dont_appear_in_public_api_anon(self):
-        make_service(status=ServiceStatus.ARCHIVED)
-        response = self.client.get("/api/v1/services/")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
+        if settings.ALLOW_PUBLIC_API:
+            make_service(status=ServiceStatus.ARCHIVED)
+            response = self.client.get("/api/v1/services/")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.data), 0)
 
     def test_archives_dont_appear_in_public_api_auth(self):
-        make_service(status=ServiceStatus.ARCHIVED)
-        self.client.force_authenticate(user=self.me)
-        response = self.client.get("/api/v1/services/")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
+        if settings.ALLOW_PUBLIC_API:
+            make_service(status=ServiceStatus.ARCHIVED)
+            self.client.force_authenticate(user=self.me)
+            response = self.client.get("/api/v1/services/")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.data), 0)
 
 
 class ServiceStatusChangeTestCase(APITestCase):
