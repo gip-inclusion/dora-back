@@ -27,30 +27,69 @@ class Command(BaseCommand):
         parser.add_argument(
             "--limit", type=int, help="Limite du nombre de tâches à traiter"
         )
+        parser.add_argument(
+            "--types",
+            type=str,
+            help="Types de tâche de notification à prendre en compte, séparés par ',' (valeur de l'enum)",
+        )
 
     def handle(self, *args, **options):
         wet_run = options["wet_run"]
         limit = options["limit"]
+        types = options["types"]
 
         self.stdout.write(self.help + " :")
 
         if wet_run:
-            self.stdout.write(self.style.WARNING("PRODUCTION RUN"))
+            self.stdout.write(self.style.WARNING("PRODUCTION RUN\n"))
         else:
             self.stdout.write(self.style.NOTICE("DRY-RUN"))
-            self.stdout.write("Les notifications ne sont pas créées dans ce mode")
+            self.stdout.write(
+                self.style.WARNING(
+                    "Les notifications ne sont pas créées dans ce mode\n"
+                )
+            )
 
         if not Task.registered_tasks():
-            self.stdout.write(" > aucune tâche enregistrée!")
+            self.stdout.write(" > aucune tâche enregistrée !")
+            return
+
+        # Par défaut, tous les types de tâches enregistrés sont sélectionnés
+        selected_types = Task.registered_tasks()
+
+        if types:
+            selected_types = [
+                task
+                for task in Task.registered_tasks()
+                if task.task_type() in types.split(",")
+            ]
+
+        if not selected_types:
+            self.stdout.write(
+                self.style.WARNING(
+                    "Aucun type de tâche de notification sélectionné : fin du traitement"
+                )
+            )
             return
 
         total_timer = 0
 
-        for task_class in Task.registered_tasks():
-            self.stdout.write(self.style.NOTICE(f"> {task_class.__name__} :"))
+        for task_class in selected_types:
+            task = task_class()
+
+            self.stdout.write(
+                self.style.NOTICE(
+                    f"> {task_class.__name__} ({task_class.task_type()}) :"
+                )
+            )
+            self.stdout.write(
+                self.style.WARNING(
+                    f" > nombre d'éléments candidats : {len(task.candidates())}"
+                )
+            )
 
             timer = time.time()
-            ok, errors, obsolete = task_class().run(
+            ok, errors, obsolete = task.run(
                 strict=True, dry_run=not wet_run, limit=limit
             )
             timer = time.time() - timer
