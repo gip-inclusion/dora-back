@@ -20,9 +20,13 @@ class InvitedUsersTask(Task):
 
     @classmethod
     def candidates(cls):
-        # les invitations à une structure en attente depuis moins de 6 mois
+        # en CAT 1 : depuis 6 mois ou +
+        # - invitations à une structure en attente
+        # - pour les utilisateurs invité par un admin
+        # - mais qui n'ont pas validé leur e-mail
         return StructurePutativeMember.objects.filter(
             invited_by_admin=True,
+            user__is_valid=False,
             creation_date__gt=timezone.now() - relativedelta(months=6),
         )
 
@@ -61,7 +65,8 @@ class InvitedUsersTask(Task):
                     )
                 except Exception as ex:
                     raise TaskError(
-                        f"Erreur d'envoi de la relance d'invitation ({notification}): {ex}"
+                        f"Erreur d'envoi de la relance d'invitation ({notification}): {
+                            ex}"
                     ) from ex
             case 4:
                 # notifications aux administrateurs 20j
@@ -72,7 +77,8 @@ class InvitedUsersTask(Task):
                     )
                 except Exception as ex:
                     raise TaskError(
-                        f"Erreur d'envoi de la relance (1) aux administrateurs ({notification}): {ex}"
+                        f"Erreur d'envoi de la relance (1) aux administrateurs ({
+                            notification}): {ex}"
                     ) from ex
             case 5:
                 # notifications aux administrateurs 90j
@@ -83,7 +89,8 @@ class InvitedUsersTask(Task):
                     )
                 except Exception as ex:
                     raise TaskError(
-                        f"Erreur d'envoi de la relance (2) aux administrateurs ({notification}): {ex}"
+                        f"Erreur d'envoi de la relance (2) aux administrateurs ({
+                            notification}): {ex}"
                     ) from ex
             case 6:
                 # clôture au préalable de la notification
