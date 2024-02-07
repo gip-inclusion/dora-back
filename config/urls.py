@@ -1,9 +1,7 @@
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path, register_converter
-from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
 from rest_framework.routers import SimpleRouter
-from rest_framework.versioning import NamespaceVersioning
 
 import dora.admin_express.views
 import dora.core.views
@@ -67,50 +65,6 @@ router.register(
 register_converter(InseeCodeConverter, "insee_code")
 register_converter(SiretConverter, "siret")
 
-public_api_patterns = [
-    path("api/v1/", include("dora.api.urls_v1", namespace="v1")),
-    path("api/v2/", include("dora.api.urls", namespace="v2")),
-]
-
-V1_CUSTOM_SETTINGS = {
-    "POSTPROCESSING_HOOKS": [
-        "drf_spectacular.hooks.postprocess_schema_enums",
-        "drf_spectacular.contrib.djangorestframework_camel_case.camelize_serializer_fields",
-    ],
-}
-spectacular_patterns = [
-    path(
-        "api/v1/schema/",
-        SpectacularAPIView.as_view(
-            urlconf=public_api_patterns,
-            api_version="v1",
-            custom_settings=V1_CUSTOM_SETTINGS,
-        ),
-        name="schema-v1",
-    ),
-    path(
-        "api/v2/schema/",
-        SpectacularAPIView.as_view(urlconf=public_api_patterns, api_version="v2"),
-        name="schema-v2",
-    ),
-    # Doc
-    path(
-        "api/v1/schema/doc/",
-        SpectacularRedocView.as_view(
-            url_name="schema-v1",
-            versioning_class=NamespaceVersioning,
-        ),
-        name="api-doc-v1",
-    ),
-    path(
-        "api/v2/schema/doc/",
-        SpectacularRedocView.as_view(
-            url_name="schema-v2",
-            versioning_class=NamespaceVersioning,
-        ),
-        name="api-doc-v2",
-    ),
-]
 
 # conditionally inject a di_client dependency to views
 di_client = data_inclusion.di_client_factory() if not settings.IS_TESTING else None
@@ -145,12 +99,22 @@ private_api_patterns = [
     path("profile/main-activity/", dora.users.views.update_main_activity),
 ]
 
+di_api_patterns = [
+    path("api/v2/", include("dora.api.urls", namespace="v2")),
+]
+
+
 urlpatterns = [
     *private_api_patterns,
-    *public_api_patterns,
-    *spectacular_patterns,
+    *di_api_patterns,
     *oidc_patterns,
 ]
+
+if settings.ALLOW_PUBLIC_API:
+    urlpatterns.append(
+        path("api/v1/", include("dora.api.urls_v1", namespace="v1")),
+    )
+
 
 if settings.PROFILE:
     urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]

@@ -88,7 +88,6 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_gis",
     "corsheaders",
-    "drf_spectacular",
     # local
     "config.apps.AdminConfig",
     "dora.core",
@@ -281,7 +280,6 @@ REST_FRAMEWORK = {
     },
     "EXCEPTION_HANDLER": "dora.core.exceptions_handler.custom_exception_handler",
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 # CORS
@@ -479,19 +477,6 @@ CSP_EXCLUDE_URL_PREFIXES = tuple(
     ]
 )
 
-###################
-# DRF-SPECTACULAR #
-###################
-SPECTACULAR_SETTINGS = {
-    "TITLE": "API référentiel de l’offre d’insertion",
-    "DESCRIPTION": "",
-    "VERSION": None,
-    "CAMELIZE_NAMES": False,
-    "POSTPROCESSING_HOOKS": [],
-    "SORT_OPERATIONS": False,
-    "SERVE_INCLUDE_SCHEMA": False,
-    "COMPONENT_NO_READ_ONLY_REQUIRED": True,
-}
 
 ########
 # SILK #
@@ -556,3 +541,8 @@ IC_CLIENT_SECRET = os.environ.get("IC_CLIENT_SECRET")
 INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS = (
     os.environ.get("INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS") == "true"
 )
+
+########
+# TEMP #
+########
+ALLOW_PUBLIC_API = not os.environ.get("ALLOW_PUBLIC_API") == "false"
