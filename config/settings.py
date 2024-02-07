@@ -545,4 +545,4 @@ INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS = (
 ########
 # TEMP #
 ########
-ALLOW_PUBLIC_API = not os.environ.get("ALLOW_PUBLIC_API") == "false"
+ALLOW_PUBLIC_API = os.environ.get("ALLOW_PUBLIC_API") != "false"
