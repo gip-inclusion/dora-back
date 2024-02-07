@@ -128,8 +128,9 @@ class Task(abc.ABC):
             current_candidates
         ).values_list("pk", flat=True)
         # le queryset est filtré dynamiquement sur le type de modèles des objets candidats
+        # on ne garde que les notifications actives
         diff = {self._model_key + "__in": obsolete_objects}
-        obsolete_notifications = notifications_already_created.filter(**diff)
+        obsolete_notifications = notifications_already_created.pending().filter(**diff)
 
         # notifications à créer pour les nouveaux candidats :
         new_candidates = [
