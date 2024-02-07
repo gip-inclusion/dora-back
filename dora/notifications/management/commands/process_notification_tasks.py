@@ -30,7 +30,11 @@ class Command(BaseCommand):
         parser.add_argument(
             "--types",
             type=str,
-            help="Types de tâche de notification à prendre en compte, séparés par ',' (valeur de l'enum)",
+            help=(
+                f"Types de tâche de notification à prendre en compte, séparés par ','"
+                f" ({'|'.join([task.task_type()
+                               for task in Task.registered_tasks()])})"
+            ),
         )
 
     def handle(self, *args, **options):
@@ -84,7 +88,8 @@ class Command(BaseCommand):
             )
             self.stdout.write(
                 self.style.WARNING(
-                    f" > nombre d'éléments candidats : {len(task.candidates())}"
+                    f" > nombre d'éléments candidats : {
+                        len(task.candidates())}"
                 )
             )
 
