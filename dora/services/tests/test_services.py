@@ -1204,9 +1204,7 @@ class DataInclusionSearchTestCase(APITestCase):
         request = self.factory.get(f"/service-di/{di_id}/")
         response = service_di(request, di_id=di_id, di_client=self.di_client)
 
-        for field in set(ServiceSerializer.Meta.fields) - set(
-            ["category", "category_display"]
-        ):
+        for field in set(ServiceSerializer.Meta.fields):
             with self.subTest(field=field):
                 self.assertIn(field, response.data)
 
