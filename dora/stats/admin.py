@@ -1,7 +1,6 @@
 from django.contrib import admin
 
 from dora.stats.models import (
-    ABTestGroup,
     DeploymentState,
     DiMobilisationEvent,
     DiServiceView,
@@ -167,16 +166,10 @@ class OrientationEventAdmin(AnalyticsEventAdmin):
     ]
 
 
-@admin.display(description="AB groups")
-def ab_testing_groups_display(obj):
-    return ", ".join(c.value for c in obj.ab_test_groups.all())
-
-
 class MobilisationEventAdmin(AnalyticsEventAdmin):
     raw_id_fields = ("service", "structure", "user", "search_view")
     list_display = [
         "date",
-        ab_testing_groups_display,
         "service",
         "structure",
         "structure_department",
@@ -184,9 +177,8 @@ class MobilisationEventAdmin(AnalyticsEventAdmin):
         "anonymous_user_hash",
     ]
 
-    list_filter = ["date", "structure_department", "ab_test_groups"]
+    list_filter = ["date", "structure_department"]
     filter_horizontal = [
-        "ab_test_groups",
         "categories",
         "subcategories",
     ]
@@ -196,15 +188,14 @@ class DiMobilisationEventAdmin(AnalyticsEventAdmin):
     raw_id_fields = ("user", "search_view")
     list_display = [
         "date",
-        ab_testing_groups_display,
         "service_name",
         "structure_name",
         "structure_department",
         "user",
         "anonymous_user_hash",
     ]
-    list_filter = ["date", "structure_department", "ab_test_groups"]
-    filter_horizontal = ["categories", "subcategories", "ab_test_groups"]
+    list_filter = ["date", "structure_department"]
+    filter_horizontal = ["categories", "subcategories"]
 
 
 admin.site.register(DeploymentState, DeploymentStateAdmin)
@@ -216,5 +207,3 @@ admin.site.register(DiServiceView, DiServiceEventAdmin)
 admin.site.register(SearchView, SearchEventAdmin)
 admin.site.register(MobilisationEvent, MobilisationEventAdmin)
 admin.site.register(DiMobilisationEvent, DiMobilisationEventAdmin)
-
-admin.site.register(ABTestGroup)

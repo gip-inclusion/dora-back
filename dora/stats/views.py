@@ -7,7 +7,6 @@ from dora.core.utils import code_insee_to_code_dept, get_object_or_none
 from dora.orientations.models import Orientation
 from dora.services.models import Service, ServiceCategory, ServiceSubCategory
 from dora.stats.models import (
-    ABTestGroup,
     DiMobilisationEvent,
     DiServiceView,
     MobilisationEvent,
@@ -187,23 +186,11 @@ def log_event(request):
         )
         event.categories.set(service.categories.all())
         event.subcategories.set(service.subcategories.all())
-        ab_testing_group = request.data.get("ab_testing_group", "")
-        if ab_testing_group:
-            ab_testing_group, _created = ABTestGroup.objects.get_or_create(
-                value=ab_testing_group
-            )
-            event.ab_test_groups.set([ab_testing_group])
 
     elif tag == "di_mobilisation":
         event = DiMobilisationEvent.objects.create(
             **common_analytics_data, **di_service_data
         )
-        ab_testing_group = request.data.get("ab_testing_group", "")
-        if ab_testing_group:
-            ab_testing_group, _created = ABTestGroup.objects.get_or_create(
-                value=ab_testing_group
-            )
-            event.ab_test_groups.set([ab_testing_group])
         cats_values = request.data.get("di_categories", [])
         subcats_values = request.data.get("di_subcategories", [])
         categories, subcategories = get_categories(cats_values, subcats_values)
