@@ -70,10 +70,6 @@ class ServicePermission(permissions.BasePermission):
         if request.method == "DELETE":
             return user and user.is_authenticated
 
-        # Only authentified users can get the last draft
-        if view.action == "get_last_draft":
-            return user and user.is_authenticated
-
         # Anybody can read
         if request.method in permissions.SAFE_METHODS:
             return True
