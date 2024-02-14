@@ -27,13 +27,22 @@ class Command(BaseCommand):
         parser.add_argument(
             "--limit", type=int, help="Limite du nombre de tâches à traiter"
         )
+
+        # FIXME:
+        # si on inclut directement la valeur de `possible_tasks` dans la f-string ci-dessous,
+        # ruff formattera le fichier au format python 3.12 (menant à une erreur sur python 3.11)
+        # impossible de forcer un formattage compatible python 3.11 à cette heure (même avec `target-version`)
+        # cause : voir https://docs.python.org/3/whatsnew/3.12.html#pep-701-syntactic-formalization-of-f-strings
+        possible_tasks = "|".join(
+            [task.task_type() for task in Task.registered_tasks()]
+        )
+
         parser.add_argument(
             "--types",
             type=str,
             help=(
                 f"Types de tâche de notification à prendre en compte, séparés par ','"
-                f" ({'|'.join([task.task_type()
-                               for task in Task.registered_tasks()])})"
+                f" ({possible_tasks})"
             ),
         )
 
