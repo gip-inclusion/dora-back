@@ -38,7 +38,7 @@ def test_invited_user_task_should_not_trigger(invited_users_task):
 
 def test_invited_user_task_should_trigger(invited_users_task):
     structure = make_structure()
-    user = make_user()
+    user = make_user(is_valid=False)
     admin = make_user(structure=structure, is_admin=True)
 
     # les invitations doivent avoir été envoyées par un admin (CAT 1)
