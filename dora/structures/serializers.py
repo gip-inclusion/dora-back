@@ -164,8 +164,6 @@ class StructureSerializer(serializers.ModelSerializer):
                     "address1",
                     "address2",
                     "categories_display",
-                    "category",
-                    "category_display",
                     "city",
                     "city_code",
                     "coach_orientation_modes",
@@ -221,8 +219,6 @@ class StructureSerializer(serializers.ModelSerializer):
                 model = Service
                 fields = [
                     "categories_display",
-                    "category",
-                    "category_display",
                     "city",
                     "department",
                     "diffusion_zone_details_display",
