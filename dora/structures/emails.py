@@ -153,7 +153,7 @@ def send_orphan_structure_notification(structure):
 def send_structure_activation_notification(structure):
     # notification envoyée aux administrateurs de structure
     # pour une première activation de service
-    cta_link = furl(settings.FRONTEND_URL) / "auth" / "invitation"
+    cta_link = furl(settings.FRONTEND_URL) / "services" / "creer"
     cta_link.add(
         {
             "structure": structure.slug,
@@ -171,8 +171,7 @@ def send_structure_activation_notification(structure):
         "user"
     ):
         send_mail(
-            f"Votre structure n’a pas encore publié de service sur DORA ({
-                structure.name})",
+            f"Votre structure n’a pas encore publié de service sur DORA ({ structure.name})",
             pm.user.email,
             mjml2html(
                 render_to_string("notification-service-activation.mjml", context),

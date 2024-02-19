@@ -47,11 +47,7 @@ def test_send_structure_activation_notification():
         == f"Votre structure n’a pas encore publié de service sur DORA ({structure.name})"
     )
     assert structure.name in mail.outbox[0].body
-    assert (
-        f"/auth/invitation?structure={
-            structure.slug}"
-        in mail.outbox[0].body
-    )
+    assert f"/services/creer?structure={ structure.slug}" in mail.outbox[0].body
     assert "mtm_campaign=MailsTransactionnels" in mail.outbox[0].body
     assert "mtm_kwd=RelanceActivationService" in mail.outbox[0].body
     assert "https://aide.dora.inclusion.beta.gouv.fr" in mail.outbox[0].body
