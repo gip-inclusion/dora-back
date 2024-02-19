@@ -1,17 +1,17 @@
 {% extends "email-base.mjml" %}
 
 {% block preview %}
-  La demande de rattachement de {{ user.first_name }} {{ user.last_name }} est toujours en attente de validation
+  La demande de rattachement de {{ user.get_full_name }} est toujours en attente de validation
 {% endblock %}
 
 {% block content %}
   <p><strong>Bonjour {{ admin.first_name }},</strong></p>
 
-  <p>Nous espérons que vous allez bien. Nous souhaitons vous rappeler qu'une demande de rattachement à votre structure sur DORA a été soumise par {{ user.first_name }} {{ user.last_name }} il y a quelques jours.
+  <p>Nous espérons que vous allez bien. Nous souhaitons vous rappeler qu'une demande de rattachement à votre structure sur DORA a été soumise par {{ user.get_full_name }} il y a quelques jours.
   </p>
   <p>Voici les détails de la demande :</p>
   <ul style="align:left;">
-    <li>Nom du demandeur : {{ user.first_name }} {{ user.last_name }}</li>
+    <li>Nom du demandeur : {{ user.get_full_name }} </li>
     <li>E-mail du demandeur : {{ user.email }}</li>
     <li>Nom de la structure concernée : {{ structure.name }}</li>
   </ul>
@@ -31,6 +31,6 @@
   <mj-text>
     <p>Si vous ne connaissez pas personnellement le demandeur ou si vous ne souhaitez pas approuver la demande, vous pouvez également l'annuler.</p>
     <p>Nous tenons à vous rappeler qu'il est essentiel de donner rapidement accès aux collaborateurs pour qu'ils puissent bénéficier de toutes les fonctionnalités de DORA.</p>
-    <p>Si vous avez des questions ou avez besoin d'assistance, n'hésitez pas à n'hésitez pas à <a href="{{ contact_link }}">nous contacter</a> ou à <a href="{{ help_link }}">consulter notre section d'aide</a>.</p>
+    <p>Si vous avez des questions ou avez besoin d'assistance, n'hésitez pas à <a href="{{ contact_link }}">nous contacter</a> ou à <a href="{{ help_link }}">consulter notre section d'aide</a>.</p>
   </mj-text>
 {% endblock %}

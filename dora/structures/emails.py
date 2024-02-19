@@ -141,8 +141,7 @@ def send_orphan_structure_notification(structure):
     }
 
     send_mail(
-        f"Votre structure n’a pas encore de membre actif sur DORA ({
-            structure.name})",
+        f"Votre structure n’a pas encore de membre actif sur DORA ({ structure.name})",
         structure.email,
         mjml2html(render_to_string("notification-orphan-structure.mjml", context)),
         tags=["orphan-structure"],
