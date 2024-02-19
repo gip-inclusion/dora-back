@@ -60,7 +60,7 @@ def send_invitation_for_pe_members_email(member, inviter_name):
     body = mjml2html(render_to_string("invitation_pe.mjml", params))
 
     send_mail(
-        f"Rejoignez l'{structure.name} sur DORA",
+        f"Rejoignez la structure «{structure.name}» sur DORA",
         member.user.email,
         body,
         tags=["invitation"],

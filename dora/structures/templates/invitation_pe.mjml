@@ -1,11 +1,11 @@
 {% extends "email-base.mjml" %}
 
 {% block preview %}
-  {{ inviter_name }} vous a invité(e) à rejoindre l'{{ structure.name }} sur DORA
+   Votre direction territoriale France Travail et l'équipe DORA vous ont invité à rejoindre la structure «{{ structure.name }}» sur DORA
 {% endblock %}
 
 {% block title %}
-  Rejoignez l'{{ structure.name }} sur DORA.
+  Rejoignez la structure «{{ structure.name }}» sur DORA.
 {% endblock %}
 
 {% block illustration %}
@@ -17,9 +17,8 @@
     <strong>Bonjour,</strong>
   </p>
   <p>
-    Votre direction territoriale France Travail et l'équipe DORA vous ont invités à rejoindre la Structure <a href="{{ structure.get_frontend_url }}">{{ structure.name }}</a>
-    sur la plate-forme <a href="{% frontend_url %}">DORA</a>. Cliquez sur le bouton ci-dessous pour créer votre
-    compte et accéder à votre espace :
+    Votre direction territoriale France Travail et l'équipe DORA vous ont invité à rejoindre la structure «<a href="{{ structure.get_frontend_url }}">{{ structure.name }}</a>» sur la plate-forme <a href="{% frontend_url %}">DORA</a>. Cliquez sur le bouton ci-dessous pour créer votre
+    compte et accéder à votre espace&nbsp;:
   </p>
 {% endblock %}
 

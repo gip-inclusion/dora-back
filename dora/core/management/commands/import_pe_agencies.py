@@ -56,7 +56,7 @@ def structure_by_safir(safir: str) -> Structure | None:
 
 
 def invite_user(structure, email, admin=True) -> str:
-    def _upgrade_as_admin(member, admin: bool) -> str:
+    def _maybe_upgrade_as_admin(member, admin: bool) -> str:
         if admin and not member.is_admin:
             member.is_admin = True
             member.save()
@@ -72,12 +72,12 @@ def invite_user(structure, email, admin=True) -> str:
     try:
         member = StructurePutativeMember.objects.get(user=user, structure=structure)
         result = f"{email} a déjà été invité·e"
-        result += _upgrade_as_admin(member, admin)
+        result += _maybe_upgrade_as_admin(member, admin)
     except StructurePutativeMember.DoesNotExist:
         try:
             member = StructureMember.objects.get(user=user, structure=structure)
             result = f"{email} est déjà membre de la structure"
-            result += _upgrade_as_admin(member, admin)
+            result += _maybe_upgrade_as_admin(member, admin)
         except StructureMember.DoesNotExist:
             member = StructurePutativeMember.objects.create(
                 user=user,
@@ -131,7 +131,7 @@ class Command(BaseCommand):
                 try:
                     safir = row["SAFIR"]
                     structure = structure_by_safir(safir)
-                    email = to_pe_email(row["PRENOM"], row["NOM"])
+                    email = row.get("EMAIL") or to_pe_email(row["PRENOM"], row["NOM"])
                 except Exception as ex:
                     self.stdout.write(
                         self.style.ERROR(f"Erreur de traitement L{i + 1}: {ex}")
