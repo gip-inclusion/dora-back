@@ -35,6 +35,38 @@ def send_invitation_email(member, inviter_name):
     )
 
 
+def send_invitation_for_pe_members_email(member, inviter_name):
+    # FIXME: devrait être temporaire,
+    # donc simple copie de l'invitation standard avec quelques variations
+    # ne pas oublier de retirer le template également
+
+    structure = member.structure
+    invitation_link = furl(settings.FRONTEND_URL).add(
+        path="/auth/invitation",
+        args={
+            "login_hint": iri_to_uri(member.user.email),
+            "structure": structure.slug,
+        },
+    )
+    params = {
+        "recipient_email": member.user.email,
+        "recipient_name": member.user.get_short_name(),
+        "inviter_name": inviter_name,
+        "structure": structure,
+        "cta_link": invitation_link,
+        "with_legal_info": True,
+        "with_dora_info": True,
+    }
+    body = mjml2html(render_to_string("invitation_pe.mjml", params))
+
+    send_mail(
+        f"Rejoignez la structure «{structure.name}» sur DORA",
+        member.user.email,
+        body,
+        tags=["invitation"],
+    )
+
+
 def send_invitation_accepted_notification(member, admin_user):
     params = {
         "recipient_email": admin_user.email,
