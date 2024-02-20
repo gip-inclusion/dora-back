@@ -153,10 +153,9 @@ def send_orphan_structure_notification(structure):
 def send_structure_activation_notification(structure):
     # notification envoyée aux administrateurs de structure
     # pour une première activation de service
-    cta_link = furl(settings.FRONTEND_URL) / "services" / "creer"
+    cta_link = furl(settings.FRONTEND_URL) / "structures" / structure.slug / "services"
     cta_link.add(
         {
-            "structure": structure.slug,
             "mtm_campaign": "MailsTransactionnels",
             "mtm_kwd": "RelanceActivationService",
         }
