@@ -8,7 +8,6 @@ select
     services_service.short_desc,
     services_service.full_desc,
     services_service.is_cumulative,
-    services_service.has_fee,
     services_service.fee_details,
     services_service.beneficiaries_access_modes_other,
     services_service.coach_orientation_modes_other,
