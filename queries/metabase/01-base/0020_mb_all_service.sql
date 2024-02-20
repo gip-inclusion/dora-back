@@ -8,7 +8,6 @@ select
     services_service.short_desc,
     services_service.full_desc,
     services_service.is_cumulative,
-    services_service.has_fee,
     services_service.fee_details,
     services_service.beneficiaries_access_modes_other,
     services_service.coach_orientation_modes_other,
@@ -48,21 +47,8 @@ select
     services_service.source_id,
     services_service.data_inclusion_id,
     services_service.data_inclusion_source,
-    -- TODO: deprecated
-    (select services_service.status != 'PUBLISHED')          as is_draft,
-    (select services_service.status = 'SUGGESTION')          as is_suggestion,
-    --
     (select st_y((services_service.geom)::geometry) as st_y) as latitude,
     (select st_x((services_service.geom)::geometry) as st_x) as longitude,
-    (
-        select services_service.contact_name != ''
-    )                                                        as has_contact_name,
-    (
-        select services_service.contact_phone != ''
-    )                                                        as has_contact_phone,
-    (
-        select services_service.contact_email != ''
-    )                                                        as has_contact_email,
     case
         when
             services_service.modification_date + '240 days' <= now()

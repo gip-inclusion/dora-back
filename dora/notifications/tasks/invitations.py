@@ -66,8 +66,7 @@ class InvitedUsersTask(Task):
                     )
                 except Exception as ex:
                     raise TaskError(
-                        f"Erreur d'envoi de la relance d'invitation ({notification}): {
-                            ex}"
+                        f"Erreur d'envoi de la relance d'invitation ({notification}): {ex}"
                     ) from ex
             case 4:
                 # notifications aux administrateurs 20j
@@ -78,8 +77,7 @@ class InvitedUsersTask(Task):
                     )
                 except Exception as ex:
                     raise TaskError(
-                        f"Erreur d'envoi de la relance (1) aux administrateurs ({
-                            notification}): {ex}"
+                        f"Erreur d'envoi de la relance (1) aux administrateurs ({notification}): {ex}"
                     ) from ex
             case 5:
                 # notifications aux administrateurs 90j
@@ -90,8 +88,7 @@ class InvitedUsersTask(Task):
                     )
                 except Exception as ex:
                     raise TaskError(
-                        f"Erreur d'envoi de la relance (2) aux administrateurs ({
-                            notification}): {ex}"
+                        f"Erreur d'envoi de la relance (2) aux administrateurs ({notification}): {ex}"
                     ) from ex
             case 6:
                 # clôture au préalable de la notification
@@ -160,8 +157,7 @@ class SelfInvitedUsersTask(Task):
                 )
             except Exception as ex:
                 raise TaskError(
-                    f"Erreur d'envoi de la notification ({
-                        notification}): {ex}"
+                    f"Erreur d'envoi de la notification ({notification}): {ex}"
                 )
 
         match notification.counter:
