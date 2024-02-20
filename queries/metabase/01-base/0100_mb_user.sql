@@ -18,9 +18,7 @@ select
     users_user.main_activity,
     (
         select users_user.last_service_reminder_email_sent
-    )              as last_notification_email_sent,
-    -- TODO: deprecated
-    (select false) as is_bizdev
+    ) as last_notification_email_sent
 --
 from users_user
 where (users_user.is_active is true);

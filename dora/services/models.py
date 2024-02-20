@@ -254,10 +254,7 @@ class Service(ModerationMixin, models.Model):
         ConcernedPublic, verbose_name="Publics concernés", blank=True
     )
     is_cumulative = models.BooleanField(verbose_name="Solution cumulable", default=True)
-    # TODO: deprecated?
-    has_fee = models.BooleanField(
-        verbose_name="Frais à charge pour le bénéficiaire", default=False
-    )
+
     fee_condition = models.ForeignKey(
         ServiceFee,
         verbose_name="Frais à charge",
@@ -358,7 +355,6 @@ class Service(ModerationMixin, models.Model):
     diffusion_zone_details = models.CharField(max_length=9, db_index=True, blank=True)
     qpv_or_zrr = models.BooleanField(default=False)
 
-    # Duration
     recurrence = models.CharField(verbose_name="Récurrence", max_length=140, blank=True)
 
     suspension_date = models.DateField(
@@ -600,7 +596,7 @@ class ServiceModificationHistoryItem(models.Model):
 class Bookmark(models.Model):
     user = models.ForeignKey("users.User", on_delete=models.CASCADE)
     service = models.ForeignKey("Service", on_delete=models.CASCADE, null=True)
-    di_id = models.CharField(max_length=50, blank=True)
+    di_id = models.TextField(blank=True)
     creation_date = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:

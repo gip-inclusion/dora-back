@@ -2,7 +2,7 @@ import logging
 import re
 from typing import Tuple
 
-from django.core.exceptions import ObjectDoesNotExist
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.text import Truncator
 
@@ -48,5 +48,5 @@ def get_object_or_none(klass, *args, **kwargs):
     """
     try:
         return get_object_or_404(klass, *args, **kwargs)
-    except ObjectDoesNotExist:
+    except Http404:
         return None

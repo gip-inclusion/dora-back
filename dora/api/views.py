@@ -2,7 +2,6 @@ import django_filters
 from django.conf import settings
 from django.db.models import Q
 from djangorestframework_camel_case.render import CamelCaseJSONRenderer
-from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, permissions, viewsets
 from rest_framework.renderers import JSONRenderer
 from rest_framework.versioning import NamespaceVersioning
@@ -26,18 +25,8 @@ from dora.services.utils import (
 from dora.structures.models import Structure, StructureSource, StructureTypology
 
 from .serializers import (
-    BeneficiaryAccessModeSerializerV1,
-    CoachOrientationModeSerializerV1,
-    LocationKindSerializerV1,
-    ServiceCategorySerializerV1,
-    ServiceKindSerializerV1,
     ServiceSerializer,
-    ServiceSerializerV1,
-    ServiceSubCategorySerializerV1,
     StructureSerializer,
-    StructureSerializerV1,
-    StructureSourceSerializerV1,
-    StructureTypologySerializerV1,
 )
 
 
@@ -114,187 +103,178 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
 ############
 # V1
 ############
-
-
-class StructureFilterV1(django_filters.FilterSet):
-    source = django_filters.ModelChoiceFilter(
-        queryset=StructureSource.objects.all(),
-        to_field_name="value",
+if settings.ALLOW_PUBLIC_API:
+    from .serializers import (
+        BeneficiaryAccessModeSerializerV1,
+        CoachOrientationModeSerializerV1,
+        LocationKindSerializerV1,
+        ServiceCategorySerializerV1,
+        ServiceKindSerializerV1,
+        ServiceSerializerV1,
+        ServiceSubCategorySerializerV1,
+        StructureSerializerV1,
+        StructureSourceSerializerV1,
+        StructureTypologySerializerV1,
     )
 
-    typology = django_filters.ModelChoiceFilter(
-        queryset=StructureTypology.objects.all(),
-        to_field_name="value",
-    )
-
-    creation_date = django_filters.DateFromToRangeFilter()
-    modification_date = django_filters.DateFromToRangeFilter()
-
-    o = django_filters.OrderingFilter(fields=("creation_date", "modification_date"))
-
-    class Meta:
-        model = Structure
-        fields = ["department", "siret"]
-
-
-@extend_schema(
-    tags=["Structures"],
-)
-class StructureViewSetV1(viewsets.ReadOnlyModelViewSet):
-    versioning_class = NamespaceVersioning
-    serializer_class = StructureSerializerV1
-    permission_classes = [permissions.AllowAny]
-    renderer_classes = [PrettyCamelCaseJSONRenderer]
-    filterset_class = StructureFilterV1
-    pagination_class = OptionalPageNumberPagination
-
-    def get_queryset(self):
-        structures = Structure.objects.select_related("typology", "source").all()
-        if self.request.GET.get("di") in TRUTHY_VALUES:
-            structures = structures.exclude(
-                Q(membership=None) & Q(source__value__startswith="di-")
-            )
-        return structures.order_by("pk")
-
-
-@extend_schema(tags=["Dictionnaires des structures"])
-class StructureTypologyViewSetV1(mixins.ListModelMixin, viewsets.GenericViewSet):
-    versioning_class = NamespaceVersioning
-    queryset = StructureTypology.objects.all()
-    serializer_class = StructureTypologySerializerV1
-    permission_classes = [permissions.AllowAny]
-    renderer_classes = [PrettyCamelCaseJSONRenderer]
-
-
-@extend_schema(tags=["Dictionnaires des structures"])
-class StructureSourceViewSetV1(mixins.ListModelMixin, viewsets.GenericViewSet):
-    versioning_class = NamespaceVersioning
-    queryset = StructureSource.objects.all()
-    serializer_class = StructureSourceSerializerV1
-    permission_classes = [permissions.AllowAny]
-    renderer_classes = [PrettyCamelCaseJSONRenderer]
-
-
-class ServiceFilterV1(django_filters.FilterSet):
-    siret = django_filters.CharFilter(
-        field_name="structure__siret",
-    )
-    structure = django_filters.ModelChoiceFilter(queryset=Structure.objects.all())
-    creation_date = django_filters.DateFromToRangeFilter()
-    modification_date = django_filters.DateFromToRangeFilter()
-    categories = django_filters.ModelMultipleChoiceFilter(
-        field_name="categories__value",
-        queryset=ServiceCategory.objects.all(),
-        to_field_name="value",
-    )
-    subcategories = django_filters.ModelMultipleChoiceFilter(
-        field_name="subcategories__value",
-        queryset=ServiceSubCategory.objects.all(),
-        to_field_name="value",
-    )
-    city = django_filters.CharFilter(
-        method="filter_by_city_code", help_text="Code INSEE de la commune"
-    )
-    department = django_filters.CharFilter(
-        method="filter_by_department_code", help_text="Code INSEE du département"
-    )
-    region = django_filters.CharFilter(
-        method="filter_by_region_code", help_text="Code INSEE de la région"
-    )
-
-    o = django_filters.OrderingFilter(
-        fields=("creation_date", "modification_date", "name")
-    )
-
-    class Meta:
-        model = Service
-        fields = []
-
-    def filter_by_city_code(self, queryset, _name, city_code):
-        return filter_services_by_city_code(queryset, city_code)
-
-    def filter_by_department_code(self, queryset, _name, dept_code):
-        return filter_services_by_department(queryset, dept_code)
-
-    def filter_by_region_code(self, queryset, _name, region_code):
-        return filter_services_by_region(queryset, region_code)
-
-
-@extend_schema(tags=["Services"])
-class ServiceViewSetV1(viewsets.ReadOnlyModelViewSet):
-    versioning_class = NamespaceVersioning
-    queryset = (
-        Service.objects.published()
-        .select_related("structure")
-        .prefetch_related(
-            "kinds",
-            "categories",
-            "subcategories",
-            "access_conditions",
-            "concerned_public",
-            "beneficiaries_access_modes",
-            "coach_orientation_modes",
-            "requirements",
-            "credentials",
-            "location_kinds",
+    class StructureFilterV1(django_filters.FilterSet):
+        source = django_filters.ModelChoiceFilter(
+            queryset=StructureSource.objects.all(),
+            to_field_name="value",
         )
-    )
-    serializer_class = ServiceSerializerV1
-    permission_classes = [permissions.AllowAny]
-    renderer_classes = [PrettyCamelCaseJSONRenderer]
-    filterset_class = ServiceFilterV1
-    pagination_class = OptionalPageNumberPagination
 
+        typology = django_filters.ModelChoiceFilter(
+            queryset=StructureTypology.objects.all(),
+            to_field_name="value",
+        )
 
-@extend_schema(tags=["Dictionnaires des services"])
-class ServiceCategoryViewSetV1(mixins.ListModelMixin, viewsets.GenericViewSet):
-    versioning_class = NamespaceVersioning
-    queryset = ServiceCategory.objects.all()
-    serializer_class = ServiceCategorySerializerV1
-    permission_classes = [permissions.AllowAny]
-    renderer_classes = [PrettyCamelCaseJSONRenderer]
+        creation_date = django_filters.DateFromToRangeFilter()
+        modification_date = django_filters.DateFromToRangeFilter()
 
+        o = django_filters.OrderingFilter(fields=("creation_date", "modification_date"))
 
-@extend_schema(tags=["Dictionnaires des services"])
-class ServiceSubCategoryViewSetV1(mixins.ListModelMixin, viewsets.GenericViewSet):
-    versioning_class = NamespaceVersioning
-    queryset = ServiceSubCategory.objects.all()
-    serializer_class = ServiceSubCategorySerializerV1
-    permission_classes = [permissions.AllowAny]
-    renderer_classes = [PrettyCamelCaseJSONRenderer]
+        class Meta:
+            model = Structure
+            fields = ["department", "siret"]
 
+    class StructureViewSetV1(viewsets.ReadOnlyModelViewSet):
+        versioning_class = NamespaceVersioning
+        serializer_class = StructureSerializerV1
+        permission_classes = [permissions.AllowAny]
+        renderer_classes = [PrettyCamelCaseJSONRenderer]
+        filterset_class = StructureFilterV1
+        pagination_class = OptionalPageNumberPagination
 
-@extend_schema(tags=["Dictionnaires des services"])
-class ServiceKindViewSetV1(mixins.ListModelMixin, viewsets.GenericViewSet):
-    versioning_class = NamespaceVersioning
-    queryset = ServiceKind.objects.all()
-    serializer_class = ServiceKindSerializerV1
-    permission_classes = [permissions.AllowAny]
-    renderer_classes = [PrettyCamelCaseJSONRenderer]
+        def get_queryset(self):
+            structures = Structure.objects.select_related("typology", "source").all()
+            if self.request.GET.get("di") in TRUTHY_VALUES:
+                structures = structures.exclude(
+                    Q(membership=None) & Q(source__value__startswith="di-")
+                )
+            return structures.order_by("pk")
 
+    class StructureTypologyViewSetV1(mixins.ListModelMixin, viewsets.GenericViewSet):
+        versioning_class = NamespaceVersioning
+        queryset = StructureTypology.objects.all()
+        serializer_class = StructureTypologySerializerV1
+        permission_classes = [permissions.AllowAny]
+        renderer_classes = [PrettyCamelCaseJSONRenderer]
 
-@extend_schema(tags=["Dictionnaires des services"])
-class BeneficiaryAccessModeViewSetV1(mixins.ListModelMixin, viewsets.GenericViewSet):
-    versioning_class = NamespaceVersioning
-    queryset = BeneficiaryAccessMode.objects.all()
-    serializer_class = BeneficiaryAccessModeSerializerV1
-    permission_classes = [permissions.AllowAny]
-    renderer_classes = [PrettyCamelCaseJSONRenderer]
+    class StructureSourceViewSetV1(mixins.ListModelMixin, viewsets.GenericViewSet):
+        versioning_class = NamespaceVersioning
+        queryset = StructureSource.objects.all()
+        serializer_class = StructureSourceSerializerV1
+        permission_classes = [permissions.AllowAny]
+        renderer_classes = [PrettyCamelCaseJSONRenderer]
 
+    class ServiceFilterV1(django_filters.FilterSet):
+        siret = django_filters.CharFilter(
+            field_name="structure__siret",
+        )
+        structure = django_filters.ModelChoiceFilter(queryset=Structure.objects.all())
+        creation_date = django_filters.DateFromToRangeFilter()
+        modification_date = django_filters.DateFromToRangeFilter()
+        categories = django_filters.ModelMultipleChoiceFilter(
+            field_name="categories__value",
+            queryset=ServiceCategory.objects.all(),
+            to_field_name="value",
+        )
+        subcategories = django_filters.ModelMultipleChoiceFilter(
+            field_name="subcategories__value",
+            queryset=ServiceSubCategory.objects.all(),
+            to_field_name="value",
+        )
+        city = django_filters.CharFilter(
+            method="filter_by_city_code", help_text="Code INSEE de la commune"
+        )
+        department = django_filters.CharFilter(
+            method="filter_by_department_code", help_text="Code INSEE du département"
+        )
+        region = django_filters.CharFilter(
+            method="filter_by_region_code", help_text="Code INSEE de la région"
+        )
 
-@extend_schema(tags=["Dictionnaires des services"])
-class CoachOrientationModeViewSetV1(mixins.ListModelMixin, viewsets.GenericViewSet):
-    versioning_class = NamespaceVersioning
-    queryset = CoachOrientationMode.objects.all()
-    serializer_class = CoachOrientationModeSerializerV1
-    permission_classes = [permissions.AllowAny]
-    renderer_classes = [PrettyCamelCaseJSONRenderer]
+        o = django_filters.OrderingFilter(
+            fields=("creation_date", "modification_date", "name")
+        )
 
+        class Meta:
+            model = Service
+            fields = []
 
-@extend_schema(tags=["Dictionnaires des services"])
-class LocationKindViewSetV1(mixins.ListModelMixin, viewsets.GenericViewSet):
-    versioning_class = NamespaceVersioning
-    queryset = LocationKind.objects.all()
-    serializer_class = LocationKindSerializerV1
-    permission_classes = [permissions.AllowAny]
-    renderer_classes = [PrettyCamelCaseJSONRenderer]
+        def filter_by_city_code(self, queryset, _name, city_code):
+            return filter_services_by_city_code(queryset, city_code)
+
+        def filter_by_department_code(self, queryset, _name, dept_code):
+            return filter_services_by_department(queryset, dept_code)
+
+        def filter_by_region_code(self, queryset, _name, region_code):
+            return filter_services_by_region(queryset, region_code)
+
+    class ServiceViewSetV1(viewsets.ReadOnlyModelViewSet):
+        versioning_class = NamespaceVersioning
+        queryset = (
+            Service.objects.published()
+            .select_related("structure")
+            .prefetch_related(
+                "kinds",
+                "categories",
+                "subcategories",
+                "access_conditions",
+                "concerned_public",
+                "beneficiaries_access_modes",
+                "coach_orientation_modes",
+                "requirements",
+                "credentials",
+                "location_kinds",
+            )
+        )
+        serializer_class = ServiceSerializerV1
+        permission_classes = [permissions.AllowAny]
+        renderer_classes = [PrettyCamelCaseJSONRenderer]
+        filterset_class = ServiceFilterV1
+        pagination_class = OptionalPageNumberPagination
+
+    class ServiceCategoryViewSetV1(mixins.ListModelMixin, viewsets.GenericViewSet):
+        versioning_class = NamespaceVersioning
+        queryset = ServiceCategory.objects.all()
+        serializer_class = ServiceCategorySerializerV1
+        permission_classes = [permissions.AllowAny]
+        renderer_classes = [PrettyCamelCaseJSONRenderer]
+
+    class ServiceSubCategoryViewSetV1(mixins.ListModelMixin, viewsets.GenericViewSet):
+        versioning_class = NamespaceVersioning
+        queryset = ServiceSubCategory.objects.all()
+        serializer_class = ServiceSubCategorySerializerV1
+        permission_classes = [permissions.AllowAny]
+        renderer_classes = [PrettyCamelCaseJSONRenderer]
+
+    class ServiceKindViewSetV1(mixins.ListModelMixin, viewsets.GenericViewSet):
+        versioning_class = NamespaceVersioning
+        queryset = ServiceKind.objects.all()
+        serializer_class = ServiceKindSerializerV1
+        permission_classes = [permissions.AllowAny]
+        renderer_classes = [PrettyCamelCaseJSONRenderer]
+
+    class BeneficiaryAccessModeViewSetV1(
+        mixins.ListModelMixin, viewsets.GenericViewSet
+    ):
+        versioning_class = NamespaceVersioning
+        queryset = BeneficiaryAccessMode.objects.all()
+        serializer_class = BeneficiaryAccessModeSerializerV1
+        permission_classes = [permissions.AllowAny]
+        renderer_classes = [PrettyCamelCaseJSONRenderer]
+
+    class CoachOrientationModeViewSetV1(mixins.ListModelMixin, viewsets.GenericViewSet):
+        versioning_class = NamespaceVersioning
+        queryset = CoachOrientationMode.objects.all()
+        serializer_class = CoachOrientationModeSerializerV1
+        permission_classes = [permissions.AllowAny]
+        renderer_classes = [PrettyCamelCaseJSONRenderer]
+
+    class LocationKindViewSetV1(mixins.ListModelMixin, viewsets.GenericViewSet):
+        versioning_class = NamespaceVersioning
+        queryset = LocationKind.objects.all()
+        serializer_class = LocationKindSerializerV1
+        permission_classes = [permissions.AllowAny]
+        renderer_classes = [PrettyCamelCaseJSONRenderer]

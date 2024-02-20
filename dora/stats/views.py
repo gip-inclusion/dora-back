@@ -7,7 +7,6 @@ from dora.core.utils import code_insee_to_code_dept, get_object_or_none
 from dora.orientations.models import Orientation
 from dora.services.models import Service, ServiceCategory, ServiceSubCategory
 from dora.stats.models import (
-    ABTestGroup,
     DiMobilisationEvent,
     DiServiceView,
     MobilisationEvent,
@@ -58,7 +57,7 @@ def log_event(request):
         orientation = get_object_or_none(Orientation, id=orientation_id)
         if orientation:
             service = orientation.service
-            structure = orientation.service.structure
+            structure = orientation.service.structure if service else None
     if not service and service_slug:
         service = get_object_or_none(Service, slug=service_slug)
         if service:
@@ -166,38 +165,32 @@ def log_event(request):
         event.categories.set(categories)
         event.subcategories.set(subcategories)
     elif tag == "orientation":
+        is_di = not service
         event = OrientationView.objects.create(
             orientation=orientation,
             orientation_status=orientation.status,
             **common_analytics_data,
             **structure_data,
             **service_data,
+            is_di=is_di,
+            di_structure_name=request.data.get("di_structure_name", ""),
+            di_service_id=request.data.get("di_service_id", ""),
+            di_service_name=request.data.get("di_service_name", ""),
         )
-        event.categories.set(service.categories.all())
-        event.subcategories.set(service.subcategories.all())
+        if not is_di:
+            event.categories.set(service.categories.all())
+            event.subcategories.set(service.subcategories.all())
     elif tag == "mobilisation":
         event = MobilisationEvent.objects.create(
             **common_analytics_data, **structure_data, **service_data
         )
         event.categories.set(service.categories.all())
         event.subcategories.set(service.subcategories.all())
-        ab_testing_group = request.data.get("ab_testing_group", "")
-        if ab_testing_group:
-            ab_testing_group, _created = ABTestGroup.objects.get_or_create(
-                value=ab_testing_group
-            )
-            event.ab_test_groups.set([ab_testing_group])
 
     elif tag == "di_mobilisation":
         event = DiMobilisationEvent.objects.create(
             **common_analytics_data, **di_service_data
         )
-        ab_testing_group = request.data.get("ab_testing_group", "")
-        if ab_testing_group:
-            ab_testing_group, _created = ABTestGroup.objects.get_or_create(
-                value=ab_testing_group
-            )
-            event.ab_test_groups.set([ab_testing_group])
         cats_values = request.data.get("di_categories", [])
         subcats_values = request.data.get("di_subcategories", [])
         categories, subcategories = get_categories(cats_values, subcats_values)

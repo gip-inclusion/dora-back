@@ -39,13 +39,6 @@ class DeploymentState(models.Model):
 #
 
 
-class ABTestGroup(models.Model):
-    value = models.CharField(max_length=255, primary_key=True)
-
-    def __str__(self):
-        return self.value
-
-
 #############################################################################################
 # Modèles abstraits
 #
@@ -235,6 +228,15 @@ class OrientationView(AbstractServiceEvent):
         default="",
         blank=True,
     )
+    # À l'usage, la séparation des événements en dora vs di n'est pas pratique.
+    # Donc plutot que de créer une classe DiOrientationView, on rajoute juste un booleen ici,
+    # et on va se débrouiller pour rajouter les informations nécessaires du service d·i dans
+    # ici, plutot que d'heriter de AbstractDiServiceEvent.
+    # À terme il faudrait faire ça pour les autres classes aussi, et se débarasser de l'AbstractDiServiceEvent
+    is_di = models.BooleanField(default=False, db_index=True)
+    di_structure_name = models.CharField(max_length=255, default="")
+    di_service_id = models.CharField(max_length=255, default="")
+    di_service_name = models.CharField(max_length=255, default="")
 
 
 #############################################################################################
@@ -243,8 +245,8 @@ class OrientationView(AbstractServiceEvent):
 
 
 class MobilisationEvent(AbstractServiceEvent):
-    ab_test_groups = models.ManyToManyField(ABTestGroup, blank=True)
+    pass
 
 
 class DiMobilisationEvent(AbstractDiServiceEvent):
-    ab_test_groups = models.ManyToManyField(ABTestGroup, blank=True)
+    pass

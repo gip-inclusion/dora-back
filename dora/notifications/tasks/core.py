@@ -55,6 +55,12 @@ class Task(abc.ABC):
         # précise quelle est l'action à effectuer pour un type de notification donné
         pass
 
+    @classmethod
+    def post_process(cls, notification: Notification):
+        # précise quelle est l'action à effectuer *après* le traitement pour une notification donnée
+        # peut être utile si on essaye de supprimer des èléments comme le propriétaire lors d'une action
+        pass
+
     def __init__(self, *args, limit=None, **kwargs):
         # le type de l'objet à récupérer est déduit du nom de la FK
         model_key = f"owner_{self.candidates().model.__name__}_id".lower()
@@ -122,8 +128,9 @@ class Task(abc.ABC):
             current_candidates
         ).values_list("pk", flat=True)
         # le queryset est filtré dynamiquement sur le type de modèles des objets candidats
+        # on ne garde que les notifications actives
         diff = {self._model_key + "__in": obsolete_objects}
-        obsolete_notifications = notifications_already_created.filter(**diff)
+        obsolete_notifications = notifications_already_created.pending().filter(**diff)
 
         # notifications à créer pour les nouveaux candidats :
         new_candidates = [
@@ -188,6 +195,9 @@ class Task(abc.ABC):
                         # si tout s'est bien passé, on marque la notification comme ayant
                         # été activée (incrément du compteur)
                         n.trigger()
+
+                        # traitement à posteriori
+                        self.post_process(n)
                     ok += 1
 
         # (traitées correctement, en erreur, obsolètes / objet candidat sorti du scope)

@@ -35,6 +35,38 @@ def send_invitation_email(member, inviter_name):
     )
 
 
+def send_invitation_for_pe_members_email(member, inviter_name):
+    # FIXME: devrait être temporaire,
+    # donc simple copie de l'invitation standard avec quelques variations
+    # ne pas oublier de retirer le template également
+
+    structure = member.structure
+    invitation_link = furl(settings.FRONTEND_URL).add(
+        path="/auth/invitation",
+        args={
+            "login_hint": iri_to_uri(member.user.email),
+            "structure": structure.slug,
+        },
+    )
+    params = {
+        "recipient_email": member.user.email,
+        "recipient_name": member.user.get_short_name(),
+        "inviter_name": inviter_name,
+        "structure": structure,
+        "cta_link": invitation_link,
+        "with_legal_info": True,
+        "with_dora_info": True,
+    }
+    body = mjml2html(render_to_string("invitation_pe.mjml", params))
+
+    send_mail(
+        f"Rejoignez la structure «{structure.name}» sur DORA",
+        member.user.email,
+        body,
+        tags=["invitation"],
+    )
+
+
 def send_invitation_accepted_notification(member, admin_user):
     params = {
         "recipient_email": admin_user.email,
@@ -136,19 +168,85 @@ def send_orphan_structure_notification(structure):
     )
     context = {
         "structure": structure,
-        "dora_doc_link": "https://aide.dora.inclusion.beta.gouv.fr/fr/article/decouvrir-et-faire-decouvrir-dora-1nyj6f1/",
+        "dora_doc_link": "https://aide.dora.inclusion.beta.gouv.fr/fr/",
         "webinar_link": "https://app.livestorm.co/dora-1/presentation-dora",
         "cta_link": cta_link.url,
     }
 
     send_mail(
-        f"Votre structure n’a pas encore de membre actif sur DORA ({
-            structure.name})",
+        f"Votre structure n’a pas encore de membre actif sur DORA ({ structure.name})",
         structure.email,
         mjml2html(render_to_string("notification-orphan-structure.mjml", context)),
         tags=["orphan-structure"],
     )
 
+
+def send_admin_invited_users_20_notification(structure, user):
+    # utilisateurs invités en attente :
+    # notification envoyée aux admins de la structure - 20j
+    for admin in structure.admins:
+        context = {
+            "structure": structure,
+            "user": user,
+            "admin": admin,
+            "contact_link": "https://aide.dora.inclusion.beta.gouv.fr/",
+            "help_link": "https://aide.dora.inclusion.beta.gouv.fr/fr/article/gerer-le-compte-de-ses-collaborateurs-en-tant-quadministrateur-xkonvm/",
+        }
+        send_mail(
+            "Invitation non acceptée : Action requise",
+            admin.email,
+            mjml2html(
+                render_to_string("notification-invitation-stalled-20.mjml", context)
+            ),
+        )
+
+
+def send_admin_invited_users_90_notification(structure, user):
+    # utilisateurs invités en attente :
+    # notification envoyée aux admins de la structure - 90j
+    for admin in structure.admins:
+        context = {
+            "structure": structure,
+            "user": user,
+            "admin": admin,
+        }
+        send_mail(
+            "Action requise : une de vos invitations sera bientôt désactivée",
+            admin.email,
+            mjml2html(
+                render_to_string("notification-invitation-stalled-90.mjml", context)
+            ),
+        )
+
+
+def send_admin_self_invited_users_notification(structure, user):
+    # rattachements en attente :
+    # notification envoyée au admin de la structure
+    cta_link = (
+        furl(settings.FRONTEND_URL) / "structures" / structure.slug / "collaborateurs"
+    )
+    cta_link.add(
+        {
+            "mtm_campaign": "MailsTransactionnels",
+            "mtm_kwd": "RattachStructureaValider",
+        }
+    )
+    for admin in structure.admins:
+        context = {
+            "structure": structure,
+            "user": user,
+            "admin": admin,
+            "cta_link": cta_link.url,
+            "contact_link": "https://aide.dora.inclusion.beta.gouv.fr/",
+            "help_link": "https://aide.dora.inclusion.beta.gouv.fr/fr/article/gerer-le-compte-de-ses-collaborateurs-en-tant-quadministrateur-xkonvm/",
+        }
+        send_mail(
+            "Rappel : Demande de rattachement en attente",
+            admin.email,
+            mjml2html(
+                render_to_string("notification-self-invited-users.mjml", context)
+            ),
+        )
 
 def send_structure_activation_notification(structure):
     # notification envoyée aux administrateurs de structure
@@ -176,4 +274,4 @@ def send_structure_activation_notification(structure):
                 render_to_string("notification-service-activation.mjml", context),
             ),
             tags=["structure-service-activation"],
-        )
+            )

@@ -108,12 +108,6 @@ class ServiceSuggestion(models.Model):
         location_kinds = self.contents.pop("location_kinds", [])
         fee_condition = self.contents.pop("fee_condition", None)
 
-        # rétrocompatibilité: les anciennes suggestion avaient uniquement
-        # un champ "category" au lieu du champ "categories" multiple
-        category = self.contents.pop("category", "")
-        if category:
-            categories = [category]
-
         lon = self.contents.pop("longitude", None)
         lat = self.contents.pop("latitude", None)
         contact_phone = "".join(

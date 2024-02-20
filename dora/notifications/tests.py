@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 from django.utils import timezone
 
-from dora.core.test_utils import make_structure
+from dora.core.test_utils import make_structure, make_user
 
 from .enums import NotificationStatus, TaskType
 from .models import Notification, NotificationError
@@ -41,7 +41,7 @@ def test_notification_str(notification, status):
 def test_constraints(notification):
     notification.owner_structure = None
 
-    with pytest.raises(IntegrityError, match="check_structure"):
+    with pytest.raises(IntegrityError, match="check_owner"):
         notification.save()
     ...
 
@@ -60,10 +60,19 @@ def test_unicity(notification):
 
 def test_owner(notification):
     assert notification.owner == notification.owner_structure
-    with pytest.raises(NotificationError):
+
+    with pytest.raises(
+        NotificationError, match="Aucun propriétaire défini pour la notification"
+    ):
         notification.owner_structure = None
         notification.owner
-    ...
+
+    with pytest.raises(
+        NotificationError, match="Plusieurs propriétaires définis pour la notification"
+    ):
+        notification.owner_user = make_user()
+        notification.owner_structure = make_structure()
+        notification.owner
 
 
 def test_expired(notification):
@@ -120,6 +129,12 @@ def test_clean(notification):
     # pas de structure propriétaire
     notification.task_type = TaskType.ORPHAN_STRUCTURES
     notification.owner_structure = None
+    with pytest.raises(ValidationError, match="Aucun objet propriétaire attaché"):
+        notification.clean()
+
+    # mauvais type de structure rattaché
+    notification.owner_user = make_user()
     with pytest.raises(ValidationError, match="Aucune structure attachée"):
         notification.clean()
+
     ...

@@ -177,12 +177,13 @@ class Command(BaseCommand):
                         ),
                         existing,
                     )
-                    mod |= self.maybe_update(
-                        structure,
-                        "email",
-                        agency["contact"].get("email", ""),
-                        existing,
-                    )
+                    # Attention: on ne veut à priori pas exposer l'email des agences
+                    # mod |= self.maybe_update(
+                    #     structure,
+                    #     "email",
+                    #     agency["contact"].get("email", ""),
+                    #     existing,
+                    # )
                     address = agency.get("adressePrincipale")
                     mod |= self.maybe_update(
                         structure,

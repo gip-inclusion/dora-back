@@ -45,6 +45,18 @@ def make_unique_slug(instance, value, length=20):
     return unique_slug
 
 
+class StructurePutativeMemberQuerySet(models.QuerySet):
+    def invited_by_admin(self):
+        # essentiellement pour notifications
+        return self.filter(
+            invited_by_admin=True,
+            user__is_staff=False,
+        ).select_related("user", "structure")
+
+        # cat 1 : user__is_valid = True
+        # cat 2 : user__is_valid = False
+
+
 class StructurePutativeMember(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -60,6 +72,8 @@ class StructurePutativeMember(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True)
 
     invited_by_admin = models.BooleanField(default=False)
+
+    objects = StructurePutativeMemberQuerySet.as_manager()
 
     class Meta:
         verbose_name = "Membre Potentiel"
@@ -343,13 +357,20 @@ class Structure(ModerationMixin, models.Model):
             and user.department == self.department
         )
 
+    @property
+    def admins(self):
+        return [
+            m.user
+            for m in self.membership.filter(
+                is_admin=True, user__is_valid=True, user__is_active=True
+            )
+        ]
+
     def has_admin(self):
         return bool(self.num_admins())
 
     def num_admins(self):
-        return self.membership.filter(
-            is_admin=True, user__is_valid=True, user__is_active=True
-        ).count()
+        return len(self.admins)
 
     def is_pending_member(self, user):
         return StructurePutativeMember.objects.filter(
