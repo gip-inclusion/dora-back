@@ -197,4 +197,12 @@ class User(AbstractBaseUser):
                 api_response = api_instance.create_contact(create_contact)
                 logger.info("User %s added to SiB: %s", self.pk, api_response)
             except SibApiException as e:
+                # FIXME: l'API SIB / Brevo semble être un peu sensible sur l'inscription de contact
+                # pour résoudre certains problèmes de rejets (HTTP 400), on loggue un peu plus profondément
+                # pour investigation
+                logger.error("SiB error details: UID=%s, email=%s, attrs=%s", self.pk, self.email, attributes)
+                if create_contact:
+                    logger.error("SiB Contact obj: %s", create_contact.to_dict())
+
+                # les traces de l'exception peuvent être tronquées sur Sentry
                 logger.exception(e)
