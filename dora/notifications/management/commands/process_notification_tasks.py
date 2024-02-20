@@ -96,10 +96,7 @@ class Command(BaseCommand):
                 )
             )
             self.stdout.write(
-                self.style.WARNING(
-                    f" > nombre d'éléments candidats : {
-                        len(task.candidates())}"
-                )
+                self.style.WARNING(f" > nombre d'éléments candidats : {len(task.candidates())}")
             )
 
             timer = time.time()
