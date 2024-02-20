@@ -39,13 +39,6 @@ class DeploymentState(models.Model):
 #
 
 
-class ABTestGroup(models.Model):
-    value = models.CharField(max_length=255, primary_key=True)
-
-    def __str__(self):
-        return self.value
-
-
 #############################################################################################
 # Modèles abstraits
 #
@@ -252,8 +245,8 @@ class OrientationView(AbstractServiceEvent):
 
 
 class MobilisationEvent(AbstractServiceEvent):
-    ab_test_groups = models.ManyToManyField(ABTestGroup, blank=True)
+    pass
 
 
 class DiMobilisationEvent(AbstractDiServiceEvent):
-    ab_test_groups = models.ManyToManyField(ABTestGroup, blank=True)
+    pass

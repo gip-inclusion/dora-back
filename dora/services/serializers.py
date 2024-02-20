@@ -131,10 +131,6 @@ def _get_diffusion_zone_type_display(obj):
 
 
 class ServiceSerializer(serializers.ModelSerializer):
-    # pour rétrocompatibilité temporaire
-    category = serializers.SerializerMethodField()
-    category_display = serializers.SerializerMethodField()
-
     is_available = serializers.SerializerMethodField()
     forms_info = serializers.SerializerMethodField()
     structure = serializers.SlugRelatedField(
@@ -264,8 +260,6 @@ class ServiceSerializer(serializers.ModelSerializer):
             "can_write",
             "categories",
             "categories_display",
-            "category",
-            "category_display",
             "city",
             "city_code",
             "coach_orientation_modes",
@@ -566,8 +560,6 @@ class ServiceListSerializer(ServiceSerializer):
         model = Service
         fields = [
             "categories_display",
-            "category",
-            "category_display",
             "city",
             "coach_orientation_modes",
             "contact_email",
