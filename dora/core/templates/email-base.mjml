@@ -77,6 +77,10 @@
         {% block cta %}
         {% endblock %}
 
+        <!-- Post-CTA -->
+	{% block post_cta %}
+	{% endblock %}
+
         <!-- Salutations -->
         {% block signature %}
           <mj-text>
