@@ -87,6 +87,7 @@ def test_send_admin_self_invited_users_notification():
         in mail.outbox[0].body
     )
 
+
 def test_send_structure_activation_notification():
     admin = make_user(email="jessie@pixar.com")
     structure = make_structure(putative_member=admin)

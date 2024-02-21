@@ -248,6 +248,7 @@ def send_admin_self_invited_users_notification(structure, user):
             ),
         )
 
+
 def send_structure_activation_notification(structure):
     # notification envoyée aux administrateurs de structure
     # pour une première activation de service
@@ -274,4 +275,4 @@ def send_structure_activation_notification(structure):
                 render_to_string("notification-service-activation.mjml", context),
             ),
             tags=["structure-service-activation"],
-            )
+        )

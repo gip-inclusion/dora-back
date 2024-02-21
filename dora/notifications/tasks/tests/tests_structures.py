@@ -133,8 +133,7 @@ def test_structure_service_activation_task_should_trigger(
             n.refresh_from_db()
 
             # la notification a bien été déclenchée
-            assert ok, f"failed for month: {in_months}, {
-                expected_count}, {n.counter}"
+            assert ok, f"failed for month: {in_months}, {expected_count}, {n.counter}"
             assert n.counter == expected_count
 
             ok, _, _ = structure_service_activation_task.run()

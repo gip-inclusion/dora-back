@@ -46,10 +46,7 @@ class OrphanStructuresTask(Task):
         try:
             send_orphan_structure_notification(notification.owner_structure)
         except Exception as ex:
-            raise TaskError(
-                f"Erreur d'envoi du mail ({
-                    notification}) : {ex}"
-            ) from ex
+            raise TaskError(f"Erreur d'envoi du mail ({ notification}) : {ex}") from ex
         else:
             if notification.counter == 3:
                 # cloturée au bout de 4 envois
@@ -99,8 +96,7 @@ class StructureServiceActivationTask(Task):
             send_structure_activation_notification(notification.owner_structure)
         except Exception as ex:
             raise TaskError(
-                f"Erreur d'envoi du mail de relance d'activation de service ({
-                    notification}) : {ex}"
+                f"Erreur d'envoi du mail de relance d'activation de service ({notification}) : {ex}"
             ) from ex
         else:
             if notification.counter == 4:
