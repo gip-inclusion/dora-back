@@ -7,7 +7,7 @@ djhtml==3.0.6
 freezegun==1.2.2
 ggshield==1.18.1
 pre-commit==3.4.0
-ruff==0.1.4
+ruff==0.2.2
 pytest==7.4.3
 pytest-django==4.6.0
 sqlfluff==2.3.5
