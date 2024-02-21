@@ -97,8 +97,7 @@ class Command(BaseCommand):
             )
             self.stdout.write(
                 self.style.WARNING(
-                    f" > nombre d'éléments candidats : {
-                        len(task.candidates())}"
+                    f" > nombre d'éléments candidats : {len(task.candidates())}"
                 )
             )
 
