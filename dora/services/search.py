@@ -23,22 +23,28 @@ from .utils import filter_services_by_city_code
 MAX_DISTANCE = 50
 
 
-def _filter_and_annotate_dora_services(services, location):
+def _filter_and_annotate_dora_services(services, location, with_remote, with_onsite):
     # 1) services ayant un lieu de déroulement, à moins de MAX_DISTANCE km
     services_on_site = (
         services.filter(location_kinds__value="en-presentiel")
         .annotate(distance=Distance("geom", location))
         .filter(distance__lte=D(km=MAX_DISTANCE))
+        if with_onsite
+        else []
     )
     # 2) services sans lieu de déroulement
     services_remote = (
-        services.filter(
-            Q(location_kinds__value="a-distance")
-            | ~Q(location_kinds__value="en-presentiel")
+        (
+            services.filter(
+                Q(location_kinds__value="a-distance")
+                | ~Q(location_kinds__value="en-presentiel")
+            )
+            .exclude(id__in=services_on_site)
+            .distinct()
+            .annotate(distance=Value(None, output_field=IntegerField()))
         )
-        .exclude(id__in=services_on_site)
-        .distinct()
-        .annotate(distance=Value(None, output_field=IntegerField()))
+        if with_remote
+        else []
     )
     return list(services_on_site) + list(services_remote)
 
@@ -87,6 +93,7 @@ def _get_di_results(
     subcategories: Optional[list[str]] = None,
     kinds: Optional[list[str]] = None,
     fees: Optional[list[str]] = None,
+    location_kinds: Optional[list[str]] = None,
     lat: Optional[float] = None,
     lon: Optional[float] = None,
 ) -> list:
@@ -172,15 +179,27 @@ def _get_di_results(
         result
         for result in mapped_di_results
         if (
-            (
-                "a-distance" not in result["location_kinds"]
-                and result.get("distance") is not None
+            "a-distance" in result["location_kinds"]
+            or (
+                result.get("distance") is not None
                 and result["distance"] <= MAX_DISTANCE
             )
-            or "a-distance" in result["location_kinds"]
         )
     ]
 
+    # FIXME: gestion du paramètre `location_kinds`
+    # Idéalement, il faudrait le transmettre à l’API d·i, mais tant qu’elle ne le prend pas
+    # en charge, on filtre les services à posteriori
+    with_remote = not location_kinds or "a-distance" in location_kinds
+    with_onsite = not location_kinds or "en-presentiel" in location_kinds
+    mapped_di_results = [
+        result
+        for result in mapped_di_results
+        if (
+            (with_onsite and "en-presentiel" in result["location_kinds"])
+            or (with_remote and "a-distance" in result["location_kinds"])
+        )
+    ]
     return mapped_di_results
 
 
@@ -191,6 +210,7 @@ def _get_dora_results(
     subcategories: Optional[list[str]] = None,
     kinds: Optional[list[str]] = None,
     fees: Optional[list[str]] = None,
+    location_kinds: Optional[list[str]] = None,
     lat: Optional[float] = None,
     lon: Optional[float] = None,
 ):
@@ -211,6 +231,12 @@ def _get_dora_results(
 
     if fees:
         services = services.filter(fee_condition__value__in=fees)
+
+    if location_kinds:
+        services = services.filter(location_kinds__value__in=location_kinds)
+
+    with_remote = not location_kinds or "a-distance" in location_kinds
+    with_onsite = not location_kinds or "en-presentiel" in location_kinds
 
     categories_filter = Q()
     if categories:
@@ -247,6 +273,8 @@ def _get_dora_results(
     results = _filter_and_annotate_dora_services(
         services_to_display,
         city.geom if not lat or not lon else Point(float(lon), float(lat), srid=4326),
+        with_remote,
+        with_onsite,
     )
 
     return SearchResultSerializer(results, many=True, context={"request": request}).data
@@ -259,6 +287,7 @@ def search_services(
     subcategories: Optional[list[str]] = None,
     kinds: Optional[list[str]] = None,
     fees: Optional[list[str]] = None,
+    location_kinds: Optional[list[str]] = None,
     di_client: Optional[data_inclusion.DataInclusionClient] = None,
     lat: Optional[float] = None,
     lon: Optional[float] = None,
@@ -281,6 +310,7 @@ def search_services(
             city_code=city_code,
             kinds=kinds,
             fees=fees,
+            location_kinds=location_kinds,
             lat=lat,
             lon=lon,
         )
@@ -295,6 +325,7 @@ def search_services(
         city_code=city_code,
         kinds=kinds,
         fees=fees,
+        location_kinds=location_kinds,
         lat=lat,
         lon=lon,
     )

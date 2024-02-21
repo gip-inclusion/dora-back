@@ -7,8 +7,12 @@ from django.utils import timezone
 from mjml import mjml2html
 
 from dora.core.emails import send_mail
+from dora.services.models import LocationKind
 
 from ...models import SavedSearch, SavedSearchFrequency
+
+ON_SITE = LocationKind.objects.get(value="en-presentiel")
+REMOTE = LocationKind.objects.get(value="a-distance")
 
 
 def get_saved_search_notifications_to_send():
@@ -28,8 +32,14 @@ def get_saved_search_notifications_to_send():
 
 
 def compute_search_label(saved_search):
-    text = f"Services d’insertion à proximité de {saved_search.city_label}"
-
+    on_site_only = ON_SITE in saved_search.location_kinds.all()
+    remote_only = REMOTE in saved_search.location_kinds.all()
+    location_txt = ""
+    if on_site_only:
+        location_txt = "en présentiel"
+    elif remote_only:
+        location_txt = "à distance"
+    text = f"Services d’insertion {location_txt}{" " if location_txt else ""}à proximité de {saved_search.city_label}"
     if saved_search.category:
         text += f', pour la thématique "{saved_search.category.label}"'
 
