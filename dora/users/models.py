@@ -164,30 +164,58 @@ class User(AbstractBaseUser):
 
     def start_onboarding(self, structure, is_first_admin):
         if not settings.SIB_ACTIVE:
+            logger.info("L'API SiB n'est pas active sur cet environnement")
             return
 
+        onboarding_list_id = int(settings.SIB_ONBOARDING_LIST)
         admin_contact = structure.get_most_recently_active_admin()
-        # Configure API key authorization: api-key
+
+        # configuration de l'API SiB
         configuration = sib_api_v3_sdk.Configuration()
         configuration.api_key["api-key"] = settings.SIB_API_KEY
-
-        # create an instance of the API class
-        api_instance = sib_api_v3_sdk.ContactsApi(
+        sib_api_instance = sib_api_v3_sdk.ContactsApi(
             sib_api_v3_sdk.ApiClient(configuration)
         )
 
-        # vérifie que le contact existe
-        # ou on obtient une erreur 400 en retour lors de la création
         try:
-            api_instance.get_contact_info(self.email)
             # l'API SiB renvoie une 404 si l'utilisateur n'est pas trouvé
-            logger.warning("L'utilisateur %s existe déjà dans SiB : onboarding non effectué", self.email)
-            return
+            contact = sib_api_instance.get_contact_info(self.email)
         except SibApiException as exc:
             # 404 : l'utilisateur n'existe pas dans SiB, on peut continuer
             if exc.status != 404:
                 # sinon il s'agit d'une autre erreur SiB
                 raise exc
+        else:
+            # on vérifie l'appartenance à la liste d'onboarding
+            if onboarding_list_id in contact.list_ids:
+                # rien de plus à faire : déjà onboardé
+                logger.info(
+                    "L'utilisateur %s est déja membre de la liste d'onboarding SiB",
+                    self.pk,
+                )
+                return
+
+            # on ajoute le contact existant à la liste d'onboarding
+            try:
+                sib_api_instance.add_contact_to_list(
+                    onboarding_list_id,
+                    sib_api_v3_sdk.AddContactToList(emails=[self.email]),
+                )
+                logger.info(
+                    "L'utilisateur %s a été ajouté à la liste d'onboarding SiB",
+                    self.pk,
+                )
+            except SibApiException as exc:
+                logger.exception(exc)
+                logger.error(
+                    "Impossible d'ajouter l'utilisateur %s à la liste d'onboarding SiB",
+                    self.pk,
+                )
+            return
+
+        # certains cas restent en suspens :
+        # multi-structure, nécessité de mise à jour du contact ...
+        # on pourrait aussi imaginer mettre à jour les attributs
 
         attributes = {
             "PRENOM": self.first_name,
@@ -204,13 +232,13 @@ class User(AbstractBaseUser):
         create_contact = sib_api_v3_sdk.CreateContact(
             email=self.email,
             attributes=attributes,
-            list_ids=[int(settings.SIB_ONBOARDING_LIST)],
+            list_ids=[onboarding_list_id],
             update_enabled=False,
         )
 
         try:
             # Create a contact
-            api_response = api_instance.create_contact(create_contact)
+            api_response = sib_api_instance.create_contact(create_contact)
             logger.info("User %s added to SiB: %s", self.pk, api_response)
         except SibApiException as e:
             # note : les traces de l'exception peuvent être tronquées sur Sentry
