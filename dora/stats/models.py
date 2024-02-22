@@ -4,7 +4,14 @@ from django.db import models
 
 from dora.orientations.models import Orientation, OrientationStatus
 from dora.services.enums import ServiceStatus, ServiceUpdateStatus
-from dora.services.models import Service, ServiceCategory, ServiceSubCategory
+from dora.services.models import (
+    LocationKind,
+    Service,
+    ServiceCategory,
+    ServiceFee,
+    ServiceKind,
+    ServiceSubCategory,
+)
 from dora.structures.models import Structure
 from dora.users.models import MAIN_ACTIVITY_CHOICES
 
@@ -185,6 +192,24 @@ class AbstractSearchEvent(AbstractAnalyticsEvent):
     num_di_results_top10 = models.IntegerField(default=0)
 
     results_slugs_top10 = ArrayField(models.CharField(blank=True), default=list)
+
+    kinds = models.ManyToManyField(
+        ServiceKind,
+        verbose_name="Type de service",
+        blank=True,
+    )
+
+    fee_conditions = models.ManyToManyField(
+        ServiceFee,
+        verbose_name="Frais à charge",
+        blank=True,
+    )
+
+    location_kinds = models.ManyToManyField(
+        LocationKind,
+        verbose_name="Lieu de déroulement",
+        blank=True,
+    )
 
     class Meta:
         abstract = True

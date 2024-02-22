@@ -648,6 +648,15 @@ class SavedSearchSerializer(serializers.ModelSerializer):
     fees_display = serializers.SlugRelatedField(
         source="fees", slug_field="label", many=True, read_only=True
     )
+    location_kinds = serializers.SlugRelatedField(
+        slug_field="value",
+        queryset=LocationKind.objects.all(),
+        many=True,
+        required=False,
+    )
+    location_kinds_display = serializers.SlugRelatedField(
+        source="location_kinds", slug_field="label", many=True, read_only=True
+    )
 
     new_services_count = serializers.SerializerMethodField()
 
@@ -667,6 +676,8 @@ class SavedSearchSerializer(serializers.ModelSerializer):
             "subcategories_display",
             "kinds",
             "kinds_display",
+            "location_kinds",
+            "location_kinds_display",
             "new_services_count",
         ]
 

@@ -36,6 +36,9 @@ def map_search_result(result: dict) -> dict:
     # (c.a.d qu'on veut un objet similaire à ce que renvoie le SearchResultSerializer)
 
     service_data = result["service"]
+    location_kinds = service_data["modes_accueil"] or []
+    if location_kinds == [] and result["distance"] is not None:
+        location_kinds = ["en-presentiel"]
 
     return {
         #
@@ -56,7 +59,7 @@ def map_search_result(result: dict) -> dict:
         # ServiceSerializer
         #
         # TODO: spécifier 'en-presentiel' si on a une geoloc/adresse?
-        "location_kinds": service_data["modes_accueil"] or [],
+        "location_kinds": location_kinds,
         "modification_date": service_data["date_maj"],
         "name": service_data["nom"],
         "short_desc": service_data["presentation_resume"] or "",

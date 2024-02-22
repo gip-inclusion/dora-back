@@ -5,7 +5,14 @@ from rest_framework.response import Response
 
 from dora.core.utils import code_insee_to_code_dept, get_object_or_none
 from dora.orientations.models import Orientation
-from dora.services.models import Service, ServiceCategory, ServiceSubCategory
+from dora.services.models import (
+    LocationKind,
+    Service,
+    ServiceCategory,
+    ServiceFee,
+    ServiceKind,
+    ServiceSubCategory,
+)
 from dora.stats.models import (
     DiMobilisationEvent,
     DiServiceView,
@@ -43,8 +50,7 @@ def log_event(request):
     structure_slug = request.data.get("structure", "")
     service = structure = orientation = None
     orientation_id = request.data.get("orientation", "")
-    num_di_results = int(request.data.get("num_di_results", "0"))
-    num_di_results_top10 = int(request.data.get("num_di_results_top10", "0"))
+
     search_view = None
     search_view_id = request.data.get("search_id")
     if search_view_id:
@@ -65,10 +71,7 @@ def log_event(request):
     if not structure and structure_slug:
         structure = get_object_or_none(Structure, slug=structure_slug)
 
-    is_search = tag == "search"
     user = request.user
-
-    results_slugs_top10 = request.data.get("results_slugs_top10", [])
 
     common_analytics_data = {
         "path": request.data.get("path"),
@@ -131,7 +134,22 @@ def log_event(request):
     elif tag == "search":
         city_code = request.data.get("search_city_code", "")
         department = code_insee_to_code_dept(city_code) if city_code else ""
-        num_results = request.data.get("search_num_results") if is_search else None
+        num_results = int(request.data.get("search_num_results", "0"))
+        num_di_results = int(request.data.get("num_di_results", "0"))
+        num_di_results_top10 = int(request.data.get("num_di_results_top10", "0"))
+        kinds = request.data.get("kinds")
+        fee_conditions = request.data.get("fee_conditions")
+        location_kinds = request.data.get("location_kinds")
+        results_slugs_top10 = request.data.get("results_slugs_top10", [])
+        print(
+            city_code,
+            department,
+            num_results,
+            num_di_results,
+            kinds,
+            fee_conditions,
+            location_kinds,
+        )
         event = SearchView.objects.create(
             **common_analytics_data,
             city_code=city_code,
@@ -146,6 +164,10 @@ def log_event(request):
         categories, subcategories = get_categories(cats_values, subcats_values)
         event.categories.set(categories)
         event.subcategories.set(subcategories)
+        event.kinds.set(ServiceKind.objects.filter(value__in=kinds))
+        event.fee_conditions.set(ServiceFee.objects.filter(value__in=fee_conditions))
+        event.location_kinds.set(LocationKind.objects.filter(value__in=location_kinds))
+
     elif tag == "structure":
         event = StructureView.objects.create(**common_analytics_data, **structure_data)
     elif tag == "service":

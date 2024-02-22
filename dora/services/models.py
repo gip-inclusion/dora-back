@@ -635,6 +635,11 @@ class SavedSearch(models.Model):
         ServiceKind, verbose_name="Type de service", blank=True
     )
     fees = models.ManyToManyField(ServiceFee, verbose_name="Frais à charge", blank=True)
+    location_kinds = models.ManyToManyField(
+        LocationKind,
+        verbose_name="Lieu de déroulement",
+        blank=True,
+    )
     frequency = models.CharField(
         max_length=10,
         choices=SavedSearchFrequency.choices,
@@ -673,6 +678,10 @@ class SavedSearch(models.Model):
         if self.fees.exists():
             fees = self.fees.values_list("value", flat=True)
 
+        location_kinds = None
+        if self.location_kinds.exists():
+            location_kinds = self.location_kinds.values_list("value", flat=True)
+
         # Récupération des résultats de la recherche
         from .search import search_services
 
@@ -683,6 +692,7 @@ class SavedSearch(models.Model):
             subcategories,
             kinds,
             fees,
+            location_kinds,
             di_client,
         )
 
