@@ -38,6 +38,42 @@ def test_notification_str(notification, status):
     assert notification.task_type in str(notification)
 
 
+def test_related_objects():
+    structure = make_structure()
+
+    assert not structure.notifications.count()
+
+    notification = Notification(
+        owner_structure=structure, task_type=TaskType.GENERIC_TASK
+    )
+    notification.save()
+
+    assert notification == structure.notifications.first()
+
+    user = make_user()
+
+    assert not user.notifications.count()
+
+    notification = Notification(owner_user=user, task_type=TaskType.GENERIC_TASK)
+    notification.save()
+
+    assert notification == user.notifications.first()
+
+    putative_membership = make_structure(
+        putative_member=make_user()
+    ).putative_membership.first()
+
+    assert not putative_membership.notifications.count()
+
+    notification = Notification(
+        owner_structureputativemember=putative_membership,
+        task_type=TaskType.GENERIC_TASK,
+    )
+    notification.save()
+
+    assert notification == putative_membership.notifications.first()
+
+
 def test_constraints(notification):
     notification.owner_structure = None
 
