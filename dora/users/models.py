@@ -168,7 +168,6 @@ class User(AbstractBaseUser):
             return
 
         onboarding_list_id = int(settings.SIB_ONBOARDING_LIST)
-        admin_contact = structure.get_most_recently_active_admin()
 
         # configuration de l'API SiB
         configuration = sib_api_v3_sdk.Configuration()
@@ -176,6 +175,21 @@ class User(AbstractBaseUser):
         sib_api_instance = sib_api_v3_sdk.ContactsApi(
             sib_api_v3_sdk.ApiClient(configuration)
         )
+
+        # préparation des attributs nécessaire à la création ou au rattachement de l'utilisateur
+        admin_contact = structure.get_most_recently_active_admin()
+        attributes = {
+            "PRENOM": self.first_name,
+            "NOM": self.last_name,
+            "PROFIL": self.main_activity,
+            "IS_ADMIN": structure.is_admin(self),
+            "IS_FIRST_ADMIN": is_first_admin,
+            "URL_DORA_STRUCTURE": structure.get_frontend_url(),
+            "NEED_VALIDATION": structure.is_pending_member(self),
+            "CONTACT_ADHESION": admin_contact.user.get_safe_name()
+            if admin_contact and not is_first_admin
+            else "",
+        }
 
         try:
             # l'API SiB renvoie une 404 si l'utilisateur n'est pas trouvé
@@ -189,8 +203,21 @@ class User(AbstractBaseUser):
             # on vérifie l'appartenance à la liste d'onboarding
             if onboarding_list_id in contact.list_ids:
                 # rien de plus à faire : déjà onboardé
-                logger.info(
+                logger.warning(
                     "L'utilisateur %s est déja membre de la liste d'onboarding SiB",
+                    self.pk,
+                )
+                return
+
+            # mise à jour du contact avec les attributs nécessaires à l'onboarding
+            update_contact = sib_api_v3_sdk.UpdateContact(attributes=attributes)
+
+            try:
+                sib_api_instance.update_contact(self.email, update_contact)
+            except SibApiException as exc:
+                logger.exception(exc)
+                logger.error(
+                    "Impossible de modifier les attributs pour l'utilisateur %s",
                     self.pk,
                 )
                 return
@@ -213,22 +240,6 @@ class User(AbstractBaseUser):
                 )
             return
 
-        # certains cas restent en suspens :
-        # multi-structure, nécessité de mise à jour du contact ...
-        # on pourrait aussi imaginer mettre à jour les attributs
-
-        attributes = {
-            "PRENOM": self.first_name,
-            "NOM": self.last_name,
-            "PROFIL": self.main_activity,
-            "IS_ADMIN": structure.is_admin(self),
-            "IS_FIRST_ADMIN": is_first_admin,
-            "URL_DORA_STRUCTURE": structure.get_frontend_url(),
-            "NEED_VALIDATION": structure.is_pending_member(self),
-            "CONTACT_ADHESION": admin_contact.user.get_safe_name()
-            if admin_contact and not is_first_admin
-            else "",
-        }
         create_contact = sib_api_v3_sdk.CreateContact(
             email=self.email,
             attributes=attributes,
