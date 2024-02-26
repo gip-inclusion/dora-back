@@ -139,3 +139,6 @@ class DataInclusionClient:
             return None
         except requests.ReadTimeout:
             return None
+        except requests.RequestException as err:
+            logger.error(err)
+            return None
