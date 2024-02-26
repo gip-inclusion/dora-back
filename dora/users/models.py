@@ -163,38 +163,55 @@ class User(AbstractBaseUser):
         return self.email.split("@")[0]
 
     def start_onboarding(self, structure, is_first_admin):
-        if settings.SIB_ACTIVE:
-            admin_contact = structure.get_most_recently_active_admin()
-            # Configure API key authorization: api-key
-            configuration = sib_api_v3_sdk.Configuration()
-            configuration.api_key["api-key"] = settings.SIB_API_KEY
+        if not settings.SIB_ACTIVE:
+            return
 
-            # create an instance of the API class
-            api_instance = sib_api_v3_sdk.ContactsApi(
-                sib_api_v3_sdk.ApiClient(configuration)
-            )
-            attributes = {
-                "PRENOM": self.first_name,
-                "NOM": self.last_name,
-                "PROFIL": self.main_activity,
-                "IS_ADMIN": structure.is_admin(self),
-                "IS_FIRST_ADMIN": is_first_admin,
-                "URL_DORA_STRUCTURE": structure.get_frontend_url(),
-                "NEED_VALIDATION": structure.is_pending_member(self),
-                "CONTACT_ADHESION": admin_contact.user.get_safe_name()
-                if admin_contact and not is_first_admin
-                else "",
-            }
-            create_contact = sib_api_v3_sdk.CreateContact(
-                email=self.email,
-                attributes=attributes,
-                list_ids=[int(settings.SIB_ONBOARDING_LIST)],
-                update_enabled=False,
-            )
+        admin_contact = structure.get_most_recently_active_admin()
+        # Configure API key authorization: api-key
+        configuration = sib_api_v3_sdk.Configuration()
+        configuration.api_key["api-key"] = settings.SIB_API_KEY
 
-            try:
-                # Create a contact
-                api_response = api_instance.create_contact(create_contact)
-                logger.info("User %s added to SiB: %s", self.pk, api_response)
-            except SibApiException as e:
-                logger.exception(e)
+        # create an instance of the API class
+        api_instance = sib_api_v3_sdk.ContactsApi(
+            sib_api_v3_sdk.ApiClient(configuration)
+        )
+
+        # vérifie que le contact existe
+        # ou on obtient une erreur 400 en retour lors de la création
+        try:
+            api_instance.get_contact_info(self.email)
+            # l'API SiB renvoie une 404 si l'utilisateur n'est pas trouvé
+            logger.warning("L'utilisateur %s existe déjà dans SiB : onboarding non effectué", self.email)
+            return
+        except SibApiException as exc:
+            # 404 : l'utilisateur n'existe pas dans SiB, on peut continuer
+            if exc.status != 404:
+                # sinon il s'agit d'une autre erreur SiB
+                raise exc
+
+        attributes = {
+            "PRENOM": self.first_name,
+            "NOM": self.last_name,
+            "PROFIL": self.main_activity,
+            "IS_ADMIN": structure.is_admin(self),
+            "IS_FIRST_ADMIN": is_first_admin,
+            "URL_DORA_STRUCTURE": structure.get_frontend_url(),
+            "NEED_VALIDATION": structure.is_pending_member(self),
+            "CONTACT_ADHESION": admin_contact.user.get_safe_name()
+            if admin_contact and not is_first_admin
+            else "",
+        }
+        create_contact = sib_api_v3_sdk.CreateContact(
+            email=self.email,
+            attributes=attributes,
+            list_ids=[int(settings.SIB_ONBOARDING_LIST)],
+            update_enabled=False,
+        )
+
+        try:
+            # Create a contact
+            api_response = api_instance.create_contact(create_contact)
+            logger.info("User %s added to SiB: %s", self.pk, api_response)
+        except SibApiException as e:
+            # note : les traces de l'exception peuvent être tronquées sur Sentry
+            logger.exception(e)

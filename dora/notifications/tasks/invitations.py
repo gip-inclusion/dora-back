@@ -6,6 +6,7 @@ from dora.notifications.models import Notification
 from dora.structures.emails import (
     send_admin_invited_users_20_notification,
     send_admin_invited_users_90_notification,
+    send_admin_self_invited_users_notification,
 )
 from dora.structures.models import StructurePutativeMember
 from dora.users.emails import send_invitation_reminder
@@ -20,10 +21,10 @@ class InvitedUsersTask(Task):
 
     @classmethod
     def candidates(cls):
-        # en CAT 1 : depuis 6 mois ou +
-        # - invitations à une structure en attente
-        # - pour les utilisateurs invité par un admin
-        # - mais qui n'ont pas validé leur e-mail
+        # CAT 1 :
+        # - les invitations à une structure en attente depuis moins de 6 mois
+        # - les utilisateurs invités n'ont pas validé leur e-mail
+        # filtrée sur les anciens enregistrements (+6 mois)
         return StructurePutativeMember.objects.filter(
             invited_by_admin=True,
             user__is_valid=False,
@@ -116,4 +117,58 @@ class InvitedUsersTask(Task):
                 user.delete()
 
 
+class SelfInvitedUsersTask(Task):
+    @classmethod
+    def task_type(cls):
+        return TaskType.SELF_INVITED_USERS
+
+    @classmethod
+    def candidates(cls):
+        # (presque) CAT 2 :
+        # - rattachement en attente : l'utilisateur n'a pas été invité par un admin
+        # - utilisateurs ayant validé leur adresse e-mail
+        return StructurePutativeMember.objects.filter(
+            invited_by_admin=False, user__is_valid=True
+        )
+
+    @classmethod
+    def should_trigger(cls, notification: Notification) -> bool:
+        now = timezone.now()
+
+        match notification.counter:
+            case 0:
+                return notification.created_at + relativedelta(days=1) <= now
+            case 1:
+                return notification.created_at + relativedelta(days=3) <= now
+            case 2:
+                return notification.created_at + relativedelta(days=5) <= now
+            case 3:
+                return notification.created_at + relativedelta(days=7) <= now
+            case _:
+                return False
+
+    @classmethod
+    def process(cls, notification: Notification):
+        def _send_email():
+            try:
+                send_admin_self_invited_users_notification(
+                    notification.owner_structureputativemember.structure,
+                    notification.owner_structureputativemember.user,
+                )
+            except Exception as ex:
+                raise TaskError(
+                    f"Erreur d'envoi de la notification ({notification}): {ex}"
+                )
+
+        match notification.counter:
+            case 0 | 1 | 2:
+                _send_email()
+            case 3:
+                _send_email()
+                notification.complete()
+            case _:
+                raise TaskError(f"Incohérence de compteur ({notification})")
+
+
 Task.register(InvitedUsersTask)
+Task.register(SelfInvitedUsersTask)
