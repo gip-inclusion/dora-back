@@ -1,6 +1,13 @@
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE="config.settings"
+python_files = ["test.py", "tests*.py", "test_*.py"]
+
 [tool.ruff]
-ignore = ["E501", "E203"]
+target-version = "py311"
 line-length = 88
+
+[tool.ruff.lint]
+ignore = ["E501", "E203"]
 # Compatibilité minimale avec flake8, à faire évoluer si nécessaire
 # voir les règles de lint : https://docs.astral.sh/ruff/rules/
 select = [
@@ -11,12 +18,8 @@ select = [
     "I",  # isort
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["dora"]
-
-[tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE="config.settings"
-python_files = ["test.py", "tests*.py", "test_*.py"]
 
 # Note : la plupart des éléments de configuration de sqlfluff
 # sont basés sur les recommandantions et usages de Data-Inclusion
