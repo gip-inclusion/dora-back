@@ -22,6 +22,7 @@ def test_user_account_deletion_registered():
 
 
 def test_user_account_deletation_should_trigger(user_account_deletion_task):
+    # utilisateur actif récemment : pas de notification créée
     user = make_user(last_login=timezone.now())
 
     assert user not in user_account_deletion_task.candidates()
@@ -30,6 +31,7 @@ def test_user_account_deletation_should_trigger(user_account_deletion_task):
 
     assert not ok
 
+    # utilisateur inactif depuis 2 ans : création d'une notification
     old_user = make_user(last_login=timezone.now() - relativedelta(years=2))
 
     assert old_user in user_account_deletion_task.candidates()
@@ -67,6 +69,39 @@ def test_user_account_deletation_should_trigger(user_account_deletion_task):
     with pytest.raises(Notification.DoesNotExist):
         # et la notification aussi
         n.refresh_from_db()
+
+
+def test_inactive_user_becomes_active(user_account_deletion_task):
+    # on vérifie qu'un utilisateur inactif notifié
+    # qui se connecte ne sera plus notifié (maj de la notification)
+    inactive_user = make_user(last_login=timezone.now() - relativedelta(years=2))
+    ok, _, _ = user_account_deletion_task.run()
+    n = Notification.objects.pending().first()
+
+    assert ok
+    assert inactive_user in user_account_deletion_task.candidates()
+    assert n
+    assert n.counter == 1
+
+    # L'utilisateur a bien été notifié,
+    # s'il se connecte, la notification doit être fermée (`complete`)
+    inactive_user.last_login = timezone.now()
+    inactive_user.save()
+
+    ok, _, obs = user_account_deletion_task.run()
+    inactive_user.refresh_from_db()
+    n.refresh_from_db()
+
+    assert not ok
+    assert obs == 1
+    assert n.is_complete
+
+    # juste pour être sûr : vérification de la désactivation de la notification
+    with freeze_time(timezone.now() + relativedelta(days=30)):
+        ok, _, _ = user_account_deletion_task.run()
+        assert not ok
+        # on vérifie que l'utilisateur est bien présent en base
+        inactive_user.refresh_from_db()
 
 
 def test_process_user_account_deletion(user_account_deletion_task):
