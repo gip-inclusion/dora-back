@@ -163,6 +163,7 @@ class StructureAdmin(admin.ModelAdmin):
         "modification_date",
         "source",
         "typology",
+        "national_labels",
         "department",
     ]
     search_fields = (
@@ -174,7 +175,7 @@ class StructureAdmin(admin.ModelAdmin):
         "slug",
         "data_inclusion_id",
     )
-    ordering = ["-modification_date", "department"]
+
     inlines = [
         StructureMemberInline,
         StructurePutativeMemberInline,
