@@ -137,19 +137,10 @@ def log_event(request):
         num_results = int(request.data.get("search_num_results", "0"))
         num_di_results = int(request.data.get("num_di_results", "0"))
         num_di_results_top10 = int(request.data.get("num_di_results_top10", "0"))
-        kinds = request.data.get("kinds")
+        kinds = request.data.get("kinds", [])
         fee_conditions = request.data.get("fee_conditions")
         location_kinds = request.data.get("location_kinds")
         results_slugs_top10 = request.data.get("results_slugs_top10", [])
-        print(
-            city_code,
-            department,
-            num_results,
-            num_di_results,
-            kinds,
-            fee_conditions,
-            location_kinds,
-        )
         event = SearchView.objects.create(
             **common_analytics_data,
             city_code=city_code,
