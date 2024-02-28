@@ -52,7 +52,9 @@ class UsersWithoutStructureTask(Task):
         match notification.counter:
             case 0 | 1 | 2 | 3:
                 try:
-                    send_user_without_structure_notification(notification.owner_user)
+                    send_user_without_structure_notification(
+                        notification.owner_user, deletion=notification.counter == 3
+                    )
                 except Exception as ex:
                     raise TaskError(
                         f"Erreur d'envoi du mail pour un utilisateur sans structure ({notification}) : {ex}"

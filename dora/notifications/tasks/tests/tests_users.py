@@ -78,6 +78,19 @@ def test_user_without_structure_task_should_trigger(user_without_structure_task)
             assert len(mail.outbox) == cnt
             assert mail.outbox[cnt - 1].to == [user.email]
 
+            # le contenu de l'e-mail est différent pour la dernière notification
+            match cnt:
+                case 4:
+                    assert (
+                        mail.outbox[cnt - 1].subject
+                        == "Dernier rappel avant suppression"
+                    )
+                case _:
+                    assert (
+                        mail.outbox[cnt - 1].subject
+                        == "Rappel : Identifiez votre structure sur DORA"
+                    )
+
         with freeze_time(now + relativedelta(days=day + 1)):
             ok, _, _ = user_without_structure_task.run()
             assert not ok
