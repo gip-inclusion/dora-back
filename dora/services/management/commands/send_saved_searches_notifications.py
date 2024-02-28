@@ -11,9 +11,6 @@ from dora.services.models import LocationKind
 
 from ...models import SavedSearch, SavedSearchFrequency
 
-ON_SITE = LocationKind.objects.get(value="en-presentiel")
-REMOTE = LocationKind.objects.get(value="a-distance")
-
 
 def get_saved_search_notifications_to_send():
     # Notifications toutes les deux semaines
@@ -31,37 +28,15 @@ def get_saved_search_notifications_to_send():
     return two_weeks_notifications.union(monthly_notifications)
 
 
-def compute_search_label(saved_search):
-    on_site_only = ON_SITE in saved_search.location_kinds.all()
-    remote_only = REMOTE in saved_search.location_kinds.all()
-    location_txt = ""
-    if on_site_only:
-        location_txt = "en présentiel"
-    elif remote_only:
-        location_txt = "à distance"
-    text = f"Services d’insertion {location_txt}{" " if location_txt else ""}à proximité de {saved_search.city_label}"
-    if saved_search.category:
-        text += f', pour la thématique "{saved_search.category.label}"'
-
-    if saved_search.subcategories.exists():
-        labels = saved_search.subcategories.values_list("label", flat=True)
-        text += f", pour le(s) besoin(s) : {', '.join(labels)}"
-
-    if saved_search.kinds.exists():
-        labels = saved_search.kinds.values_list("label", flat=True)
-        text += f", pour le(s) type(s) de service : {', '.join(labels)}"
-
-    if saved_search.fees.exists():
-        labels = saved_search.fees.values_list("label", flat=True)
-        text += f", avec comme frais à charge : {', '.join(labels)}"
-
-    return text
-
-
 class Command(BaseCommand):
     help = (
         "Envoi les notifications liées aux recherches sauvegardées par les utilisateurs"
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.on_site = LocationKind.objects.get(value="en-presentiel")
+        self.remote = LocationKind.objects.get(value="a-distance")
 
     def handle(self, *args, **options):
         self.stdout.write("Vérification des notifications de recherches sauvegardées")
@@ -79,7 +54,7 @@ class Command(BaseCommand):
             if new_services:
                 # Envoi de l'email
                 context = {
-                    "search_label": compute_search_label(saved_search),
+                    "search_label": self.compute_search_label(saved_search),
                     "updated_services": new_services,
                     "alert_link": f"{settings.FRONTEND_URL}/mes-alertes/{saved_search.id}",
                     "tracking_params": tracking_params,
@@ -99,3 +74,29 @@ class Command(BaseCommand):
             saved_search.last_notification_date = timezone.now()
             saved_search.save()
         self.stdout.write(f"{num_emails_sent} courriels envoyés")
+
+    def compute_search_label(self, saved_search):
+        on_site_only = self.on_site in saved_search.location_kinds.all()
+        remote_only = self.remote in saved_search.location_kinds.all()
+        location_txt = ""
+        if on_site_only:
+            location_txt = "en présentiel"
+        elif remote_only:
+            location_txt = "à distance"
+        text = f'Services d’insertion {location_txt}{" " if location_txt else ""}à proximité de {saved_search.city_label}'
+        if saved_search.category:
+            text += f', pour la thématique "{saved_search.category.label}"'
+
+        if saved_search.subcategories.exists():
+            labels = saved_search.subcategories.values_list("label", flat=True)
+            text += f", pour le(s) besoin(s) : {', '.join(labels)}"
+
+        if saved_search.kinds.exists():
+            labels = saved_search.kinds.values_list("label", flat=True)
+            text += f", pour le(s) type(s) de service : {', '.join(labels)}"
+
+        if saved_search.fees.exists():
+            labels = saved_search.fees.values_list("label", flat=True)
+            text += f", avec comme frais à charge : {', '.join(labels)}"
+
+        return text
