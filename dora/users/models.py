@@ -4,6 +4,7 @@ import logging
 import sib_api_v3_sdk
 from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
 from sib_api_v3_sdk.rest import ApiException as SibApiException
@@ -103,7 +104,19 @@ class User(AbstractBaseUser):
         help_text="Indique si l’utilisateur est un gestionnaire (de département)",
     )
     department = models.CharField(
-        max_length=3, default="", blank=True, help_text="Département d'un gestionnaire"
+        blank=True,
+        null=True,
+        max_length=3,
+        help_text="Département d'un gestionnaire",
+    )
+    departments = ArrayField(
+        base_field=models.CharField(
+            max_length=3,
+        ),
+        blank=True,
+        null=True,
+        verbose_name="Départements en gestion",
+        help_text="Liste des départements gérés par l'utilisateur (si il est gestionnaire)",
     )
     main_activity = models.CharField(
         max_length=25,
