@@ -51,7 +51,9 @@ def user_info(request):
         user, token = TokenAuthentication().authenticate_credentials(key)
     except exceptions.AuthenticationFailed:
         raise Http404
+
     update_last_login(user)
+
     return Response(UserInfoSerializer(user, context={"token": token}).data, status=200)
 
 
@@ -196,7 +198,7 @@ def join_structure(request):
 @transaction.atomic
 def invite_first_admin(request):
     inviter = request.user
-    if not (inviter.is_staff or (inviter.is_manager and inviter.department)):
+    if not (inviter.is_staff or (inviter.is_manager and inviter.departments)):
         raise exceptions.PermissionDenied
     siret = request.data.get("siret")
     if not siret:

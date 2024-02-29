@@ -23,7 +23,7 @@ class StructureAdminPermission(permissions.BasePermission):
             return (
                 user
                 and user.is_authenticated
-                and (user.is_staff or (user.is_manager and user.department))
+                and (user.is_staff or (user.is_manager and user.departments))
             )
         return False
 
@@ -70,12 +70,10 @@ class StructureAdminViewSet(
     def get_queryset(self):
         user = self.request.user
         department = self.request.query_params.get("department")
-        if user.is_manager and department and user.department != department:
+        if user.is_manager and department and department not in user.departments:
             raise PermissionDenied
-        if user.is_manager and not user.department:
+        if user.is_manager and not user.departments:
             raise PermissionDenied
-        if user.is_manager:
-            department = user.department
 
         moderation = self.request.query_params.get("moderation") in TRUTHY_VALUES
 

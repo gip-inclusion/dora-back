@@ -353,8 +353,8 @@ class Structure(ModerationMixin, models.Model):
         return (
             user.is_authenticated
             and user.is_manager
-            and user.department
-            and user.department == self.department
+            and user.departments
+            and self.department in user.departments
         )
 
     @property
