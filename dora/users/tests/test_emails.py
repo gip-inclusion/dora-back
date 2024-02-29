@@ -8,11 +8,12 @@ from dora.users.emails import (
 )
 
 
-def test_send_invitation_reminder():
+@pytest.mark.parametrize("with_notification", (True, False))
+def test_send_invitation_reminder(with_notification):
     user = make_user()
     structure = make_structure(putative_member=user)
 
-    send_invitation_reminder(user, structure)
+    send_invitation_reminder(user, structure, notification=with_notification)
 
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == [user.email]
@@ -22,6 +23,13 @@ def test_send_invitation_reminder():
     )
     assert structure.name in mail.outbox[0].body
     assert "/auth/invitation" in mail.outbox[0].body
+
+    if with_notification:
+        assert "MailsTransactionnels" in mail.outbox[0].body
+        assert "InvitationaConfirmer" in mail.outbox[0].body
+    else:
+        assert "MailsTransactionnels" not in mail.outbox[0].body
+        assert "InvitationaConfirmer" not in mail.outbox[0].body
 
 
 @pytest.mark.parametrize(
