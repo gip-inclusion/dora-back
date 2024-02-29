@@ -78,8 +78,8 @@
         {% endblock %}
 
         <!-- Post-CTA -->
-	{% block post_cta %}
-	{% endblock %}
+        {% block post_cta %}
+        {% endblock %}
 
         <!-- Salutations -->
         {% block signature %}
