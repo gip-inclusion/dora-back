@@ -361,6 +361,10 @@ class Service(ModerationMixin, models.Model):
         verbose_name="Jusqu’au", null=True, blank=True, db_index=True
     )
 
+    appointment_link = models.URLField(
+        verbose_name="Lien de prise de rendez-vous", blank=True
+    )
+
     ##########
     # Metadata
 
