@@ -103,12 +103,6 @@ class User(AbstractBaseUser):
         default=False,
         help_text="Indique si l’utilisateur est un gestionnaire (de département)",
     )
-    department = models.CharField(
-        blank=True,
-        null=True,
-        max_length=3,
-        help_text="Département d'un gestionnaire",
-    )
     departments = ArrayField(
         base_field=models.CharField(
             max_length=3,
