@@ -199,6 +199,7 @@ def test_service_serialization_exemple(authenticated_user, api_client):
         recurrence="Tu 09:00-12:00;We 14:00-17:00",
         coach_orientation_modes_other="Mêmes modalités que pour les bénéficiaires",
         beneficiaries_access_modes_other="Contacter conseiller(e) Pôle Emploi",
+        appointment_link="https://example.com",
     )
 
     service.subcategories.add(
@@ -259,7 +260,7 @@ def test_service_serialization_exemple(authenticated_user, api_client):
         "pre_requis": ["Bonne connaissance du français oral et écrit"],
         "presentation_detail": "Service de proximité visant à soutenir les familles ayant la responsabilité de jeunes enfants, en particulier les familles monoparentales.",
         "presentation_resume": "Accompagnement des familles à domicile",
-        "prise_rdv": None,
+        "prise_rdv": "https://example.com",
         "profils": ["adultes", "jeunes-16-26", "femmes"],
         "recurrence": "Tu 09:00-12:00;We 14:00-17:00",
         "source": None,
