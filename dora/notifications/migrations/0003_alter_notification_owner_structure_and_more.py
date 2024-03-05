@@ -58,6 +58,7 @@ class Migration(migrations.Migration):
                     ("service_activation", "Service Activation"),
                     ("invited_users", "Invited Users"),
                     ("self_invited_users", "Self Invited Users"),
+                    ("users_without_structure", "Users Without Structure"),
                     ("generic_task", "Generic Task"),
                 ],
                 verbose_name="Type de tâche",
