@@ -56,7 +56,7 @@ def test_structures_api_response(authenticated_user, api_client):
 
 @pytest.mark.loaddata("structure_typology", "service_subcategory")
 def test_structures_serialization_exemple(
-    setup_structure_data, authenticated_user, api_client
+    setup_structure_data, authenticated_user, api_client,settings
 ):
     # Example adapté de la doc data·inclusion :
     # https://www.data.inclusion.beta.gouv.fr/schemas-de-donnees-de-loffre/schema-des-structures-et-services-dinsertion
@@ -123,7 +123,7 @@ def test_structures_serialization_exemple(
         "labels_autres": ["Nièvre médiation numérique"],
         "labels_nationaux": ["MOBIN", "AFPA"],
         "latitude": 48.7703,
-        "lien_source": f"http://localhost:3000/structures/{struct.slug}",
+        "lien_source": f"{settings.FRONTEND_URL}/structures/{struct.slug}",
         "longitude": 7.848133,
         "nom": "MOBILETTE",
         "presentation_detail": None,
@@ -169,7 +169,7 @@ def test_unpublished_service_is_not_serialized(authenticated_user, api_client):
     "service_coach_orientation_mode",
     "service_beneficiary_access_mode",
 )
-def test_service_serialization_exemple(authenticated_user, api_client):
+def test_service_serialization_exemple(authenticated_user, api_client, settings):
     # Example adapté de la doc data·inclusion :
     # https://www.data.inclusion.beta.gouv.fr/schemas-de-donnees-de-loffre/schema-des-structures-et-services-dinsertion
     baker.make(Department, code="29", name="Finistère")
@@ -253,7 +253,7 @@ def test_service_serialization_exemple(authenticated_user, api_client):
         "id": str(service.id),
         "justificatifs": ["Carte d'identité, passeport ou permis de séjour"],
         "latitude": 23.88654,
-        "lien_source": f"http://localhost:3000/services/{service.slug}",
+        "lien_source": f"{settings.FRONTEND_URL}/services/{service.slug}",
         "longitude": 3.76855,
         "modes_accueil": ["a-distance", "en-presentiel"],
         "nom": "TISF",
