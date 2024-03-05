@@ -27,7 +27,7 @@ class StructureTestCase(APITestCase):
         self.me = baker.make("users.User", is_valid=True)
         self.superuser = baker.make("users.User", is_staff=True, is_valid=True)
         self.manager = baker.make(
-            "users.User", is_valid=True, is_manager=True, department="31"
+            "users.User", is_valid=True, is_manager=True, departments=["31"]
         )
         # Structure dont je suis administrateur
         self.my_struct = make_structure()
@@ -346,7 +346,7 @@ class StructureMemberTestCase(APITestCase):
         self.unaccepted_admin = baker.make("users.User", is_valid=True)
         self.superuser = baker.make("users.User", is_staff=True, is_valid=True)
         self.manager = baker.make(
-            "users.User", is_manager=True, is_valid=True, department="31"
+            "users.User", is_manager=True, is_valid=True, departments=["31"]
         )
         self.other_struct31_user = baker.make(
             "users.User",

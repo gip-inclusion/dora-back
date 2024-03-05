@@ -91,7 +91,7 @@ class ServiceTestCase(APITestCase):
         )
 
         self.manager = baker.make(
-            "users.User", is_manager=True, is_valid=True, department="31"
+            "users.User", is_manager=True, is_valid=True, departments=["31"]
         )
         self.struct_31 = make_structure(department="31")
         self.service_31 = make_service(

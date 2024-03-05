@@ -107,7 +107,7 @@ class ManagerTestCase(APITestCase):
             is_valid=True,
             is_staff=False,
             is_manager=True,
-            department=31,
+            departments=[31],
         )
 
     def test_coord_can_see_structures_in_his_dept(self):
