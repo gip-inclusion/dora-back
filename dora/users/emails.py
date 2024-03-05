@@ -7,9 +7,18 @@ from mjml import mjml2html
 from dora.core.emails import send_mail
 
 
-def send_invitation_reminder(user, structure):
+def send_invitation_reminder(user, structure, notification=False):
     cta_link = furl(settings.FRONTEND_URL) / "auth" / "invitation"
     cta_link.add({"login_hint": iri_to_uri(user.email), "structure": structure.slug})
+
+    if notification:
+        cta_link.add(
+            {
+                "mtm_campaign": "MailsTransactionnels",
+                "mtm_keyword": "InvitationaConfirmer",
+            }
+        )
+
     context = {
         "user": user,
         "structure": structure,

@@ -63,6 +63,7 @@ class InvitedUsersTask(Task):
                     send_invitation_reminder(
                         notification.owner_structureputativemember.user,
                         notification.owner_structureputativemember.structure,
+                        notification=True,
                     )
                 except Exception as ex:
                     raise TaskError(
