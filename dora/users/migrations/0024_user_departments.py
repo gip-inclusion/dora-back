@@ -5,13 +5,12 @@ import logging
 import django.contrib.postgres.fields
 from django.db import migrations, models
 
-from ..models import User
-
 logger = logging.getLogger(__name__)
 
 
 class Migration(migrations.Migration):
     def update_departments_array(apps, schema_editor):
+        User = apps.get_model("users", "user")
         if managers := User.objects.exclude(department="").filter(is_manager=True):
             logger.info("Mise à jour de %s comptes de gestionnaire", len(managers))
             # note :
