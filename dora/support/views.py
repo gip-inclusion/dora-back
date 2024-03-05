@@ -70,10 +70,16 @@ class StructureAdminViewSet(
     def get_queryset(self):
         user = self.request.user
         department = self.request.query_params.get("department")
-        if user.is_manager and department and department not in user.departments:
-            raise PermissionDenied
-        if user.is_manager and not user.departments:
-            raise PermissionDenied
+
+        if user.is_manager:
+            if not user.departments:
+                raise PermissionDenied
+
+            if department and department not in user.departments:
+                raise PermissionDenied
+
+            if not department:
+                [department, *_] = user.departments
 
         moderation = self.request.query_params.get("moderation") in TRUTHY_VALUES
 
