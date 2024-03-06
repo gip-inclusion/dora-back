@@ -60,15 +60,14 @@ class StructureServiceActivationTask(Task):
 
     @classmethod
     def candidates(cls):
-        # liste des structures sans membres enregistrés,
-        # avec au moins un admin en attente d'inscription
-        # depuis un mois
+        # structures sans services, hors agences FT
+        # avec au moins un admin inscrit depuis un mois
         one_month_ago = timezone.now() - relativedelta(months=1)
         return Structure.objects.filter(
             services=None,
-            membership=None,
-            putative_membership__is_admin=True,
-            putative_membership__creation_date__lt=one_month_ago,
+            code_safir_pe=None,
+            membership__is_admin=True,
+            membership__creation_date__lt=one_month_ago,
         ).distinct()
 
     @classmethod
