@@ -12,7 +12,7 @@ from dora.admin_express.models import AdminDivisionType, City
 from dora.core import utils
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
-from dora.core.utils import code_insee_to_code_dept, normalize_description
+from dora.core.utils import code_insee_to_code_dept
 from dora.data_inclusion.mappings import DI_TO_DORA_DIFFUSION_ZONE_TYPE_MAPPING
 from dora.services.enums import ServiceStatus
 from dora.services.models import (
@@ -46,24 +46,21 @@ def clean_field(value, max_length, default_value):
     return Truncator(value).chars(max_length)
 
 
+def cust_choice_to_objects(Model, values):
+    if values:
+        return Model.objects.filter(name__in=values)
+    return []
+
+
 class Command(BaseCommand):
     help = "Importe les nouvelles structures Data Inclusion qui n'existent pas encore dans Dora"
 
     def add_arguments(self, parser):
-        parser.add_argument("source", type=str)
         parser.add_argument("--department", type=str)
 
     def handle(self, *args, **options):
         department = options["department"]
-        source = options["source"]
-
-        if not source.startswith("mediation-numerique"):
-            self.stderr.write(
-                self.style.ERROR("Source non MedNum, utilisez `import_data_inclusion`")
-            )
-            import sys
-
-            sys.exit(-1)
+        source = "mediation-numerique"
 
         self.stdout.write(self.style.SUCCESS(f"Import de la source: {source}"))
         try:
@@ -209,10 +206,21 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"{num_imported} structures importées"))
 
     def import_services(self, source_value, services):
-        def cust_choice_to_objects(Model, values):
-            if values:
-                return Model.objects.filter(name__in=values)
-            return []
+        existing_di_ids = Service.objects.filter(
+            data_inclusion_source__startswith="mediation-numerique"
+        ).values_list("data_inclusion_id", flat=True)
+        existing_di_ids = [id for id in existing_di_ids if len(id) == 44]
+
+        def already_imported(new_id):
+            if Service.objects.filter(data_inclusion_id=new_id):
+                return True
+            # On gère les imports historiques aussi bien que possible
+            # étant donné que les ids ont changé
+            for id in new_id.split("__"):
+                for existing_di_id in existing_di_ids:
+                    if id.endswith(existing_di_id):
+                        return True
+            return False
 
         bot_user = User.objects.get_dora_bot()
         source, _created = ServiceSource.objects.get_or_create(
@@ -228,10 +236,7 @@ class Command(BaseCommand):
             )
         num_imported = 0
         for s in services:
-            if Service.objects.filter(
-                data_inclusion_id=s["id"],
-                data_inclusion_source=s["source"],
-            ).exists():
+            if already_imported(s["id"]):
                 continue
             siret, labels_nationaux = STRUCTURES_INDEX.get(
                 s["structure_id"], (None, [])
@@ -279,6 +284,7 @@ class Command(BaseCommand):
                     if s["zone_diffusion_type"]
                     else "",
                     diffusion_zone_details=s["zone_diffusion_code"] or "",
+                    appointment_link=s["prise_rdv"] or "",
                     source=source,
                     creator=bot_user,
                     last_editor=bot_user,
@@ -344,15 +350,6 @@ class Command(BaseCommand):
 
     def _presave_mednum_services(self, service, label_nationaux):
         service.use_inclusion_numerique_scheme = True
-        if not service.short_desc:
-            subcats_label = ", ".join(
-                s.label.lower() for s in service.subcategories.all()
-            )
-            short_desc, _ = normalize_description(subcats_label, 280)
-            # TODO peut depasser 280 chars
-            service.short_desc = (
-                f"{service.structure.name} propose des services : {short_desc}"
-            )
 
         if service.geom and not service.city_code:
             try:
@@ -376,13 +373,19 @@ class Command(BaseCommand):
                     service.city_code
                 )
 
-        service.beneficiaries_access_modes.add(
-            BeneficiaryAccessMode.objects.get(value="telephoner"),
-            BeneficiaryAccessMode.objects.get(value="se-presenter"),
-        )
         service.coach_orientation_modes.add(
             CoachOrientationMode.objects.get(value="telephoner"),
             CoachOrientationMode.objects.get(value="envoyer-courriel"),
         )
+
+        service.beneficiaries_access_modes.add(
+            BeneficiaryAccessMode.objects.get(value="telephoner"),
+        )
+
+        if not service.appointment_link:
+            service.beneficiaries_access_modes.add(
+                BeneficiaryAccessMode.objects.get(value="se-presenter"),
+            )
+
         if label_nationaux:
             self.set_or_update_labels(service.structure, label_nationaux)

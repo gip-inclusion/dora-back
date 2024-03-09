@@ -12,6 +12,7 @@ class TaskType(models.TextChoices):
     SERVICE_ACTIVATION = "service_activation"
     INVITED_USERS = "invited_users"
     SELF_INVITED_USERS = "self_invited_users"
+    USERS_WITHOUT_STRUCTURE = "users_without_structure"
     USER_ACCOUNT_DELETION = "user_account_deletion"
 
     ...

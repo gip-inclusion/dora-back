@@ -281,8 +281,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         return [scat for scat in scats if not scat.endswith("--autre")]
 
     def get_prise_rdv(self, obj):
-        # TODO: pas encore supporté sur DORA
-        return None
+        return obj.appointment_link
 
     def get_frais(self, obj):
         return obj.fee_condition.value if obj.fee_condition else None
