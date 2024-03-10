@@ -6,6 +6,7 @@ from django.core import mail
 from django.utils import timezone
 from freezegun import freeze_time
 
+from dora.core.constants import SIREN_POLE_EMPLOI
 from dora.core.test_utils import make_service, make_structure, make_user
 from dora.notifications.enums import NotificationStatus, TaskType
 from dora.notifications.models import Notification
@@ -110,17 +111,20 @@ def test_structure_services_activation_candidates(
 ):
     assert structure_service_activation_task.candidates()
 
-    structure_with_admin.code_safir_pe = "12345"
+    # la structure est une agence France Travail
+    structure_with_admin.siret = SIREN_POLE_EMPLOI + "12345"
     structure_with_admin.save()
 
     assert not structure_service_activation_task.candidates()
 
-    structure_with_admin.code_safir_pe = None
+    # structure avec au moins un service
+    structure_with_admin.siret = "50060080000001"
     make_service(structure=structure_with_admin)
     structure_with_admin.save()
 
     assert not structure_service_activation_task.candidates()
 
+    # admin dans la structure, mais depuis moins d'un mois
     structure_with_admin.services.first().delete()
     m = structure_with_admin.membership.first()
     m.creation_date = timezone.now()
