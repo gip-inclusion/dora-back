@@ -37,59 +37,78 @@ def test_send_orphan_structure_notification():
 def test_send_first_admin_notification_for_pending_invitation():
     putative_member = make_user()
     structure = make_structure(putative_member=putative_member)
-    admin_user = make_user(structure=structure, is_admin=True)
+    admin_users = [
+        make_user(structure=structure, is_admin=True),
+        make_user(structure=structure, is_admin=True),
+    ]
 
     send_admin_invited_users_20_notification(structure, putative_member)
 
-    assert len(mail.outbox) == 1
-    assert mail.outbox[0].to == [admin_user.email]
-    assert mail.outbox[0].subject == "Invitation non acceptée : Action requise"
-    assert structure.name in mail.outbox[0].body
-    assert putative_member.email in mail.outbox[0].body
-    assert "https://aide.dora.inclusion.beta.gouv.fr/" in mail.outbox[0].body
-    assert (
-        "gerer-le-compte-de-ses-collaborateurs-en-tant-quadministrateur-xkonvm"
-        in mail.outbox[0].body
-    )
+    assert len(mail.outbox) == len(admin_users)
+
+    for idx, admin_user in enumerate(admin_users):
+        assert mail.outbox[idx].to == [admin_user.email]
+        assert mail.outbox[idx].subject == "Invitation non acceptée : Action requise"
+        assert structure.name in mail.outbox[idx].body
+        assert putative_member.email in mail.outbox[idx].body
+        assert "https://aide.dora.inclusion.beta.gouv.fr/" in mail.outbox[idx].body
+        assert (
+            "gerer-le-compte-de-ses-collaborateurs-en-tant-quadministrateur-xkonvm"
+            in mail.outbox[idx].body
+        )
 
 
 def test_send_second_admin_notification_for_pending_invitation():
     putative_member = make_user()
     structure = make_structure(putative_member=putative_member)
-    admin_user = make_user(structure=structure, is_admin=True)
+    admin_users = [
+        make_user(structure=structure, is_admin=True),
+        make_user(structure=structure, is_admin=True),
+    ]
 
     send_admin_invited_users_90_notification(structure, putative_member)
 
-    assert len(mail.outbox) == 1
-    assert mail.outbox[0].to == [admin_user.email]
-    assert (
-        mail.outbox[0].subject
-        == "Action requise : une de vos invitations sera bientôt désactivée"
-    )
-    assert structure.name in mail.outbox[0].body
-    assert putative_member.email in mail.outbox[0].body
+    assert len(mail.outbox) == len(admin_users)
+
+    for idx, admin_user in enumerate(admin_users):
+        assert mail.outbox[idx].to == [admin_user.email]
+        assert (
+            mail.outbox[idx].subject
+            == "Action requise : une de vos invitations sera bientôt désactivée"
+        )
+        assert structure.name in mail.outbox[idx].body
+        assert putative_member.email in mail.outbox[idx].body
 
 
 def test_send_admin_self_invited_users_notification():
     putative_member = make_user()
     structure = make_structure(putative_member=putative_member)
-    admin_user = make_user(structure=structure, is_admin=True)
+    admins_users = [
+        make_user(structure=structure, is_admin=True),
+        make_user(structure=structure, is_admin=True),
+    ]
 
     send_admin_self_invited_users_notification(structure, putative_member)
 
-    assert len(mail.outbox) == 1
-    assert mail.outbox[0].to == [admin_user.email]
-    assert mail.outbox[0].subject == "Rappel : Demande de rattachement en attente"
-    assert structure.name in mail.outbox[0].body
-    assert putative_member.email in mail.outbox[0].body
-    assert putative_member.first_name in mail.outbox[0].body
-    assert putative_member.last_name in mail.outbox[0].body
-    assert f"structures/{structure.slug}/collaborateurs" in mail.outbox[0].body
-    assert "https://aide.dora.inclusion.beta.gouv.fr/" in mail.outbox[0].body
-    assert (
-        "gerer-le-compte-de-ses-collaborateurs-en-tant-quadministrateur-xkonvm"
-        in mail.outbox[0].body
-    )
+    assert len(mail.outbox) == 2
+
+    for idx, admin_user in enumerate(admins_users):
+        assert mail.outbox[idx].to == [admin_user.email]
+        assert mail.outbox[idx].subject == "Rappel : Demande de rattachement en attente"
+        assert structure.name in mail.outbox[idx].body
+        assert putative_member.email in mail.outbox[idx].body
+        assert putative_member.first_name in mail.outbox[idx].body
+        assert putative_member.last_name in mail.outbox[idx].body
+        assert "/auth/connexion" in mail.outbox[idx].body
+        assert (
+            urlencode({"next": f"/structures/{structure.slug}/collaborateurs"})
+            in mail.outbox[idx].body
+        )
+        assert "https://aide.dora.inclusion.beta.gouv.fr/" in mail.outbox[idx].body
+        assert (
+            "gerer-le-compte-de-ses-collaborateurs-en-tant-quadministrateur-xkonvm"
+            in mail.outbox[idx].body
+        )
 
 
 def test_send_structure_activation_notification_to_old_admins():

@@ -224,16 +224,18 @@ def send_admin_invited_users_90_notification(structure, user):
 def send_admin_self_invited_users_notification(structure, user):
     # rattachements en attente :
     # notification envoyée au admin de la structure
-    cta_link = (
-        furl(settings.FRONTEND_URL) / "structures" / structure.slug / "collaborateurs"
-    )
-    cta_link.add(
-        {
-            "mtm_campaign": "MailsTransactionnels",
-            "mtm_kwd": "RattachStructureaValider",
-        }
-    )
+    next_link = furl(f"/structures/{structure.slug}/collaborateurs")
+
     for admin in structure.admins:
+        cta_link = furl(settings.FRONTEND_URL) / "auth" / "connexion"
+        cta_link.add({"next": next_link, "login_hint": admin.email})
+        cta_link.add(
+            {
+                "mtm_campaign": "MailsTransactionnels",
+                "mtm_kwd": "RattachStructureaValider",
+            }
+        )
+
         context = {
             "structure": structure,
             "user": user,
