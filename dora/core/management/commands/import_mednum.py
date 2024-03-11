@@ -212,6 +212,10 @@ class Command(BaseCommand):
         existing_di_ids = [id for id in existing_di_ids if len(id) == 44]
 
         def already_imported(new_id):
+            if Service.objects.filter(data_inclusion_id=new_id):
+                return True
+            # On gère les imports historiques aussi bien que possible
+            # étant donné que les ids ont changé
             for id in new_id.split("__"):
                 for existing_di_id in existing_di_ids:
                     if id.endswith(existing_di_id):

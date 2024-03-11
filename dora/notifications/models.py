@@ -55,6 +55,7 @@ class Notification(models.Model):
         blank=True,
         on_delete=models.CASCADE,
         verbose_name="Structure propriétaire",
+        related_name="notifications",
     )
     owner_user = models.ForeignKey(
         User,
@@ -62,6 +63,7 @@ class Notification(models.Model):
         blank=True,
         on_delete=models.CASCADE,
         verbose_name="Utilisateur propriétaire",
+        related_name="notifications",
     )
     owner_structureputativemember = models.ForeignKey(
         StructurePutativeMember,
@@ -69,6 +71,7 @@ class Notification(models.Model):
         blank=True,
         on_delete=models.CASCADE,
         verbose_name="Invitation propriétaire",
+        related_name="notifications",
     )
     ...
 
