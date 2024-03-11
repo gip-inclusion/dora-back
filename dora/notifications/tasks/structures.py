@@ -3,6 +3,7 @@ from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 
+from dora.core import constants
 from dora.notifications.enums import TaskType
 from dora.notifications.models import Notification
 from dora.structures.emails import (
@@ -60,16 +61,18 @@ class StructureServiceActivationTask(Task):
 
     @classmethod
     def candidates(cls):
-        # liste des structures sans membres enregistrés,
-        # avec au moins un admin en attente d'inscription
-        # depuis un mois
+        # structures sans services, hors agences FT
+        # avec au moins un admin inscrit depuis un mois
         one_month_ago = timezone.now() - relativedelta(months=1)
-        return Structure.objects.filter(
-            services=None,
-            membership=None,
-            putative_membership__is_admin=True,
-            putative_membership__creation_date__lt=one_month_ago,
-        ).distinct()
+        return (
+            Structure.objects.exclude(siret__startswith=constants.SIREN_POLE_EMPLOI)
+            .filter(
+                services=None,
+                membership__is_admin=True,
+                membership__creation_date__lt=one_month_ago,
+            )
+            .distinct()
+        )
 
     @classmethod
     def should_trigger(cls, notification: Notification) -> bool:
