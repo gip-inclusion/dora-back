@@ -56,7 +56,7 @@ def test_structures_api_response(authenticated_user, api_client):
 
 @pytest.mark.loaddata("structure_typology", "service_subcategory")
 def test_structures_serialization_exemple(
-    setup_structure_data, authenticated_user, api_client,settings
+    setup_structure_data, authenticated_user, api_client, settings
 ):
     # Example adapté de la doc data·inclusion :
     # https://www.data.inclusion.beta.gouv.fr/schemas-de-donnees-de-loffre/schema-des-structures-et-services-dinsertion
