@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
             field=django.contrib.postgres.fields.ArrayField(
                 base_field=models.CharField(max_length=3),
                 blank=True,
-                help_text="Liste des départements gérés par l'utilisateur (si il est gestionnaire)",
+                help_text="Liste des numéros des départements gérés par l'utilisateur (s’il est gestionnaire). Séparés par des virgules.",
                 null=True,
                 size=None,
                 verbose_name="Départements en gestion",

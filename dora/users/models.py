@@ -110,7 +110,7 @@ class User(AbstractBaseUser):
         blank=True,
         null=True,
         verbose_name="Départements en gestion",
-        help_text="Liste des départements gérés par l'utilisateur (si il est gestionnaire)",
+        help_text="Liste des numéros des départements gérés par l'utilisateur (s’il est gestionnaire). Séparés par des virgules.",
     )
     main_activity = models.CharField(
         max_length=25,
