@@ -1,5 +1,7 @@
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.encoding import iri_to_uri
 from furl import furl
 from mjml import mjml2html
@@ -63,4 +65,26 @@ def send_user_without_structure_notification(user, deletion=False):
                 context,
             )
         ),
+    )
+
+
+def send_account_deletion_notification(user):
+    # envoyé 30j avant la destruction effective du compte utilisateur
+    cta_link = furl(settings.FRONTEND_URL) / "auth" / "connexion"
+    cta_link.add(
+        {
+            "login_hint": iri_to_uri(user.email),
+            "mtm_campaign": "MailsTransactionnels",
+            "mtm_kwd": "RelanceInactif",
+        }
+    )
+    context = {
+        "limit_date": timezone.localdate() + relativedelta(days=30),
+        "cta_link": cta_link.url,
+    }
+
+    send_mail(
+        "DORA - Suppression prochaine de votre compte",
+        user.email,
+        mjml2html(render_to_string("notification_account_deletion.mjml", context)),
     )
