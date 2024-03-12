@@ -1,5 +1,6 @@
 import time
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from dora.notifications.tasks.core import Task
@@ -9,9 +10,15 @@ Lancement / activation des notifications :
     - récupère la liste des tâches actuellement enregitrées
     - effectue un `run()` sur chaque tâche (rafraichissement, purge, et actions)
 
-Limite d'enregistrement à traiter possible et dry-run par défaut.
+Limite d'enregistrements à traiter possible et dry-run par défaut.
 
-La planification de cette commande reste à définir (1x/j a priori).
+Le système peut être activé ou limité dynamiquement par l'utilisation de variables
+d'environnement sur l'environnement cible :
+    - NOTIFICATIONS_ENABLED    : notifications activées seulement si `true` (par défaut: non)
+    - NOTIFICATIONS_TASK_TYPES : sélectionne les notifications à lancer, équivalent de `--types` (défaut: tous les types activés)
+    - NOTIFICATIONS_LIMIT      : nombre limite de notifications traitées en une fois pour chaque tâche (défaut: 0, pas de limite)
+
+Ces variables sont définies dans les `settings` de Django.
 """
 
 
@@ -25,7 +32,10 @@ class Command(BaseCommand):
             help="Par défaut les taches sont seulement listées, pas executées. Ce paramètre active le traitement effectif des tâches.",
         )
         parser.add_argument(
-            "--limit", type=int, help="Limite du nombre de tâches à traiter"
+            "--limit",
+            type=int,
+            help="Limite du nombre de tâches à traiter",
+            default=settings.NOTIFICATIONS_LIMIT,
         )
 
         # FIXME:
@@ -44,24 +54,56 @@ class Command(BaseCommand):
                 f"Types de tâche de notification à prendre en compte, séparés par ','"
                 f" ({possible_tasks})"
             ),
+            default=settings.NOTIFICATIONS_TASK_TYPES,
+        )
+
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Force l'activation des notifications sans tenir compte de 'settings.NOTIFICATIONS_ENABLED'. Utile pour un lancement manuel.",
         )
 
     def handle(self, *args, **options):
+        force = options["force"]
+
+        if not (settings.NOTIFICATIONS_ENABLED or force):
+            self.stdout.write(
+                self.style.WARNING(
+                    "Le système de notification n'est pas activé sur cet environnement."
+                )
+            )
+            return
+
         wet_run = options["wet_run"]
         limit = options["limit"]
         types = options["types"]
 
-        self.stdout.write(self.help + " :")
-
         if wet_run:
-            self.stdout.write(self.style.WARNING("PRODUCTION RUN\n"))
+            self.stdout.write(self.style.WARNING("PRODUCTION RUN"))
         else:
             self.stdout.write(self.style.NOTICE("DRY-RUN"))
             self.stdout.write(
                 self.style.WARNING(
-                    "Les notifications ne sont pas créées dans ce mode\n"
+                    " - les notifications ne sont pas créées dans ce mode"
                 )
             )
+
+        if force:
+            self.stdout.write(
+                self.style.NOTICE(" - activation FORCÉE des notifications\n")
+            )
+
+        if types:
+            self.stdout.write(
+                self.style.WARNING(f" - tâche(s) sélectionnée(s) : {types}")
+            )
+
+        if limit:
+            self.stdout.write(
+                self.style.WARNING(f" - limite de notifications par tâche : {limit}")
+            )
+
+        self.stdout.write()
 
         if not Task.registered_tasks():
             self.stdout.write(" > aucune tâche enregistrée !")
@@ -132,5 +174,7 @@ class Command(BaseCommand):
                 )
             else:
                 self.stdout.write(" > aucune notification obsolète")
+
+            self.stdout.write()
 
         self.stdout.write(self.style.NOTICE(f"Terminé en {total_timer:.2f}s !"))
