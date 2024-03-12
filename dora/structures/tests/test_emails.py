@@ -1,5 +1,8 @@
+from dateutil.relativedelta import relativedelta
 from django.core import mail
+from django.utils import timezone
 from django.utils.http import urlencode
+from freezegun import freeze_time
 
 from dora.core.test_utils import make_structure, make_user
 
@@ -108,24 +111,49 @@ def test_send_admin_self_invited_users_notification():
         )
 
 
-def test_send_structure_activation_notification():
-    admin = make_user(email="jessie@pixar.com")
-    structure = make_structure(putative_member=admin)
-    invitation = structure.putative_membership.first()
-    invitation.is_admin = True
-    invitation.save()
+def test_send_structure_activation_notification_to_old_admins():
+    structure = make_structure()
+
+    # les admins concernés par la notification doivent être inscrits depuis plus d'un mois
+    with freeze_time(time_to_freeze=timezone.now() - relativedelta(months=2)):
+        admin_users = [
+            make_user(structure=structure, is_admin=True),
+            make_user(structure=structure, is_admin=True),
+        ]
 
     send_structure_activation_notification(structure)
 
-    assert len(mail.outbox) == 1
-    assert mail.outbox[0].to == [admin.email]
-    assert (
-        mail.outbox[0].subject
-        == f"Votre structure n’a pas encore publié de service sur DORA ({structure.name})"
-    )
-    assert structure.name in mail.outbox[0].body
-    assert f"/structures/{structure.slug}/services" in mail.outbox[0].body
-    assert "mtm_campaign=MailsTransactionnels" in mail.outbox[0].body
-    assert "mtm_kwd=RelanceActivationService" in mail.outbox[0].body
-    assert "https://aide.dora.inclusion.beta.gouv.fr" in mail.outbox[0].body
-    assert "https://app.livestorm.co/dora-1/presentation-dora" in mail.outbox[0].body
+    assert len(mail.outbox) == len(admin_users)
+
+    for idx, admin_user in enumerate(admin_users):
+        assert mail.outbox[idx].to == [admin_user.email]
+        assert (
+            mail.outbox[idx].subject
+            == f"Votre structure n’a pas encore publié de service sur DORA ({structure.name})"
+        )
+        assert structure.name in mail.outbox[idx].body
+        assert (
+            urlencode({"next": f"/structures/{structure.slug}/services"})
+            in mail.outbox[idx].body
+        )
+        assert "mtm_campaign=MailsTransactionnels" in mail.outbox[idx].body
+        assert "mtm_kwd=RelanceActivationService" in mail.outbox[idx].body
+        assert "https://aide.dora.inclusion.beta.gouv.fr" in mail.outbox[idx].body
+        assert (
+            "https://app.livestorm.co/dora-1/presentation-dora" in mail.outbox[idx].body
+        )
+
+
+def test_send_structure_activation_notification_to_other_members():
+    structure = make_structure()
+    make_user(structure, is_admin=True)
+
+    send_structure_activation_notification(structure)
+
+    # les nouveaux admins et utilisateurs ne sont pas concernés par la notification
+    assert not len(mail.outbox)
+
+    make_user(structure)
+    send_structure_activation_notification(structure)
+
+    assert not len(mail.outbox)
