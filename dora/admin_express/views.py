@@ -1,3 +1,5 @@
+from operator import attrgetter
+
 from django.contrib.gis.geos import Point
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import Value
@@ -133,4 +135,7 @@ def get_departments(request):
         departments = [Department.objects.get_from_code(code) for code in q.split(",")]
     else:
         departments = Department.objects.all()
-    return Response(DeptSerializer(departments, many=True).data)
+
+    return Response(
+        DeptSerializer(sorted(departments, key=attrgetter("code")), many=True).data
+    )
