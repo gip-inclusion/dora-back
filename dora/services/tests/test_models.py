@@ -159,7 +159,7 @@ def test_can_create_service_from_any_model(api_client):
 
 
 def test_manager_can_create_model_from_service_in_its_dept(api_client):
-    user = baker.make("users.User", is_valid=True, is_manager=True, department="31")
+    user = baker.make("users.User", is_valid=True, is_manager=True, departments=["31"])
     struct_src = make_structure(department="31")
     struct_dest = make_structure(department="31")
     service = make_service(status=ServiceStatus.PUBLISHED, structure=struct_src)
@@ -173,7 +173,7 @@ def test_manager_can_create_model_from_service_in_its_dept(api_client):
 
 
 def test_manager_cant_create_model_from_service_outside_its_dept(api_client):
-    user = baker.make("users.User", is_valid=True, is_manager=True, department="31")
+    user = baker.make("users.User", is_valid=True, is_manager=True, departments=["31"])
     struct_src = make_structure(department="44")
     struct_dest = make_structure(department="31")
     service = make_service(status=ServiceStatus.PUBLISHED, structure=struct_src)
@@ -187,7 +187,7 @@ def test_manager_cant_create_model_from_service_outside_its_dept(api_client):
 
 
 def test_manager_cant_create_model_in_struct_outside_its_dept(api_client):
-    user = baker.make("users.User", is_valid=True, is_manager=True, department="31")
+    user = baker.make("users.User", is_valid=True, is_manager=True, departments=["31"])
     struct_src = make_structure(department="31")
     struct_dest = make_structure(department="44")
     service = make_service(status=ServiceStatus.PUBLISHED, structure=struct_src)

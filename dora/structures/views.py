@@ -167,9 +167,9 @@ class StructureMemberViewset(viewsets.ModelViewSet):
 
             # Les gestionnaires ont accès à tous les collaborateurs de
             # leur département
-            elif user.is_manager and user.department:
+            elif user.is_manager and user.departments:
                 return StructureMember.objects.filter(
-                    structure__department=user.department
+                    structure__department__in=user.departments
                 )
 
             # Les membres des structures ont accès à tous leurs collègues

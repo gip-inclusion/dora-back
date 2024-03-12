@@ -80,6 +80,7 @@ private_api_patterns = [
     ),
     path("admin-division-search/", dora.admin_express.views.search),
     path("admin-division-reverse-search/", dora.admin_express.views.reverse_search),
+    path("admin-division-departments/", dora.admin_express.views.get_departments),
     path(
         "city-label/<insee_code:insee_code>/", dora.admin_express.views.get_city_label
     ),

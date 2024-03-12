@@ -23,7 +23,7 @@ class StructureAdminPermission(permissions.BasePermission):
             return (
                 user
                 and user.is_authenticated
-                and (user.is_staff or (user.is_manager and user.department))
+                and (user.is_staff or (user.is_manager and user.departments))
             )
         return False
 
@@ -70,20 +70,23 @@ class StructureAdminViewSet(
     def get_queryset(self):
         user = self.request.user
         department = self.request.query_params.get("department")
-        if user.is_manager and department and user.department != department:
-            raise PermissionDenied
-        if user.is_manager and not user.department:
-            raise PermissionDenied
-        if user.is_manager:
-            department = user.department
-
-        moderation = self.request.query_params.get("moderation") in TRUTHY_VALUES
 
         structures = Structure.objects.select_related("typology")
         if department:
+            if user.is_manager:
+                # assuré par StructureAdminPermission
+                assert user.departments
+                if department not in user.departments:
+                    raise PermissionDenied
             structures = structures.filter(department=department)
+        else:
+            if user.is_manager:
+                structures = structures.filter(department__in=user.departments)
+
+        moderation = self.request.query_params.get("moderation") in TRUTHY_VALUES
         if moderation:
             return structures.exclude(moderation_status=ModerationStatus.VALIDATED)
+
         return structures
 
     def get_serializer_class(self):
