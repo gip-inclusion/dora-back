@@ -6,7 +6,8 @@ from django.core import mail
 from django.utils import timezone
 from freezegun import freeze_time
 
-from dora.core.test_utils import make_structure, make_user
+from dora.core.constants import SIREN_POLE_EMPLOI
+from dora.core.test_utils import make_service, make_structure, make_user
 from dora.notifications.enums import NotificationStatus, TaskType
 from dora.notifications.models import Notification
 
@@ -93,13 +94,10 @@ def structure_service_activation_task():
 
 
 @pytest.fixture
-def structure_with_pending_admin():
+def structure_with_admin():
+    structure = make_structure()
     with freeze_time(timezone.now() - timedelta(days=42)):
-        structure = make_structure(putative_member=make_user())
-
-    invitation = structure.putative_membership.first()
-    invitation.is_admin = True
-    invitation.save()
+        make_user(structure=structure, is_admin=True)
 
     return structure
 
@@ -108,8 +106,35 @@ def test_structure_service_activation_task_registered():
     assert StructureServiceActivationTask in Task.registered_tasks()
 
 
+def test_structure_services_activation_candidates(
+    structure_with_admin, structure_service_activation_task
+):
+    assert structure_service_activation_task.candidates()
+
+    # la structure est une agence France Travail
+    structure_with_admin.siret = SIREN_POLE_EMPLOI + "12345"
+    structure_with_admin.save()
+
+    assert not structure_service_activation_task.candidates()
+
+    # structure avec au moins un service
+    structure_with_admin.siret = "50060080000001"
+    make_service(structure=structure_with_admin)
+    structure_with_admin.save()
+
+    assert not structure_service_activation_task.candidates()
+
+    # admin dans la structure, mais depuis moins d'un mois
+    structure_with_admin.services.first().delete()
+    m = structure_with_admin.membership.first()
+    m.creation_date = timezone.now()
+    m.save()
+
+    assert not structure_service_activation_task.candidates()
+
+
 def test_structure_service_activation_task_should_trigger(
-    structure_with_pending_admin, structure_service_activation_task
+    structure_with_admin, structure_service_activation_task
 ):
     ok, _, _ = structure_service_activation_task.run()
     n = Notification.objects.pending().first()
@@ -154,12 +179,10 @@ def test_structure_service_activation_task_should_trigger(
 
 
 def test_process_structure_service_activation_task(
-    structure_service_activation_task, structure_with_pending_admin
+    structure_service_activation_task, structure_with_admin
 ):
     ok, _, _ = structure_service_activation_task.run()
 
     assert ok == 1
     assert len(mail.outbox) == 1
-    assert mail.outbox[0].to == [
-        structure_with_pending_admin.putative_membership.first().user.email
-    ]
+    assert mail.outbox[0].to == [structure_with_admin.admins[0].email]
