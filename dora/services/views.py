@@ -119,10 +119,10 @@ def get_visible_services(user):
     # Staff can see everything
     elif user.is_staff:
         qs = all_services
-    elif user.is_manager and user.department:
+    elif user.is_manager and user.departments:
         qs = all_services.filter(
             Q(status=ServiceStatus.PUBLISHED)
-            | Q(structure__department=user.department)
+            | Q(structure__department__in=user.departments)
             | Q(structure__membership__user=user)
         )
     else:
@@ -628,9 +628,9 @@ def options(request):
             )
             filters |= Q(structure_id__in=user_structures)
 
-            if user.is_manager and user.department:
+            if user.is_manager and user.departments:
                 manager_structures = Structure.objects.filter(
-                    department=user.department
+                    department__in=user.departments
                 )
                 filters |= Q(structure__in=manager_structures)
 

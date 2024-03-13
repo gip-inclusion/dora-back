@@ -20,7 +20,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             "bookmarks",
-            "department",
+            "departments",
             "email",
             "first_name",
             "full_name",
