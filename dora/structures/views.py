@@ -60,9 +60,9 @@ class StructureViewSet(
                 return Structure.objects.none()
             if user.is_staff:
                 return all_structures.order_by("-modification_date").distinct()
-            elif user.is_manager and user.department:
+            elif user.is_manager and user.departments:
                 return (
-                    all_structures.filter(department=user.department)
+                    all_structures.filter(department__in=user.departments)
                     .order_by("-modification_date")
                     .distinct()
                 )
@@ -223,10 +223,10 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
 
             # Les gestionnaires ont accès à tous les collaborateurs de
             # leur département
-            elif user.is_manager and user.department:
+            elif user.is_manager and user.departments:
                 return StructurePutativeMember.objects.filter(
                     Q(user__is_valid=True) | Q(invited_by_admin=True),
-                    structure__department=user.department,
+                    structure__department__in=user.departments,
                 )
 
             # Les membres des structures ont accès à tous leurs collègues
