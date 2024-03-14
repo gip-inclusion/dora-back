@@ -538,12 +538,6 @@ INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS = (
     os.environ.get("INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS") == "true"
 )
 
-########
-# TEMP #
-########
-ALLOW_PUBLIC_API = os.environ.get("ALLOW_PUBLIC_API") != "false"
-
-
 # Notifications :
 # voir management command `process_notification_tasks`
 
