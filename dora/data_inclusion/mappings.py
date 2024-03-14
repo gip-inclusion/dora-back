@@ -182,7 +182,6 @@ def map_service(service_data: dict) -> dict:
             Profil(p)
             for p in (set(service_data["profils"]) & {p.value for p in Profil})
         ]
-
     return {
         "access_conditions": None,
         "access_conditions_display": None,
@@ -275,6 +274,8 @@ def map_service(service_data: dict) -> dict:
         "structure_info": {
             "name": service_data["structure"]["nom"],
             "department": structure_department,
+            "phone": service_data["structure"]["telephone"],
+            "email": service_data["structure"]["courriel"],
         },
         "subcategories": [c.value for c in subcategories]
         if subcategories is not None
