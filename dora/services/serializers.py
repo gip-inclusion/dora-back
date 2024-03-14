@@ -109,6 +109,8 @@ class StructureSerializer(serializers.ModelSerializer):
             "siret",
             "slug",
             "url",
+            "phone",
+            "email",
         ]
         read_only_fields = [
             "city",
