@@ -49,6 +49,8 @@ def make_di_service_data(**kwargs) -> dict:
             "zone_diffusion_nom": "foo",
             "structure": {
                 "nom": "Rouge Empire",
+                "telephone": "1234",
+                "courriel": "contact@example.com",
             },
         },
         **kwargs,

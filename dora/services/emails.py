@@ -74,7 +74,7 @@ def send_service_sharing_email(
                 modes.append(mode[1])
     else:
         all_beneficiaries_modes = [
-            o for o in service["beneficiaries_access_modes"] or []
+            mode for mode in service["beneficiaries_access_modes"] or []
         ]
         if "se-presenter" in all_beneficiaries_modes:
             modes.append("Se présenter")

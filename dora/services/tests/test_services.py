@@ -1602,7 +1602,11 @@ class DataInclusionSearchTestCase(APITestCase):
             date_maj="2023-01-01",
             recurrence="Tous les jours",
             date_suspension="2030-01-01",
-            structure={"nom": "Rouge Empire"},
+            structure={
+                "nom": "Rouge Empire",
+                "telephone": "1234",
+                "courriel": "contact@example.com",
+            },
         )
         di_id = self.get_di_id(service_data)
         request = self.factory.get(f"/services-di/{di_id}/")
@@ -1620,7 +1624,11 @@ class DataInclusionSearchTestCase(APITestCase):
     def test_service_di_structure(self):
         service_data = self.make_di_service(
             structure_id="rouge-empire",
-            structure={"nom": "Rouge Empire"},
+            structure={
+                "nom": "Rouge Empire",
+                "telephone": "1234",
+                "courriel": "contact@example.com",
+            },
         )
         di_id = self.get_di_id(service_data)
         request = self.factory.get(f"/services-di/{di_id}/")
