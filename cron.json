@@ -15,6 +15,10 @@
     {
       "command": "30 7 * * * tools/send-saved-searches-notifications.sh",
       "size": "S"
+    },
+    {
+      "command": "0 0-6 * * * tools/run-notification-tasks.sh",
+      "size": "S"
     }
   ]
 }

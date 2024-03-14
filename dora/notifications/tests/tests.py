@@ -5,8 +5,8 @@ from django.utils import timezone
 
 from dora.core.test_utils import make_structure, make_user
 
-from .enums import NotificationStatus, TaskType
-from .models import Notification, NotificationError
+from ..enums import NotificationStatus, TaskType
+from ..models import Notification, NotificationError
 
 # note : le premier type de propriétaire implémenté est la structure
 # les tests du modèle se basent sur des notification ayant ce type de propriétaire
