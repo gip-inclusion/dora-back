@@ -734,7 +734,9 @@ def service_di(
     if raw_service is None:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    return Response(data_inclusion.map_service(raw_service))
+    return Response(
+        data_inclusion.map_service(raw_service, request.user.is_authenticated)
+    )
 
 
 @api_view(["POST"])
@@ -753,7 +755,9 @@ def share_di_service(
     if raw_service is None:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    serialized_service = data_inclusion.map_service(raw_service)
+    serialized_service = data_inclusion.map_service(
+        raw_service, request.user.is_authenticated
+    )
     return share_service(request, serialized_service, is_di=True)
 
 

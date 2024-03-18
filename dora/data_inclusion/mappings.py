@@ -92,7 +92,7 @@ def is_orientable(service_data: dict) -> bool:
     return not blacklisted
 
 
-def map_service(service_data: dict) -> dict:
+def map_service(service_data: dict, is_authenticated: bool) -> dict:
     categories = None
     subcategories = None
     if service_data["thematiques"] is not None:
@@ -218,9 +218,15 @@ def map_service(service_data: dict) -> dict:
         "concerned_public_display": [p.label for p in profils]
         if profils is not None
         else None,
-        "contact_email": service_data["courriel"],
-        "contact_name": service_data["contact_nom_prenom"],
-        "contact_phone": service_data["telephone"],
+        "contact_email": service_data["courriel"]
+        if service_data["contact_public"] or is_authenticated
+        else None,
+        "contact_name": service_data["contact_nom_prenom"]
+        if service_data["contact_public"] or is_authenticated
+        else None,
+        "contact_phone": service_data["telephone"]
+        if service_data["contact_public"] or is_authenticated
+        else None,
         "creation_date": service_data["date_creation"],
         "credentials": service_data["justificatifs"],
         "credentials_display": service_data["justificatifs"],
