@@ -62,20 +62,28 @@
     {% endfor %}
   </ul>
 
-  <h2 style="margin-bottom: 8px">
-    Comment mobiliser ce service :
-  </h2>
 
-  {% if for_beneficiary and not modes %}
-    <p style="color: #ED7D00; font-style: italic;">Demandez de l’aide à votre conseiller ou à un professionnel qui travaille
-      dans l’insertion pour savoir comment accéder à ce service.</p>
+  {% if not modes %}
+    {% if for_beneficiary %}
+      <h2 style="margin-bottom: 8px">
+        Comment mobiliser ce service :
+      </h2>
+
+      <p style="color: #ED7D00; font-style: italic;">Demandez de l’aide à votre conseiller ou à un professionnel qui travaille
+        dans l’insertion pour savoir comment accéder à ce service.</p>
+    {% endif %}
+
+  {% else %}
+    <h2 style="margin-bottom: 8px">
+      Comment mobiliser ce service :
+    </h2>
+
+    <ul>
+      {% for item in modes %}
+        <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
   {% endif %}
-
-  <ul>
-    {% for item in modes %}
-      <li>{{ item }}</li>
-    {% endfor %}
-  </ul>
 {% endblock %}
 
 {% block cta %}
