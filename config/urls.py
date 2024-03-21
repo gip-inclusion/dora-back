@@ -74,8 +74,13 @@ private_api_patterns = [
     path("search/", dora.services.views.search, {"di_client": di_client}),
     path("stats/event/", dora.stats.views.log_event),
     path(
-        "service-di/<slug:di_id>/",
+        "services-di/<slug:di_id>/",
         dora.services.views.service_di,
+        {"di_client": di_client},
+    ),
+    path(
+        "services-di/<slug:di_id>/share/",
+        dora.services.views.share_di_service,
         {"di_client": di_client},
     ),
     path("admin-division-search/", dora.admin_express.views.search),

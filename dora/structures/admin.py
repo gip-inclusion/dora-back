@@ -158,6 +158,7 @@ class StructureAdmin(admin.ModelAdmin):
     ]
     list_filter = [
         IsBranchListFilter,
+        "is_obsolete",
         "moderation_status",
         "creation_date",
         "modification_date",

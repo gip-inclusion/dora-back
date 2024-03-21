@@ -8,6 +8,7 @@ from dora.stats.models import (
     OrientationView,
     PageView,
     SearchView,
+    ServiceShare,
     ServiceView,
     StructureView,
 )
@@ -151,12 +152,36 @@ class OrientationEventAdmin(AnalyticsEventAdmin):
     list_display = [
         "date",
         "service",
+        "is_di",
         "structure",
         "structure_department",
         "user",
         "anonymous_user_hash",
     ]
     list_filter = [
+        "is_di",
+        "date",
+        "structure_department",
+    ]
+    filter_horizontal = [
+        "categories",
+        "subcategories",
+    ]
+
+
+class ServiceShareAdmin(AnalyticsEventAdmin):
+    raw_id_fields = ("service", "structure", "user", "search_view")
+    list_display = [
+        "date",
+        "service",
+        "is_di",
+        "structure",
+        "structure_department",
+        "user",
+        "anonymous_user_hash",
+    ]
+    list_filter = [
+        "is_di",
         "date",
         "structure_department",
     ]
@@ -202,6 +227,7 @@ admin.site.register(DeploymentState, DeploymentStateAdmin)
 admin.site.register(PageView, PageViewAdmin)
 admin.site.register(StructureView, StructureEventAdmin)
 admin.site.register(OrientationView, OrientationEventAdmin)
+admin.site.register(ServiceShare, ServiceShareAdmin)
 admin.site.register(ServiceView, ServiceEventAdmin)
 admin.site.register(DiServiceView, DiServiceEventAdmin)
 admin.site.register(SearchView, SearchEventAdmin)
