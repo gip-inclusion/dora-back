@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
-from dora.core.validators import validate_full_siret
+from dora.core.validators import validate_siret
 from dora.services.models import ServiceModel
 from dora.services.utils import instantiate_model
 from dora.sirene.models import Establishment
@@ -39,10 +39,8 @@ def to_string_array(strings_list):
 
 class ImportSerializer(serializers.Serializer):
     name = serializers.CharField()
-    siret = serializers.CharField(allow_blank=True, validators=[validate_full_siret])
-    parent_siret = serializers.CharField(
-        allow_blank=True, validators=[validate_full_siret]
-    )
+    siret = serializers.CharField(allow_blank=True, validators=[validate_siret])
+    parent_siret = serializers.CharField(allow_blank=True, validators=[validate_siret])
     admins = serializers.ListField(child=serializers.EmailField(), allow_empty=True)
     labels = serializers.ListField(child=serializers.CharField(), allow_empty=True)
     models = serializers.ListField(child=serializers.CharField(), allow_empty=True)

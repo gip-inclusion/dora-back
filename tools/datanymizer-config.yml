@@ -84,6 +84,11 @@ tables:
     query:
       dump_condition: "FALSE"
 
+  - name: stats_servicesshare
+    rules: {}
+    query:
+      dump_condition: "FALSE"
+
 filter:
   except:
     - public.spatial_ref_sys
