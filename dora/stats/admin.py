@@ -170,7 +170,7 @@ class OrientationEventAdmin(AnalyticsEventAdmin):
 
 
 class ServiceShareAdmin(AnalyticsEventAdmin):
-    raw_id_fields = ("service", "structure", "user")
+    raw_id_fields = ("service", "structure", "user", "search_view")
     list_display = [
         "date",
         "service",
