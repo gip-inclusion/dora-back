@@ -11,6 +11,8 @@ from django.db.utils import DataError
 
 from dora.sirene.models import Establishment
 
+# Documentation des variables SIRENE : https://www.sirene.fr/static-resources/htm/v_sommaire.htm
+
 
 def clean_spaces(string):
     return string.replace("  ", " ").strip()
@@ -73,20 +75,31 @@ class Command(BaseCommand):
 
         return stock_file, estab_file
 
-    def get_name(self, parent_name, row):
+    def get_ul_name(self, row):
+        if row["categorieJuridiqueUniteLegale"] == "1000":
+            # personne physique
+            unit_name = row["denominationUsuelle1UniteLegale"] or (
+                f'{row["prenomUsuelUniteLegale"]} {row["nomUsageUniteLegale"] or row["nomUniteLegale"]}'
+            )
+        else:
+            # personne morale
+            unit_name = (
+                row["denominationUsuelle1UniteLegale"] or row["denominationUniteLegale"]
+            )
+
+            if row["sigleUniteLegale"]:
+                unit_name += f' — {row["sigleUniteLegale"]}'
+
+        return unit_name
+
+    def get_name(self, row):
         denom = row["denominationUsuelleEtablissement"]
         enseigne1 = (
             row["enseigne1Etablissement"]
             if row["enseigne1Etablissement"] != denom
             else ""
         )
-        name = clean_spaces(
-            f'{denom} {enseigne1} {row["enseigne2Etablissement"]} {row["enseigne3Etablissement"]}'
-        )
-
-        if name.startswith(parent_name):
-            parent_name = ""
-        return clean_spaces(f"{parent_name} {name}")
+        return clean_spaces(f"{denom} {enseigne1}")
 
     def get_address1(self, row):
         return clean_spaces(
@@ -99,10 +112,14 @@ class Command(BaseCommand):
         )
 
     def create_establishment(self, siren, parent_name, row):
-        e = Establishment(
+        name = self.get_name(row)[:255]
+        parent_name = parent_name[:255]
+        full_search_text = f"{name} {parent_name}" if name != parent_name else name
+        return Establishment(
             siren=siren[:9],
             siret=row["siret"][:14],
-            name=self.get_name(parent_name, row)[:255],
+            name=name,
+            parent_name=parent_name,
             address1=self.get_address1(row)[:255],
             address2=row["complementAdresseEtablissement"][:255],
             city=self.get_city_name(row)[:255],
@@ -114,9 +131,8 @@ class Command(BaseCommand):
             is_siege=row["etablissementSiege"] == "true",
             longitude=row["longitude"] if row["longitude"] else None,
             latitude=row["latitude"] if row["latitude"] else None,
+            full_search_text=full_search_text,
         )
-        e.full_search_text = f"{e.name} {e.siret}"
-        return e
 
     def handle(self, *args, **options):
         with tempfile.TemporaryDirectory() as tmp_dir_name:
@@ -125,9 +141,10 @@ class Command(BaseCommand):
             num_stock_items = 0
             with open(stock_file) as f:
                 num_stock_items = sum(1 for line in f)
+
+            legal_units = {}
             with open(stock_file) as units_file:
                 legal_units_reader = csv.DictReader(units_file, delimiter=",")
-                legal_units = {}
 
                 self.stdout.write(self.style.NOTICE("Parsing legal units"))
 
@@ -136,14 +153,9 @@ class Command(BaseCommand):
                         self.stdout.write(
                             self.style.NOTICE(f"{round(100*i/num_stock_items)}% done")
                         )
-
-                    unit_name = (
-                        row["denominationUniteLegale"]
-                        or f'{row["nomUsageUniteLegale"] or row["nomUniteLegale"]} {row["prenomUsuelUniteLegale"] or row["prenom1UniteLegale"]}'
-                    )
-                    legal_units[row["siren"]] = clean_spaces(
-                        f'{unit_name} {row["sigleUniteLegale"]}'
-                    )
+                    if row["etatAdministratifUniteLegale"] == "A":
+                        # On ignore les unités légales fermées
+                        legal_units[row["siren"]] = self.get_ul_name(row)
 
                 self.stdout.write(self.style.NOTICE("Counting establishments"))
 
@@ -152,37 +164,39 @@ class Command(BaseCommand):
                     num_establishments = sum(1 for line in f)
                 last_prog = 0
 
+            with open(estab_file) as establishment_file:
                 self.stdout.write(self.style.NOTICE("Importing establishments"))
+                reader = csv.DictReader(establishment_file, delimiter=",")
 
-                with open(estab_file) as establishment_file:
-                    reader = csv.DictReader(establishment_file, delimiter=",")
-
-                    with transaction.atomic(durable=True):
-                        self.stdout.write(self.style.WARNING("Emptying current table"))
-                        Establishment.objects.all().delete()
-                        batch_size = 10_000
-                        rows = []
-                        for i, row in enumerate(reader):
-                            if (i % batch_size) == 0:
-                                prog = round(100 * i / num_establishments)
-                                if prog != last_prog:
-                                    last_prog = prog
-                                    self.stdout.write(
-                                        self.style.NOTICE(f"{prog}% done")
-                                    )
-                                commit(rows)
-                                rows = []
-                            try:
-                                siren = row["siren"]
-                                parent_name = legal_units.get(siren, "")
+                with transaction.atomic(durable=True):
+                    self.stdout.write(self.style.WARNING("Emptying current table"))
+                    Establishment.objects.all().delete()
+                    batch_size = 1_000
+                    rows = []
+                    for i, row in enumerate(reader):
+                        if (i % batch_size) == 0:
+                            prog = round(100 * i / num_establishments)
+                            if prog != last_prog:
+                                last_prog = prog
+                            self.stdout.write(self.style.NOTICE(f"{prog}% done"))
+                            commit(rows)
+                            rows = []
+                        try:
+                            siren = row["siren"]
+                            parent = legal_units.get(siren)
+                            if parent:
                                 rows.append(
-                                    self.create_establishment(siren, parent_name, row)
+                                    self.create_establishment(
+                                        siren,
+                                        parent,
+                                        row,
+                                    )
                                 )
 
-                            except DataError as err:
-                                self.stdout.write(self.style.ERROR(err))
-                                self.stdout.write(self.style.ERROR(row))
+                        except DataError as err:
+                            self.stdout.write(self.style.ERROR(err))
+                            self.stdout.write(self.style.ERROR(row))
 
-                        commit(rows)
+                    commit(rows)
 
                 self.stdout.write(self.style.SUCCESS("Import successful"))

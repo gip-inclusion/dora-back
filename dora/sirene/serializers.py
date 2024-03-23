@@ -4,6 +4,8 @@ from .models import Establishment
 
 
 class EstablishmentSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
     class Meta:
         model = Establishment
         fields = [
@@ -20,3 +22,12 @@ class EstablishmentSerializer(serializers.ModelSerializer):
             "siren",
             "siret",
         ]
+
+    def get_name(self, obj):
+        if not obj.name:
+            return obj.parent_name
+
+        if obj.name.startswith(obj.parent_name) or obj.parent_name.startswith(obj.name):
+            return obj.name
+
+        return f"{obj.name} ({obj.parent_name})"[:255]

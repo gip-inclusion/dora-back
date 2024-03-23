@@ -1,7 +1,9 @@
-from django.contrib.postgres.search import TrigramSimilarity
+import unicodedata
+
+from django.contrib.postgres.search import TrigramSimilarity, TrigramWordSimilarity
 from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
 from dora.admin_express.utils import main_insee_code_to_arrdts
@@ -11,12 +13,22 @@ from .models import Establishment
 from .serializers import EstablishmentSerializer
 
 
+def normalize_query(q: str) -> str:
+    # Passage en majuscule, et suppression des accents
+    return "".join(
+        c
+        for c in unicodedata.normalize("NFD", q.upper())
+        if unicodedata.category(c)
+        != "Mn"  # http://www.unicode.org/reports/tr44/#GC_Values_Table
+    )
+
+
 @api_view()
 @permission_classes([permissions.AllowAny])
 def search_sirene(request, citycode):
-    q = request.query_params.get("q", "")
+    q = normalize_query(request.query_params.get("q", ""))
     if not q:
-        return Response("need q")
+        return ValidationError("Le champ `q` est requis")
 
     # La base SIRENE contient les code insee par arrondissement
     # mais on veut faire une recherche sur la ville entière
@@ -24,8 +36,12 @@ def search_sirene(request, citycode):
 
     results = (
         Establishment.objects.filter(city_code__in=citycodes)
-        .annotate(similarity=TrigramSimilarity("full_search_text", q))
-        .order_by("-similarity")
+        .annotate(
+            w_similarity=TrigramWordSimilarity(q, "full_search_text"),
+            similarity=TrigramSimilarity("full_search_text", q),
+        )
+        .filter(w_similarity__gte=0.6)
+        .order_by("-similarity", "-is_siege")
     )
 
     # Exclut les structures marquées comme obsolètes
@@ -35,27 +51,15 @@ def search_sirene(request, citycode):
         )
     )
 
-    return Response(
-        EstablishmentSerializer(
-            results[:10], many=True, context={"request": request}
-        ).data
-    )
+    # Exclut les structures sans nom propre, sauf s’il s’agit du siège
+    results = results.exclude(name="", is_siege=False)
 
-
-@api_view()
-@permission_classes([permissions.AllowAny])
-def search_all_sirene(request):
-    q = request.query_params.get("q", "")
-    if not q:
-        return Response("need q")
-
-    results = Establishment.objects.annotate(
-        similarity=TrigramSimilarity("full_search_text", q)
-    ).order_by("-similarity")
+    # Exclut les structures non diffusibles
+    results = results.exclude(name="[ND]")
 
     return Response(
         EstablishmentSerializer(
-            results[:10], many=True, context={"request": request}
+            results[:30], many=True, context={"request": request}
         ).data
     )
 
