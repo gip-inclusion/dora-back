@@ -268,22 +268,32 @@ class StructuresImportTestCase(APITestCase):
         self.assertTrue(member.is_admin)
 
     def test_create_structure_on_the_fly(self):
-        baker.make("Establishment", siret="12345678901234", name="My Establishment")
+        baker.make(
+            "Establishment",
+            siret="12345678901234",
+            name="My Establishment",
+            parent_name="Parent",
+        )
         self.add_row(["Foo", "12345678901234", "", "foo@buzz.com", "", ""])
         self.call_command()
         self.assertTrue(
             Structure.objects.filter(
-                siret="12345678901234", name="My Establishment"
+                siret="12345678901234", name="My Establishment (Parent)"
             ).exists()
         )
 
     def test_create_parent_structure_on_the_fly(self):
-        baker.make("Establishment", siret="12345678901234", name="My Establishment")
+        baker.make(
+            "Establishment",
+            siret="12345678901234",
+            name="My Establishment",
+            parent_name="Parent",
+        )
         self.add_row(["Foo", "", "12345678901234", "foo@buzz.com", "", ""])
         self.call_command()
         self.assertTrue(
             Structure.objects.filter(
-                siret="12345678901234", name="My Establishment"
+                siret="12345678901234", name="My Establishment (Parent)"
             ).exists()
         )
 
