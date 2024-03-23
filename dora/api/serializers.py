@@ -158,7 +158,7 @@ class StructureSerializer(serializers.ModelSerializer):
         return None
 
     def get_typologie(self, obj):
-        return obj.typology.value if obj.typology else None
+        return obj.typology
 
 
 class ServiceSerializer(serializers.ModelSerializer):
