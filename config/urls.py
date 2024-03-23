@@ -116,11 +116,5 @@ urlpatterns = [
     *oidc_patterns,
 ]
 
-if settings.ALLOW_PUBLIC_API:
-    urlpatterns.append(
-        path("api/v1/", include("dora.api.urls_v1", namespace="v1")),
-    )
-
-
 if settings.PROFILE:
     urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
