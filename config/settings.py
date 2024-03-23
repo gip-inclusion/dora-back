@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     "django_filters",
     "rest_framework",
+    "rest_framework.authtoken",
     "rest_framework_gis",
     "corsheaders",
     # local
@@ -258,7 +259,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAdminUser",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "dora.rest_auth.authentication.TokenAuthentication",
+        "rest_framework.authentication.TokenAuthentication",
     ],
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     # Camel Case
@@ -553,4 +554,3 @@ try:
     NOTIFICATIONS_LIMIT = int(os.environ.get("NOTIFICATIONS_LIMIT", 0))
 except Exception:
     NOTIFICATIONS_LIMIT = 0
-
