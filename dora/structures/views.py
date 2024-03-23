@@ -1,3 +1,4 @@
+from data_inclusion.schema import Typologie
 from django.db import transaction
 from django.db.models.query_utils import Q
 from django.shortcuts import get_object_or_404
@@ -17,7 +18,6 @@ from dora.structures.models import (
     StructureNationalLabel,
     StructurePutativeMember,
     StructureSource,
-    StructureTypology,
 )
 from dora.structures.permissions import (
     StructureMemberPermission,
@@ -52,9 +52,7 @@ class StructureViewSet(
         only_pending = self.request.query_params.get("pending")
         only_active = self.request.query_params.get("active")
 
-        all_structures = Structure.objects.select_related(
-            "typology", "source", "parent"
-        ).all()
+        all_structures = Structure.objects.select_related("source", "parent").all()
         if only_managed:
             if not user or not user.is_authenticated:
                 return Structure.objects.none()
@@ -347,10 +345,7 @@ def siret_was_claimed(request, siret):
 @permission_classes([permissions.AllowAny])
 def options(request):
     result = {
-        "typologies": [
-            {"value": c.value, "label": c.label}
-            for c in StructureTypology.objects.all().order_by("label")
-        ],
+        "typologies": Typologie.as_dict_list(),
         "national_labels": [
             {"value": c.value, "label": c.label}
             for c in StructureNationalLabel.objects.all().order_by("label")

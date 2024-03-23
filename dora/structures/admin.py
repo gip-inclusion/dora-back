@@ -11,7 +11,6 @@ from .models import (
     StructureNationalLabel,
     StructurePutativeMember,
     StructureSource,
-    StructureTypology,
 )
 
 
@@ -189,12 +188,11 @@ class StructureAdmin(admin.ModelAdmin):
         "data_inclusion_id",
         "data_inclusion_source",
     )
-    raw_id_fields = ["parent"]
+    raw_id_fields = ["parent", "creator", "last_editor"]
 
 
 admin.site.register(Structure, StructureAdmin)
 admin.site.register(StructureMember, StructureMemberAdmin)
 admin.site.register(StructurePutativeMember, StructurePutativeMemberAdmin)
 admin.site.register(StructureSource, EnumAdmin)
-admin.site.register(StructureTypology, EnumAdmin)
 admin.site.register(StructureNationalLabel, EnumAdmin)
