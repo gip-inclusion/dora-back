@@ -59,11 +59,6 @@ tables:
     query:
       dump_condition: "FALSE"
 
-  - name: rest_auth_token
-    rules: {}
-    query:
-      dump_condition: "FALSE"
-
   - name: authtoken_token
     rules: {}
     query:
