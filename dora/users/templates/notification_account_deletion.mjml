@@ -10,7 +10,7 @@
     Nous constatons que votre compte DORA n'a pas été utilisé depuis un certain temps.
   </p>
   <p>
-  Conformément à notre politique de gestion des comptes inactifs, votre compte sera désactivé le <strong>{{ limit_date }}</strong>.
+    Conformément à notre politique de gestion des comptes inactifs, votre compte sera désactivé le <strong>{{ limit_date }}</strong>.
   </p>
   <p>
     Après cette désactivation, vous serez dans l’obligation de créer un nouveau compte si vous souhaitez utiliser la plateforme DORA.

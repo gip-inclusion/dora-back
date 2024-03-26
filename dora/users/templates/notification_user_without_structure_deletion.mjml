@@ -17,6 +17,10 @@
 {% block post_cta %}
   <mj-text>
     <p>
+      Si vous avez des difficultés ou des questions, notre équipe est là pour vous aider. N’hésitez pas à <a href="{{ contact_link }}">nous contacter</a>, vous inscrire à <a href="{{ webinar_link }}">un webinaire de prise en main</a> ou à <a href="{{ help_link }}">consulter notre section d'aide</a>.
+    </p>
+
+    <p>
       Nous vous remercions pour votre intérêt pour DORA et espérons vous voir bientôt parmi nos utilisateurs actifs.
     </p>
   </mj-text>

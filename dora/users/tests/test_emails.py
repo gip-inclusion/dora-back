@@ -55,7 +55,7 @@ def test_send_account_deletion_notification():
 @pytest.mark.parametrize(
     "deletion,subject",
     (
-        (False, "Rappel : Identifiez votre structure sur DORA"),
+        (False, "Rappel : rejoignez votre structure sur DORA"),
         (True, "Dernier rappel avant suppression"),
     ),
 )
@@ -71,3 +71,10 @@ def test_send_user_without_structure_notification(deletion, subject):
     assert "MailsTransactionnels" in mail.outbox[0].body
     assert "InscritSansStructure" in mail.outbox[0].body
     assert "Nous avons accès à vos données à caractère personnel" in mail.outbox[0].body
+
+    assert "/dora-1/presentation-dora" in mail.outbox[0].body
+    assert "aide.dora.inclusion.beta.gouv.fr" in mail.outbox[0].body
+    assert (
+        "article/comment-sinscrire-sur-dora-14d64n0/#3-03-adherer-a-votre-structure"
+        in mail.outbox[0].body
+    )

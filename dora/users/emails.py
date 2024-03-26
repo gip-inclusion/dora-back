@@ -49,13 +49,16 @@ def send_user_without_structure_notification(user, deletion=False):
     context = {
         "user": user,
         "cta_link": cta_link.url,
+        "help_link": "https://aide.dora.inclusion.beta.gouv.fr/fr/",
+        "contact_link": "https://aide.dora.inclusion.beta.gouv.fr/fr/article/comment-sinscrire-sur-dora-14d64n0/#3-03-adherer-a-votre-structure",
+        "webinar_link": "https://app.livestorm.co/dora-1/presentation-dora",
         "with_legal_info": True,
     }
 
     send_mail(
         "Dernier rappel avant suppression"
         if deletion
-        else "Rappel : Identifiez votre structure sur DORA",
+        else "Rappel : rejoignez votre structure sur DORA",
         user.email,
         mjml2html(
             render_to_string(

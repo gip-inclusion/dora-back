@@ -24,11 +24,15 @@
       </ul>
     </p>
 
+    <p>
+      Si vous avez des difficultés ou des questions, notre équipe est là pour vous aider. N’hésitez pas à <a href="{{ contact_link }}">nous contacter</a>, vous inscrire à <a href="{{ webinar_link }}">un webinaire de prise en main</a> ou à <a href="{{ help_link }}">consulter notre section d'aide</a>.
+    </p>
+
     <p>Ne manquez pas cette opportunité de bénéficier pleinement de DORA !</p>
   </mj-text>
 {% endblock %}
 
 {% block cta %}
-  <mj-button mj-class="cta" href="{{ cta_link }}">Identifiez et rejoignez votre structure</mj-button>
+  <mj-button mj-class="cta" href="{{ cta_link }}">Identifiez-vous et rejoignez votre structure</mj-button>
   <mj-spacer height="24px"/>
 {% endblock %}
