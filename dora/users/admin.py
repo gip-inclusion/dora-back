@@ -115,7 +115,7 @@ class UserAdmin(BaseUserAdmin):
         "is_manager",
         "is_active",
         "is_valid",
-        "department",
+        "departments",
         "main_activity",
     )
     fieldsets = (
@@ -138,7 +138,7 @@ class UserAdmin(BaseUserAdmin):
                 "fields": (
                     "is_staff",
                     "is_manager",
-                    "department",
+                    "departments",
                     "is_active",
                     "is_valid",
                 )

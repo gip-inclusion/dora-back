@@ -25,7 +25,7 @@ from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
 from dora.core.pagination import OptionalPageNumberPagination
 from dora.core.utils import TRUTHY_VALUES
-from dora.services.emails import send_service_feedback_email
+from dora.services.emails import send_service_feedback_email, send_service_sharing_email
 from dora.services.enums import ServiceStatus
 from dora.services.models import (
     AccessCondition,
@@ -119,10 +119,10 @@ def get_visible_services(user):
     # Staff can see everything
     elif user.is_staff:
         qs = all_services
-    elif user.is_manager and user.department:
+    elif user.is_manager and user.departments:
         qs = all_services.filter(
             Q(status=ServiceStatus.PUBLISHED)
-            | Q(structure__department=user.department)
+            | Q(structure__department__in=user.departments)
             | Q(structure__membership__user=user)
         )
     else:
@@ -190,6 +190,19 @@ class ServiceViewSet(
         d = serializer.validated_data
         send_service_feedback_email(service, d["full_name"], d["email"], d["message"])
         return Response(status=201)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="share",
+        permission_classes=[permissions.AllowAny],
+    )
+    def share(self, request, slug):
+        service = self.get_object()
+        serialized_service = ServiceSerializer(
+            service, context={"request": request}
+        ).data
+        return share_service(request, serialized_service, is_di=False)
 
     def perform_create(self, serializer):
         pub_date = None
@@ -628,9 +641,9 @@ def options(request):
             )
             filters |= Q(structure_id__in=user_structures)
 
-            if user.is_manager and user.department:
+            if user.is_manager and user.departments:
                 manager_structures = Structure.objects.filter(
-                    department=user.department
+                    department__in=user.departments
                 )
                 filters |= Q(structure__in=manager_structures)
 
@@ -721,7 +734,31 @@ def service_di(
     if raw_service is None:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    return Response(data_inclusion.map_service(raw_service))
+    return Response(
+        data_inclusion.map_service(raw_service, request.user.is_authenticated)
+    )
+
+
+@api_view(["POST"])
+@permission_classes([permissions.AllowAny])
+def share_di_service(
+    request,
+    di_id: str,
+    di_client: data_inclusion.DataInclusionClient,
+):
+    source_di, di_service_id = di_id.split("--")
+    try:
+        raw_service = di_client.retrieve_service(source=source_di, id=di_service_id)
+    except requests.ConnectionError:
+        return Response(status=status.HTTP_502_BAD_GATEWAY)
+
+    if raw_service is None:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    serialized_service = data_inclusion.map_service(
+        raw_service, request.user.is_authenticated
+    )
+    return share_service(request, serialized_service, is_di=True)
 
 
 @api_view()
@@ -757,3 +794,29 @@ def search(request, di_client=None):
     )
 
     return Response(sorted_results)
+
+
+def share_service(request, service, is_di):
+    class ShareSerializer(serializers.Serializer):
+        sender_name = serializers.CharField(required=False)
+        recipient_email = serializers.EmailField()
+        recipient_kind = serializers.ChoiceField(
+            choices=["beneficiary", "professional"]
+        )
+
+    serializer = ShareSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    d = serializer.validated_data
+    if not d.get("sender_name") and not request.user.is_authenticated:
+        raise serializers.ValidationError(
+            "Le champ `sender_name` est requis pour les soumissions anonymes"
+        )
+    sender_name = (
+        request.user.get_full_name()
+        if request.user.is_authenticated
+        else d["sender_name"]
+    )
+    send_service_sharing_email(
+        service, sender_name, d["recipient_email"], d["recipient_kind"], is_di
+    )
+    return Response(status=201)

@@ -62,7 +62,8 @@ class StructuresImportTestCase(APITestCase):
     def test_invalid_siret_wont_create_anything(self):
         self.add_row(["foo", "1234", "", "foo@buzz.com", "", ""])
         out, err = self.call_command()
-        self.assertIn("Siret invalide", err)
+        self.assertIn("Le numéro SIRET doit être composé de 14 chiffres.", err)
+        self.assertIn("siret", err)
         self.assertFalse(Structure.objects.filter(siret="12345").exists())
         self.assertFalse(User.objects.filter(email="foo@buzz.com").exists())
         self.assertEqual(len(mail.outbox), 0)
@@ -70,12 +71,13 @@ class StructuresImportTestCase(APITestCase):
     def test_invalid_parent_siret_error(self):
         self.add_row(["foo", "", "1234", "foo@buzz.com", "", ""])
         out, err = self.call_command()
-        self.assertIn("Siret parent invalide", err)
+        self.assertIn("Le numéro SIRET doit être composé de 14 chiffres.", err)
+        self.assertIn("parent_siret", err)
 
     def test_unknown_parent_siret_error(self):
         self.add_row(["foo", "", "12345678901234", "foo@buzz.com", "", ""])
         out, err = self.call_command()
-        self.assertIn("Siret parent inconnu", err)
+        self.assertIn("SIRET parent inconnu", err)
 
     def test_missing_siret_error(self):
         self.add_row(["foo", "", "", "foo@buzz.com", "", ""])
@@ -88,7 +90,7 @@ class StructuresImportTestCase(APITestCase):
         self.add_row(["foo", "", "12345678901234", "foo@buzz.com", "", ""])
         out, err = self.call_command()
         self.assertIn(
-            "Le siret 12345678901234 est une antenne, il ne peut pas être utilisé comme parent",
+            "Le SIRET 12345678901234 est une antenne, il ne peut pas être utilisé comme parent",
             err,
         )
 

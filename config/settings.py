@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     "django_filters",
     "rest_framework",
+    "rest_framework.authtoken",
     "rest_framework_gis",
     "corsheaders",
     # local
@@ -258,7 +259,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAdminUser",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "dora.rest_auth.authentication.TokenAuthentication",
+        "rest_framework.authentication.TokenAuthentication",
     ],
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     # Camel Case
@@ -538,7 +539,18 @@ INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS = (
     os.environ.get("INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS") == "true"
 )
 
-########
-# TEMP #
-########
-ALLOW_PUBLIC_API = os.environ.get("ALLOW_PUBLIC_API") != "false"
+# Notifications :
+# voir management command `process_notification_tasks`
+
+# activation des notifications
+NOTIFICATIONS_ENABLED = os.environ.get("NOTIFICATIONS_ENABLED", "") == "true"
+
+# si défini, seules ces tâches de notification seront lancées par le CRON
+# même principe que pour la management command, les tâches sélectionnées sont séparées par des ","
+NOTIFICATIONS_TASK_TYPES = os.environ.get("NOTIFICATIONS_TASK_TYPES", "")
+
+# nombre de Notifications à envoyer pour chaque tâche
+try:
+    NOTIFICATIONS_LIMIT = int(os.environ.get("NOTIFICATIONS_LIMIT", 0))
+except Exception:
+    NOTIFICATIONS_LIMIT = 0

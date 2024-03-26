@@ -1,5 +1,7 @@
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.encoding import iri_to_uri
 from furl import furl
 from mjml import mjml2html
@@ -222,16 +224,18 @@ def send_admin_invited_users_90_notification(structure, user):
 def send_admin_self_invited_users_notification(structure, user):
     # rattachements en attente :
     # notification envoyée au admin de la structure
-    cta_link = (
-        furl(settings.FRONTEND_URL) / "structures" / structure.slug / "collaborateurs"
-    )
-    cta_link.add(
-        {
-            "mtm_campaign": "MailsTransactionnels",
-            "mtm_kwd": "RattachStructureaValider",
-        }
-    )
+    next_link = furl(f"/structures/{structure.slug}/collaborateurs")
+
     for admin in structure.admins:
+        cta_link = furl(settings.FRONTEND_URL) / "auth" / "connexion"
+        cta_link.add({"next": next_link, "login_hint": admin.email})
+        cta_link.add(
+            {
+                "mtm_campaign": "MailsTransactionnels",
+                "mtm_kwd": "RattachStructureaValider",
+            }
+        )
+
         context = {
             "structure": structure,
             "user": user,
@@ -252,25 +256,31 @@ def send_admin_self_invited_users_notification(structure, user):
 def send_structure_activation_notification(structure):
     # notification envoyée aux administrateurs de structure
     # pour une première activation de service
-    cta_link = furl(settings.FRONTEND_URL) / "structures" / structure.slug / "services"
-    cta_link.add(
-        {
-            "mtm_campaign": "MailsTransactionnels",
-            "mtm_kwd": "RelanceActivationService",
-        }
-    )
+    next_link = f"/structures/{structure.slug}/services"
     context = {
         "structure": structure,
         "dora_doc_link": "https://aide.dora.inclusion.beta.gouv.fr/fr/article/referencer-son-offre-de-service-xpivaw/",
         "webinar_link": "https://app.livestorm.co/dora-1/presentation-dora",
-        "cta_link": cta_link.url,
     }
-    for pm in structure.putative_membership.filter(is_admin=True).select_related(
-        "user"
+
+    # aux admins inscrits depuis plus d'un mois
+    for membership in structure.membership.filter(
+        is_admin=True, creation_date__lt=timezone.now() - relativedelta(months=1)
     ):
+        admin = membership.user
+        cta_link = furl(settings.FRONTEND_URL) / "auth" / "connexion"
+        cta_link.add(
+            {
+                "login_hint": iri_to_uri(admin.email),
+                "mtm_campaign": "MailsTransactionnels",
+                "mtm_kwd": "RelanceActivationService",
+                "next": next_link,
+            }
+        )
+        context |= {"cta_link": cta_link}
         send_mail(
             f"Votre structure n’a pas encore publié de service sur DORA ({ structure.name})",
-            pm.user.email,
+            admin.email,
             mjml2html(
                 render_to_string("notification-service-activation.mjml", context),
             ),

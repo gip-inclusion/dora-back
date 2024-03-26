@@ -107,7 +107,15 @@ class ManagerTestCase(APITestCase):
             is_valid=True,
             is_staff=False,
             is_manager=True,
-            department=31,
+            departments=[31],
+        )
+
+        self.bimanager = baker.make(
+            "users.User",
+            is_valid=True,
+            is_staff=False,
+            is_manager=True,
+            departments=["31", "08"],
         )
 
     def test_coord_can_see_structures_in_his_dept(self):
@@ -154,3 +162,43 @@ class ManagerTestCase(APITestCase):
         self.client.force_authenticate(user=manager)
         response = self.client.get(f"/structures-admin/{structure.slug}/")
         self.assertEqual(response.status_code, 403)
+
+    ## Plusieurs départements
+    def test_bicoord_can_see_structures_in_his_depts(self):
+        structure1 = make_structure(department="31")
+        structure2 = make_structure(department="08")
+        self.client.force_authenticate(user=self.bimanager)
+        response = self.client.get("/structures-admin/")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            response.data[0]["slug"] == structure1.slug
+            or response.data[0]["slug"] == structure2.slug
+        )
+        self.assertTrue(
+            response.data[1]["slug"] == structure1.slug
+            or response.data[1]["slug"] == structure2.slug
+        )
+
+    def test_bicoord_cant_see_structures_outside_his_depts(self):
+        make_structure(department="12")
+        self.client.force_authenticate(user=self.bimanager)
+        response = self.client.get("/structures-admin/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_bicoord_can_see_specific_structures_in_his_depts(self):
+        structure1 = make_structure(department="31")
+        structure2 = make_structure(department="08")
+        self.client.force_authenticate(user=self.bimanager)
+        response = self.client.get(f"/structures-admin/{structure1.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["slug"], structure1.slug)
+        response = self.client.get(f"/structures-admin/{structure2.slug}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["slug"], structure2.slug)
+
+    def test_bicoord_cant_see_specific_structure_outside_his_depts(self):
+        structure = make_structure(department=12)
+        self.client.force_authenticate(user=self.bimanager)
+        response = self.client.get(f"/structures-admin/{structure.slug}/")
+        self.assertEqual(response.status_code, 404)

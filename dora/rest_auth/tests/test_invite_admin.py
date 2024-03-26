@@ -18,7 +18,7 @@ def test_establishment():
 
 def test_manager_can_invite(api_client):
     assert not Structure.objects.filter(siret=TEST_SIRET).exists()
-    user = make_user(is_staff=False, is_manager=True, department=31)
+    user = make_user(is_staff=False, is_manager=True, departments=[31])
     api_client.force_authenticate(user=user)
     response = api_client.post(
         "/auth/invite-first-admin/",
@@ -43,7 +43,7 @@ def test_manager_can_invite(api_client):
 
 def test_can_invite_to_existing_structure(api_client):
     make_structure(siret=TEST_SIRET)
-    user = make_user(is_staff=False, is_manager=True, department=31)
+    user = make_user(is_staff=False, is_manager=True, departments=[31])
     api_client.force_authenticate(user=user)
     response = api_client.post(
         "/auth/invite-first-admin/",
@@ -101,7 +101,7 @@ def test_superuser_can_invite(api_client):
 
 
 def test_siret_is_mandatory(api_client):
-    user = make_user(is_staff=False, is_manager=True, department=31)
+    user = make_user(is_staff=False, is_manager=True, departments=[31])
     api_client.force_authenticate(user=user)
     response = api_client.post(
         "/auth/invite-first-admin/",
@@ -112,7 +112,7 @@ def test_siret_is_mandatory(api_client):
 
 
 def test_invitee_email_is_mandatory(api_client):
-    user = make_user(is_staff=False, is_manager=True, department=31)
+    user = make_user(is_staff=False, is_manager=True, departments=[31])
     api_client.force_authenticate(user=user)
     response = api_client.post(
         "/auth/invite-first-admin/",
@@ -123,7 +123,7 @@ def test_invitee_email_is_mandatory(api_client):
 
 
 def test_cant_invite_non_pe_agents_to_pe_structure(api_client):
-    user = make_user(is_staff=False, is_manager=True, department=31)
+    user = make_user(is_staff=False, is_manager=True, departments=[31])
     siret_pe = SIREN_POLE_EMPLOI + "12345"
     baker.make("Establishment", siret=siret_pe)
     api_client.force_authenticate(user=user)
@@ -136,7 +136,7 @@ def test_cant_invite_non_pe_agents_to_pe_structure(api_client):
 
 
 def test_can_invite_pe_agents_to_pe_structure(api_client):
-    user = make_user(is_staff=False, is_manager=True, department=31)
+    user = make_user(is_staff=False, is_manager=True, departments=[31])
     siret_pe = SIREN_POLE_EMPLOI + "12345"
     baker.make("Establishment", siret=siret_pe)
     api_client.force_authenticate(user=user)
@@ -151,7 +151,7 @@ def test_can_invite_pe_agents_to_pe_structure(api_client):
 def test_cant_invite_other_admins(api_client):
     structure = make_structure(siret=TEST_SIRET)
     make_user(structure=structure, is_staff=False, is_manager=False, is_admin=True)
-    user = make_user(is_staff=False, is_manager=True, department=31)
+    user = make_user(is_staff=False, is_manager=True, departments=[31])
     api_client.force_authenticate(user=user)
     response = api_client.post(
         "/auth/invite-first-admin/",
@@ -167,7 +167,7 @@ def test_cant_reinvite_already_existing_admin(api_client):
     admin = make_user(
         structure=structure, is_staff=False, is_manager=False, is_admin=True
     )
-    user = make_user(is_staff=False, is_manager=True, department=31)
+    user = make_user(is_staff=False, is_manager=True, departments=[31])
     api_client.force_authenticate(user=user)
     response = api_client.post(
         "/auth/invite-first-admin/",
@@ -194,7 +194,7 @@ def test_promote_already_invited_user(api_client):
         invited_by_admin=True,
         is_admin=False,
     )
-    user = make_user(is_staff=False, is_manager=True, department=31)
+    user = make_user(is_staff=False, is_manager=True, departments=[31])
     api_client.force_authenticate(user=user)
     response = api_client.post(
         "/auth/invite-first-admin/",
@@ -216,7 +216,7 @@ def test_promote_already_existing_member(api_client):
         StructureMember.objects.get(structure=structure, user=existing_user).is_admin
         is False
     )
-    user = make_user(is_staff=False, is_manager=True, department=31)
+    user = make_user(is_staff=False, is_manager=True, departments=[31])
     api_client.force_authenticate(user=user)
     response = api_client.post(
         "/auth/invite-first-admin/",
@@ -245,7 +245,7 @@ def test_accept_and_promote_waiting_member(api_client):
         user=existing_user,
         invited_by_admin=False,
     )
-    user = make_user(is_staff=False, is_manager=True, department=31)
+    user = make_user(is_staff=False, is_manager=True, departments=[31])
     api_client.force_authenticate(user=user)
     response = api_client.post(
         "/auth/invite-first-admin/",

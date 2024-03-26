@@ -1,3 +1,5 @@
+from operator import attrgetter
+
 from django.contrib.gis.geos import Point
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import Value
@@ -115,3 +117,25 @@ def get_city_label(request, insee_code):
     if city:
         return Response(city.name)
     raise NotFound
+
+
+@api_view()
+@permission_classes([permissions.AllowAny])
+def get_departments(request):
+    class DeptSerializer(serializers.Serializer):
+        code = serializers.CharField()
+        name = serializers.CharField()
+        geom = GeometrySerializerMethodField()
+
+        def get_geom(self, obj):
+            return obj.geom.simplify(tolerance=0.1)
+
+    q = request.GET.get("dept_codes", "")
+    if q:
+        departments = [Department.objects.get_from_code(code) for code in q.split(",")]
+    else:
+        departments = Department.objects.all()
+
+    return Response(
+        DeptSerializer(sorted(departments, key=attrgetter("code")), many=True).data
+    )

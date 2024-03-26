@@ -5,6 +5,7 @@ from django.http.response import Http404
 from django.utils import timezone
 from django.views.decorators.debug import sensitive_post_parameters
 from rest_framework import exceptions, permissions
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -12,7 +13,6 @@ from rest_framework.response import Response
 from dora.core.constants import SIREN_POLE_EMPLOI
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
-from dora.rest_auth.authentication import TokenAuthentication
 from dora.sirene.models import Establishment
 from dora.structures.models import (
     Structure,
@@ -51,7 +51,9 @@ def user_info(request):
         user, token = TokenAuthentication().authenticate_credentials(key)
     except exceptions.AuthenticationFailed:
         raise Http404
+
     update_last_login(user)
+
     return Response(UserInfoSerializer(user, context={"token": token}).data, status=200)
 
 
@@ -196,7 +198,7 @@ def join_structure(request):
 @transaction.atomic
 def invite_first_admin(request):
     inviter = request.user
-    if not (inviter.is_staff or (inviter.is_manager and inviter.department)):
+    if not (inviter.is_staff or (inviter.is_manager and inviter.departments)):
         raise exceptions.PermissionDenied
     siret = request.data.get("siret")
     if not siret:

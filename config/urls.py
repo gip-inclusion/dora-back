@@ -74,12 +74,18 @@ private_api_patterns = [
     path("search/", dora.services.views.search, {"di_client": di_client}),
     path("stats/event/", dora.stats.views.log_event),
     path(
-        "service-di/<slug:di_id>/",
+        "services-di/<slug:di_id>/",
         dora.services.views.service_di,
+        {"di_client": di_client},
+    ),
+    path(
+        "services-di/<slug:di_id>/share/",
+        dora.services.views.share_di_service,
         {"di_client": di_client},
     ),
     path("admin-division-search/", dora.admin_express.views.search),
     path("admin-division-reverse-search/", dora.admin_express.views.reverse_search),
+    path("admin-division-departments/", dora.admin_express.views.get_departments),
     path(
         "city-label/<insee_code:insee_code>/", dora.admin_express.views.get_city_label
     ),
@@ -109,12 +115,6 @@ urlpatterns = [
     *di_api_patterns,
     *oidc_patterns,
 ]
-
-if settings.ALLOW_PUBLIC_API:
-    urlpatterns.append(
-        path("api/v1/", include("dora.api.urls_v1", namespace="v1")),
-    )
-
 
 if settings.PROFILE:
     urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]

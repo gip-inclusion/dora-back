@@ -6,6 +6,7 @@ from rest_framework import serializers
 
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
+from dora.core.validators import validate_siret
 from dora.services.models import ServiceModel
 from dora.services.utils import instantiate_model
 from dora.sirene.models import Establishment
@@ -38,29 +39,25 @@ def to_string_array(strings_list):
 
 class ImportSerializer(serializers.Serializer):
     name = serializers.CharField()
-    siret = serializers.CharField(allow_blank=True)
-    parent_siret = serializers.CharField(allow_blank=True)
+    siret = serializers.CharField(allow_blank=True, validators=[validate_siret])
+    parent_siret = serializers.CharField(allow_blank=True, validators=[validate_siret])
     admins = serializers.ListField(child=serializers.EmailField(), allow_empty=True)
     labels = serializers.ListField(child=serializers.CharField(), allow_empty=True)
     models = serializers.ListField(child=serializers.CharField(), allow_empty=True)
 
-    def validate(self, data):
-        raw_siret = data.get("siret")
-        raw_parent_siret = data.get("parent_siret")
-        siret = "".join([c for c in raw_siret if c.isdigit()])
-        parent_siret = "".join([c for c in raw_parent_siret if c.isdigit()])
+    def _clean_siret(self, siret: str):
+        return "".join([c for c in siret if c.isdigit()])
 
-        if siret and len(siret) != 14:
-            raise serializers.ValidationError(f"Siret invalide: {raw_siret}")
+    def to_internal_value(self, data):
+        # nettoyage pré-validation
+        data |= {
+            "siret": self._clean_siret(data["siret"]),
+            "parent_siret": self._clean_siret(data["parent_siret"]),
+        }
 
-        if parent_siret and len(parent_siret) != 14:
-            raise serializers.ValidationError(
-                f"Siret parent invalide: {raw_parent_siret}"
-            )
+        return super().to_internal_value(data)
 
-        if not siret and not parent_siret:
-            raise serializers.ValidationError("`siret` ou `parent_siret` sont requis")
-
+    def validate_siret(self, siret):
         if (
             siret
             and not Structure.objects.filter(siret=siret).exists()
@@ -69,20 +66,31 @@ class ImportSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 f"Siret inconnu: https://annuaire-entreprises.data.gouv.fr/etablissement/{siret}"
             )
+        return siret
 
+    def validate_parent_siret(self, parent_siret):
         if (
             parent_siret
             and not Structure.objects.filter(siret=parent_siret).exists()
             and not Establishment.objects.filter(siret=parent_siret).exists()
         ):
             raise serializers.ValidationError(
-                f"Siret parent inconnu: https://annuaire-entreprises.data.gouv.fr/etablissement/{siret}"
+                f"SIRET parent inconnu: https://annuaire-entreprises.data.gouv.fr/etablissement/{parent_siret}"
             )
 
         if Structure.objects.filter(siret=parent_siret, parent__isnull=False).exists():
             raise serializers.ValidationError(
-                f"Le siret {parent_siret} est une antenne, il ne peut pas être utilisé comme parent"
+                f"Le SIRET {parent_siret} est une antenne, il ne peut pas être utilisé comme parent"
             )
+
+        return parent_siret
+
+    def validate(self, data):
+        siret = data.get("siret")
+        parent_siret = data.get("parent_siret")
+
+        if not siret and not parent_siret:
+            raise serializers.ValidationError("`siret` ou `parent_siret` sont requis")
 
         return super().validate(data)
 
@@ -137,10 +145,6 @@ class Command(BaseCommand):
         with open(filename) as structures_file:
             reader = csv.DictReader(structures_file, delimiter=",")
             for i, row in enumerate(reader):
-                name = " ".join(row["nom"].split())
-                self.stdout.write(
-                    self.style.SUCCESS(f"{i}. Import de la structure {name}")
-                )
                 serializer = ImportSerializer(
                     data={
                         "name": row["nom"],
@@ -153,8 +157,13 @@ class Command(BaseCommand):
                 )
 
                 if serializer.is_valid():
+                    data = serializer.validated_data
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f"{i}. Import de la structure {serializer.data['name']} (SIRET:{serializer.data['siret']})"
+                        )
+                    )
                     if not dry_run:
-                        data = serializer.validated_data
                         structure = self.get_or_create_structure(
                             data["name"],
                             data["siret"],

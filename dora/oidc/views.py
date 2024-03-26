@@ -9,11 +9,11 @@ from django.db import transaction
 from django.utils.crypto import get_random_string
 from furl import furl
 from rest_framework import permissions
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 
-from dora.rest_auth.models import Token
 from dora.rest_auth.views import update_last_login
 from dora.users.models import User
 
@@ -161,8 +161,9 @@ def inclusion_connect_authenticate(request):
                     user = User.objects.create(**user_dict)
 
         update_last_login(user)
-        token = Token.objects.filter(user=user).first()
-        if not token:
+        try:
+            token = Token.objects.get(user=user)
+        except Token.DoesNotExist:
             token = Token.objects.create(user=user)
         return Response(
             {"token": token.key, "valid_user": True, "code_safir": code_safir}
