@@ -130,6 +130,7 @@ def test_structures_serialization_exemple(
         "presentation_resume": "L’association Mobilette propose des solutions de déplacement aux personnes pour qui la non mobilité est un frein à l’insertion professionnelle : - connaissance de l'offre de transport du territoire - accès à un véhicule 2 ou 4 roues - transport solidaire - accès au permis",
         "rna": None,
         "siret": "60487647500499",
+        "parent_siret": parent.siret,
         "site_web": "https://www.asso-gonzalez.net/",
         "source": "solidagregateur",
         "telephone": "0102030405",
