@@ -18,6 +18,14 @@ MAIN_ACTIVITY_CHOICES = [
     ("autre", "Autre"),
 ]
 
+DISCOVERY_METHOD_CHOICES = [
+    ("bouche-a-oreille", "Bouche-à-oreille (mes collègues, réseau, etc.)"),
+    ("moteurs-de-recherche", "Moteurs de recherche (Ecosia, Qwant, Google, Bing, etc.)"),
+    ("reseaux-sociaux", "Réseaux sociaux (Linkedin, Twitter, etc.)"),
+    ("evenements-dora", "Événements DORA (démonstration, webinaires, open labs, etc.)"),
+    ("autre", "Autre (préciser)"),
+]
+
 IC_PRODUCTION_DATE = timezone.make_aware(timezone.datetime(2022, 10, 3))
 
 
@@ -118,6 +126,13 @@ class User(AbstractBaseUser):
         verbose_name="Activité principale de l'utilisateur",
         db_index=True,
         blank=True,
+    )
+    discovery_method = models.CharField(
+        max_length=25,
+        choices=DISCOVERY_METHOD_CHOICES,
+        verbose_name="Comment avez-vous connu DORA ?",
+        blank=True,
+        null=True,
     )
     date_joined = models.DateTimeField("date joined", default=timezone.now)
     last_service_reminder_email_sent = models.DateTimeField(blank=True, null=True)
