@@ -3,8 +3,34 @@
 ## Pré-requis
 
 - Python 3
-- PostgresQL avec l'extension [PostGIS](https://postgis.net/).
+- PostgreSQL avec l'extension [PostGIS](https://postgis.net/).
 - [GDAL](https://gdal.org/).
+
+### Docker Compose
+
+PostgreSQL, PostGIS, Minio et Redis peuvent être installés simplement avec Docker Compose.
+
+Copier `docker-compose.yml.template` en `docker-compose.yml`.
+
+Vous pouvez modifier `docker-compose.yml` à votre guise (ports, volumes, etc.).
+
+Créer et démarrer les conteneurs :
+
+```bash
+docker compose up
+```
+
+Importer une sauvegarde de base de données anonymisée :
+
+```bash
+docker compose exec -T db psql dora -U POSTGRES_USER < dump-anon.sql
+```
+
+Utiliser _psql_ :
+
+```bash
+docker compose exec db psql dora -U POSTGRES_USER
+```
 
 ## Installation
 
