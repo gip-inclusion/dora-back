@@ -134,6 +134,12 @@ class User(AbstractBaseUser):
         blank=True,
         null=True,
     )
+    discovery_method_other = models.CharField(
+        max_length=255,
+        verbose_name="Comment avez-vous connu DORA ? (autre)",
+        blank=True,
+        null=True,
+    )
     date_joined = models.DateTimeField("date joined", default=timezone.now)
     last_service_reminder_email_sent = models.DateTimeField(blank=True, null=True)
     newsletter = models.BooleanField(default=False, db_index=True)
