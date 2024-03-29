@@ -21,10 +21,10 @@ from dora.users.models import User
 
 
 def get_pe_credentials():
-    # https://pole-emploi.io/data/documentation/utilisation-api-pole-emploi/generer-access-token
+    # https://francetravail.io/data/documentation/utilisation-api-pole-emploi/generer-access-token
     try:
         response = requests.post(
-            url="https://entreprise.pole-emploi.fr/connexion/oauth2/access_token",
+            url="https://entreprise.francetravail.fr/connexion/oauth2/access_token",
             params={
                 "realm": "/partenaire",
             },
@@ -41,10 +41,10 @@ def get_pe_credentials():
 
 
 def get_pe_agencies(token):
-    # https://pole-emploi.io/data/api/referentiel-agences
+    # https://francetravail.io/data/api/referentiel-agences
     try:
         response = requests.get(
-            url="https://api.emploi-store.fr/partenaire/referentielagences/v1/agences",
+            url="https://api.francetravail.io/partenaire/referentielagences/v1/agences",
             params={},
             headers={
                 "Content-Type": "application/json",
