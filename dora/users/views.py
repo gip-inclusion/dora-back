@@ -18,7 +18,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return attrs
 
 
-@api_view(["POST"])
+@api_view(["PATCH", "POST"])  # TODO: remove POST when not used by frontend anymore
 @permission_classes([permissions.IsAuthenticated])
 def update_user_profile(request):
     serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
