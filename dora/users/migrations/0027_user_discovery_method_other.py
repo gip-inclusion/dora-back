@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 max_length=255,
                 null=True,
-                verbose_name="Comment avez-vous connu DORA\u202f? (autre)",
+                verbose_name="comment avez-vous connu DORA\u202f? (autre)",
             ),
         ),
     ]

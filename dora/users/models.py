@@ -118,13 +118,13 @@ class User(AbstractBaseUser):
     discovery_method = models.CharField(
         max_length=25,
         choices=DiscoveryMethod.choices,
-        verbose_name="Comment avez-vous connu DORA ?",
+        verbose_name="comment avez-vous connu DORA ?",
         blank=True,
         null=True,
     )
     discovery_method_other = models.CharField(
         max_length=255,
-        verbose_name="Comment avez-vous connu DORA ? (autre)",
+        verbose_name="comment avez-vous connu DORA ? (autre)",
         blank=True,
         null=True,
     )

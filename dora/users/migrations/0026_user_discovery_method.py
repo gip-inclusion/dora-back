@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
                 ],
                 max_length=25,
                 null=True,
-                verbose_name="Comment avez-vous connu DORA ?",
+                verbose_name="comment avez-vous connu DORA\u202f?",
             ),
         ),
     ]
