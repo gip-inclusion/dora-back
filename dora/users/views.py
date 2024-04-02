@@ -11,8 +11,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ["main_activity", "discovery_method", "discovery_method_other"]
 
     def validate(self, attrs):
-        if 'main_activity' not in attrs and not self.instance.main_activity:
-            raise serializers.ValidationError("Le champ « Activité principale » est requis")
+        if "main_activity" not in attrs and not self.instance.main_activity:
+            raise serializers.ValidationError(
+                "Le champ « Activité principale » est requis"
+            )
         return attrs
 
 
