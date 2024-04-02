@@ -148,7 +148,7 @@ def test_can_invite_pe_agents_to_pe_structure_pe_address(api_client):
     assert len(mail.outbox) == 1
 
 
-def test_can_invite_pe_agents_to_pe_structure_fr_address(api_client):
+def test_can_invite_pe_agents_to_pe_structure_ft_address(api_client):
     user = make_user(is_staff=False, is_manager=True, departments=[31])
     siret_pe = SIREN_POLE_EMPLOI + "12345"
     baker.make("Establishment", siret=siret_pe)
