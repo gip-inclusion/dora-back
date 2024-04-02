@@ -77,8 +77,11 @@ class Command(BaseCommand):
                         safir = struct["safir"]
                         siret = struct["siret"]
 
+                        if len(safir) != 5:
+                            print(f"Safir incorrect pour {name} ({safir})")
+                            continue
                         if not siret:
-                            print(f"Siret manquant pour {name}")
+                            print(f"Siret manquant pour {name} ({safir})")
                             continue
 
                         # S'il existe une structure avec ce code safir, mais un siret different,
