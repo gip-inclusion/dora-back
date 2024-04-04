@@ -16,6 +16,7 @@ class OrientationAdmin(admin.ModelAdmin):
         "beneficiary_last_name",
         "service",
         "creation_date",
+        "prescriber_email",
         "processing_date",
         "status",
     )
@@ -34,6 +35,12 @@ class OrientationAdmin(admin.ModelAdmin):
     readonly_fields = ("query_id", "original_service_name")
     filter_horizontal = ("rejection_reasons",)
     inlines = [SentContactEmailInline]
+
+    @admin.display(description="e-mail prescripteur")
+    def prescriber_email(self, obj):
+        if p := obj.prescriber:
+            return p.email
+        return "-"
 
 
 admin.site.register(Orientation, OrientationAdmin)
