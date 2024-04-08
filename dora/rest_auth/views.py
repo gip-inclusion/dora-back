@@ -153,11 +153,12 @@ def join_structure(request):
         and user.email.split("@")[1]
         not in (
             "pole-emploi.fr",
+            "francetravail.fr",
             "beta.gouv.fr",
         )
     ):
         raise exceptions.PermissionDenied(
-            "Seuls les agents Pôle emploi peuvent se rattacher à une agence Pôle emploi"
+            "Seuls les agents France Travail peuvent se rattacher à une agence France Travail"
         )
 
     if establishment:
@@ -217,11 +218,12 @@ def invite_first_admin(request):
         and invitee_email.split("@")[1]
         not in (
             "pole-emploi.fr",
+            "francetravail.fr",
             "beta.gouv.fr",
         )
     ):
         raise exceptions.PermissionDenied(
-            "Seuls les agents Pôle emploi peuvent se rattacher à une agence Pôle emploi"
+            "Seuls les agents France Travail peuvent se rattacher à une agence France Travail"
         )
 
     structure = _create_structure(
