@@ -92,7 +92,6 @@ private_api_patterns = [
     path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
     path("search-siret/", dora.sirene.views.search_siret),
     path("search-safir/", dora.sirene.views.search_safir),
-    path("search-all-sirene/", dora.sirene.views.search_all_sirene),
     path("services-options/", dora.services.views.options),
     path("siret-claimed/<siret:siret>/", dora.structures.views.siret_was_claimed),
     path("structures-options/", dora.structures.views.options),
