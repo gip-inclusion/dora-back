@@ -102,7 +102,10 @@ private_api_patterns = [
     path("ping/", dora.core.views.ping),
     path("sentry-debug/", dora.core.views.trigger_error),
     path("", include(router.urls)),
-    path("profile/main-activity/", dora.users.views.update_main_activity),
+    path("profile/", dora.users.views.update_user_profile),
+    path(
+        "profile/main-activity/", dora.users.views.update_user_profile
+    ),  # TODO: remove when not used by frontend anymore
 ]
 
 di_api_patterns = [

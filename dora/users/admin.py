@@ -128,6 +128,8 @@ class UserAdmin(BaseUserAdmin):
                     "last_name",
                     "first_name",
                     "main_activity",
+                    "discovery_method",
+                    "discovery_method_other",
                     has_migrated_to_ic,
                 )
             },
@@ -158,7 +160,7 @@ class UserAdmin(BaseUserAdmin):
         ),
     )
     search_fields = ("email", "last_name", "first_name")
-    readonly_fields = [has_migrated_to_ic]
+    readonly_fields = [has_migrated_to_ic, "discovery_method", "discovery_method_other"]
     ordering = ("-date_joined",)
     filter_horizontal = ()
     inlines = [
