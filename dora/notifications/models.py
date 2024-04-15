@@ -25,24 +25,36 @@ class NotificationQueryset(models.QuerySet):
         return self.filter(status=NotificationStatus.EXPIRED)
 
 
-class Notification(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    created_at = models.DateTimeField(
-        auto_now_add=True, verbose_name="Date de création"
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True, verbose_name="Date de modification"
-    )
+class NotificationMixin(models.Model):
+    task_type = models.CharField(choices=TaskType.choices, verbose_name="type de tâche")
     status = models.CharField(
         choices=NotificationStatus.choices,
         default=NotificationStatus.PENDING,
         verbose_name="Statut",
     )
+    counter = models.IntegerField(default=0, verbose_name="compteur d'exécution")
 
-    task_type = models.CharField(choices=TaskType.choices, verbose_name="Type de tâche")
-    counter = models.IntegerField(default=0, verbose_name="Compteur d'exécution")
+    class Meta:
+        abstract = True
+        indexes = [
+            models.Index(fields=("task_type",)),
+            models.Index(fields=("status",)),
+        ]
+
+
+class Notification(NotificationMixin):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name="date de création"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, verbose_name="date de modification"
+    )
+
+    # voir champs commun du mixin
+
     expires_at = models.DateTimeField(
-        null=True, blank=True, verbose_name="Date d'expiration"
+        null=True, blank=True, verbose_name="date d'expiration"
     )
 
     # propriétaires potentiels :
@@ -54,7 +66,7 @@ class Notification(models.Model):
         null=True,
         blank=True,
         on_delete=models.CASCADE,
-        verbose_name="Structure propriétaire",
+        verbose_name="structure propriétaire",
         related_name="notifications",
     )
     owner_user = models.ForeignKey(
@@ -62,7 +74,7 @@ class Notification(models.Model):
         null=True,
         blank=True,
         on_delete=models.CASCADE,
-        verbose_name="Utilisateur propriétaire",
+        verbose_name="utilisateur propriétaire",
         related_name="notifications",
     )
     owner_structureputativemember = models.ForeignKey(
@@ -70,7 +82,7 @@ class Notification(models.Model):
         null=True,
         blank=True,
         on_delete=models.CASCADE,
-        verbose_name="Invitation propriétaire",
+        verbose_name="invitation propriétaire",
         related_name="notifications",
     )
     ...
@@ -106,10 +118,8 @@ class Notification(models.Model):
             ),
         ]
         indexes = [
-            models.Index(fields=("task_type",)),
-            models.Index(fields=("status",)),
             models.Index(fields=("updated_at",)),
-        ]
+        ] + NotificationMixin.Meta.indexes
 
     def _owners(self):
         # liste des propriétaires définis pour la notification
@@ -139,6 +149,17 @@ class Notification(models.Model):
         self.updated_at = timezone.now()
         self.counter += 1
         self.save()
+
+        # redondant à première vue, mais permet de garder l'historique des modifications
+        # et d'avoir une trace en cas de complétion entrainant la destruction de la notification
+        # (par ex. suppression d'un utilisateur propriétaire après une période d'inactivité)
+        NotificationLog(
+            notification=self,
+            owner=str(self.owner)[:150],
+            task_type=self.task_type,
+            status=self.status,
+            counter=self.counter,
+        ).save()
 
     def complete(self):
         if self.status in (NotificationStatus.COMPLETE, NotificationStatus.EXPIRED):
@@ -179,3 +200,31 @@ class Notification(models.Model):
     @property
     def expired(self):
         return self.expires_at and self.expires_at < timezone.now()
+
+
+class NotificationLog(NotificationMixin):
+    """
+    Permet de garder l'historique des changements intéressants de la modification.
+    Un objet est créé automatiquement à chaque sauvegarde d'une notification.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    triggered_at = models.DateTimeField(
+        auto_now=True, verbose_name="date de déclenchement"
+    )
+    notification = models.ForeignKey(
+        Notification,
+        null=True,
+        blank=True,
+        related_name="logs",
+        on_delete=models.SET_NULL,
+        verbose_name="notification parente",
+    )
+    owner = models.CharField(
+        null=False, blank=True, max_length=150, verbose_name="propriétaire"
+    )
+
+    # voir champs communs du mixin
+
+    class Meta:
+        verbose_name = "historique de notification"
