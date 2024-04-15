@@ -87,7 +87,6 @@ def is_orientable(service_data: dict) -> bool:
         else None
     )
     blacklisted = siren in settings.ORIENTATION_SIRENE_BLACKLIST
-    blacklisted |= service_data["source"] == "soliguide"
     blacklisted |= not service_data["courriel"]
     return not blacklisted
 
