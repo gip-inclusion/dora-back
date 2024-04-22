@@ -103,6 +103,7 @@ INSTALLED_APPS = [
     "dora.admin_express",
     "dora.stats",
     "dora.notifications",
+    "dora.logs",
 ]
 
 MIDDLEWARE = [
