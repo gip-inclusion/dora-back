@@ -21,43 +21,50 @@ def test_logger_created(logger):
     assert isinstance(handler, ActionLogHandler)
 
 
-def test_clean_log_record(logger):
-    # la méthode save() effectue un clean()
-    with pytest.raises(ValidationError):
-        ActionLog().clean()
-
-    with pytest.raises(ValidationError):
-        ActionLog(payload={"msg": "ko"}).clean()
-
-    with pytest.raises(ValidationError):
-        ActionLog(payload={"level": "ERROR"}).clean()
-
-    with pytest.raises(ValidationError):
-        ActionLog(payload={"msg": "ok", "level": "MY_LEVEL"}).clean()
-
-    ActionLog(payload={"msg": "ok", "level": "INFO"}).clean()
-
-
 def test_store_log(logger):
     ActionLog(
-        payload={"msg": "ok", "level": "DEBUG", "myInt": 42, "myBool": True}
+        msg="ok", level=logging.DEBUG, legal=True, payload={"myInt": 42, "myBool": True}
     ).save()
 
     result = ActionLog.objects.first()
 
     assert result
-    assert result.payload.get("msg") == "ok"
-    assert result.payload.get("level") == "DEBUG"
+    assert result.msg == "ok"
+    assert result.level == logging.DEBUG
+    assert result.legal
     assert result.payload.get("myInt") == 42
     assert result.payload.get("myBool")
 
 
 def test_log_me(logger):
-    logger.critical("Message important", {"unParam": "au hasard"})
+    logger.critical("Message important", {"unParam": "au hasard", "legal": True})
 
     result = ActionLog.objects.first()
 
     assert result
-    assert result.payload.get("msg") == "Message important"
-    assert result.payload.get("level") == "CRITICAL"
+    assert result.msg == "Message important"
+    assert result.level == logging.CRITICAL
     assert result.payload.get("unParam") == "au hasard"
+
+    # le champ "legal" peut être modifié une fois l'objet créé,
+    # mais si il est inclus dans le payload, le champ du modèle est initialisé
+    # (et retiré du payload)
+    assert result.legal
+    assert "legal" not in result.payload.keys()
+
+
+def test_str(logger):
+    logger.error("Message texte", {"unParam": "au hasard", "legal": True})
+    result = ActionLog.objects.first()
+
+    assert str(result.pk) in str(result)
+
+    assert "_legal" in result.__repr__()
+    assert "_id" in result.__repr__()
+    assert "_createdAt" in result.__repr__()
+    assert "_level" in result.__repr__()
+
+
+def test_bad_legal_in_json(logger):
+    with pytest.raises(ValidationError):
+        logger.critical("Message important", {"unParam": "au hasard", "legal": "no"})

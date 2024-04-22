@@ -8,4 +8,4 @@ class LogsConfig(AppConfig):
     def ready(self):
         super().ready()
         # force la définition du logger 'dora.logs.core'
-        from .core import logger  # noqa
+        import dora.logs.core  # noqa

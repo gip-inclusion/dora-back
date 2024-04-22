@@ -11,12 +11,44 @@ class ActionLog(models.Model):
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False, verbose_name="identifiant"
     )
+
     created_at = models.DateTimeField(
         auto_now=True, editable=False, verbose_name="date de création"
     )
-    payload = models.JSONField(
-        default=dict, null=False, blank=True, verbose_name="contenu brut (JSON)"
+
+    level = models.SmallIntegerField(
+        null=False,
+        blank=True,
+        verbose_name="niveau de log",
+        editable=False,
+        choices=logging._levelToName.items(),
     )
+
+    msg = models.TextField(null=False, blank=True, verbose_name="message")
+
+    # un des futurs besoins de ce log sera de tracker les points avec une thématique légale,
+    # style AIPD, RGPD ou action sensibles sur les données.
+    # on pourra adjoindre plus de détails dans le payload.
+    legal = models.BooleanField(
+        null=False,
+        default=False,
+        blank=True,
+        verbose_name="implications légales (RGPD, AIPD..)",
+    )
+
+    payload = models.JSONField(
+        default=dict,
+        null=False,
+        blank=True,
+        verbose_name="contenu supplémentaire (JSON)",
+    )
+
+    # note :
+    # pour l'instant, pas d'implémentation de recherche sur le contenu du message du log.
+    # le système actuel se veut simple et ne nécessitera pas forcément une recherche "fulltext".
+    # si le cas se présente :
+    # - ajouter un champ de type `SearchVectorField` par ex.
+    # - indexer le champ `msg` (GIN)
 
     class Meta:
         verbose_name = "historique des actions"
@@ -27,30 +59,42 @@ class ActionLog(models.Model):
                 name="idx_%(app_label)s_%(class)s_created_at",
                 autosummarize=True,
             ),
+            models.Index(fields=("level",)),
+            models.Index(fields=("legal",)),
         )
 
     def __repr__(self):
         return pprint.pformat(
-            {"_id": str(self.pk), "_createdAt": str(self.created_at)} | self.payload
+            {
+                "_id": str(self.pk),
+                "_createdAt": str(self.created_at),
+                "_level": self.level_name,
+                "_msg": self.msg,
+                "_legal": self.legal,
+            }
+            | self.payload
         )
 
     def __str__(self):
-        return f"{str(self.pk)} - {self.payload.get('level')}"
-
-    def save(
-        self, force_insert=False, force_update=False, using=None, update_fields=None
-    ):
-        self.clean()
-        super().save(force_insert, force_update, using, update_fields)
+        return f"{str(self.pk)} - {self.level_name}"
 
     def clean(self):
-        # on s'assure de la présence de certains champs dans le contenu JSON :
-        # - un message
-        # - le niveau du log
-        if not self.payload.get("msg"):
-            raise ValidationError("Le contenu du log doit contenir un champ 'msg'")
+        # le champ `legal` peut être inclus dans le payload
+        # pour être directement créé par le logger,
+        # mais il doit être un booléen
+        if isinstance(self.payload, dict):
+            if legal := self.payload.get("legal"):
+                if not isinstance(legal, bool):
+                    raise ValidationError(
+                        "Le champ JSON 'legal' doit être un booléen", code="legal"
+                    )
+                self.legal = legal
+                del self.payload["legal"]
 
-        if self.payload.get("level") not in logging._levelToName.values():
-            raise ValidationError(
-                "Le contenu du log doit contenir un champ 'level' conforme"
-            )
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+    @property
+    def level_name(self):
+        return logging._levelToName[self.level]
