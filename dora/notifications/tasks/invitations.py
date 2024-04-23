@@ -1,3 +1,5 @@
+import logging
+
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 
@@ -12,6 +14,8 @@ from dora.structures.models import StructurePutativeMember
 from dora.users.emails import send_invitation_reminder
 
 from .core import Task, TaskError
+
+logger = logging.getLogger("dora.logs.core")
 
 
 class InvitedUsersTask(Task):
@@ -106,6 +110,17 @@ class InvitedUsersTask(Task):
         # le traitement va planter puisque la notification n'existe plus (détruite en CASCADE).
         if notification.is_complete:
             user = notification.owner_structureputativemember.user
+
+            logger.warning(
+                "Suppression d'utilisateur",
+                {
+                    "legal": True,
+                    "userEmail": user.email,
+                    "userId": user.pk,
+                    "structureId": notification.owner_structureputativemember.structure.pk,
+                    "reason": "Pas de rattachement à la structure après relances",
+                },
+            )
 
             # suppression de l'invitation :
             notification.owner_structureputativemember.delete()

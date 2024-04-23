@@ -1,3 +1,5 @@
+import logging
+
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 
@@ -17,6 +19,8 @@ Users :
     c.a.d. sans passer par l'intermédiaire d'un objet tiers,
     comme une invitation ou une structure.
 """
+
+logger = logging.getLogger("dora.logs.core")
 
 
 class UsersWithoutStructureTask(Task):
@@ -76,6 +80,15 @@ class UsersWithoutStructureTask(Task):
             # - aucune autre invitation
             # - non membre d'une structure
             if not user.putative_membership.count() and not user.membership.count():
+                logger.warning(
+                    "Suppression d'utilisateur",
+                    {
+                        "legal": True,
+                        "userEmail": user.email,
+                        "userId": user.pk,
+                        "reason": "Aucun rattachement ou invitation à une structure après relances",
+                    },
+                )
                 user.delete()
                 # à ce point, la notification doit aussi être détruite (CASCADE)...
 
@@ -126,7 +139,19 @@ class UserAccountDeletionTask(Task):
     @classmethod
     def post_process(cls, notification: Notification):
         if notification.is_complete:
-            notification.owner_user.delete()
+            user = notification.owner_user
+
+            logger.warning(
+                "Suppression d'utilisateur",
+                {
+                    "legal": True,
+                    "userEmail": user.email,
+                    "userId": user.pk,
+                    "reason": "Inactivité de longue durée",
+                },
+            )
+
+            user.delete()
             # à ce point, la notification est détruite en cascade
 
 
