@@ -92,7 +92,6 @@ private_api_patterns = [
     path("search-sirene/<insee_code:citycode>/", dora.sirene.views.search_sirene),
     path("search-siret/", dora.sirene.views.search_siret),
     path("search-safir/", dora.sirene.views.search_safir),
-    path("search-all-sirene/", dora.sirene.views.search_all_sirene),
     path("services-options/", dora.services.views.options),
     path("siret-claimed/<siret:siret>/", dora.structures.views.siret_was_claimed),
     path("structures-options/", dora.structures.views.options),
@@ -102,7 +101,10 @@ private_api_patterns = [
     path("ping/", dora.core.views.ping),
     path("sentry-debug/", dora.core.views.trigger_error),
     path("", include(router.urls)),
-    path("profile/main-activity/", dora.users.views.update_main_activity),
+    path("profile/", dora.users.views.update_user_profile),
+    path(
+        "profile/main-activity/", dora.users.views.update_user_profile
+    ),  # TODO: remove when not used by frontend anymore
 ]
 
 di_api_patterns = [

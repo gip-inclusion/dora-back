@@ -70,9 +70,7 @@ class UsersWithoutStructureTask(Task):
 
     @classmethod
     def post_process(cls, notification: Notification):
-        print("PP")
         if notification.is_complete:
-            print("PP:deleting")
             user = notification.owner_user
             # suppression du compte utilisateur associé si :
             # - aucune autre invitation

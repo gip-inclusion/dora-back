@@ -9,14 +9,10 @@ from django.db import models
 from django.utils import timezone
 from sib_api_v3_sdk.rest import ApiException as SibApiException
 
-logger = logging.getLogger(__name__)
+from .enums import MainActivity, DiscoveryMethod
 
-MAIN_ACTIVITY_CHOICES = [
-    ("accompagnateur", "Accompagnateur"),
-    ("offreur", "Offreur"),
-    ("accompagnateur_offreur", "Accompagnateur et offreur"),
-    ("autre", "Autre"),
-]
+
+logger = logging.getLogger(__name__)
 
 IC_PRODUCTION_DATE = timezone.make_aware(timezone.datetime(2022, 10, 3))
 
@@ -114,10 +110,23 @@ class User(AbstractBaseUser):
     )
     main_activity = models.CharField(
         max_length=25,
-        choices=MAIN_ACTIVITY_CHOICES,
+        choices=MainActivity.choices,
         verbose_name="Activité principale de l'utilisateur",
         db_index=True,
         blank=True,
+    )
+    discovery_method = models.CharField(
+        max_length=25,
+        choices=DiscoveryMethod.choices,
+        verbose_name="comment avez-vous connu DORA ?",
+        blank=True,
+        null=True,
+    )
+    discovery_method_other = models.CharField(
+        max_length=255,
+        verbose_name="comment avez-vous connu DORA ? (autre)",
+        blank=True,
+        null=True,
     )
     date_joined = models.DateTimeField("date joined", default=timezone.now)
     last_service_reminder_email_sent = models.DateTimeField(blank=True, null=True)
