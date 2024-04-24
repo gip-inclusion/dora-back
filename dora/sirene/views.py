@@ -45,11 +45,23 @@ def search_sirene(request, citycode):
     )
 
     # Exclut les structures marquées comme obsolètes
-    results = results.exclude(
-        siret__in=Structure.objects.filter(is_obsolete=True).values_list(
-            "siret", flat=True
-        )
+
+    # FIXME :
+    # pour une raison que je n'explique pas encore,
+    # le code original suivant ne fonctionne pas *en production*
+    # mais fonctionne correctement sur un environnement de dev :
+    # results = results.exclude(
+    #     siret__in=Structure.objects.filter(is_obsolete=True).values_list(
+    #         "siret", flat=True
+    #     )
+    # )
+    # la sous-requête ne renvoie rien sur la production,
+    # sauf si on la matérialise via une liste.
+
+    obsolete = Structure.objects.filter(is_obsolete=True).values_list(
+        "siret", flat=True
     )
+    results = results.exclude(siret__in=list(obsolete))
 
     # Exclut les structures sans nom propre, sauf s’il s’agit du siège
     results = results.exclude(name="", is_siege=False)
