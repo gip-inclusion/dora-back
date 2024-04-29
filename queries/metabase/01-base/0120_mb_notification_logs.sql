@@ -15,6 +15,7 @@ select
 from logs_actionlog
 where
     msg like 'process_notification_tasks:%'
+    -- log level 20 => INFO
     and level = 20;
 
 
