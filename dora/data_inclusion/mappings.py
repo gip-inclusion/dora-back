@@ -61,7 +61,7 @@ def map_search_result(result: dict) -> dict:
         # TODO: spécifier 'en-presentiel' si on a une geoloc/adresse?
         "location_kinds": location_kinds,
         "kinds": service_data["types"],
-        "fee_conditions": service_data["frais"],
+        "fee_condition": service_data["frais"][0] if service_data["frais"] else None,
         "modification_date": service_data["date_maj"],
         "name": service_data["nom"],
         "short_desc": service_data["presentation_resume"] or "",
