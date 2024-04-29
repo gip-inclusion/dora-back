@@ -763,7 +763,6 @@ class BookmarkSerializer(BookmarkListSerializer):
 class SearchResultSerializer(ServiceListSerializer):
     distance = serializers.SerializerMethodField()
     coordinates = serializers.SerializerMethodField()
-    fee_conditions = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
@@ -776,7 +775,7 @@ class SearchResultSerializer(ServiceListSerializer):
             "distance",
             "kinds",
             "location_kinds",
-            "fee_conditions",
+            "fee_condition",
             "modification_date",
             "name",
             "postal_code",
@@ -794,6 +793,3 @@ class SearchResultSerializer(ServiceListSerializer):
     def get_coordinates(self, obj):
         if obj.geom:
             return (obj.geom.x, obj.geom.y)
-
-    def get_fee_conditions(self, obj):
-        return [obj.fee_condition.value] if obj.fee_condition else []
