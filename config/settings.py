@@ -555,3 +555,17 @@ try:
     NOTIFICATIONS_LIMIT = int(os.environ.get("NOTIFICATIONS_LIMIT", 0))
 except Exception:
     NOTIFICATIONS_LIMIT = 0
+
+# Logging :
+# permettre un niveau de log 'INFO' pour le logger `dora.logs.core`
+# il est également réglable via variable d'environnement, si besoin
+# (le reste de la configuration de logging par défaut n'est pas modifié)
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "loggers": {
+        "dora.logs.core": {
+            "level": os.getenv("DORA_LOGS_CORE_LEVEL", "INFO"),
+        },
+    },
+}
