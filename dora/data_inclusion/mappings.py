@@ -48,6 +48,14 @@ def map_search_result(result: dict) -> dict:
     if location_kinds == [] and result["distance"] is not None:
         location_kinds = ["en-presentiel"]
 
+    kinds = (
+        ServiceKind.objects.filter(value__in=service_data["types"]).values_list(
+            "value", flat=True
+        )
+        if service_data["types"] is not None
+        else None
+    )
+
     return {
         #
         # SearchResultSerializer
@@ -68,7 +76,7 @@ def map_search_result(result: dict) -> dict:
         #
         # TODO: spécifier 'en-presentiel' si on a une geoloc/adresse?
         "location_kinds": location_kinds,
-        "kinds": service_data["types"],
+        "kinds": kinds,
         "fee_condition": service_data["frais"][0] if service_data["frais"] else None,
         "modification_date": service_data["date_maj"],
         "name": service_data["nom"],
