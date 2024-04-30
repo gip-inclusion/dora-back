@@ -25,6 +25,12 @@ DI_TO_DORA_DIFFUSION_ZONE_TYPE_MAPPING = {
 }
 
 
+# Différence entre les types "" ou [] et None :
+# Une valeur nulle (None) signifie que l'information n'est pas renseignée tandis
+# qu'une valeur vide ("" ou []) signifie que l'information est renseignée mais vide.
+# Ces valeurs ayant un sens différent, leur traitement peut lui aussi différer.
+
+
 # TODO:
 # On pourrait avoir envie d'instancier un objet service et de réutiliser la sérialisation implémentée.
 # Les relations m2m nécessitent malheureusement la sauvegarde en db.
@@ -34,6 +40,8 @@ DI_TO_DORA_DIFFUSION_ZONE_TYPE_MAPPING = {
 def map_search_result(result: dict) -> dict:
     # On transforme les champs nécessaires à l'affichage des resultats de recherche au format DORA
     # (c.a.d qu'on veut un objet similaire à ce que renvoie le SearchResultSerializer)
+
+    # Voir différence entre les types "" ou [] et None dans le commentaire en haut du fichier
 
     service_data = result["service"]
     location_kinds = service_data["modes_accueil"] or []
@@ -94,6 +102,8 @@ def is_orientable(service_data: dict) -> bool:
 
 
 def map_service(service_data: dict, is_authenticated: bool) -> dict:
+    # Voir différence entre les types "" ou [] et None dans le commentaire en haut du fichier
+
     categories = None
     subcategories = None
     if service_data["thematiques"] is not None:
