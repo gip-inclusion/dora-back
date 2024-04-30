@@ -773,6 +773,7 @@ class SearchResultSerializer(ServiceListSerializer):
             "coordinates",
             "diffusion_zone_type",
             "distance",
+            "is_orientable",
             "kinds",
             "location_kinds",
             "fee_condition",
