@@ -95,6 +95,7 @@ def map_search_result(result: dict) -> dict:
         "coordinates": (result["service"]["longitude"], result["service"]["latitude"])
         if result["service"]["longitude"] and result["service"]["latitude"]
         else None,
+        "is_orientable": is_orientable(service_data),
     }
 
 
