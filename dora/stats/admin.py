@@ -230,6 +230,7 @@ class StructureInfoEventAdmin(AnalyticsEventAdmin):
         "date",
         "path",
         "structure",
+        "structure_department",
         "user",
         "anonymous_user_hash",
     ]
