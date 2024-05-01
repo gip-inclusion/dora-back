@@ -83,7 +83,7 @@ def map_search_result(result: dict) -> dict:
         "short_desc": service_data["presentation_resume"] or "",
         "slug": f"{service_data['source']}--{service_data['id']}",
         "status": ServiceStatus.PUBLISHED.value,
-        "structure": "",
+        "structure": service_data["structure_id"],
         # Champs spécifiques aux résultats d·i
         "type": "di",
         "di_source": service_data["source"],
