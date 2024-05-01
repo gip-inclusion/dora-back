@@ -6,12 +6,12 @@ drop table if exists mb_notification_logs cascade;
 
 create table mb_notification_logs as
 select
-    created_at                 as "date_creation",
-    payload ->> 'taskType'     as "tache",
-    payload ->> 'nbCandidates' as "nb_bandidats",
-    payload ->> 'nbProcessed'  as "nb_traitees",
-    payload ->> 'nbObsolete'   as "nb_obsoletes",
-    payload ->> 'nbErrors'     as "nb_erreurs"
+    created_at                        as "date_creation",
+    (payload ->> 'nbCandidates')::int as "nb_candidats",
+    (payload ->> 'nbProcessed')::int  as "nb_traitees",
+    (payload ->> 'nbObsolete')::int   as "nb_obsoletes",
+    (payload ->> 'nbErrors')::int     as "nb_erreurs",
+    payload ->> 'taskType'            as "tache"
 from logs_actionlog
 where
     msg like 'process_notification_tasks:%'
