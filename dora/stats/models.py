@@ -230,8 +230,8 @@ class StructureView(AbstractStructureEvent):
 
 class StructureInfosView(AbstractStructureEvent):
     class Meta:
-        verbose_name="Click sur contacts de la structure"
-        verbose_name_plural="Clicks sur contacts de la structure"
+        verbose_name = "click sur contacts de la structure"
+        verbose_name_plural = "clicks sur contacts de la structure"
 
 
 class ServiceView(AbstractServiceEvent):
