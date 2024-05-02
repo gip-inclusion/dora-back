@@ -13,7 +13,7 @@ from dora.structures.models import (
 
 DUMMY_STRUCTURE = {
     "siret": "12345678901234",
-    "typology": "PE",
+    "typology": "FT",
     "name": "Ma structure",
     "short_desc": "Description courte",
     "postal_code": "75001",
@@ -170,7 +170,7 @@ class StructureTestCase(APITestCase):
 
     def test_update_national_labels_accepted(self):
         slug = self.my_struct.slug
-        national_labels = ["mobin", "pole-emploi"]
+        national_labels = ["mobin", "france-travail"]
         response = self.client.patch(
             f"/structures/{slug}/",
             {"national_labels": national_labels},

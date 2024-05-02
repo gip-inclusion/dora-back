@@ -35,6 +35,8 @@ class StructureSerializer(serializers.ModelSerializer):
     presentation_resume = serializers.SerializerMethodField()
     rna = serializers.SerializerMethodField()
     siret = serializers.SerializerMethodField()
+    siret = serializers.SerializerMethodField()
+    parent_siret = serializers.SerializerMethodField()
     site_web = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
     telephone = serializers.SerializerMethodField()
@@ -66,6 +68,7 @@ class StructureSerializer(serializers.ModelSerializer):
             "presentation_resume",
             "rna",
             "siret",
+            "parent_siret",
             "site_web",
             "source",
             "telephone",
@@ -143,6 +146,9 @@ class StructureSerializer(serializers.ModelSerializer):
 
     def get_siret(self, obj):
         return obj.siret or None
+
+    def get_parent_siret(self, obj) -> str:
+        return obj.parent.siret if obj.parent else None
 
     def get_site_web(self, obj):
         return obj.url or None

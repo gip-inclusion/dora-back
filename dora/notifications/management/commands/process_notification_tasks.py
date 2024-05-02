@@ -1,3 +1,4 @@
+import logging
 import time
 
 from django.conf import settings
@@ -20,6 +21,8 @@ d'environnement sur l'environnement cible :
 
 Ces variables sont définies dans les `settings` de Django.
 """
+
+logger = logging.getLogger("dora.logs.core")
 
 
 class Command(BaseCommand):
@@ -176,5 +179,18 @@ class Command(BaseCommand):
                 self.stdout.write(" > aucune notification obsolète")
 
             self.stdout.write()
+
+            if wet_run:
+                logger.info(
+                    f"process_notification_tasks:{task_class.task_type()}",
+                    {
+                        "taskType": task_class.task_type(),
+                        "nbCandidates": len(task.candidates()),
+                        "nbProcessed": ok,
+                        "nbObsolete": obsolete,
+                        "nbErrors": errors,
+                        "processingTimeSecs": round(timer, 2),
+                    },
+                )
 
         self.stdout.write(self.style.NOTICE(f"Terminé en {total_timer:.2f}s !"))

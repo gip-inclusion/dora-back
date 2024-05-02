@@ -13,7 +13,7 @@ from dora.services.models import (
     ServiceSubCategory,
 )
 from dora.structures.models import Structure
-from dora.users.models import MAIN_ACTIVITY_CHOICES
+from dora.users.enums import MainActivity
 
 
 class DeploymentLevel(models.IntegerChoices):
@@ -68,7 +68,7 @@ class AbstractAnalyticsEvent(models.Model):
     is_an_admin = models.BooleanField()
     user_kind = models.CharField(
         max_length=25,
-        choices=MAIN_ACTIVITY_CHOICES,
+        choices=MainActivity.choices,
         verbose_name="Activité principale de l'utilisateur",
         db_index=True,
         blank=True,

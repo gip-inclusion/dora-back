@@ -51,6 +51,9 @@ class StructureSerializer(serializers.ModelSerializer):
 
     source = serializers.SerializerMethodField()
 
+    parent_siret = serializers.SerializerMethodField()
+    parent_slug = serializers.SerializerMethodField()
+
     class Meta:
         model = Structure
         fields = [
@@ -98,13 +101,27 @@ class StructureSerializer(serializers.ModelSerializer):
             "short_desc",
             "siret",
             "slug",
+            "parent_siret",
+            "parent_slug",
             "source",
             "typology",
             "typology_display",
             "url",
         ]
         lookup_field = "slug"
-        read_only_fields = ["has_been_edited", "city", "department"]
+        read_only_fields = [
+            "has_been_edited",
+            "city",
+            "department",
+            "parent_slug",
+            "parent_siret",
+        ]
+
+    def get_parent_siret(self, obj):
+        return obj.parent.siret if obj.parent else None
+
+    def get_parent_slug(self, obj):
+        return obj.parent.slug if obj.parent else None
 
     # TODO: utiliser !!numAdmins coté front pour se débarasser de cette methode
     def get_has_admin(self, obj):

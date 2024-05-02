@@ -188,7 +188,7 @@ class StructureAdmin(admin.ModelAdmin):
         "data_inclusion_id",
         "data_inclusion_source",
     )
-    raw_id_fields = ["parent", "creator", "last_editor"]
+    raw_id_fields = ("parent", "creator", "last_editor")
 
 
 admin.site.register(Structure, StructureAdmin)
