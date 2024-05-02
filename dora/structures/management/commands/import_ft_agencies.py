@@ -80,8 +80,8 @@ class Command(BaseCommand):
         agencies = get_pe_agencies(pe_access_token)
 
         bot_user = User.objects.get_dora_bot()
-        label = StructureNationalLabel.objects.get(value="pole-emploi")
-        typology = StructureTypology.objects.get(value="PE")
+        label = StructureNationalLabel.objects.get(value="france-travail")
+        typology = StructureTypology.objects.get(value="FT")
         source = StructureSource.objects.get(
             value="api-referentiel-agences-pole-emploi"
         )
