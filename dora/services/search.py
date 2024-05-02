@@ -224,6 +224,8 @@ def _get_dora_results(
         )
         .prefetch_related(
             "kinds",
+            "fee_condition",
+            "location_kinds",
             "categories",
             "subcategories",
         )
