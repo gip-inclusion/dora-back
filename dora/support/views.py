@@ -71,7 +71,7 @@ class StructureAdminViewSet(
         user = self.request.user
         department = self.request.query_params.get("department")
 
-        structures = Structure.objects.select_related("typology")
+        structures = Structure.objects.all()
         if department:
             if user.is_manager:
                 # assuré par StructureAdminPermission

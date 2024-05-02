@@ -1,6 +1,8 @@
 import json
+import logging
 
 import requests
+from data_inclusion.schema import Typologie
 from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand
@@ -24,13 +26,11 @@ from dora.services.models import (
     ServiceSubCategory,
 )
 from dora.sirene.models import Establishment
-from dora.structures.models import (
-    Structure,
-    StructureNationalLabel,
-    StructureSource,
-    StructureTypology,
-)
+from dora.structures.models import Structure, StructureNationalLabel, StructureSource
 from dora.users.models import User
+
+logger = logging.getLogger(__name__)
+
 
 # Documentation DI : https://data-inclusion-api-prod.osc-secnum-fr1.scalingo.io/api/v0/docs
 
@@ -166,19 +166,6 @@ class Command(BaseCommand):
                 )
                 continue
             try:
-                typology = None
-                if s["typologie"]:
-                    typology, _created = StructureTypology.objects.get_or_create(
-                        value=s["typologie"]
-                    )
-                if _created:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"typology: {s['typologie']} inexistante. Pensez à renseigner son label dans l'interface "
-                            f"d'administration"
-                        )
-                    )
-
                 structure = Structure.objects.create_from_establishment(establishment)
                 structure.creator = bot_user
                 structure.last_editor = bot_user
@@ -190,7 +177,15 @@ class Command(BaseCommand):
                 structure.url = clean_field(s["site_web"], 200, "")
                 structure.full_desc = s["presentation_detail"] or ""
                 structure.short_desc = clean_field(s["presentation_resume"], 280, "")
-                structure.typology = typology
+                typo_di = s["typologie"]
+                try:
+                    typologie = Typologie[typo_di]
+                    structure.typology = typologie.value
+                except KeyError:
+                    logger.warning(
+                        "La typologie “%s” n’est pas supportée",
+                        typo_di,
+                    )
                 structure.accesslibre_url = s["accessibilite"]
                 structure.save()
 
