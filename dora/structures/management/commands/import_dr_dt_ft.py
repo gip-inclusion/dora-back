@@ -17,7 +17,7 @@ from dora.users.models import User
 
 BOT_USER = User.objects.get_dora_bot()
 SOURCE = StructureSource.objects.get(value="dr-dt-pole-emploi")
-FT_TYPOLOGY = StructureTypology.objects.get(value="PE")
+FT_TYPOLOGY = StructureTypology.objects.get(value="FT")
 LABEL = StructureNationalLabel.objects.get(value="pole-emploi")
 
 
