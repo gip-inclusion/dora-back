@@ -9,8 +9,7 @@ from django.db import models
 from django.utils import timezone
 from sib_api_v3_sdk.rest import ApiException as SibApiException
 
-from .enums import MainActivity, DiscoveryMethod
-
+from .enums import DiscoveryMethod, MainActivity
 
 logger = logging.getLogger(__name__)
 
