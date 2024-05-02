@@ -1,6 +1,8 @@
 import json
+import logging
 
 import requests
+from data_inclusion.schema import Typologie
 from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand
@@ -26,6 +28,9 @@ from dora.services.models import (
 from dora.sirene.models import Establishment
 from dora.structures.models import Structure, StructureNationalLabel, StructureSource
 from dora.users.models import User
+
+logger = logging.getLogger(__name__)
+
 
 # Documentation DI : https://data-inclusion-api-prod.osc-secnum-fr1.scalingo.io/api/v0/docs
 
@@ -172,7 +177,15 @@ class Command(BaseCommand):
                 structure.url = clean_field(s["site_web"], 200, "")
                 structure.full_desc = s["presentation_detail"] or ""
                 structure.short_desc = clean_field(s["presentation_resume"], 280, "")
-                structure.typology = s["typologie"]
+                typo_di = s["typologie"]
+                try:
+                    typologie = Typologie[typo_di]
+                    structure.typology = typologie.value
+                except KeyError:
+                    logger.warning(
+                        "La typologie “%s” n’est pas supportée",
+                        typo_di,
+                    )
                 structure.accesslibre_url = s["accessibilite"]
                 structure.save()
 
