@@ -5,7 +5,7 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("structures", "0065_migrate_typologies"),
+        ("structures", "0066_migrate_typologies"),
     ]
 
     operations = [

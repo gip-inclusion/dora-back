@@ -17,7 +17,7 @@ def migrate_typologies(apps, _):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("structures", "0064_structure_typo_di"),
+        ("structures", "0065_structure_typo_di"),
     ]
 
     operations = [

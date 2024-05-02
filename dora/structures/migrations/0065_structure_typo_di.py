@@ -6,7 +6,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("structures", "0063_structure_is_obsolete"),
+        ("structures", "0064_pe_to_ft_typo"),
     ]
 
     operations = [
