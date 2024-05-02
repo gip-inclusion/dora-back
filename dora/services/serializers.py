@@ -785,6 +785,9 @@ class SearchResultSerializer(ServiceListSerializer):
             "status",
             "structure_info",
             "structure",
+            "is_orientable_partial_compute",
+            "coach_orientation_modes",
+            "beneficiaries_access_modes",
         ]
 
     def get_distance(self, obj):

@@ -229,6 +229,8 @@ def _get_dora_results(
             "location_kinds",
             "categories",
             "subcategories",
+            "coach_orientation_modes",
+            "beneficiaries_access_modes",
         )
     )
 
