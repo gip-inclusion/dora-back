@@ -158,7 +158,7 @@ class Command(BaseCommand):
                     mod |= self.maybe_update(
                         structure,
                         "typology",
-                        Typologie.FT,
+                        Typologie.FT.value,
                         existing,
                     )
                     mod |= self.maybe_update(

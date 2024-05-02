@@ -24,8 +24,9 @@ class Command(BaseCommand):
         structure.source = SOURCE
         structure.creator = BOT_USER
         structure.last_editor = BOT_USER
-        structure.typology = Typologie.FT
+        structure.typology = Typologie.FT.value
         structure.save()
+        structure.national_labels.add(LABEL)
         send_moderation_notification(
             structure,
             BOT_USER,
