@@ -1,3 +1,4 @@
+from data_inclusion.schema import Typologie
 from django.db.models import Count, Q
 from rest_framework import exceptions, serializers
 
@@ -12,14 +13,10 @@ from .models import (
     StructureMember,
     StructureNationalLabel,
     StructurePutativeMember,
-    StructureTypology,
 )
 
 
 class StructureSerializer(serializers.ModelSerializer):
-    typology = serializers.SlugRelatedField(
-        slug_field="value", queryset=StructureTypology.objects.all()
-    )
     typology_display = serializers.SerializerMethodField()
     parent = serializers.SlugRelatedField(slug_field="slug", read_only=True)
     can_edit_informations = serializers.SerializerMethodField()
@@ -162,7 +159,7 @@ class StructureSerializer(serializers.ModelSerializer):
         return obj.is_admin(user)
 
     def get_typology_display(self, obj):
-        return obj.typology.label if obj.typology else ""
+        return Typologie[obj.typology].label if obj.typology else ""
 
     def get_num_services(self, structure):
         return structure.get_num_visible_services(self.context["request"].user)

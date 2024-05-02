@@ -1,23 +1,18 @@
 import csv
 from pathlib import Path
 
+from data_inclusion.schema import Typologie
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
 from dora.sirene.models import Establishment
-from dora.structures.models import (
-    Structure,
-    StructureNationalLabel,
-    StructureSource,
-    StructureTypology,
-)
+from dora.structures.models import Structure, StructureNationalLabel, StructureSource
 from dora.users.models import User
 
 BOT_USER = User.objects.get_dora_bot()
 SOURCE = StructureSource.objects.get(value="dr-dt-pole-emploi")
-FT_TYPOLOGY = StructureTypology.objects.get(value="FT")
 LABEL = StructureNationalLabel.objects.get(value="france-travail")
 
 
@@ -29,8 +24,9 @@ class Command(BaseCommand):
         structure.source = SOURCE
         structure.creator = BOT_USER
         structure.last_editor = BOT_USER
-        structure.typology = FT_TYPOLOGY
+        structure.typology = Typologie.FT.value
         structure.save()
+        structure.national_labels.add(LABEL)
         send_moderation_notification(
             structure,
             BOT_USER,

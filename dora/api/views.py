@@ -63,7 +63,7 @@ class StructureViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         structures = (
-            Structure.objects.select_related("typology", "source")
+            Structure.objects.select_related("source")
             .prefetch_related("national_labels")
             .all()
         )
