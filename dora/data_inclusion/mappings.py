@@ -37,7 +37,7 @@ DI_TO_DORA_DIFFUSION_ZONE_TYPE_MAPPING = {
 # On pourrait tout de même implémenter les mappings avec des serializers basés sur ceux existants.
 
 
-def map_search_result(result: dict) -> dict:
+def map_search_result(result: dict, supported_service_kinds: list[str]) -> dict:
     # On transforme les champs nécessaires à l'affichage des resultats de recherche au format DORA
     # (c.a.d qu'on veut un objet similaire à ce que renvoie le SearchResultSerializer)
 
@@ -49,9 +49,7 @@ def map_search_result(result: dict) -> dict:
         location_kinds = ["en-presentiel"]
 
     kinds = (
-        ServiceKind.objects.filter(value__in=service_data["types"]).values_list(
-            "value", flat=True
-        )
+        filter(lambda kind: kind in supported_service_kinds, service_data["types"])
         if service_data["types"] is not None
         else None
     )
