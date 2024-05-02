@@ -21,10 +21,12 @@ from dora.stats.models import (
     SearchView,
     ServiceShare,
     ServiceView,
+    StructureInfosView,
     StructureView,
 )
 from dora.structures.models import Structure, StructureMember
 
+from .enums import Tag
 from .models import PageView
 
 
@@ -126,125 +128,150 @@ def log_event(request):
 
     event = None
 
-    if tag == "pageview":
-        event = PageView.objects.create(
-            **common_analytics_data,
-            title=request.data.get("title", ""),
-        )
-
-    elif tag == "search":
-        city_code = request.data.get("search_city_code", "")
-        department = code_insee_to_code_dept(city_code) if city_code else ""
-        num_results = int(request.data.get("search_num_results", "0"))
-        num_di_results = int(request.data.get("num_di_results", "0"))
-        num_di_results_top10 = int(request.data.get("num_di_results_top10", "0"))
-        kinds = request.data.get("kinds", [])
-        fee_conditions = request.data.get("fee_conditions")
-        location_kinds = request.data.get("location_kinds")
-        results_slugs_top10 = request.data.get("results_slugs_top10", [])
-        event = SearchView.objects.create(
-            **common_analytics_data,
-            city_code=city_code,
-            department=department,
-            num_results=num_results,
-            num_di_results=num_di_results,
-            num_di_results_top10=num_di_results_top10,
-            results_slugs_top10=results_slugs_top10,
-        )
-        cats_values = request.data.get("category_ids", [])
-        subcats_values = request.data.get("sub_category_ids", [])
-        categories, subcategories = get_categories(cats_values, subcats_values)
-        event.categories.set(categories)
-        event.subcategories.set(subcategories)
-        event.kinds.set(ServiceKind.objects.filter(value__in=kinds))
-        event.fee_conditions.set(ServiceFee.objects.filter(value__in=fee_conditions))
-        event.location_kinds.set(LocationKind.objects.filter(value__in=location_kinds))
-
-    elif tag == "structure":
-        event = StructureView.objects.create(**common_analytics_data, **structure_data)
-    elif tag == "service":
-        event = ServiceView.objects.create(
-            **common_analytics_data,
-            **structure_data,
-            **service_data,
-            is_orientable=service.is_orientable() is True,
-        )
-        event.categories.set(service.categories.all())
-        event.subcategories.set(service.subcategories.all())
-    elif tag == "di_service":
-        event = DiServiceView.objects.create(**common_analytics_data, **di_service_data)
-        cats_values = request.data.get("di_categories", [])
-        subcats_values = request.data.get("di_subcategories", [])
-        categories, subcategories = get_categories(cats_values, subcats_values)
-        event.categories.set(categories)
-        event.subcategories.set(subcategories)
-    elif tag == "orientation":
-        is_di = not service
-        event = OrientationView.objects.create(
-            orientation=orientation,
-            orientation_status=orientation.status,
-            **common_analytics_data,
-            **structure_data,
-            **service_data,
-            is_di=is_di,
-            di_structure_name=request.data.get("di_structure_name", ""),
-            di_service_id=request.data.get("di_service_id", ""),
-            di_service_name=request.data.get("di_service_name", ""),
-        )
-        if not is_di:
-            event.categories.set(service.categories.all())
-            event.subcategories.set(service.subcategories.all())
-    elif tag == "share":
-        recipient_email = request.data.get("recipient_email", "")
-        recipient_kind = request.data.get("recipient_kind", "")
-        is_di = not service
-        if is_di:
-            event = ServiceShare.objects.create(
-                recipient_email=recipient_email,
-                recipient_kind=recipient_kind,
-                is_structure_member=False,
-                is_structure_admin=False,
-                is_di=True,
-                di_structure_name=request.data.get("di_structure_name", ""),
-                di_service_id=request.data.get("di_service_id", ""),
-                di_service_name=request.data.get("di_service_name", ""),
-                structure_department=request.data.get("di_structure_department", ""),
-                structure_source=request.data.get("di_source", ""),
-                search_view=search_view,
-                search_view_id=search_view_id,
+    match tag:
+        case Tag.PAGEVIEW:
+            event = PageView.objects.create(
                 **common_analytics_data,
+                title=request.data.get("title", ""),
             )
 
+        case Tag.SEARCH:
+            city_code = request.data.get("search_city_code", "")
+            department = code_insee_to_code_dept(city_code) if city_code else ""
+            num_results = int(request.data.get("search_num_results", "0"))
+            num_di_results = int(request.data.get("num_di_results", "0"))
+            num_di_results_top10 = int(request.data.get("num_di_results_top10", "0"))
+            kinds = request.data.get("kinds", [])
+            fee_conditions = request.data.get("fee_conditions")
+            location_kinds = request.data.get("location_kinds")
+            results_slugs_top10 = request.data.get("results_slugs_top10", [])
+            event = SearchView.objects.create(
+                **common_analytics_data,
+                city_code=city_code,
+                department=department,
+                num_results=num_results,
+                num_di_results=num_di_results,
+                num_di_results_top10=num_di_results_top10,
+                results_slugs_top10=results_slugs_top10,
+            )
+            cats_values = request.data.get("category_ids", [])
+            subcats_values = request.data.get("sub_category_ids", [])
+            categories, subcategories = get_categories(cats_values, subcats_values)
+            event.categories.set(categories)
+            event.subcategories.set(subcategories)
+            event.kinds.set(ServiceKind.objects.filter(value__in=kinds))
+            event.fee_conditions.set(
+                ServiceFee.objects.filter(value__in=fee_conditions)
+            )
+            event.location_kinds.set(
+                LocationKind.objects.filter(value__in=location_kinds)
+            )
+
+        case Tag.STRUCTURE:
+            event = StructureView.objects.create(
+                **common_analytics_data, **structure_data
+            )
+
+        case Tag.STRUCTURE_INFOS:
+            event = StructureInfosView.objects.create(
+                **common_analytics_data, **structure_data
+            )
+
+        case Tag.SERVICE:
+            event = ServiceView.objects.create(
+                **common_analytics_data,
+                **structure_data,
+                **service_data,
+                is_orientable=service.is_orientable() is True,
+            )
+            event.categories.set(service.categories.all())
+            event.subcategories.set(service.subcategories.all())
+
+        case Tag.DI_SERVICE:
+            event = DiServiceView.objects.create(
+                **common_analytics_data, **di_service_data
+            )
             cats_values = request.data.get("di_categories", [])
             subcats_values = request.data.get("di_subcategories", [])
             categories, subcategories = get_categories(cats_values, subcats_values)
             event.categories.set(categories)
             event.subcategories.set(subcategories)
-        else:
-            event = ServiceShare.objects.create(
-                recipient_email=recipient_email,
-                recipient_kind=recipient_kind,
-                is_di=False,
+
+        case Tag.ORIENTATION:
+            is_di = not service
+            event = OrientationView.objects.create(
+                orientation=orientation,
+                orientation_status=orientation.status,
                 **common_analytics_data,
                 **structure_data,
                 **service_data,
+                is_di=is_di,
+                di_structure_name=request.data.get("di_structure_name", ""),
+                di_service_id=request.data.get("di_service_id", ""),
+                di_service_name=request.data.get("di_service_name", ""),
+            )
+            if not is_di:
+                event.categories.set(service.categories.all())
+                event.subcategories.set(service.subcategories.all())
+
+        case Tag.SHARE:
+            recipient_email = request.data.get("recipient_email", "")
+            recipient_kind = request.data.get("recipient_kind", "")
+            is_di = not service
+            if is_di:
+                event = ServiceShare.objects.create(
+                    recipient_email=recipient_email,
+                    recipient_kind=recipient_kind,
+                    is_structure_member=False,
+                    is_structure_admin=False,
+                    is_di=True,
+                    di_structure_name=request.data.get("di_structure_name", ""),
+                    di_service_id=request.data.get("di_service_id", ""),
+                    di_service_name=request.data.get("di_service_name", ""),
+                    structure_department=request.data.get(
+                        "di_structure_department", ""
+                    ),
+                    structure_source=request.data.get("di_source", ""),
+                    search_view=search_view,
+                    search_view_id=search_view_id,
+                    **common_analytics_data,
+                )
+
+                cats_values = request.data.get("di_categories", [])
+                subcats_values = request.data.get("di_subcategories", [])
+                categories, subcategories = get_categories(cats_values, subcats_values)
+                event.categories.set(categories)
+                event.subcategories.set(subcategories)
+            else:
+                event = ServiceShare.objects.create(
+                    recipient_email=recipient_email,
+                    recipient_kind=recipient_kind,
+                    is_di=False,
+                    **common_analytics_data,
+                    **structure_data,
+                    **service_data,
+                )
+                event.categories.set(service.categories.all())
+                event.subcategories.set(service.subcategories.all())
+
+        case Tag.MOBILISATION:
+            event = MobilisationEvent.objects.create(
+                **common_analytics_data, **structure_data, **service_data
             )
             event.categories.set(service.categories.all())
             event.subcategories.set(service.subcategories.all())
-    elif tag == "mobilisation":
-        event = MobilisationEvent.objects.create(
-            **common_analytics_data, **structure_data, **service_data
-        )
-        event.categories.set(service.categories.all())
-        event.subcategories.set(service.subcategories.all())
 
-    elif tag == "di_mobilisation":
-        event = DiMobilisationEvent.objects.create(
-            **common_analytics_data, **di_service_data
-        )
-        cats_values = request.data.get("di_categories", [])
-        subcats_values = request.data.get("di_subcategories", [])
-        categories, subcategories = get_categories(cats_values, subcats_values)
-        event.categories.set(categories)
-        event.subcategories.set(subcategories)
+        case Tag.DI_MOBILISATION:
+            event = DiMobilisationEvent.objects.create(
+                **common_analytics_data, **di_service_data
+            )
+            cats_values = request.data.get("di_categories", [])
+            subcats_values = request.data.get("di_subcategories", [])
+            categories, subcategories = get_categories(cats_values, subcats_values)
+            event.categories.set(categories)
+            event.subcategories.set(subcategories)
+
+        case _:
+            return Response({"error": f"Unknown analytics tag: {tag}"}, status=404)
+
     return Response({"tag": tag, "event": event.id}, status=201)

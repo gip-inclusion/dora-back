@@ -228,6 +228,12 @@ class StructureView(AbstractStructureEvent):
     pass
 
 
+class StructureInfosView(AbstractStructureEvent):
+    class Meta:
+        verbose_name = "clic sur contacts de la structure"
+        verbose_name_plural = "clics sur contacts de la structure"
+
+
 class ServiceView(AbstractServiceEvent):
     is_orientable = models.BooleanField(default=False, blank=True)
 
