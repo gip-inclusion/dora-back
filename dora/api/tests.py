@@ -72,7 +72,7 @@ def test_structures_serialization_exemple(
         address2="HOTEL DE VILLE",
         longitude=7.848133,
         latitude=48.7703,
-        typology=typology,
+        typology=typology.value,
         phone="0102030405",
         email="julie@example.net",
         url="https://www.asso-gonzalez.net/",
