@@ -773,7 +773,6 @@ class SearchResultSerializer(ServiceListSerializer):
             "coordinates",
             "diffusion_zone_type",
             "distance",
-            "is_orientable",
             "kinds",
             "location_kinds",
             "fee_condition",
@@ -786,6 +785,9 @@ class SearchResultSerializer(ServiceListSerializer):
             "status",
             "structure_info",
             "structure",
+            "is_orientable_partial_compute",
+            "coach_orientation_modes",
+            "beneficiaries_access_modes",
         ]
 
     def get_distance(self, obj):
