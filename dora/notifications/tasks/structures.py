@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from dateutil.relativedelta import relativedelta
+from django.db.models import Q
 from django.utils import timezone
 
 from dora.core import constants
@@ -65,7 +66,9 @@ class StructureServiceActivationTask(Task):
         # avec au moins un admin inscrit depuis un mois
         one_month_ago = timezone.now() - relativedelta(months=1)
         return (
-            Structure.objects.exclude(siret__startswith=constants.SIREN_POLE_EMPLOI)
+            Structure.objects.exclude(
+                Q(siret__startswith=constants.SIREN_POLE_EMPLOI) | Q(is_obsolete=True),
+            )
             .filter(
                 services=None,
                 membership__is_admin=True,
