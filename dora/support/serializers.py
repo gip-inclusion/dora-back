@@ -305,10 +305,10 @@ class StructureAdminSerializer(StructureSerializer):
         return len([m.user.email for m in members])
 
     def get_num_potential_members_to_remind(self, obj):
+        # rapport gestionnaires: les membres potentiels n'ont pas forcément activé leur e-mail
         members = StructurePutativeMember.objects.filter(
             structure=obj,
             invited_by_admin=True,
-            user__is_valid=True,
             user__is_active=True,
         )
         return len([m.user.email for m in members])
