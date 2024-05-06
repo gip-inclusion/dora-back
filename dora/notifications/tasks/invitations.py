@@ -116,8 +116,10 @@ class InvitedUsersTask(Task):
                 {
                     "legal": True,
                     "userEmail": user.email,
-                    "userId": user.pk,
-                    "structureId": notification.owner_structureputativemember.structure.pk,
+                    "userId": str(user.pk),
+                    "structureId": str(
+                        notification.owner_structureputativemember.structure.pk
+                    ),
                     "reason": "Pas de rattachement à la structure après relances",
                 },
             )

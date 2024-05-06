@@ -11,7 +11,6 @@ from .models import (
     StructureNationalLabel,
     StructurePutativeMember,
     StructureSource,
-    StructureTypology,
 )
 
 
@@ -196,5 +195,4 @@ admin.site.register(Structure, StructureAdmin)
 admin.site.register(StructureMember, StructureMemberAdmin)
 admin.site.register(StructurePutativeMember, StructurePutativeMemberAdmin)
 admin.site.register(StructureSource, EnumAdmin)
-admin.site.register(StructureTypology, EnumAdmin)
 admin.site.register(StructureNationalLabel, EnumAdmin)

@@ -2,6 +2,7 @@ import json
 from io import StringIO
 
 import requests
+from data_inclusion.schema import Typologie
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -11,12 +12,7 @@ from dora.admin_express.utils import get_clean_city_name
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
 from dora.core.utils import normalize_phone_number
-from dora.structures.models import (
-    Structure,
-    StructureNationalLabel,
-    StructureSource,
-    StructureTypology,
-)
+from dora.structures.models import Structure, StructureNationalLabel, StructureSource
 from dora.users.models import User
 
 
@@ -80,8 +76,7 @@ class Command(BaseCommand):
         agencies = get_pe_agencies(pe_access_token)
 
         bot_user = User.objects.get_dora_bot()
-        label = StructureNationalLabel.objects.get(value="pole-emploi")
-        typology = StructureTypology.objects.get(value="PE")
+        label = StructureNationalLabel.objects.get(value="france-travail")
         source = StructureSource.objects.get(
             value="api-referentiel-agences-pole-emploi"
         )
@@ -163,7 +158,7 @@ class Command(BaseCommand):
                     mod |= self.maybe_update(
                         structure,
                         "typology",
-                        typology,
+                        Typologie.FT.value,
                         existing,
                     )
                     mod |= self.maybe_update(

@@ -24,13 +24,14 @@ MAX_DISTANCE = 50
 
 
 def _filter_and_annotate_dora_services(services, location, with_remote, with_onsite):
+    no_services = models.Service.objects.none()
     # 1) services ayant un lieu de déroulement, à moins de MAX_DISTANCE km
     services_on_site = (
         services.filter(location_kinds__value="en-presentiel")
         .annotate(distance=Distance("geom", location))
         .filter(distance__lte=D(km=MAX_DISTANCE))
         if with_onsite
-        else []
+        else no_services
     )
     # 2) services sans lieu de déroulement
     services_remote = (
@@ -44,9 +45,9 @@ def _filter_and_annotate_dora_services(services, location, with_remote, with_ons
             .annotate(distance=Value(None, output_field=IntegerField()))
         )
         if with_remote
-        else []
+        else no_services
     )
-    return list(services_on_site) + list(services_remote)
+    return services_on_site | services_remote
 
 
 def _sort_services(services):
@@ -168,8 +169,11 @@ def _get_di_results(
         )
     ]
 
+    supported_service_kinds = models.ServiceKind.objects.values_list("value", flat=True)
+
     mapped_di_results = [
-        data_inclusion.map_search_result(result) for result in raw_di_results
+        data_inclusion.map_search_result(result, supported_service_kinds)
+        for result in raw_di_results
     ]
 
     # FIXME: exclu les services uniquement en présentiel à plus de MAX_DISTANCE
@@ -221,8 +225,12 @@ def _get_dora_results(
         )
         .prefetch_related(
             "kinds",
+            "fee_condition",
+            "location_kinds",
             "categories",
             "subcategories",
+            "coach_orientation_modes",
+            "beneficiaries_access_modes",
         )
     )
 
