@@ -246,7 +246,7 @@ class StructureAdminSerializer(StructureSerializer):
         return obj.services.update_advised().count()
 
     def get_num_services(self, obj):
-        return obj.services.count()
+        return obj.services.active().count()
 
     def get_categories(self, obj):
         return obj.services.values_list("categories__value", flat=True).distinct()
