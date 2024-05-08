@@ -1,5 +1,6 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 
+from .checks import check_orientation, format_warnings
 from .models import Orientation, SentContactEmail
 
 
@@ -41,6 +42,13 @@ class OrientationAdmin(admin.ModelAdmin):
         if p := obj.prescriber:
             return p.email
         return "-"
+
+    def get_object(self, request, obj_id, f):
+        # quelques tests pour notifier d'avertissements concernant la demande l'orientation (ou pas)
+        if msgs := check_orientation(obj_id):
+            self.message_user(request, format_warnings(msgs), messages.WARNING)
+
+        return super().get_object(request, obj_id, f)
 
 
 admin.site.register(Orientation, OrientationAdmin)
