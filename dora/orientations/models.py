@@ -1,8 +1,10 @@
 import uuid
 
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.utils import timezone
 
 from dora.core.models import EnumModel
 from dora.services.models import Service
@@ -27,6 +29,11 @@ class RejectionReason(EnumModel):
         verbose_name_plural = "Motifs de refus"
 
 
+def _orientation_query_expiration_date():
+    # lu quelque part: les lambdas sont moyennement appréciées dans les migrations
+    return timezone.now() + relativedelta(days=8)
+
+
 class Orientation(models.Model):
     id = models.BigAutoField(
         auto_created=True,
@@ -36,6 +43,11 @@ class Orientation(models.Model):
     )
 
     query_id = models.UUIDField(default=uuid.uuid4, editable=False, db_index=True)
+
+    query_expires_at = models.DateTimeField(
+        default=_orientation_query_expiration_date,
+        verbose_name="expiration du lien de la demande",
+    )
 
     # Infos bénéficiaires
     requirements = ArrayField(
@@ -140,12 +152,17 @@ class Orientation(models.Model):
         RejectionReason, verbose_name="Motifs de refus de l'orientation", blank=True
     )
 
-    creation_date = models.DateTimeField(auto_now_add=True, editable=False)
-    processing_date = models.DateTimeField(blank=True, null=True)
+    creation_date = models.DateTimeField(
+        auto_now_add=True, editable=False, verbose_name="date de création"
+    )
+    processing_date = models.DateTimeField(
+        blank=True, null=True, verbose_name="date de traitement"
+    )
     status = models.CharField(
         max_length=10,
         choices=OrientationStatus.choices,
         default=OrientationStatus.PENDING,
+        verbose_name="statut",
     )
     last_reminder_email_sent = models.DateTimeField(blank=True, null=True)
 
@@ -240,6 +257,14 @@ class Orientation(models.Model):
             return f"{settings.FRONTEND_URL}/services/di--{self.di_service_id}"
         else:
             return ""
+
+    def refresh_query_expiration_date(self):
+        self.query_expires_at = _orientation_query_expiration_date()
+        self.save()
+
+    @property
+    def query_expired(self) -> bool:
+        return timezone.now() > self.query_expires_at
 
 
 class ContactRecipient(models.TextChoices):

@@ -26,12 +26,12 @@ class OrientationPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method == "DELETE":
             return False
-        if request.method == "POST":
+        if request.method in ["POST", "PATCH"]:
             return request.user.is_authenticated
         return True
 
     def has_object_permission(self, request, view, orientation):
-        return request.method in ["GET", "POST"]
+        return request.method in ["GET", "POST", "PATCH"]
 
 
 class OrientationViewSet(
@@ -160,5 +160,19 @@ class OrientationViewSet(
             recipient=ContactRecipient.PRESCRIBER,
             carbon_copies=sent_contact_emails,
         )
+
+        return Response(status=204)
+
+    @action(
+        detail=True,
+        methods=["patch"],
+        url_path="refresh",
+        permission_classes=[OrientationPermission],
+    )
+    def refresh(self, request, query_id=None):
+        orientation = self.get_object()
+        orientation.refresh_query_expiration_date()
+
+        # TODO: renvoyer les e-mails après clarifications
 
         return Response(status=204)
