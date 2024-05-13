@@ -46,16 +46,31 @@ class OrientationAdmin(admin.ModelAdmin):
 
     @admin.display(description="vérification")
     def orientation_checked(self, obj) -> bool:
-        return not bool(check_orientation(obj.pk))
+        return not bool(check_orientation(obj))
 
     orientation_checked.boolean = True
 
     def get_object(self, request, obj_id, f):
         # quelques tests pour notifier d'avertissements concernant la demande l'orientation (ou pas)
-        if msgs := check_orientation(obj_id):
+        orientation = super().get_object(request, obj_id, f)
+
+        if msgs := check_orientation(orientation):
             self.message_user(request, format_warnings(msgs), messages.WARNING)
 
-        return super().get_object(request, obj_id, f)
+        return orientation
+
+    def get_queryset(self, request):
+        qs = (
+            super()
+            .get_queryset(request)
+            .prefetch_related(
+                "prescriber_structure__membership", "service__structure__membership"
+            )
+            .select_related(
+                "prescriber", "prescriber_structure", "service", "service__structure"
+            )
+        )
+        return qs
 
 
 admin.site.register(Orientation, OrientationAdmin)

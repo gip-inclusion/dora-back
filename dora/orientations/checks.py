@@ -73,9 +73,10 @@ def check_structure(orientation: Orientation) -> list:
     result = []
 
     if orientation.service:
-        # pour les services enregistrés sur DORA
-        if orientation.prescriber and orientation.service.structure.is_member(
+        # note : dans ce cas, plus optimisé que de passer par structure.is_member
+        if (
             orientation.prescriber
+            and orientation.prescriber in orientation.service.structure.members
         ):
             result.append(
                 "le prescripteur est membre de la structure proposant le service"
@@ -104,9 +105,10 @@ def check_prescriber(orientation: Orientation) -> list:
         ):
             result.append("la structure du prescripteur n'est pas encore validée")
 
+        # note : dans ce cas, plus optimisé que de passer par structure.is_admin
         if (
             orientation.prescriber_structure.membership.count() == 1
-            and orientation.prescriber_structure.is_admin(orientation.prescriber)
+            and orientation.prescriber in orientation.prescriber_structure.admins
         ):
             result.append(
                 "le prescripteur est le seul membre et administrateur de la structure"
@@ -131,9 +133,8 @@ def check_prescriber(orientation: Orientation) -> list:
     return result
 
 
-def check_orientation(orientation_pk: str) -> list | None:
+def check_orientation(orientation: Orientation) -> list | None:
     try:
-        orientation = Orientation.objects.get(pk=orientation_pk)
         msgs = [
             t(orientation)
             for t in [
