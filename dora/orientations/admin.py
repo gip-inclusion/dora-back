@@ -1,5 +1,6 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 
+from .checks import check_orientation, format_warnings
 from .models import Orientation, SentContactEmail
 
 
@@ -19,6 +20,7 @@ class OrientationAdmin(admin.ModelAdmin):
         "prescriber_email",
         "processing_date",
         "status",
+        "orientation_checked",
     )
     list_filter = (
         "status",
@@ -37,10 +39,38 @@ class OrientationAdmin(admin.ModelAdmin):
     inlines = [SentContactEmailInline]
 
     @admin.display(description="e-mail prescripteur")
-    def prescriber_email(self, obj):
+    def prescriber_email(self, obj) -> str:
         if p := obj.prescriber:
             return p.email
         return "-"
+
+    @admin.display(description="vérification")
+    def orientation_checked(self, obj) -> bool:
+        return not bool(check_orientation(obj))
+
+    orientation_checked.boolean = True
+
+    def get_object(self, request, obj_id, f):
+        # quelques tests pour notifier d'avertissements concernant la demande l'orientation (ou pas)
+        orientation = super().get_object(request, obj_id, f)
+
+        if msgs := check_orientation(orientation):
+            self.message_user(request, format_warnings(msgs), messages.WARNING)
+
+        return orientation
+
+    def get_queryset(self, request):
+        qs = (
+            super()
+            .get_queryset(request)
+            .prefetch_related(
+                "prescriber_structure__membership", "service__structure__membership"
+            )
+            .select_related(
+                "prescriber", "prescriber_structure", "service", "service__structure"
+            )
+        )
+        return qs
 
 
 admin.site.register(Orientation, OrientationAdmin)
