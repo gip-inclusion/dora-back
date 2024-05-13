@@ -76,7 +76,7 @@ def check_structure(orientation: Orientation) -> list:
         # note : dans ce cas, plus optimisé que de passer par structure.is_member
         if (
             orientation.prescriber
-            and orientation.prescriber in orientation.service.structure.members
+            and orientation.prescriber in orientation.service.structure.members.all()
         ):
             result.append(
                 "le prescripteur est membre de la structure proposant le service"
