@@ -10,6 +10,7 @@ from dora.stats.models import (
     SearchView,
     ServiceShare,
     ServiceView,
+    StructureInfosView,
     StructureView,
 )
 
@@ -223,6 +224,22 @@ class DiMobilisationEventAdmin(AnalyticsEventAdmin):
     filter_horizontal = ["categories", "subcategories"]
 
 
+class StructureInfoEventAdmin(AnalyticsEventAdmin):
+    raw_id_fields = ("structure", "user")
+    list_display = [
+        "date",
+        "path",
+        "structure",
+        "structure_department",
+        "user",
+        "anonymous_user_hash",
+    ]
+    list_filter = [
+        "date",
+        "structure_source",
+    ]
+
+
 admin.site.register(DeploymentState, DeploymentStateAdmin)
 admin.site.register(PageView, PageViewAdmin)
 admin.site.register(StructureView, StructureEventAdmin)
@@ -233,3 +250,4 @@ admin.site.register(DiServiceView, DiServiceEventAdmin)
 admin.site.register(SearchView, SearchEventAdmin)
 admin.site.register(MobilisationEvent, MobilisationEventAdmin)
 admin.site.register(DiMobilisationEvent, DiMobilisationEventAdmin)
+admin.site.register(StructureInfosView, StructureEventAdmin)

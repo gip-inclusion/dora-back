@@ -1,6 +1,7 @@
 import uuid
 from typing import Optional
 
+from data_inclusion.schema import Typologie
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
@@ -146,11 +147,6 @@ class StructureNationalLabel(EnumModel):
         verbose_name_plural = "Labels nationaux"
 
 
-class StructureTypology(EnumModel):
-    class Meta:
-        verbose_name = "Typologie"
-
-
 class StructureManager(models.Manager):
     def create_from_establishment(
         self, establishment, name="", parent=None, structure_id=None
@@ -206,8 +202,11 @@ class Structure(ModerationMixin, models.Model):
     )
 
     name = models.CharField(verbose_name="Nom", max_length=255)
-    typology = models.ForeignKey(
-        StructureTypology, null=True, blank=True, on_delete=models.PROTECT
+
+    typology = models.CharField(
+        choices=zip([t.value for t in Typologie], [t.label for t in Typologie]),
+        max_length=100,
+        default="",
     )
     slug = models.SlugField(blank=True, null=True, unique=True)
     url = models.URLField(blank=True)

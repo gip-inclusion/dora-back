@@ -117,9 +117,17 @@ def test_structure_services_activation_candidates(
 
     assert not structure_service_activation_task.candidates()
 
-    # structure avec au moins un service
+    # pas de structure obsolète
     structure_with_admin.siret = "50060080000001"
+    structure_with_admin.is_obsolete = True
+    structure_with_admin.save()
+
+    assert not structure_service_activation_task.candidates()
+
+    # structure avec au moins un service
+    structure_with_admin.siret = "50060080000002"
     make_service(structure=structure_with_admin)
+    structure_with_admin.is_obsolete = False
     structure_with_admin.save()
 
     assert not structure_service_activation_task.candidates()

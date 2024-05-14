@@ -1,4 +1,5 @@
 import pytest
+from data_inclusion.schema import Typologie
 from django.contrib.gis.geos import Point
 from model_bakery import baker
 
@@ -16,11 +17,7 @@ from dora.services.models import (
     ServiceStatus,
     ServiceSubCategory,
 )
-from dora.structures.models import (
-    StructureNationalLabel,
-    StructureSource,
-    StructureTypology,
-)
+from dora.structures.models import StructureNationalLabel, StructureSource
 
 
 @pytest.fixture
@@ -54,13 +51,14 @@ def test_structures_api_response(authenticated_user, api_client):
     assert [] == response.data
 
 
-@pytest.mark.loaddata("structure_typology", "service_subcategory")
+# TODO: plus tard ...
+# @pytest.mark.loaddata("structure_typology", "service_subcategory")
 def test_structures_serialization_exemple(
     setup_structure_data, authenticated_user, api_client, settings
 ):
     # Example adapté de la doc data·inclusion :
     # https://www.data.inclusion.beta.gouv.fr/schemas-de-donnees-de-loffre/schema-des-structures-et-services-dinsertion
-    typology = StructureTypology.objects.get(value="ASSO")
+    typology = Typologie.ASSO
     source = StructureSource.objects.get(value="solidagregateur")
     parent = make_structure()
 
@@ -75,7 +73,7 @@ def test_structures_serialization_exemple(
         address2="HOTEL DE VILLE",
         longitude=7.848133,
         latitude=48.7703,
-        typology=typology,
+        typology=typology.value,
         phone="0102030405",
         email="julie@example.net",
         url="https://www.asso-gonzalez.net/",
@@ -162,14 +160,15 @@ def test_unpublished_service_is_not_serialized(authenticated_user, api_client):
     assert 404 == response.status_code
 
 
-@pytest.mark.loaddata(
-    "service_fee",
-    "service_subcategory",
-    "service_kind",
-    "service_location_kind",
-    "service_coach_orientation_mode",
-    "service_beneficiary_access_mode",
-)
+# TODO: plus tard ...
+# @pytest.mark.loaddata(
+#     "service_fee",
+#     "service_subcategory",
+#     "service_kind",
+#     "service_location_kind",
+#     "service_coach_orientation_mode",
+#     "service_beneficiary_access_mode",
+# )
 def test_service_serialization_exemple(authenticated_user, api_client, settings):
     # Example adapté de la doc data·inclusion :
     # https://www.data.inclusion.beta.gouv.fr/schemas-de-donnees-de-loffre/schema-des-structures-et-services-dinsertion

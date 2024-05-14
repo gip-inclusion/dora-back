@@ -25,20 +25,34 @@ DI_TO_DORA_DIFFUSION_ZONE_TYPE_MAPPING = {
 }
 
 
+# Différence entre les types "" ou [] et None :
+# Une valeur nulle (None) signifie que l'information n'est pas renseignée tandis
+# qu'une valeur vide ("" ou []) signifie que l'information est renseignée mais vide.
+# Ces valeurs ayant un sens différent, leur traitement peut lui aussi différer.
+
+
 # TODO:
 # On pourrait avoir envie d'instancier un objet service et de réutiliser la sérialisation implémentée.
 # Les relations m2m nécessitent malheureusement la sauvegarde en db.
 # On pourrait tout de même implémenter les mappings avec des serializers basés sur ceux existants.
 
 
-def map_search_result(result: dict) -> dict:
+def map_search_result(result: dict, supported_service_kinds: list[str]) -> dict:
     # On transforme les champs nécessaires à l'affichage des resultats de recherche au format DORA
     # (c.a.d qu'on veut un objet similaire à ce que renvoie le SearchResultSerializer)
+
+    # Voir différence entre les types "" ou [] et None dans le commentaire en haut du fichier
 
     service_data = result["service"]
     location_kinds = service_data["modes_accueil"] or []
     if location_kinds == [] and result["distance"] is not None:
         location_kinds = ["en-presentiel"]
+
+    kinds = (
+        filter(lambda kind: kind in supported_service_kinds, service_data["types"])
+        if service_data["types"] is not None
+        else None
+    )
 
     return {
         #
@@ -60,12 +74,14 @@ def map_search_result(result: dict) -> dict:
         #
         # TODO: spécifier 'en-presentiel' si on a une geoloc/adresse?
         "location_kinds": location_kinds,
+        "kinds": kinds,
+        "fee_condition": service_data["frais"][0] if service_data["frais"] else None,
         "modification_date": service_data["date_maj"],
         "name": service_data["nom"],
         "short_desc": service_data["presentation_resume"] or "",
         "slug": f"{service_data['source']}--{service_data['id']}",
         "status": ServiceStatus.PUBLISHED.value,
-        "structure": "",
+        "structure": service_data["structure_id"],
         # Champs spécifiques aux résultats d·i
         "type": "di",
         "di_source": service_data["source"],
@@ -77,6 +93,7 @@ def map_search_result(result: dict) -> dict:
         "coordinates": (result["service"]["longitude"], result["service"]["latitude"])
         if result["service"]["longitude"] and result["service"]["latitude"]
         else None,
+        "is_orientable": is_orientable(service_data),
     }
 
 
@@ -92,6 +109,8 @@ def is_orientable(service_data: dict) -> bool:
 
 
 def map_service(service_data: dict, is_authenticated: bool) -> dict:
+    # Voir différence entre les types "" ou [] et None dans le commentaire en haut du fichier
+
     categories = None
     subcategories = None
     if service_data["thematiques"] is not None:
