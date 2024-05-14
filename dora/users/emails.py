@@ -33,6 +33,7 @@ def send_invitation_reminder(user, structure, notification=False):
         f"Rappel : Acceptez l'invitation à rejoindre {structure.name} sur DORA",
         user.email,
         mjml2html(render_to_string("invitation_reminder.mjml", context)),
+        tags=["notification"],
     )
 
 
@@ -65,6 +66,7 @@ def send_user_without_structure_notification(user, deletion=False):
                 context,
             )
         ),
+        tags=["notification"],
     )
 
 
@@ -87,4 +89,5 @@ def send_account_deletion_notification(user):
         "DORA - Suppression prochaine de votre compte",
         user.email,
         mjml2html(render_to_string("notification_account_deletion.mjml", context)),
+        tags=["notification"],
     )
