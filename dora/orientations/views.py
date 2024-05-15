@@ -10,6 +10,7 @@ from .emails import (
     send_message_to_prescriber,
     send_orientation_accepted_emails,
     send_orientation_created_emails,
+    send_orientation_created_to_structure,
     send_orientation_rejected_emails,
 )
 from .models import (
@@ -173,6 +174,30 @@ class OrientationViewSet(
         orientation = self.get_object()
         orientation.refresh_query_expiration_date()
 
-        # TODO: renvoyer les e-mails après clarifications
+        # renvoi de l'e-mail avec un nouveau lien (uniquement pour la structure)
+        send_orientation_created_to_structure(orientation)
+
+        # TODO: comme on est dans un contexte AIPD, voir si nécessité de logguer
 
         return Response(status=204)
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="check",
+        permission_classes=[OrientationPermission],
+    )
+    def check(self, request, query_id=None):
+        class ResultSerializer(serializers.Serializer):
+            result = serializers.CharField(read_only=True)
+
+        orientation = self.get_object()
+        h = self.request.query_params.get("h")
+        result = "invalid"
+
+        if h == orientation.get_query_id_hash():
+            result = (
+                "expired" if orientation.query_expired else str(orientation.query_id)
+            )
+
+        return Response(ResultSerializer({"result": result}).data)

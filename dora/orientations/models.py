@@ -1,3 +1,4 @@
+import hashlib
 import uuid
 
 from dateutil.relativedelta import relativedelta
@@ -174,8 +175,15 @@ class Orientation(models.Model):
     def __str__(self):
         return f"Orientation #{self.id}"
 
+    def get_query_id_hash(self) -> str:
+        return hashlib.sha256(
+            f"{self.query_id}{self.query_expires_at}{settings.SECRET_KEY}".encode(
+                "utf8"
+            )
+        ).hexdigest()[:12]
+
     def get_magic_link(self):
-        return self.get_frontend_url()
+        return f"{settings.FRONTEND_URL}/orientations?token={self.query_id}&h={self.get_query_id_hash()}"
 
     def get_absolute_url(self):
         return self.get_frontend_url()
