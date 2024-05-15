@@ -195,9 +195,11 @@ class OrientationViewSet(
         h = self.request.query_params.get("h")
         result = "invalid"
 
-        if h == orientation.get_query_id_hash():
+        if h:
             result = (
-                "expired" if orientation.query_expired else str(orientation.query_id)
+                str(orientation.query_id)
+                if h == orientation.get_query_id_hash()
+                else "expired"
             )
 
         return Response(ResultSerializer({"result": result}).data)

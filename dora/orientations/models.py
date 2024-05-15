@@ -177,7 +177,7 @@ class Orientation(models.Model):
 
     def get_query_id_hash(self) -> str:
         return hashlib.sha256(
-            f"{self.query_id}{self.query_expires_at}{settings.SECRET_KEY}".encode(
+            f"{self.query_id}{self.query_expires_at}{self.status}{settings.SECRET_KEY}".encode(
                 "utf8"
             )
         ).hexdigest()[:12]
@@ -267,8 +267,10 @@ class Orientation(models.Model):
             return ""
 
     def refresh_query_expiration_date(self):
-        self.query_expires_at = _orientation_query_expiration_date()
-        self.save()
+        # on ne régénère le lien que si il est expiré
+        if self.query_expired:
+            self.query_expires_at = _orientation_query_expiration_date()
+            self.save()
 
     @property
     def query_expired(self) -> bool:
