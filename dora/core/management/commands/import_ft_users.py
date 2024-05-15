@@ -12,11 +12,11 @@ from dora.structures.models import (
 from dora.users.models import User
 
 """
-Import des conseillers et admins de agences PE :
+Import des conseillers et admins de agences FT :
     - fichiers aux format CSV en entrée : un pour les admins, l'autre pour les conseillers
     - format : SAFIR,NOM,PRENOM,fonction (avec entête)
 
-Les adresses e-mail sont déduites à partir du nom / prénom
+Les adresses e-mail sont déduites à partir du nom / prénom (si absentes).
 """
 
 
@@ -41,7 +41,7 @@ def to_pe_email(first_name: str, last_name: str) -> str:
     if not all([first_name, last_name]):
         raise ImportError(f"Erreur nom ou prénom : {first_name} - {last_name}")
 
-    return f"{strip_accents(first_name.lower())}.{strip_accents(last_name.lower())}@pole-emploi.fr".replace(
+    return f"{strip_accents(first_name.lower())}.{strip_accents(last_name.lower())}@francetravail.fr".replace(
         " ", "-"
     )
 
@@ -99,7 +99,7 @@ def invite_user(structure, email, admin=True) -> str:
 
 
 class Command(BaseCommand):
-    help = "Importe des administrateurs ou conseillers d'agence France Travail / Pôle emploi"
+    help = "Importe des administrateurs ou conseillers d'agence France Travail"
 
     def add_arguments(self, parser):
         parser.add_argument("filename")
