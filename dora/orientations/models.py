@@ -180,7 +180,7 @@ class Orientation(models.Model):
             f"{self.query_id}{self.query_expires_at}{self.status}{settings.SECRET_KEY}".encode(
                 "utf8"
             )
-        ).hexdigest()[:12]
+        ).hexdigest()
 
     def get_magic_link(self):
         return f"{settings.FRONTEND_URL}/orientations?token={self.query_id}&h={self.get_query_id_hash()}"
