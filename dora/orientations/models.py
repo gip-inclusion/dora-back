@@ -280,7 +280,7 @@ class Orientation(models.Model):
 class ContactRecipient(models.TextChoices):
     BENEFICIARY = "BÉNÉFICIAIRE", "Bénéficiaire"
     PRESCRIBER = "PRESCRIPTEUR", "Prescripteur"
-    REFERENT = "RÉFÉRENT", "Réfeérent"
+    REFERENT = "RÉFÉRENT", "Référent"
 
 
 class SentContactEmail(models.Model):
