@@ -21,7 +21,7 @@ class LogLevelFilter(admin.SimpleListFilter):
 @admin.register(ActionLog)
 class ActionLogAdmin(admin.ModelAdmin):
     list_display = ("id", "created_at", "log_level", "legal")
-    list_filter = (LogLevelFilter,)
+    list_filter = (LogLevelFilter, "legal")
     # voir modèle : pour l'instant pas de recherche sur le message du log
     search_fields = ("id",)
     readonly_fields = ("id", "created_at", "log_level", "legal", "msg", "payload")
