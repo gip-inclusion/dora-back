@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import uuid
 
 from dateutil.relativedelta import relativedelta
@@ -10,6 +11,10 @@ from django.utils import timezone
 from dora.core.models import EnumModel
 from dora.services.models import Service
 from dora.structures.models import Structure
+
+ORIENTATION_QUERY_LINK_TTL_DAY = 8
+
+logger = logging.getLogger("dora.logs.core")
 
 
 class ContactPreference(models.TextChoices):
@@ -32,7 +37,7 @@ class RejectionReason(EnumModel):
 
 def _orientation_query_expiration_date():
     # lu quelque part: les lambdas sont moyennement appréciées dans les migrations
-    return timezone.now() + relativedelta(days=8)
+    return timezone.now() + relativedelta(days=ORIENTATION_QUERY_LINK_TTL_DAY)
 
 
 class Orientation(models.Model):
@@ -271,6 +276,15 @@ class Orientation(models.Model):
         if self.query_expired:
             self.query_expires_at = _orientation_query_expiration_date()
             self.save()
+            logger.info(
+                "orientation:refresh_link",
+                {
+                    "legal": True,
+                    "reason": "lien expiré",
+                    "queryId": str(self.query_id),
+                    "ttlInDays": ORIENTATION_QUERY_LINK_TTL_DAY,
+                },
+            )
 
     @property
     def query_expired(self) -> bool:

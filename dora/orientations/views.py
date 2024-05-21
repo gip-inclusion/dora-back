@@ -177,8 +177,6 @@ class OrientationViewSet(
         # renvoi de l'e-mail avec un nouveau lien (uniquement pour la structure)
         send_orientation_created_to_structure(orientation)
 
-        # TODO: comme on est dans un contexte AIPD, voir si nécessité de logguer
-
         return Response(status=204)
 
     @action(
