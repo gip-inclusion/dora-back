@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+
 import logging
 import os
 import random
@@ -293,6 +294,7 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 # EMAIL SETTINGS #
 ##################
 DEFAULT_FROM_EMAIL = os.environ["DEFAULT_FROM_EMAIL"]
+NO_REPLY_EMAIL = os.environ.get("NO_REPLY_EMAIL", DEFAULT_FROM_EMAIL)
 
 # https://app.tipimail.com/#/app/settings/smtp_and_apis
 

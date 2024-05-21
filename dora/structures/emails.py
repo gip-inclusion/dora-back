@@ -179,7 +179,8 @@ def send_orphan_structure_notification(structure):
         f"Votre structure n’a pas encore de membre actif sur DORA ({ structure.name})",
         structure.email,
         mjml2html(render_to_string("notification-orphan-structure.mjml", context)),
-        tags=["orphan-structure"],
+        from_email=("La plateforme DORA", settings.NO_REPLY_EMAIL),
+        tags=["notification"],
     )
 
 
@@ -200,6 +201,8 @@ def send_admin_invited_users_20_notification(structure, user):
             mjml2html(
                 render_to_string("notification-invitation-stalled-20.mjml", context)
             ),
+            from_email=("La plateforme DORA", settings.NO_REPLY_EMAIL),
+            tags=["notification"],
         )
 
 
@@ -218,6 +221,8 @@ def send_admin_invited_users_90_notification(structure, user):
             mjml2html(
                 render_to_string("notification-invitation-stalled-90.mjml", context)
             ),
+            from_email=("La plateforme DORA", settings.NO_REPLY_EMAIL),
+            tags=["notification"],
         )
 
 
@@ -250,6 +255,8 @@ def send_admin_self_invited_users_notification(structure, user):
             mjml2html(
                 render_to_string("notification-self-invited-users.mjml", context)
             ),
+            from_email=("La plateforme DORA", settings.NO_REPLY_EMAIL),
+            tags=["notification"],
         )
 
 
@@ -284,5 +291,6 @@ def send_structure_activation_notification(structure):
             mjml2html(
                 render_to_string("notification-service-activation.mjml", context),
             ),
-            tags=["structure-service-activation"],
+            from_email=("La plateforme DORA", settings.NO_REPLY_EMAIL),
+            tags=["notification"],
         )
