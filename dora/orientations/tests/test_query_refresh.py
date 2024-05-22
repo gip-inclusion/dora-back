@@ -5,7 +5,7 @@ from freezegun import freeze_time
 
 from dora.core.test_utils import make_orientation
 
-from ..models import Orientation
+from ..models import ORIENTATION_QUERY_LINK_TTL_DAY, Orientation
 
 
 @pytest.fixture
@@ -21,7 +21,10 @@ def test_query_expires_at(orientation):
     orientation.refresh_query_expiration_date()
     assert h == orientation.get_query_id_hash()
 
-    with freeze_time(time_to_freeze=timezone.now() + relativedelta(days=8)):
+    with freeze_time(
+        time_to_freeze=timezone.now()
+        + relativedelta(days=ORIENTATION_QUERY_LINK_TTL_DAY)
+    ):
         assert orientation.query_expired
 
 
@@ -29,30 +32,17 @@ def test_query_refresh(api_client, orientation):
     url = f"/orientations/{orientation.query_id}/refresh/"
     response = api_client.patch(url, follow=True)
 
-    # permissions
-    assert response.status_code == 401
-
-    api_client.force_authenticate(user=orientation.prescriber)
-    response = api_client.patch(url, follow=True)
-
     assert response.status_code == 204
 
 
-def test_query_check(api_client, orientation):
-    url = f"/orientations/{orientation.query_id}/check/?h="
+def test_query_access(api_client, orientation):
+    url = f"/orientations/{orientation.query_id}/"
     response = api_client.get(url, follow=True)
 
-    # l'API réponds toujours
-    assert response.status_code == 200
-    # hash non fourni
-    assert response.json().get("result") == "invalid"
+    # permissions : pas de hash, pas d'orientation (pseudo-auth)
+    assert response.status_code == 401
 
-    # hash fourni mais incorrect : on considère le lien comme expiré
-    response = api_client.get(url + "xxxxxx", follow=True)
-    assert response.status_code == 200
-    assert response.json().get("result") == "expired"
+    url += f"?h={orientation.get_query_id_hash()}"
+    response = api_client.get(url, follow=True)
 
-    # hash correct, on retourne l'identifiant de query
-    response = api_client.get(url + orientation.get_query_id_hash(), follow=True)
     assert response.status_code == 200
-    assert response.json().get("result") == str(orientation.query_id)

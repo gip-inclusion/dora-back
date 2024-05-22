@@ -25,14 +25,24 @@ from .serializers import OrientationSerializer
 
 class OrientationPermission(permissions.BasePermission):
     def has_permission(self, request, view):
-        if request.method == "DELETE":
-            return False
-        if request.method in ["POST", "PATCH"]:
-            return request.user.is_authenticated
-        return True
+        match request.method:
+            case "DELETE":
+                return False
+            case "POST":
+                return request.user.is_authenticated
+            case _:
+                return True
 
     def has_object_permission(self, request, view, orientation):
-        return request.method in ["GET", "POST", "PATCH"]
+        match request.method:
+            case "GET":
+                if h := request.query_params.get("h"):
+                    return h == orientation.get_query_id_hash()
+                return False
+            case "POST":
+                return request.user.is_authenticated
+            case _:
+                return False
 
 
 class OrientationViewSet(
@@ -168,7 +178,7 @@ class OrientationViewSet(
         detail=True,
         methods=["patch"],
         url_path="refresh",
-        permission_classes=[OrientationPermission],
+        permission_classes=[permissions.AllowAny],
     )
     def refresh(self, request, query_id=None):
         orientation = self.get_object()
@@ -178,26 +188,3 @@ class OrientationViewSet(
         send_orientation_created_to_structure(orientation)
 
         return Response(status=204)
-
-    @action(
-        detail=True,
-        methods=["get"],
-        url_path="check",
-        permission_classes=[OrientationPermission],
-    )
-    def check(self, request, query_id=None):
-        class ResultSerializer(serializers.Serializer):
-            result = serializers.CharField(read_only=True)
-
-        orientation = self.get_object()
-        h = self.request.query_params.get("h")
-        result = "invalid"
-
-        if h:
-            result = (
-                str(orientation.query_id)
-                if h == orientation.get_query_id_hash()
-                else "expired"
-            )
-
-        return Response(ResultSerializer({"result": result}).data)
