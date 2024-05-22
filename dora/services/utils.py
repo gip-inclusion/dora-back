@@ -1,6 +1,7 @@
 import hashlib
 
-from django.contrib.gis.geos import Point
+from django.contrib.gis.gdal import CoordTransform, SpatialReference
+from django.contrib.gis.geos import MultiPolygon, Point
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -215,3 +216,26 @@ def filter_services_by_region(services, region_code):
             & Q(diffusion_zone_details=region.code)
         )
     )
+
+
+def compute_map_bounds(geom: MultiPolygon | Point, distance: int):
+    # Crée les objets de référence spatiale pour la transformation
+    original_srs = SpatialReference(geom.srid)
+    target_srs = SpatialReference(3857)  # Projection de Mercator (en mètres)
+
+    # Crée la transformation de coordonnées
+    transform_to_projected = CoordTransform(original_srs, target_srs)
+    transform_to_original = CoordTransform(target_srs, original_srs)
+
+    # Transforme la géométrie (polygone ou point) dans le système de coordonnées projeté
+    geom.transform(transform_to_projected)
+
+    # Étend la géométrie (polygone ou point) par la distance fournie en km (zone de recherche)
+    buffer_distance_m = distance * 1000
+    buffered_geom = geom.buffer(buffer_distance_m)
+
+    # Transforme la géométrie étendue dans le système de coordonnées d'origine
+    buffered_geom.transform(transform_to_original)
+
+    # Retourne la boîte englobante de la géométrie étendue
+    return buffered_geom.extent

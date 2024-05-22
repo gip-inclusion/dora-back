@@ -3,8 +3,10 @@ from operator import itemgetter
 
 import requests
 from django.conf import settings
+from django.contrib.gis.geos import Point
 from django.db.models import Q
 from django.http.response import Http404
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.timezone import now
 from rest_framework import (
@@ -21,6 +23,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from dora import data_inclusion
+from dora.admin_express.models import City
+from dora.admin_express.utils import arrdt_to_main_insee_code
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
 from dora.core.pagination import OptionalPageNumberPagination
@@ -60,7 +64,10 @@ from .serializers import (
     ServiceModelSerializer,
     ServiceSerializer,
 )
-from .utils import update_sync_checksum
+from .utils import (
+    compute_map_bounds,
+    update_sync_checksum,
+)
 
 
 class ServicePermission(permissions.BasePermission):
@@ -778,12 +785,18 @@ def search(request, di_client=None):
     kinds_list = kinds.split(",") if kinds is not None else None
     fees_list = fees.split(",") if fees is not None else None
     locs_list = locs.split(",") if locs is not None else None
+    lat = float(lat) if lat else None
+    lon = float(lon) if lon else None
     from .search import search_services
 
-    sorted_results = search_services(
+    city_code = arrdt_to_main_insee_code(city_code)
+    city = get_object_or_404(City, pk=city_code)
+
+    sorted_services = search_services(
         request=request,
         di_client=di_client,
         city_code=city_code,
+        city=city,
         categories=categories_list,
         subcategories=subcategories_list,
         kinds=kinds_list,
@@ -793,7 +806,20 @@ def search(request, di_client=None):
         lon=lon,
     )
 
-    return Response(sorted_results)
+    # Géométrie
+    # Latitude et longitude : point
+    # Ville : polygone
+    geom = Point(lon, lat, srid=4326) if lat and lon else city.geom
+
+    # Distance visible autour
+    # Latitude et longitude : 2 km
+    # Ville : 25 km
+    distance = 2 if lat and lon else 25
+
+    # Calcule la zone visible par défaut de la carte
+    map_bounds = compute_map_bounds(geom, distance)
+
+    return Response({"map_bounds": map_bounds, "services": sorted_services})
 
 
 def share_service(request, service, is_di):
