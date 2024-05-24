@@ -182,7 +182,7 @@ class Orientation(models.Model):
 
     def get_query_id_hash(self) -> str:
         return hashlib.sha256(
-            f"{self.query_id}{self.query_expires_at}{self.status}{settings.SECRET_KEY}".encode(
+            f"{self.query_id}{self.query_expires_at}{settings.SECRET_KEY}".encode(
                 "utf8"
             )
         ).hexdigest()
