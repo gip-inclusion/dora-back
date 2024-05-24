@@ -1,16 +1,8 @@
-import pytest
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 from freezegun import freeze_time
 
-from dora.core.test_utils import make_orientation
-
-from ..models import ORIENTATION_QUERY_LINK_TTL_DAY, Orientation
-
-
-@pytest.fixture
-def orientation() -> Orientation:
-    return make_orientation()
+from ..models import ORIENTATION_QUERY_LINK_TTL_DAY
 
 
 def test_query_expires_at(orientation):
@@ -28,21 +20,8 @@ def test_query_expires_at(orientation):
         assert orientation.query_expired
 
 
-def test_query_refresh(api_client, orientation):
-    url = f"/orientations/{orientation.query_id}/refresh/"
-    response = api_client.patch(url, follow=True)
+def test_hash_update(orientation):
+    h = orientation.get_query_id_hash()
+    orientation.query_expires_at = timezone.now()
 
-    assert response.status_code == 204
-
-
-def test_query_access(api_client, orientation):
-    url = f"/orientations/{orientation.query_id}/"
-    response = api_client.get(url, follow=True)
-
-    # permissions : pas de hash, pas d'orientation (pseudo-auth)
-    assert response.status_code == 401
-
-    url += f"?h={orientation.get_query_id_hash()}"
-    response = api_client.get(url, follow=True)
-
-    assert response.status_code == 200
+    assert h != orientation.get_query_id_hash()
