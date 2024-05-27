@@ -115,7 +115,7 @@ def send_orientation_created_to_beneficiary(orientation, context=None):
         )
 
 
-def send_orientation_created_emails(orientation):
+def send_orientation_created_emails(orientation, cc=None):
     context = _orientation_created_ctx(orientation)
 
     # Structure porteuse
@@ -128,7 +128,8 @@ def send_orientation_created_emails(orientation):
     send_orientation_created_to_referent(orientation, context)
 
     # Bénéficiaire
-    send_message_to_beneficiary(orientation, context)
+
+    send_message_to_beneficiary(orientation, context, [] if not cc else cc)
 
 
 def send_orientation_accepted_emails(
