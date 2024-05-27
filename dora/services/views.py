@@ -3,7 +3,6 @@ from operator import itemgetter
 
 import requests
 from django.conf import settings
-from django.contrib.gis.geos import Point
 from django.db.models import Q
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
@@ -64,10 +63,7 @@ from .serializers import (
     ServiceModelSerializer,
     ServiceSerializer,
 )
-from .utils import (
-    compute_map_bounds,
-    update_sync_checksum,
-)
+from .utils import update_sync_checksum
 
 
 class ServicePermission(permissions.BasePermission):
@@ -806,20 +802,7 @@ def search(request, di_client=None):
         lon=lon,
     )
 
-    # Géométrie
-    # Latitude et longitude : point
-    # Ville : polygone
-    geom = Point(lon, lat, srid=4326) if lat and lon else city.geom
-
-    # Distance visible autour
-    # Latitude et longitude : 2 km
-    # Ville : 25 km
-    distance = 2 if lat and lon else 25
-
-    # Calcule la zone visible par défaut de la carte
-    map_bounds = compute_map_bounds(geom, distance)
-
-    return Response({"map_bounds": map_bounds, "services": sorted_services})
+    return Response({"city_bounds": city.geom.extent, "services": sorted_services})
 
 
 def share_service(request, service, is_di):
