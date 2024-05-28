@@ -128,8 +128,7 @@ def send_orientation_created_emails(orientation, cc=None):
     send_orientation_created_to_referent(orientation, context)
 
     # Bénéficiaire
-
-    send_message_to_beneficiary(orientation, context, [] if not cc else cc)
+    send_message_to_beneficiary(orientation, context, cc=cc)
 
 
 def send_orientation_accepted_emails(
