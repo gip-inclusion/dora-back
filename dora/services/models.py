@@ -13,6 +13,7 @@ from django.utils.text import slugify
 
 from dora.admin_express.models import EPCI, AdminDivisionType, City, Department, Region
 from dora.admin_express.utils import get_clean_city_name
+from dora.core.constants import WGS84
 from dora.core.models import EnumModel, LogItem, ModerationMixin
 from dora.structures.models import Structure
 
@@ -342,7 +343,7 @@ class Service(ModerationMixin, models.Model):
     city = models.CharField(verbose_name="Ville", max_length=255, blank=True)
     #
     geom = models.PointField(
-        srid=4326, geography=True, spatial_index=True, null=True, blank=True
+        srid=WGS84, geography=True, spatial_index=True, null=True, blank=True
     )
 
     diffusion_zone_type = models.CharField(

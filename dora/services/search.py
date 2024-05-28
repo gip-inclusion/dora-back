@@ -14,6 +14,7 @@ from django.utils import timezone
 import dora.services.models as models
 from dora import data_inclusion
 from dora.admin_express.models import City
+from dora.core.constants import WGS84
 
 from .serializers import SearchResultSerializer
 from .utils import filter_services_by_city_code
@@ -276,7 +277,7 @@ def _get_dora_results(
 
     results = _filter_and_annotate_dora_services(
         services_to_display,
-        city.geom if not lat or not lon else Point(lon, lat, srid=4326),
+        city.geom if not lat or not lon else Point(lon, lat, srid=WGS84),
         with_remote,
         with_onsite,
     )

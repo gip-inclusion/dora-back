@@ -6,6 +6,7 @@ from django.db import models, transaction
 from django.utils import timezone
 from rest_framework import serializers
 
+from dora.core.constants import WGS84
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
 from dora.core.utils import code_insee_to_code_dept
@@ -114,7 +115,7 @@ class ServiceSuggestion(models.Model):
             [s for s in self.contents.pop("contact_phone", "") if s.isdigit()]
         )[:10]
         if lon and lat:
-            geom = Point(lon, lat, srid=4326)
+            geom = Point(lon, lat, srid=WGS84)
         else:
             geom = None
 
