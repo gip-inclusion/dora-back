@@ -21,7 +21,7 @@
     a réalisé une prescription en votre nom, pour le service {% include "partials/service-link.html" %}.
   </p>
 
-  <p><strong>Pour des questions concernant cette demande, veuillez contactez le prescripteur ou prescriptrice :</strong></p>
+  <p><strong>Pour des questions concernant cette demande, veuillez contacter le prescripteur ou la prescriptrice&nbsp;:</strong></p>
 
   {% if data.prescriber.email !=  data.referent_email %}
     <ul>
@@ -39,9 +39,7 @@
   </ul>
 
   <p>
-    La structure
-    {% include "partials/structure-link.html" %}
-    ou la personne qui vous accompagne vous contacteront pour donner suite à la demande.
+    La structure {% include "partials/structure-link.html" %} ou la personne qui vous accompagne vous contacteront pour donner suite à la demande.
   </p>
 {% endblock %}
 

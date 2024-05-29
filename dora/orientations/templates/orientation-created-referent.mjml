@@ -21,20 +21,21 @@
     a orienté
     {{ data.get_beneficiary_full_name }} vers le
     service {% include "partials/service-link.html" %}.
+  </p>
 
-    <p>Pour toute question concernant le traitement de la demande, veuillez contacter le référent du service&nbsp;:<p>
-      <ul>
-        {% if  data.get_contact_name %}
-          <li>{{ data.get_contact_name }}</li>
-        {% endif %}
-        <li>
-          {% if  data.get_contact_email %}{{ data.get_contact_email }}&nbsp;– {% endif %}
-          {% if  data.get_contact_phone %}{{ data.get_contact_phone|format_phone }}{% endif %}
-        </li>
-      </ul>
+  <p>Pour toute question concernant le traitement de la demande, veuillez contacter le référent du service&nbsp;:</p>
+  <ul>
+    {% if  data.get_contact_name %}
+      <li>{{ data.get_contact_name }}</li>
+    {% endif %}
+    <li>
+      {% if  data.get_contact_email %}{{ data.get_contact_email }}&nbsp;– {% endif %}
+      {% if  data.get_contact_phone %}{{ data.get_contact_phone|format_phone }}{% endif %}
+    </li>
+  </ul>
 
-      <p>
-        <strong>La structure {{ data.get_structure_name }} va traiter la demande et y apportera une réponse.</strong>
-      </p>
+  <p>
+    <strong>La structure {{ data.get_structure_name }} va traiter la demande et y apportera une réponse.</strong>
+  </p>
 
 {% endblock %}
