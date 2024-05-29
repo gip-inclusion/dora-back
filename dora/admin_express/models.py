@@ -2,6 +2,8 @@ from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.indexes import GinIndex
 
+from dora.core.constants import WGS84
+
 
 class AdminDivisionType(models.TextChoices):
     CITY = ("city", "Commune")
@@ -51,7 +53,7 @@ class AdminDivision(models.Model):
     code = models.CharField(max_length=9, primary_key=True)
     name = models.CharField(max_length=230)
     normalized_name = models.CharField(max_length=230)
-    geom = models.MultiPolygonField(srid=4326, geography=True, spatial_index=True)
+    geom = models.MultiPolygonField(srid=WGS84, geography=True, spatial_index=True)
 
     class Meta:
         abstract = True

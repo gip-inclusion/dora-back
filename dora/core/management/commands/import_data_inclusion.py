@@ -11,6 +11,7 @@ from django.utils.text import Truncator
 from furl import furl
 
 from dora.core import utils
+from dora.core.constants import WGS84
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
 from dora.services.models import (
@@ -290,7 +291,7 @@ class Command(BaseCommand):
                 lat = s["latitude"]
 
                 if lon and lat:
-                    service.geom = Point(lon, lat, srid=4326)
+                    service.geom = Point(lon, lat, srid=WGS84)
 
                 # TODO: à publier directement?
                 # service.status = ServiceStatus.PUBLISHED

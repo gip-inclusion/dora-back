@@ -5,6 +5,7 @@ from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand
 from furl import furl
 
+from dora.core.constants import WGS84
 from dora.services.models import Service
 
 
@@ -55,7 +56,7 @@ class Command(BaseCommand):
             feat = result["features"][0]
             if feat["properties"]["score"] > 0.5:
                 coords = feat["geometry"]["coordinates"]
-                s.geom = Point(coords[0], coords[1], srid=4326)
+                s.geom = Point(coords[0], coords[1], srid=WGS84)
                 s.save(update_fields=["geom"])
             else:
                 self.stderr.write(self.style.ERROR(("Résultat incertain")))

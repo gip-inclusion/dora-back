@@ -9,6 +9,7 @@ from model_bakery import baker
 from rest_framework.test import APIRequestFactory, APITestCase
 
 from dora.admin_express.models import AdminDivisionType
+from dora.core.constants import WGS84
 from dora.core.test_utils import make_model, make_service, make_structure
 from dora.data_inclusion.test_utils import FakeDataInclusionClient, make_di_service_data
 from dora.services.enums import ServiceStatus
@@ -2220,17 +2221,21 @@ class ServiceSearchTestCase(APITestCase):
 
 class ServiceSearchOrderingTestCase(APITestCase):
     def setUp(self):
-        self.toulouse_center = Point(1.4436700, 43.6042600, srid=4326)
+        self.toulouse_center = Point(1.4436700, 43.6042600, srid=WGS84)
         # Points à moins de 100km de Toulouse
         self.point_in_toulouse = Point(
-            1.4187594455116272, 43.601528176416416, srid=4326
+            1.4187594455116272, 43.601528176416416, srid=WGS84
         )
-        self.blagnac_center = Point(1.3939900, 43.6327600, srid=4326)
-        self.montauban_center = Point(1.3573408017582829, 44.022187843162136, srid=4326)
+        self.blagnac_center = Point(1.3939900, 43.6327600, srid=WGS84)
+        self.montauban_center = Point(
+            1.3573408017582829, 44.022187843162136, srid=WGS84
+        )
 
         # Points à plus de 100km de Toulouse
-        self.rocamadour_center = Point(1.6197328621667728, 44.79914551756315, srid=4326)
-        self.paris_center = Point(2.349014, 48.864716, srid=4326)
+        self.rocamadour_center = Point(
+            1.6197328621667728, 44.79914551756315, srid=WGS84
+        )
+        self.paris_center = Point(2.349014, 48.864716, srid=WGS84)
 
         region = baker.make("Region", code="76")
         dept = baker.make("Department", region=region.code, code="31")
