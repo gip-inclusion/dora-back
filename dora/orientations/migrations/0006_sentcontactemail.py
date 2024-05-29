@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                         choices=[
                             ("BÉNÉFICIAIRE", "Bénéficiaire"),
                             ("PRESCRIPTEUR", "Prescripteur"),
-                            ("RÉFÉRENT", "Réfeérent"),
+                            ("RÉFÉRENT", "Référent"),
                         ],
                         max_length=20,
                     ),
@@ -42,7 +42,7 @@ class Migration(migrations.Migration):
                             choices=[
                                 ("BÉNÉFICIAIRE", "Bénéficiaire"),
                                 ("PRESCRIPTEUR", "Prescripteur"),
-                                ("RÉFÉRENT", "Réfeérent"),
+                                ("RÉFÉRENT", "Référent"),
                             ],
                             max_length=20,
                         ),

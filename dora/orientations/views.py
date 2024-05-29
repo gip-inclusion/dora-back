@@ -10,6 +10,7 @@ from .emails import (
     send_message_to_prescriber,
     send_orientation_accepted_emails,
     send_orientation_created_emails,
+    send_orientation_created_to_structure,
     send_orientation_rejected_emails,
 )
 from .models import (
@@ -24,14 +25,20 @@ from .serializers import OrientationSerializer
 
 class OrientationPermission(permissions.BasePermission):
     def has_permission(self, request, view):
-        if request.method == "DELETE":
-            return False
-        if request.method == "POST":
-            return request.user.is_authenticated
-        return True
+        match request.method:
+            case "DELETE":
+                return False
+            case _:
+                return True
 
     def has_object_permission(self, request, view, orientation):
-        return request.method in ["GET", "POST"]
+        match request.method:
+            case "GET" | "POST" | "PATCH":
+                if h := request.query_params.get("h"):
+                    return h == orientation.get_query_id_hash()
+                return False
+            case _:
+                return False
 
 
 class OrientationViewSet(
@@ -57,7 +64,6 @@ class OrientationViewSet(
         detail=True,
         methods=["post"],
         url_path="validate",
-        permission_classes=[permissions.AllowAny],
     )
     def validate(self, request, query_id=None):
         orientation = self.get_object()
@@ -75,7 +81,6 @@ class OrientationViewSet(
         detail=True,
         methods=["post"],
         url_path="reject",
-        permission_classes=[permissions.AllowAny],
     )
     def reject(self, request, query_id=None):
         orientation = self.get_object()
@@ -94,7 +99,6 @@ class OrientationViewSet(
         detail=True,
         methods=["post"],
         url_path="contact/beneficiary",
-        permission_classes=[permissions.AllowAny],
     )
     def contact_beneficiary(self, request, query_id=None):
         orientation = self.get_object()
@@ -131,7 +135,6 @@ class OrientationViewSet(
         detail=True,
         methods=["post"],
         url_path="contact/prescriber",
-        permission_classes=[permissions.AllowAny],
     )
     def contact_prescriber(self, request, query_id=None):
         orientation = self.get_object()
@@ -160,5 +163,22 @@ class OrientationViewSet(
             recipient=ContactRecipient.PRESCRIBER,
             carbon_copies=sent_contact_emails,
         )
+
+        return Response(status=204)
+
+    @action(
+        detail=True,
+        methods=["patch"],
+        url_path="refresh",
+        permission_classes=[permissions.AllowAny],
+    )
+    def refresh(self, request, query_id=None):
+        # la régénération du hash est le seul point d'entrée "ouvert",
+        # pas d'échange d'information, juste une demande traitée côté backend.
+        orientation = self.get_object()
+        orientation.refresh_query_expiration_date()
+
+        # renvoi de l'e-mail avec un nouveau lien (uniquement pour la structure)
+        send_orientation_created_to_structure(orientation)
 
         return Response(status=204)

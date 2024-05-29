@@ -1,12 +1,20 @@
+import hashlib
+import logging
 import uuid
 
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.utils import timezone
 
 from dora.core.models import EnumModel
 from dora.services.models import Service
 from dora.structures.models import Structure
+
+ORIENTATION_QUERY_LINK_TTL_DAY = 8
+
+logger = logging.getLogger("dora.logs.core")
 
 
 class ContactPreference(models.TextChoices):
@@ -27,6 +35,11 @@ class RejectionReason(EnumModel):
         verbose_name_plural = "Motifs de refus"
 
 
+def _orientation_query_expiration_date():
+    # lu quelque part: les lambdas sont moyennement appréciées dans les migrations
+    return timezone.now() + relativedelta(days=ORIENTATION_QUERY_LINK_TTL_DAY)
+
+
 class Orientation(models.Model):
     id = models.BigAutoField(
         auto_created=True,
@@ -36,6 +49,11 @@ class Orientation(models.Model):
     )
 
     query_id = models.UUIDField(default=uuid.uuid4, editable=False, db_index=True)
+
+    query_expires_at = models.DateTimeField(
+        default=_orientation_query_expiration_date,
+        verbose_name="expiration du lien de la demande",
+    )
 
     # Infos bénéficiaires
     requirements = ArrayField(
@@ -140,12 +158,17 @@ class Orientation(models.Model):
         RejectionReason, verbose_name="Motifs de refus de l'orientation", blank=True
     )
 
-    creation_date = models.DateTimeField(auto_now_add=True, editable=False)
-    processing_date = models.DateTimeField(blank=True, null=True)
+    creation_date = models.DateTimeField(
+        auto_now_add=True, editable=False, verbose_name="date de création"
+    )
+    processing_date = models.DateTimeField(
+        blank=True, null=True, verbose_name="date de traitement"
+    )
     status = models.CharField(
         max_length=10,
         choices=OrientationStatus.choices,
         default=OrientationStatus.PENDING,
+        verbose_name="statut",
     )
     last_reminder_email_sent = models.DateTimeField(blank=True, null=True)
 
@@ -157,8 +180,15 @@ class Orientation(models.Model):
     def __str__(self):
         return f"Orientation #{self.id}"
 
+    def get_query_id_hash(self) -> str:
+        return hashlib.sha256(
+            f"{self.query_id}{self.query_expires_at}{settings.SECRET_KEY}".encode(
+                "utf8"
+            )
+        ).hexdigest()
+
     def get_magic_link(self):
-        return self.get_frontend_url()
+        return f"{settings.FRONTEND_URL}/orientations?token={self.query_id}&h={self.get_query_id_hash()}"
 
     def get_absolute_url(self):
         return self.get_frontend_url()
@@ -241,11 +271,30 @@ class Orientation(models.Model):
         else:
             return ""
 
+    def refresh_query_expiration_date(self):
+        # on ne régénère le lien que si il est expiré
+        if self.query_expired:
+            self.query_expires_at = _orientation_query_expiration_date()
+            self.save()
+            logger.info(
+                "orientation:refresh_link",
+                {
+                    "legal": True,
+                    "reason": "lien expiré",
+                    "queryId": str(self.query_id),
+                    "ttlInDays": ORIENTATION_QUERY_LINK_TTL_DAY,
+                },
+            )
+
+    @property
+    def query_expired(self) -> bool:
+        return timezone.now() > self.query_expires_at
+
 
 class ContactRecipient(models.TextChoices):
     BENEFICIARY = "BÉNÉFICIAIRE", "Bénéficiaire"
     PRESCRIBER = "PRESCRIPTEUR", "Prescripteur"
-    REFERENT = "RÉFÉRENT", "Réfeérent"
+    REFERENT = "RÉFÉRENT", "Référent"
 
 
 class SentContactEmail(models.Model):
