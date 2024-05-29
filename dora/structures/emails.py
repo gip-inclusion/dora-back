@@ -33,6 +33,7 @@ def send_invitation_email(member, inviter_name):
         "[DORA] Votre invitation sur DORA",
         member.user.email,
         body,
+        from_email=("La plateforme DORA", settings.NO_REPLY_EMAIL),
         tags=["invitation"],
     )
 
