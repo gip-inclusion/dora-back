@@ -23,7 +23,7 @@
     service {% include "partials/service-link.html" %}.
   </p>
 
-  <p>Pour toute question concernant le traitement de la demande, veuillez contacter le référent du service&nbsp;:</p>
+  <p><strong>Pour toute question concernant le traitement de la demande, veuillez contacter le référent du service&nbsp;:</strong></p>
   <ul>
     {% if  data.get_contact_name %}
       <li>{{ data.get_contact_name }}</li>
