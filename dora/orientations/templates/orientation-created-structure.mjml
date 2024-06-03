@@ -16,37 +16,13 @@
     {{ data.prescriber.get_full_name }} de la structure
     <a href="{{ data.prescriber_structure.get_frontend_url }}">{{ data.prescriber_structure.name }}
     </a>
-    vous a adressé un
-    bénéficiaire pour le
-    service {% include "partials/service-link.html" %}. Voici un
-    récapitulatif de la demande&nbsp;:
+    vous a adressé un bénéficiaire pour le service {% include "partials/service-link.html" %}.
   </p>
-
-  {% include "partials/block-beneficiary.html" %}
-
-  {% include "partials/block-situation.html" %}
-
-  {% include "partials/block-requirements.html" %}
-
-
-  {% include "partials/block-prescriber.html" %}
-  {% if data.prescriber.email !=  data.referent_email %}
-    Vous pouvez les solliciter pour obtenir de plus amples détails sur le bénéficiaire.
-  {% else %}
-    Vous pouvez le ou la solliciter pour obtenir de plus amples détails sur le bénéficiaire.
-  {% endif %}
-
-  {% include "partials/block-orientation.html" %}
-
-  {% include "partials/block-attachments.html" with show_links=True %}
-
 {% endblock %}
-
 
 {% block cta %}
   <mj-text>
-    N’hésitez pas à contacter le professionnel qui a réalisé la demande ou le bénéficiaire afin d’apporter une
-    réponse rapide à cette demande&nbsp;:
+    Afin de visualiser les détails de la demande et de contacter la personne orientée ou la personne prescriptrice, cliquez sur le bouton suivant&nbsp;:
   </mj-text>
   <mj-spacer height="24px"/>
   <mj-button mj-class="cta" href="{{ data.get_magic_link }}">

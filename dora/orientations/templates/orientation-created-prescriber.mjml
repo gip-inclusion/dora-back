@@ -1,4 +1,5 @@
 {% extends "orientation-email-base.mjml" %}
+{% load orientation_extras %}
 
 {% block preview %}
   Voici un récapitulatif de la demande que vous avez envoyé à {{ data.get_structure_name }}
@@ -15,24 +16,21 @@
   <p>
     Votre demande d’orientation pour le service {% include "partials/service-link.html" %} porté par la structure
     {% include "partials/structure-link.html" %}
-    à été transmis&nbsp;!
-    Voici un récapitulatif de la demande&nbsp;:
+    à été transmise&nbsp;!
   </p>
 
-  {% include "partials/block-beneficiary.html" %}
+  <p>Votre bénéficiaire, {{  data.get_beneficiary_full_name }}, recevra un récapitulatif de la demande à l’adresse e-mail renseignée.</p>
 
-  {% include "partials/block-situation.html" %}
-
-  {% include "partials/block-requirements.html" %}
-
-  {% include "partials/block-prescriber.html" %}
-  On pourra vous solliciter pour offrir plus de détails sur le ou la bénéficiaire.
-
-  {% include "partials/block-orientation.html" %}
-
-  {% include "partials/block-attachments.html" %}
-
-  {% include "partials/block-service-contact.html" %}
+  <p><strong>Pour toute question concernant le traitement de la demande, veuillez contacter le référent du service&nbsp;:</strong></p>
+  <ul>
+    {% if  data.get_contact_name %}
+      <li>{{ data.get_contact_name }}</li>
+    {% endif %}
+    <li>
+      {% if data.get_contact_email %}{{ data.get_contact_email }}&nbsp;– {% endif %}
+      {% if data.get_contact_phone %}{{ data.get_contact_phone|format_phone }}{% endif %}
+    </li>
+  </ul>
 
   <p>
     <strong>La structure {{ data.get_structure_name }} va traiter votre demande et reviendra vers vous avec une

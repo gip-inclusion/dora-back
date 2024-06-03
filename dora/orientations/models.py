@@ -261,7 +261,7 @@ class Orientation(models.Model):
         )
 
     def get_structure_frontend_url(self):
-        return self.service.structure.get_frontend_url if self.service else ""
+        return self.service.structure.get_frontend_url() if self.service else ""
 
     def get_service_frontend_url(self):
         if self.service:
