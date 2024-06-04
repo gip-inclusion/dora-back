@@ -66,6 +66,7 @@ def send_invitation_for_pe_members_email(member, inviter_name):
         f"Rejoignez la structure «{structure.name}» sur DORA",
         member.user.email,
         body,
+        from_email=("La plateforme DORA", settings.NO_REPLY_EMAIL),
         tags=["invitation"],
     )
 
@@ -85,6 +86,7 @@ def send_invitation_accepted_notification(member, admin_user):
         "[DORA] Invitation acceptée",
         admin_user.email,
         body,
+        from_email=("La plateforme DORA", settings.NO_REPLY_EMAIL),
         tags=["invitation-accepted"],
     )
 
@@ -105,6 +107,7 @@ def send_access_requested_notification(member, admin_user):
         "[DORA] Demande d’accès à votre structure",
         admin_user.email,
         body,
+        from_email=("La plateforme DORA", settings.NO_REPLY_EMAIL),
         tags=["access-request"],
     )
 
@@ -121,6 +124,7 @@ def send_access_granted_notification(member):
         "[DORA] Accès accordé",
         member.user.email,
         body,
+        from_email=("La plateforme DORA", settings.NO_REPLY_EMAIL),
         tags=["access-granted"],
     )
 
@@ -136,6 +140,7 @@ def send_access_rejected_notification(member):
         "[DORA] Accès refusé",
         member.user.email,
         body,
+        from_email=("La plateforme DORA", settings.NO_REPLY_EMAIL),
         tags=["access-rejected"],
     )
 
@@ -155,6 +160,7 @@ def send_branch_created_notification(structure, branch, admin_user):
         "[DORA] Votre antenne a été créée",
         admin_user.email,
         body,
+        from_email=("La plateforme DORA", settings.NO_REPLY_EMAIL),
         tags=["branch-created"],
     )
 
