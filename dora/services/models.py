@@ -7,12 +7,14 @@ from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.core.cache import cache
 from django.db.models import CharField, Q
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 
 from dora.admin_express.models import EPCI, AdminDivisionType, City, Department, Region
-from dora.admin_express.utils import get_clean_city_name
+from dora.admin_express.utils import arrdt_to_main_insee_code, get_clean_city_name
+from dora.core.constants import WGS84
 from dora.core.models import EnumModel, LogItem, ModerationMixin
 from dora.structures.models import Structure
 
@@ -342,7 +344,7 @@ class Service(ModerationMixin, models.Model):
     city = models.CharField(verbose_name="Ville", max_length=255, blank=True)
     #
     geom = models.PointField(
-        srid=4326, geography=True, spatial_index=True, null=True, blank=True
+        srid=WGS84, geography=True, spatial_index=True, null=True, blank=True
     )
 
     diffusion_zone_type = models.CharField(
@@ -689,9 +691,13 @@ class SavedSearch(models.Model):
         # Récupération des résultats de la recherche
         from .search import search_services
 
+        city_code = arrdt_to_main_insee_code(self.city_code)
+        city = get_object_or_404(City, pk=city_code)
+
         results = search_services(
             None,
             self.city_code,
+            city,
             [category.value] if category and not subcategories else None,
             subcategories,
             kinds,

@@ -4,6 +4,7 @@ from django.contrib.gis.geos import Point
 from model_bakery import baker
 
 from dora.admin_express.models import City, Department
+from dora.core.constants import WGS84
 from dora.core.test_utils import make_service, make_structure
 from dora.services.models import (
     BeneficiaryAccessMode,
@@ -195,7 +196,7 @@ def test_service_serialization_exemple(authenticated_user, api_client, settings)
         is_contact_info_public=True,
         publication_date="2023-02-04T12:34:44Z",
         modification_date="2023-03-11T16:54:10Z",
-        geom=Point(3.76855, 23.88654, srid=4326),
+        geom=Point(3.76855, 23.88654, srid=WGS84),
         recurrence="Tu 09:00-12:00;We 14:00-17:00",
         coach_orientation_modes_other="Mêmes modalités que pour les bénéficiaires",
         beneficiaries_access_modes_other="Contacter conseiller(e) Pôle Emploi",
@@ -309,7 +310,7 @@ def test_service_serialization_exemple_need_di_user(api_client):
         is_contact_info_public=True,
         publication_date="2023-02-04T12:34:44Z",
         modification_date="2023-03-11T16:54:10Z",
-        geom=Point(3.76855, 23.88654, srid=4326),
+        geom=Point(3.76855, 23.88654, srid=WGS84),
         recurrence="Tu 09:00-12:00;We 14:00-17:00",
     )
 

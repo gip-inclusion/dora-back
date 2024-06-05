@@ -9,13 +9,12 @@ from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
 from django.db.models import IntegerField, Q, Value
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 import dora.services.models as models
 from dora import data_inclusion
 from dora.admin_express.models import City
-from dora.admin_express.utils import arrdt_to_main_insee_code
+from dora.core.constants import WGS84
 
 from .serializers import SearchResultSerializer
 from .utils import filter_services_by_city_code
@@ -210,6 +209,7 @@ def _get_di_results(
 def _get_dora_results(
     request,
     city_code: str,
+    city: City,
     categories: Optional[list[str]] = None,
     subcategories: Optional[list[str]] = None,
     kinds: Optional[list[str]] = None,
@@ -270,9 +270,6 @@ def _get_dora_results(
 
     geofiltered_services = filter_services_by_city_code(services, city_code)
 
-    city_code = arrdt_to_main_insee_code(city_code)
-    city = get_object_or_404(City, pk=city_code)
-
     # Exclude suspended services
     services_to_display = geofiltered_services.filter(
         Q(suspension_date=None) | Q(suspension_date__gte=timezone.now())
@@ -280,7 +277,7 @@ def _get_dora_results(
 
     results = _filter_and_annotate_dora_services(
         services_to_display,
-        city.geom if not lat or not lon else Point(float(lon), float(lat), srid=4326),
+        city.geom if not lat or not lon else Point(lon, lat, srid=WGS84),
         with_remote,
         with_onsite,
     )
@@ -291,6 +288,7 @@ def _get_dora_results(
 def search_services(
     request,
     city_code: str,
+    city: City,
     categories: Optional[list[str]] = None,
     subcategories: Optional[list[str]] = None,
     kinds: Optional[list[str]] = None,
@@ -331,6 +329,7 @@ def search_services(
         categories=categories,
         subcategories=subcategories,
         city_code=city_code,
+        city=city,
         kinds=kinds,
         fees=fees,
         location_kinds=location_kinds,

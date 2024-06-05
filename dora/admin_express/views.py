@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework_gis.fields import GeometrySerializerMethodField
 
 from dora.admin_express.utils import normalize_string_for_search
+from dora.core.constants import WGS84
 from dora.core.utils import TRUTHY_VALUES
 
 from .models import EPCI, AdminDivisionType, City, Department, Region
@@ -88,7 +89,7 @@ def reverse_search(request):
     lon = request.GET.get("lon")
     if not type or not lat or not lon:
         raise exceptions.ValidationError("type, lat and lon are required")
-    point = Point(float(lon), float(lat), srid=4326)
+    point = Point(float(lon), float(lat), srid=WGS84)
 
     Model = None
     if type == AdminDivisionType.CITY:

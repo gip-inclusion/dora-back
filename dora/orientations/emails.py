@@ -26,8 +26,8 @@ def beneficiaries_has_alternate_contact_methods(orientation):
     )
 
 
-def send_orientation_created_emails(orientation):
-    context = {
+def _orientation_created_ctx(orientation) -> dict:
+    return {
         "data": orientation,
         "ContactPreference": ContactPreference,
         "support_email": settings.SUPPORT_EMAIL,
@@ -40,7 +40,18 @@ def send_orientation_created_emails(orientation):
             for a in orientation.beneficiary_attachments
         ],
     }
-    # Structure porteuse
+
+
+# e-mails envoyés lors de la création de l'orientation :
+# pour les liens expirés pour la structure,
+# il y a un besoin de renvoyer un e-mail du groupe séparément, d'où la séparation
+# ça permettra de tester unitairement les e-mails par ailleurs...
+
+
+def send_orientation_created_to_structure(orientation, context=None):
+    if not context:
+        context = _orientation_created_ctx(orientation)
+
     send_mail(
         f"{'[Envoyée - Structure porteuse] ' if debug else ''}Nouvelle demande d’orientation reçue",
         orientation.get_contact_email(),
@@ -52,7 +63,12 @@ def send_orientation_created_emails(orientation):
         tags=["orientation"],
         reply_to=[orientation.prescriber.email],
     )
-    # Prescripteur
+
+
+def send_orientation_created_to_prescriber(orientation, context=None):
+    if not context:
+        context = _orientation_created_ctx(orientation)
+
     send_mail(
         f"{'[Envoyée - Prescripteur] ' if debug else ''}Votre demande a bien été transmise !",
         orientation.prescriber.email,
@@ -60,7 +76,12 @@ def send_orientation_created_emails(orientation):
         tags=["orientation"],
         reply_to=[orientation.get_contact_email()],
     )
-    # Référent
+
+
+def send_orientation_created_to_referent(orientation, context=None):
+    if not context:
+        context = _orientation_created_ctx(orientation)
+
     if (
         orientation.referent_email
         and orientation.referent_email != orientation.prescriber.email
@@ -72,7 +93,12 @@ def send_orientation_created_emails(orientation):
             tags=["orientation"],
             reply_to=[orientation.prescriber.email],
         )
-    # Bénéficiaire
+
+
+def send_orientation_created_to_beneficiary(orientation, context=None):
+    if not context:
+        context = _orientation_created_ctx(orientation)
+
     if orientation.beneficiary_email:
         send_mail(
             f"{'[Envoyée - Bénéficiaire] ' if debug else ''}Une orientation a été effectuée en votre nom",
@@ -87,6 +113,22 @@ def send_orientation_created_emails(orientation):
             tags=["orientation"],
             reply_to=[orientation.prescriber.email],
         )
+
+
+def send_orientation_created_emails(orientation, cc=None):
+    context = _orientation_created_ctx(orientation)
+
+    # Structure porteuse
+    send_orientation_created_to_structure(orientation, context)
+
+    # Prescripteur
+    send_orientation_created_to_prescriber(orientation, context)
+
+    # Référent
+    send_orientation_created_to_referent(orientation, context)
+
+    # Bénéficiaire
+    send_orientation_created_to_beneficiary(orientation, context)
 
 
 def send_orientation_accepted_emails(

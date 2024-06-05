@@ -10,6 +10,7 @@ from furl import furl
 
 from dora.admin_express.models import AdminDivisionType, City
 from dora.core import utils
+from dora.core.constants import WGS84
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
 from dora.core.utils import code_insee_to_code_dept
@@ -294,7 +295,7 @@ class Command(BaseCommand):
                 lat = s["latitude"]
 
                 if lon and lat:
-                    service.geom = Point(lon, lat, srid=4326)
+                    service.geom = Point(lon, lat, srid=WGS84)
 
                 service.status = ServiceStatus.PUBLISHED
                 service.publication_date = timezone.now()

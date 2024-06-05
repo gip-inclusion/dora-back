@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from dora.admin_express.models import EPCI, AdminDivisionType, City, Department, Region
 from dora.admin_express.utils import arrdt_to_main_insee_code
+from dora.core.constants import WGS84
 from dora.core.models import ModerationStatus
 from dora.services.enums import ServiceStatus
 
@@ -68,7 +69,7 @@ def instantiate_model(model, structure, user):
     service.city_code = structure.city_code
     service.city = structure.city
     if structure.longitude and structure.latitude:
-        service.geom = Point(structure.longitude, structure.latitude, srid=4326)
+        service.geom = Point(structure.longitude, structure.latitude, srid=WGS84)
     else:
         service.geom = None
 
