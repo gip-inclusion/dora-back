@@ -1052,9 +1052,10 @@ class DataInclusionSearchTestCase(APITestCase):
         )
         request = self.factory.get("/search/", {"city": self.city1.code})
         response = self.search(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["id"], service_data["id"])
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["id"] == service_data["id"]
 
     def test_dont_find_services_in_other_city(self):
         self.make_di_service(
@@ -1063,8 +1064,11 @@ class DataInclusionSearchTestCase(APITestCase):
         )
         request = self.factory.get("/search/", {"city": self.city2.code})
         response = self.search(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
+
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 0
+        assert ["city_bounds", "services"] == list(response.data.keys())
 
     def test_filter_by_fee(self):
         service_data = self.make_di_service(
@@ -1080,9 +1084,9 @@ class DataInclusionSearchTestCase(APITestCase):
             },
         )
         response = self.search(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["id"], service_data["id"])
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert response.data["services"][0]["id"] == service_data["id"]
 
     def test_filter_by_kind(self):
         service_data = self.make_di_service(
@@ -1100,9 +1104,10 @@ class DataInclusionSearchTestCase(APITestCase):
             },
         )
         response = self.search(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["id"], service_data["id"])
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["id"] == service_data["id"]
 
     def test_filter_by_cat(self):
         service_data_1 = self.make_di_service(
@@ -1123,20 +1128,29 @@ class DataInclusionSearchTestCase(APITestCase):
             },
         )
         response = self.search(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 2)
-        assert response.data[0]["id"] in [service_data_1["id"], service_data_2["id"]]
-        assert response.data[1]["id"] in [service_data_1["id"], service_data_2["id"]]
-        assert response.data[0]["id"] != response.data[1]["id"]
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 2
+        assert response.data["services"][0]["id"] in [
+            service_data_1["id"],
+            service_data_2["id"],
+        ]
+        assert response.data["services"][1]["id"] in [
+            service_data_1["id"],
+            service_data_2["id"],
+        ]
+        assert response.data["services"][0]["id"] != response.data["services"][1]["id"]
 
     def test_simple_search_with_data_inclusion(self):
         service_data = self.make_di_service(code_insee=self.city1.code)
         request = self.factory.get("/search/", {"city": self.city1.code})
         response = self.search(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["distance"], 0)
-        self.assertEqual(response.data[0]["id"], service_data["id"])
+
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["distance"] == 0
+        assert response.data["services"][0]["id"] == service_data["id"]
 
     def test_simple_search_with_data_inclusion_and_dora(self):
         service_dora = make_service(
@@ -1147,11 +1161,16 @@ class DataInclusionSearchTestCase(APITestCase):
         service_data = self.make_di_service(code_insee=self.city1.code)
         request = self.factory.get("/search/", {"city": self.city1.code})
         response = self.search(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 2)
         d = response.data
-        assert service_dora.slug in [d[0]["slug"], d[1]["slug"]]
-        assert service_data["id"] in [d[0].get("id"), d[1].get("id")]
+
+        assert response.status_code == 200
+        assert len(d) == 2
+        assert len(d["services"]) == 2
+        assert service_dora.slug in [d["services"][0]["slug"], d["services"][1]["slug"]]
+        assert service_data["id"] in [
+            d["services"][0].get("id"),
+            d["services"][1].get("id"),
+        ]
 
     def test_data_inclusion_connection_error(self):
         service_dora = make_service(
@@ -1167,9 +1186,12 @@ class DataInclusionSearchTestCase(APITestCase):
         di_client = FaultyDataInclusionClient()
         request = self.factory.get("/search/", {"city": self.city1.code})
         response = search(request, di_client=di_client)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["slug"], service_dora.slug)
+        assert response.status_code == 200
+        # ajout des "city bounds" pour la carte
+        assert len(response.data) == 2
+        assert ["city_bounds", "services"] == list(response.data.keys())
+        service, *_ = response.data["services"]
+        assert service["slug"] == service_dora.slug
 
     # TODO: FIXME
     # def test_on_site_first(self):
@@ -1194,9 +1216,11 @@ class DataInclusionSearchTestCase(APITestCase):
         self.make_di_service(source="bar", zone_diffusion_type="pays")
         request = self.factory.get("/search/", {"city": self.city1.code})
         response = self.search(request)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["id"], service_data["id"])
+
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["id"] == service_data["id"]
 
     def test_service_di_contains_service_fields(self):
         service_data = self.make_di_service()
@@ -1721,17 +1745,19 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_type=AdminDivisionType.COUNTRY,
         )
         response = self.client.get(f"/search/?city={self.city1.code}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["slug"], service.slug)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["slug"] == service.slug
 
     def test_cant_see_draft_services(self):
         make_service(
             status=ServiceStatus.DRAFT, diffusion_zone_type=AdminDivisionType.COUNTRY
         )
         response = self.client.get(f"/search/?city={self.city1.code}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 0
 
     def test_cant_see_suggested_services(self):
         make_service(
@@ -1739,8 +1765,9 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_type=AdminDivisionType.COUNTRY,
         )
         response = self.client.get(f"/search/?city={self.city1.code}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 0
 
     def test_can_see_service_with_future_suspension_date(self):
         service = make_service(
@@ -1749,9 +1776,10 @@ class ServiceSearchTestCase(APITestCase):
             suspension_date=timezone.now() + timedelta(days=1),
         )
         response = self.client.get(f"/search/?city={self.city1.code}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["slug"], service.slug)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["slug"] == service.slug
 
     def test_cannot_see_service_with_past_suspension_date(self):
         make_service(
@@ -1760,8 +1788,9 @@ class ServiceSearchTestCase(APITestCase):
             suspension_date=timezone.now() - timedelta(days=1),
         )
         response = self.client.get(f"/search/?city={self.city1.code}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 0
 
     def test_find_services_in_city(self):
         service = make_service(
@@ -1770,9 +1799,10 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_details=self.city1.code,
         )
         response = self.client.get(f"/search/?city={self.city1.code}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["slug"], service.slug)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["slug"] == service.slug
 
     def test_find_services_in_epci(self):
         service = make_service(
@@ -1781,9 +1811,10 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_details=self.epci11.code,
         )
         response = self.client.get(f"/search/?city={self.city1.code}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["slug"], service.slug)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["slug"] == service.slug
 
     def test_find_services_in_dept(self):
         service = make_service(
@@ -1792,9 +1823,10 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_details=self.dept.code,
         )
         response = self.client.get(f"/search/?city={self.city1.code}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["slug"], service.slug)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["slug"] == service.slug
 
     def test_find_services_in_region(self):
         service = make_service(
@@ -1803,9 +1835,10 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_details=self.region.code,
         )
         response = self.client.get(f"/search/?city={self.city1.code}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["slug"], service.slug)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["slug"] == service.slug
 
     def test_dont_find_services_in_other_city(self):
         make_service(
@@ -1814,8 +1847,8 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_details=self.city1.code,
         )
         response = self.client.get(f"/search/?city={self.city2.code}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
+        assert response.status_code == 200
+        assert len(response.data) == 2
 
     def test_dont_find_services_in_other_epci(self):
         make_service(
@@ -1824,8 +1857,9 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_details=self.epci11.code,
         )
         response = self.client.get(f"/search/?city={self.city2.code}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 0
 
     def test_dont_find_services_in_other_department(self):
         make_service(
@@ -1834,8 +1868,9 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_details=self.dept.code,
         )
         response = self.client.get(f"/search/?city={self.city2.code}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 0
 
     def test_dont_find_services_in_other_region(self):
         make_service(
@@ -1844,8 +1879,9 @@ class ServiceSearchTestCase(APITestCase):
             diffusion_zone_details=self.region.code,
         )
         response = self.client.get(f"/search/?city={self.city2.code}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 0
 
     def test_filter_by_fee_free(self):
         service1 = make_service(
@@ -1866,9 +1902,10 @@ class ServiceSearchTestCase(APITestCase):
             ).first(),
         )
         response = self.client.get(f"/search/?city={self.city1.code}&fees=gratuit")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["slug"], service1.slug)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["slug"] == service1.slug
 
     def test_filter_by_fee_payant(self):
         make_service(
@@ -1889,9 +1926,10 @@ class ServiceSearchTestCase(APITestCase):
             ).first(),
         )
         response = self.client.get(f"/search/?city={self.city1.code}&fees=payant")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["slug"], service2.slug)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["slug"] == service2.slug
 
     def test_filter_by_fee_gratuit_sous_condition(self):
         make_service(
@@ -1914,9 +1952,10 @@ class ServiceSearchTestCase(APITestCase):
         response = self.client.get(
             f"/search/?city={self.city1.code}&fees=gratuit-sous-conditions"
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["slug"], service3.slug)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["slug"] == service3.slug
 
     def test_filter_without_fee(self):
         make_service(
@@ -1937,8 +1976,9 @@ class ServiceSearchTestCase(APITestCase):
             ).first(),
         )
         response = self.client.get(f"/search/?city={self.city1.code}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 3)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 3
 
     def test_filter_kinds_one(self):
         allowed_kinds = ServiceKind.objects.all()
@@ -1955,9 +1995,10 @@ class ServiceSearchTestCase(APITestCase):
         response = self.client.get(
             f"/search/?city={self.city1.code}&kinds={allowed_kinds[0].value}"
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["slug"], service1.slug)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["slug"] == service1.slug
 
     def test_filter_kinds_several(self):
         allowed_kinds = ServiceKind.objects.all()
@@ -1979,11 +2020,13 @@ class ServiceSearchTestCase(APITestCase):
         response = self.client.get(
             f"/search/?city={self.city1.code}&kinds={allowed_kinds[1].value},{allowed_kinds[2].value}"
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 2)
-        response_slugs = [r["slug"] for r in response.data]
-        self.assertIn(service1.slug, response_slugs)
-        self.assertIn(service2.slug, response_slugs)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 2
+
+        response_slugs = [r["slug"] for r in response.data["services"]]
+        assert service1.slug in response_slugs
+        assert service2.slug in response_slugs
 
     def test_filter_kinds_nomatch(self):
         allowed_kinds = ServiceKind.objects.all()
@@ -2000,8 +2043,9 @@ class ServiceSearchTestCase(APITestCase):
         response = self.client.get(
             f"/search/?city={self.city1.code}&kinds={allowed_kinds[3].value}"
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 0
 
     def test_find_service_with_requested_cat(self):
         service = make_service(
@@ -2010,9 +2054,10 @@ class ServiceSearchTestCase(APITestCase):
             categories="cat1",
         )
         response = self.client.get(f"/search/?city={self.city1.code}&cats=cat1")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["slug"], service.slug)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["slug"] == service.slug
 
     def test_find_service_with_requested_cats(self):
         service_1 = make_service(
@@ -2026,10 +2071,12 @@ class ServiceSearchTestCase(APITestCase):
             categories="cat2",
         )
         response = self.client.get(f"/search/?city={self.city1.code}&cats=cat1,cat2")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 2)
-        response_slugs = sorted([s["slug"] for s in response.data])
-        self.assertEqual(response_slugs, sorted([service_1.slug, service_2.slug]))
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 2
+
+        response_slugs = sorted([s["slug"] for s in response.data["services"]])
+        assert response_slugs == sorted([service_1.slug, service_2.slug])
 
     def test_find_service_with_requested_cats_exclude_one(self):
         service_1 = make_service(
@@ -2048,10 +2095,12 @@ class ServiceSearchTestCase(APITestCase):
             categories="cat3",
         )
         response = self.client.get(f"/search/?city={self.city1.code}&cats=cat1,cat2")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 2)
-        response_slugs = sorted([s["slug"] for s in response.data])
-        self.assertEqual(response_slugs, sorted([service_1.slug, service_2.slug]))
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 2
+
+        response_slugs = sorted([s["slug"] for s in response.data["services"]])
+        assert response_slugs == sorted([service_1.slug, service_2.slug])
 
     def test_dont_find_service_without_requested_cat(self):
         make_service(
@@ -2061,8 +2110,9 @@ class ServiceSearchTestCase(APITestCase):
         )
 
         response = self.client.get(f"/search/?city={self.city1.code}&cats=cat2")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 0
 
     def test_find_service_with_requested_subcat(self):
         service = make_service(
@@ -2071,9 +2121,10 @@ class ServiceSearchTestCase(APITestCase):
             subcategories="cat1--sub1",
         )
         response = self.client.get(f"/search/?city={self.city1.code}&subs=cat1--sub1")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["slug"], service.slug)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["slug"] == service.slug
 
     def test_find_service_with_requested_subcats(self):
         service_1 = make_service(
@@ -2089,10 +2140,12 @@ class ServiceSearchTestCase(APITestCase):
         response = self.client.get(
             f"/search/?city={self.city1.code}&subs=cat1--sub1,cat1--sub2"
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 2)
-        response_slugs = sorted([s["slug"] for s in response.data])
-        self.assertEqual(response_slugs, sorted([service_1.slug, service_2.slug]))
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 2
+
+        response_slugs = sorted([s["slug"] for s in response.data["services"]])
+        assert response_slugs == sorted([service_1.slug, service_2.slug])
 
     def test_find_service_with_requested_subcats_different_cats(self):
         service_1 = make_service(
@@ -2118,11 +2171,14 @@ class ServiceSearchTestCase(APITestCase):
         response = self.client.get(
             f"/search/?city={self.city1.code}&subs=cat1--sub1,cat1--sub2,cat2--sub1"
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 3)
-        response_slugs = sorted([s["slug"] for s in response.data])
-        self.assertEqual(
-            response_slugs, sorted([service_1.slug, service_2.slug, service_3.slug])
+
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 3
+
+        response_slugs = sorted([s["slug"] for s in response.data["services"]])
+        assert response_slugs == sorted(
+            [service_1.slug, service_2.slug, service_3.slug]
         )
 
     def test_find_service_with_requested_subcats_exclude_one(self):
@@ -2144,10 +2200,12 @@ class ServiceSearchTestCase(APITestCase):
         response = self.client.get(
             f"/search/?city={self.city1.code}&subs=cat1--sub1,cat1--sub2"
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 2)
-        response_slugs = sorted([s["slug"] for s in response.data])
-        self.assertEqual(response_slugs, sorted([service_1.slug, service_2.slug]))
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 2
+
+        response_slugs = sorted([s["slug"] for s in response.data["services"]])
+        assert response_slugs == sorted([service_1.slug, service_2.slug])
 
     def test_dont_find_service_without_requested_subcat(self):
         make_service(
@@ -2157,8 +2215,9 @@ class ServiceSearchTestCase(APITestCase):
         )
 
         response = self.client.get(f"/search/?city={self.city1.code}&subs=cat1--sub2")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 0
 
     def test_find_service_with_no_subcat_when_looking_for_the__other__subcat(self):
         # On veut remonter les services sans sous-catégorie quand on interroge la
@@ -2169,9 +2228,10 @@ class ServiceSearchTestCase(APITestCase):
             categories="cat1",
         )
         response = self.client.get(f"/search/?city={self.city1.code}&subs=cat1--autre")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["slug"], service.slug)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["slug"] == service.slug
 
     def test_find_service_with_no_subcat_when_looking_for_the__other__subcat_2(
         self,
@@ -2185,9 +2245,10 @@ class ServiceSearchTestCase(APITestCase):
             subcategories="cat2--sub1",
         )
         response = self.client.get(f"/search/?city={self.city1.code}&subs=cat1--autre")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["slug"], service.slug)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
+        assert response.data["services"][0]["slug"] == service.slug
 
     def test_dont_find_service_with_no_subcat_when_looking_for_any_subcat(self):
         make_service(
@@ -2196,8 +2257,9 @@ class ServiceSearchTestCase(APITestCase):
             categories="cat1",
         )
         response = self.client.get(f"/search/?city={self.city1.code}&subs=cat1--sub1")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 0
 
     def test_find_cats_and_subcats_are_independant(self):
         make_service(
@@ -2215,8 +2277,9 @@ class ServiceSearchTestCase(APITestCase):
         response = self.client.get(
             f"/search/?city={self.city1.code}&cats=cat1&subs=cat2--sub1"
         )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 2)
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 2
 
 
 class ServiceSearchOrderingTestCase(APITestCase):
@@ -2281,9 +2344,9 @@ class ServiceSearchOrderingTestCase(APITestCase):
         service3.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
 
         response = self.client.get("/search/?city=31555")
-        assert response.data[0]["slug"] in [service1.slug, service3.slug]
-        assert response.data[1]["slug"] in [service1.slug, service3.slug]
-        assert response.data[2]["slug"] == service2.slug
+        assert response.data["services"][0]["slug"] in [service1.slug, service3.slug]
+        assert response.data["services"][1]["slug"] in [service1.slug, service3.slug]
+        assert response.data["services"][2]["slug"] == service2.slug
 
     def test_on_site_nearest_first(self):
         self.assertEqual(Service.objects.all().count(), 0)
@@ -2316,9 +2379,9 @@ class ServiceSearchOrderingTestCase(APITestCase):
 
         response = self.client.get("/search/?city=31555")
 
-        assert response.data[0]["slug"] in [service1.slug, service3.slug]
-        assert response.data[1]["slug"] in [service1.slug, service3.slug]
-        assert response.data[2]["slug"] == service2.slug
+        assert response.data["services"][0]["slug"] in [service1.slug, service3.slug]
+        assert response.data["services"][1]["slug"] in [service1.slug, service3.slug]
+        assert response.data["services"][2]["slug"] == service2.slug
 
     def test_distance_is_correct(self):
         self.assertEqual(Service.objects.all().count(), 0)
@@ -2339,7 +2402,7 @@ class ServiceSearchOrderingTestCase(APITestCase):
         service2.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
 
         response = self.client.get("/search/?city=31555")
-        self.assertTrue(40 < response.data[1]["distance"] < 50)
+        self.assertTrue(40 < response.data["services"][1]["distance"] < 50)
 
     def test_distance_no_more_than_100km(self):
         self.assertEqual(Service.objects.all().count(), 0)
@@ -2360,7 +2423,7 @@ class ServiceSearchOrderingTestCase(APITestCase):
         service2.location_kinds.set([LocationKind.objects.get(value="en-presentiel")])
 
         response = self.client.get("/search/?city=31555")
-        self.assertEqual(len(response.data), 1)
+        assert len(response.data) == 2
 
     def test_displayed_if_remote_and_onsite_more_than_100km(self):
         self.assertEqual(Service.objects.all().count(), 0)
@@ -2378,7 +2441,7 @@ class ServiceSearchOrderingTestCase(APITestCase):
         )
 
         response = self.client.get("/search/?city=31555")
-        self.assertEqual(len(response.data), 1)
+        assert len(response.data) == 2
 
     def test_displayed_only_once_if_remote_and_onsite_less_than_100km(self):
         self.assertEqual(Service.objects.all().count(), 0)
@@ -2396,7 +2459,7 @@ class ServiceSearchOrderingTestCase(APITestCase):
         )
 
         response = self.client.get("/search/?city=31555")
-        self.assertEqual(len(response.data), 1)
+        assert len(response.data) == 2
 
     def test_intercalate_remote(self):
         self.assertEqual(Service.objects.all().count(), 0)
@@ -2434,32 +2497,32 @@ class ServiceSearchOrderingTestCase(APITestCase):
         response = self.client.get("/search/?city=31555")
         # on s'attend à ce que les services soient classés par date de modification décroissante
         # avec un service à distance sur 3 intercalé
-        assert response.data[0]["slug"] in [
+        assert response.data["services"][0]["slug"] in [
             service1.slug,
             service2.slug,
             service3.slug,
             service4.slug,
         ]
-        assert response.data[1]["slug"] in [
+        assert response.data["services"][1]["slug"] in [
             service1.slug,
             service2.slug,
             service3.slug,
             service4.slug,
         ]
-        assert response.data[2]["slug"] in [service5.slug, service6.slug]
-        assert response.data[3]["slug"] in [
+        assert response.data["services"][2]["slug"] in [service5.slug, service6.slug]
+        assert response.data["services"][3]["slug"] in [
             service1.slug,
             service2.slug,
             service3.slug,
             service4.slug,
         ]
-        assert response.data[4]["slug"] in [
+        assert response.data["services"][4]["slug"] in [
             service1.slug,
             service2.slug,
             service3.slug,
             service4.slug,
         ]
-        assert response.data[5]["slug"] in [service5.slug, service6.slug]
+        assert response.data["services"][5]["slug"] in [service5.slug, service6.slug]
 
 
 class ServiceSyncTestCase(APITestCase):
@@ -2691,8 +2754,9 @@ class ServiceArchiveTestCase(APITestCase):
             diffusion_zone_type=AdminDivisionType.COUNTRY,
         )
         response = self.client.get(f"/search/?city={city.code}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
+
+        assert response.status_code == 200
+        assert len(response.data) == 2
 
     def test_archives_dont_appear_in_search_results_auth(self):
         city = baker.make("City", code="12345")
@@ -2702,8 +2766,10 @@ class ServiceArchiveTestCase(APITestCase):
         )
         self.client.force_authenticate(user=self.me)
         response = self.client.get(f"/search/?city={city.code}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 0)
+
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert len(response.data["services"]) == 0
 
 
 class ServiceStatusChangeTestCase(APITestCase):
