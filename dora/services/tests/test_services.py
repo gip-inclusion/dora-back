@@ -1849,6 +1849,7 @@ class ServiceSearchTestCase(APITestCase):
         response = self.client.get(f"/search/?city={self.city2.code}")
         assert response.status_code == 200
         assert len(response.data) == 2
+        assert len(response.data["services"]) == 0
 
     def test_dont_find_services_in_other_epci(self):
         make_service(
@@ -2424,6 +2425,7 @@ class ServiceSearchOrderingTestCase(APITestCase):
 
         response = self.client.get("/search/?city=31555")
         assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
 
     def test_displayed_if_remote_and_onsite_more_than_100km(self):
         self.assertEqual(Service.objects.all().count(), 0)
@@ -2442,6 +2444,7 @@ class ServiceSearchOrderingTestCase(APITestCase):
 
         response = self.client.get("/search/?city=31555")
         assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
 
     def test_displayed_only_once_if_remote_and_onsite_less_than_100km(self):
         self.assertEqual(Service.objects.all().count(), 0)
@@ -2460,6 +2463,7 @@ class ServiceSearchOrderingTestCase(APITestCase):
 
         response = self.client.get("/search/?city=31555")
         assert len(response.data) == 2
+        assert len(response.data["services"]) == 1
 
     def test_intercalate_remote(self):
         self.assertEqual(Service.objects.all().count(), 0)
@@ -2757,6 +2761,7 @@ class ServiceArchiveTestCase(APITestCase):
 
         assert response.status_code == 200
         assert len(response.data) == 2
+        assert len(response.data["services"]) == 0
 
     def test_archives_dont_appear_in_search_results_auth(self):
         city = baker.make("City", code="12345")
