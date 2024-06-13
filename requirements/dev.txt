@@ -4,11 +4,11 @@ django-environ==0.11.2
 django-querycount==0.8.3
 django-silk==5.1.0
 djhtml==3.0.6
-freezegun==1.5.0
+freezegun==1.5.1
 ggshield==1.27.0
-pre-commit==3.7.0
-ruff==0.4.3
-pytest==8.2.0
+pre-commit==3.7.1
+ruff==0.4.8
+pytest==8.2.2
 pytest-django==4.8.0
-sqlfluff==3.0.6
+sqlfluff==3.0.7
 requests-mock==1.12.1
