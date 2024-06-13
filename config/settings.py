@@ -107,6 +107,9 @@ INSTALLED_APPS = [
     "dora.logs",
 ]
 
+if ENVIRONMENT == "local":
+    INSTALLED_APPS += ["django_extensions"]
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
