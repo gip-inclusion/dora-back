@@ -1,0 +1,48 @@
+import os
+
+import dj_database_url
+
+from . import BASE_DIR
+
+# Contrairement aux environements de production et staging,
+# les environnement de développement et de test se basent sur les fichiers
+# de configuration du répertoire 'envs'.
+if os.path.isdir(BASE_DIR / "envs"):
+    import environ
+
+    environ.Env.read_env(os.path.join(BASE_DIR / "envs", "dev.env"))
+    environ.Env.read_env(os.path.join(BASE_DIR / "envs", "secrets.env"))
+else:
+    # Cette portion sera modifiée pour la C.I
+    raise Exception("Impossible de charger la configuration des environnements")
+
+from .base import *  # noqa F403
+
+DEBUG = True
+
+# Base de données :
+# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+
+if DATABASE_URL := os.environ.get("DATABASE_URL"):
+    # utilisation de DATABASE_URL si défini, mais sans SSL
+    DATABASES = {"default": dj_database_url.config()}
+else:
+    # sinon configuration "traditionnelle" de postgres
+    DATABASES = {
+        "default": {
+            "NAME": os.environ["POSTGRES_DB"],
+            "USER": os.environ["POSTGRES_USER"],
+            "PASSWORD": os.environ["POSTGRES_PASSWORD"],
+            "HOST": os.environ["POSTGRES_HOST"],
+            "PORT": os.environ["POSTGRES_PORT"],
+        }
+    }
+
+# Ne pas oublier de redéfinir le moteur après une modification de config DB
+DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.postgis"
+
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "192.168.0.1", "0.0.0.0"]
+AUTH_PASSWORD_VALIDATORS = []
+
+# Configuration nécessaire pour les tests :
+SIB_ACTIVE = False
