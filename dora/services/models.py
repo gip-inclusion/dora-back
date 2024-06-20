@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.core.cache import cache
-from django.db.models import CharField, Q
+from django.db.models import CharField, Q, URLField
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.crypto import get_random_string
@@ -282,6 +282,16 @@ class Service(ModerationMixin, models.Model):
     coach_orientation_modes = models.ManyToManyField(
         CoachOrientationMode,
         verbose_name="Comment orienter un bénéficiaire en tant qu’accompagnateur",
+        blank=True,
+    )
+
+    coach_orientation_modes_external_form_link = URLField(
+        verbose_name="Lien vers le formulaire externe", blank=True
+    )
+
+    coach_orientation_modes_external_form_link_text = CharField(
+        verbose_name="L’intitulé du lien vers le formulaire externe",
+        max_length=27,
         blank=True,
     )
 

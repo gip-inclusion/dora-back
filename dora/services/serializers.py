@@ -266,6 +266,8 @@ class ServiceSerializer(serializers.ModelSerializer):
             "city_code",
             "coach_orientation_modes",
             "coach_orientation_modes_display",
+            "coach_orientation_modes_external_form_link",
+            "coach_orientation_modes_external_form_link_text",
             "coach_orientation_modes_other",
             "concerned_public",
             "concerned_public_display",
