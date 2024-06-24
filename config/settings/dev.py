@@ -2,19 +2,6 @@ import os
 
 import dj_database_url
 
-from . import BASE_DIR
-
-# Contrairement aux environements de production et staging,
-# les environnement de développement et de test se basent sur les fichiers
-# de configuration du répertoire 'envs'.
-if os.path.isdir(BASE_DIR / "envs"):
-    import environ
-
-    environ.Env.read_env(os.path.join(BASE_DIR / "envs", "dev.env"))
-    environ.Env.read_env(os.path.join(BASE_DIR / "envs", "secrets.env"))
-else:
-    raise Exception("Impossible de charger la configuration des envrionnements")
-
 from .base import *  # noqa F403
 
 DEBUG = True
