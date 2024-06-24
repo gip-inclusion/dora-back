@@ -9,7 +9,11 @@ from .base import *  # noqa F403
 DEBUG = False
 
 # Database : configuration de production
-# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
+# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+
+# Dans les environnements déployés sur Scalingo (prod et staging),
+# seule la variable d'environnement DATABASE_URL est définie pour
+# établir la connexion à la base de données.
 
 if DATABASE_URL:  # noqa F405
     # SSL obligatoire pour la production
@@ -22,19 +26,21 @@ else:
 # Ne pas oublier de redéfinir le moteur après une modification de config DB
 DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.postgis"
 
-################
-# SECURITY     #
-################
+
+# Sécurité (navigateur) :
+
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 # Disabled as this is already managed by Scalingo
+# also : raised as `security.W004` via `check --deploy`
 # SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 # https://hstspreload.org/
 # SECURE_HSTS_PRELOAD = True
 SECURE_REFERRER_POLICY = "same-origin"
 SECURE_CONTENT_TYPE_NOSNIFF = True
-SECURE_BROWSER_XSS_FILTER = True
+# Deprecated : plus utilisé depuis Django 3.0
+# SECURE_BROWSER_XSS_FILTER = True
 SECURE_SSL_REDIRECT = True
 
 # Sentry :
