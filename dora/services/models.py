@@ -275,6 +275,16 @@ class Service(ModerationMixin, models.Model):
         blank=True,
     )
 
+    beneficiaries_access_modes_external_form_link = URLField(
+        verbose_name="Lien vers le formulaire externe", blank=True
+    )
+
+    beneficiaries_access_modes_external_form_link_text = CharField(
+        verbose_name="L’intitulé du lien vers le formulaire externe",
+        max_length=27,
+        blank=True,
+    )
+
     beneficiaries_access_modes_other = CharField(
         verbose_name="Autre", max_length=280, blank=True
     )

@@ -258,6 +258,8 @@ class ServiceSerializer(serializers.ModelSerializer):
             "address2",
             "beneficiaries_access_modes",
             "beneficiaries_access_modes_display",
+            "beneficiaries_access_modes_external_form_link",
+            "beneficiaries_access_modes_external_form_link_text",
             "beneficiaries_access_modes_other",
             "can_write",
             "categories",
