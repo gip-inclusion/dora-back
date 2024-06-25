@@ -17,14 +17,12 @@ from corsheaders.defaults import default_headers
 from . import BASE_DIR
 
 # Paramètres Django
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
+# Voir : https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 # Liste des applications Django :
-# peut-être étendu par les profiles de dev ou test
+# peut-être étendue ou complétée par les profils de dev ou test.
 INSTALLED_APPS = [
     "django.contrib.gis",
     "django.contrib.auth",
@@ -95,11 +93,12 @@ AUTH_USER_MODEL = "users.User"
 
 # Base de données :
 # Si la connexion est déjà définie de cette manière, on la réutilise.
-# Sinon, elle sera définie dans les différents fichiers de settings.
+# Sinon, elle sera définie dans les différents fichiers de settings
+# (via les variables d'environnement `PG_xxx` standards).
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# Cache
-# https://docs.djangoproject.com/en/4.0/topics/cache/
+# Cache :
+# https://docs.djangoproject.com/en/4.2/topics/cache/
 
 CACHES = {
     "default": {
@@ -109,7 +108,7 @@ CACHES = {
     }
 }
 
-# Allowed hosts :
+# Hôtes autorisés :
 # https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/#allowed-hosts
 
 ALLOWED_HOSTS = (
@@ -119,8 +118,8 @@ ALLOWED_HOSTS = (
 )
 
 
-# Password validation
-# https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
+# Validation des mot de passe :
+# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -144,20 +143,20 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Internationalization
+# I18N :
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
 LANGUAGE_CODE = "fr-fr"
 TIME_ZONE = "Europe/Paris"
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
+# Fichier statiques (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
-# User uploaded files
+# Téléversement de fichiers
 # https://django-storages.readthedocs.io/en/latest/backends/azure.html
 
 STORAGES = {
@@ -189,14 +188,14 @@ ALLOWED_UPLOADED_FILES_EXTENSIONS = [
     "xlsx",
 ]
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
+# Type de clé primaire par défaut :
+# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Logging :
-# permettre un niveau de log 'INFO' pour le logger `dora.logs.core`
-# il est également réglable via variable d'environnement, si besoin
+# permet un niveau de log 'INFO' pour le logger `dora.logs.core`,
+# qui est également réglable via variable d'environnement, si besoin
 # (le reste de la configuration de logging par défaut n'est pas modifié).
 # Concernant Django, avoir des logs visibles à certains point critiques
 # de la configuration peut être une bonne idée.
@@ -214,7 +213,7 @@ LOGGING = {
 }
 
 
-# Rest Framework
+# Rest Framework :
 # https://www.django-rest-framework.org/api-guide/settings/
 
 REST_FRAMEWORK = {
@@ -243,64 +242,48 @@ REST_FRAMEWORK = {
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
 
-# CORS
+# CORS :
 # https://github.com/adamchainz/django-cors-headers/blob/main/README.rst
 CORS_ALLOWED_ORIGIN_REGEXES = [os.environ["DJANGO_CORS_ALLOWED_ORIGIN_REGEXES"]]
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "sentry-trace",
 ]
 
-################
-# APP SETTINGS #
-################
 
-# Services
+# Configuration spécifique de l'application DORA :
+
+# Services :
 DEFAULT_SEARCH_RADIUS = 15  # in km
 RECENT_SERVICES_CUTOFF_DAYS = 30
-# Bot user
+
+# Bot user :
 DORA_BOT_USER = "dora-bot@dora.beta.gouv.fr"
 
-# Third party credentials
-
+# Authentifications tierces parties :
 PE_CLIENT_ID = os.environ["PE_CLIENT_ID"]
 PE_CLIENT_SECRET = os.environ["PE_CLIENT_SECRET"]
+
+# Compte utilisateur Data·Inclusion
+DATA_INCLUSION_EMAIL = "data.inclusion@beta.gouv.fr"
 DATA_INCLUSION_URL = os.environ["DATA_INCLUSION_URL"]
 DATA_INCLUSION_IMPORT_API_KEY = os.environ.get("DATA_INCLUSION_IMPORT_API_KEY")
 DATA_INCLUSION_STREAM_API_KEY = os.environ.get("DATA_INCLUSION_STREAM_API_KEY")
-# sources to lookup when streaming services from data.inclusion
 DATA_INCLUSION_STREAM_SOURCES = (lambda s: s.split(",") if s else None)(
     os.environ.get("DATA_INCLUSION_STREAM_SOURCES")
 )
 DATA_INCLUSION_TIMEOUT_SECONDS = os.environ.get("DATA_INCLUSION_TIMEOUT_SECONDS")
 SKIP_DI_INTEGRATION_TESTS = True
 
-# Data inclusion user account
-DATA_INCLUSION_EMAIL = "data.inclusion@beta.gouv.fr"
-
-
-################
-# SEND_IN_BLUE #
-################
-
+# Send In Blue :
 SIB_ACTIVE = os.environ["SIB_ACTIVE"] == "true"
 SIB_API_KEY = os.environ["SIB_API_KEY"]
 SIB_ONBOARDING_LIST = os.environ["SIB_ONBOARDING_LIST"]
 
-#################
-# NOTIFICATIONS #
-#################
-
-######################
-# SERVICES FRESHNESS #
-######################
-
+# Actualisation des services :
 NUM_DAYS_BEFORE_ADVISED_SERVICE_UPDATE = 30 * 6
 NUM_DAYS_BEFORE_MANDATORY_SERVICE_UPDATE = 30 * 8
 
-##############################
-# NOTIFICATIONS / MODERATION #
-##############################
-
+# Modération :
 MATTERMOST_HOOK_KEY = os.environ.get("MATTERMOST_HOOK_KEY")
 
 # INCLUSION-CONNECT / PRO-CONNECT
@@ -313,7 +296,6 @@ IC_CLIENT_ID = os.environ.get("IC_CLIENT_ID")
 IC_CLIENT_SECRET = os.environ.get("IC_CLIENT_SECRET")
 
 # Recherches sauvagardées :
-
 INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS = (
     os.environ.get("INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS") == "true"
 )
@@ -339,7 +321,6 @@ NUM_DAYS_BEFORE_DRAFT_SERVICE_NOTIFICATION = 7
 NUM_DAYS_BEFORE_ORIENTATIONS_NOTIFICATION = 10
 
 # GDAL :
-
 if "GDAL_LIBRARY_PATH" in os.environ:
     GDAL_LIBRARY_PATH = os.environ["GDAL_LIBRARY_PATH"]
 if "GEOS_LIBRARY_PATH" in os.environ:
@@ -352,23 +333,18 @@ ADMINS = (
     else None
 )
 
-
 # CSP :
 # règles pour l'admin et les versions d'API
-
 PUBLIC_API_VERSIONS = ["1", "2"]
 CSP_EXCLUDE_URL_PREFIXES = (
     "/admin/",
     *[f"/api/v{version}/schema/doc/" for version in PUBLIC_API_VERSIONS],
 )
 
-# Envoi d'e-mails :
-
+# Envoi d'e-mails transactionnels :
+# https://app.tipimail.com/#/app/settings/smtp_and_apis
 DEFAULT_FROM_EMAIL = os.environ["DEFAULT_FROM_EMAIL"]
 NO_REPLY_EMAIL = os.environ.get("NO_REPLY_EMAIL", DEFAULT_FROM_EMAIL)
-
-# https://app.tipimail.com/#/app/settings/smtp_and_apis
-
 EMAIL_HOST = os.environ["EMAIL_HOST"]
 EMAIL_HOST_USER = os.environ["EMAIL_HOST_USER"]
 EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
@@ -380,6 +356,8 @@ FRONTEND_URL = os.environ["FRONTEND_URL"]
 SUPPORT_EMAIL = os.environ["SUPPORT_EMAIL"]
 
 SUPPORT_LINK = "https://aide.dora.inclusion.beta.gouv.fr"
+
+# Rientations :
 ORIENTATION_SUPPORT_LINK = os.environ["ORIENTATION_SUPPORT_LINK"]
 ORIENTATION_EMAILS_DEBUG = os.environ.get("ORIENTATION_EMAILS_DEBUG") == "true"
 ORIENTATION_SIRENE_BLACKLIST = [
@@ -499,10 +477,8 @@ ORIENTATION_SIRENE_BLACKLIST = [
 # production | staging | local
 # Utilisé our l'affichage de l'environnement sur l'admin,
 # et pour activer le SSL sur la connexion à la base de données.
-
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "local")
 
 # Profiling (Silk) :
 # Doit être explicitement activé (via env var)
-
 PROFILE = False

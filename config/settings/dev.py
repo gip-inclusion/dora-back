@@ -10,7 +10,7 @@ DEBUG = True
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 if DATABASE_URL := os.environ.get("DATABASE_URL"):
-    # utilisation de DATABASE_URL si défini, mais sans SSL
+    # utilisation de `DATABASE_URL` si défini, mais sans SSL pour un environnement local
     DATABASES = {"default": dj_database_url.config()}
 else:
     # sinon configuration "traditionnelle" de postgres
