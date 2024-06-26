@@ -69,12 +69,4 @@ if DEBUG and PROFILE:
 # Q : est-ce c'est justifié pour staging ?
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "loggers": {
-        "django": {
-            "level": os.getenv("DJANGO_LOG_LEVEL", "DEBUG"),
-        },
-    },
-}
+LOGGING["loggers"]["django"]["level"] = os.getenv("DJANGO_LOG_LEVEL", "INFO")  # noqa F405
