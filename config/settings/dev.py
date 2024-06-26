@@ -29,10 +29,6 @@ DATABASES["default"]["ENGINE"] = "django.contrib.gis.db.backends.postgis"
 
 # Django extensions :
 INSTALLED_APPS += ["django_extensions"]  # noqa F405
-MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
-] + MIDDLEWARE  # noqa F405
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "192.168.0.1", "0.0.0.0"]
 AUTH_PASSWORD_VALIDATORS = []
