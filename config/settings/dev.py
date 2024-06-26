@@ -9,7 +9,7 @@ DEBUG = True
 # Base de données :
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-if DATABASE_URL := os.environ.get("DATABASE_URL"):
+if DATABASE_URL:  # noqa 405
     # utilisation de `DATABASE_URL` si défini, mais sans SSL pour un environnement local
     DATABASES = {"default": dj_database_url.config()}
 else:
