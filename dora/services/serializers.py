@@ -732,7 +732,8 @@ class BookmarkSerializer(BookmarkListSerializer):
                 "city": obj.service.city,
                 "name": obj.service.name,
                 "shortDesc": obj.service.short_desc,
-                "source": obj.service.source,
+                # ServiceSource n'est pas sérialisable en JSON
+                "source": str(obj.service.source),
             }
         else:
             source_di, di_service_id = obj.di_id.split("--")
