@@ -9,7 +9,7 @@ from django.utils.timezone import now
 from rest_framework import exceptions, serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 
-from dora import data_inclusion
+import dora.data_inclusion.client
 from dora.core.utils import code_insee_to_code_dept
 from dora.services.enums import ServiceStatus
 from dora.structures.models import Structure, StructureMember
@@ -737,9 +737,11 @@ class BookmarkSerializer(BookmarkListSerializer):
             }
         else:
             source_di, di_service_id = obj.di_id.split("--")
-            di_client = (
-                data_inclusion.di_client_factory() if not settings.IS_TESTING else None
-            )
+            # note : pour pouvoir être mocké correctement,
+            # le client D·I doit être importé avec le *même* chemin que
+            # celui utilisé au moment du `patch`
+            # (sinon, le mock échoue)
+            di_client = dora.data_inclusion.client.di_client_factory()
 
             try:
                 di_service = (
