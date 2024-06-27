@@ -191,7 +191,9 @@ class Orientation(models.Model):
         return f"{settings.FRONTEND_URL}/orientations?token={self.query_id}&h={self.get_query_id_hash()}"
 
     def get_absolute_url(self):
-        return self.get_frontend_url()
+        # utilisé seulement par la fonctionnalité `view_on_site` de l'admin :
+        # doit retourner l'URL "magique"
+        return self.get_magic_link()
 
     def get_frontend_url(self):
         return f"{settings.FRONTEND_URL}/orientations?token={self.query_id}"
