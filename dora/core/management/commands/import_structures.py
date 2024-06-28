@@ -144,7 +144,8 @@ class Command(BaseCommand):
 
         with open(filename) as structures_file:
             reader = csv.DictReader(structures_file, delimiter=",")
-            for i, row in enumerate(reader):
+            # index à 1 et entête CSV
+            for i, row in enumerate(reader, 2):
                 serializer = ImportSerializer(
                     data={
                         "name": row["nom"],
