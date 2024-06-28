@@ -128,19 +128,19 @@ class Command(BaseCommand):
 
         parser.add_argument(
             "-n",
-            "--dry-run",
+            "--wet-run",
             action="store_true",
-            help="Vérifie le fichier d’entrée sans modifier la base de données ni envoyer de mails",
+            help="Effectue l'opération de fichier et l'envoi de mail (mode 'dry-run' par défaut)",
         )
 
     def handle(self, *args, **options):
         filename = options["filename"]
-        dry_run = options["dry_run"]
+        wet_run = options["wet_run"]
 
-        if dry_run:
-            self.stdout.write(self.style.NOTICE("DRY RUN"))
-        else:
+        if wet_run:
             self.stdout.write(self.style.WARNING("PRODUCTION RUN"))
+        else:
+            self.stdout.write(self.style.NOTICE("DRY RUN"))
 
         with open(filename) as structures_file:
             reader = csv.DictReader(structures_file, delimiter=",")
@@ -164,7 +164,7 @@ class Command(BaseCommand):
                             f"{i}. Import de la structure {serializer.data['name']} (SIRET:{serializer.data['siret']})"
                         )
                     )
-                    if not dry_run:
+                    if wet_run:
                         structure = self.get_or_create_structure(
                             data["name"],
                             data["siret"],
