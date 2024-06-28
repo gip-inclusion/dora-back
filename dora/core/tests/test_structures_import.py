@@ -44,7 +44,13 @@ class StructuresImportTestCase(APITestCase):
         self.tmp_file.seek(0)
         out = StringIO()
         err = StringIO()
-        call_command("import_structures", self.tmp_file.name, stdout=out, stderr=err)
+        call_command(
+            "import_structures",
+            self.tmp_file.name,
+            stdout=out,
+            stderr=err,
+            wet_run=True,
+        )
         self.tmp_file.seek(0)
         return out.getvalue(), err.getvalue()
 
