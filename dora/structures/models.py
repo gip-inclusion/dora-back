@@ -18,6 +18,7 @@ from dora.core.utils import code_insee_to_code_dept
 from dora.core.validators import (
     validate_accesslibre_url,
     validate_opening_hours_str,
+    validate_phone_number,
     validate_safir,
     validate_siret,
 )
@@ -212,7 +213,9 @@ class Structure(ModerationMixin, models.Model):
     url = models.URLField(blank=True)
     short_desc = models.CharField(max_length=280, blank=True)
     full_desc = models.TextField(blank=True)
-    phone = models.CharField(max_length=10, blank=True)
+    phone = models.CharField(
+        max_length=10, blank=True, validators=[validate_phone_number]
+    )
     email = models.EmailField(blank=True)
     address1 = models.CharField(max_length=255, blank=True)
     address2 = models.CharField(max_length=255, blank=True)

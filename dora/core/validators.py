@@ -72,3 +72,23 @@ def validate_full_siret(siret):
 
     if key % 10:
         raise ValidationError(f"Le numéro SIRET est incorrect (clé: {key}).")
+
+
+def validate_phone_number(phone_number: str):
+    # simpliste, mais première vérification utile pour les imports
+    # format national (0xxxxxxxxx)
+    if len(phone_number) > 10:
+        raise ValidationError(f"Le numéro de téléphone {phone_number} est incorrect.")
+
+    if len(phone_number) == 10 and phone_number[0] != "0":
+        raise ValidationError(
+            "Un numéro de téléphone à 10 chiffres doit commencer par 0"
+        )
+
+    if phone_number:
+        try:
+            int(phone_number)
+        except ValueError:
+            raise ValidationError(
+                f"Le numéro de téléphone {phone_number} ne contient pas que des chiffres"
+            )
