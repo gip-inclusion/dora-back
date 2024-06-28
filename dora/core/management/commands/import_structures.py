@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
-from dora.core.validators import validate_siret
+from dora.core.validators import validate_phone_number, validate_siret
 from dora.services.models import ServiceModel
 from dora.services.utils import instantiate_model
 from dora.sirene.models import Establishment
@@ -26,8 +26,8 @@ from dora.users.models import User
 # Les administrateurs proposés ne seront ajoutés que s’il n’y a pas déjà
 # un administrateur
 #
-# Format du CSV attendu:
-# | nom | siret | siret_parent | courriels_administrateurs | labels | modeles |
+# Format du CSV attendu (entête):
+# | nom | siret | siret_parent | courriels_administrateurs | labels | modeles | telephone | courriel_structure
 
 
 def to_string_array(strings_list):
@@ -44,15 +44,20 @@ class ImportSerializer(serializers.Serializer):
     admins = serializers.ListField(child=serializers.EmailField(), allow_empty=True)
     labels = serializers.ListField(child=serializers.CharField(), allow_empty=True)
     models = serializers.ListField(child=serializers.CharField(), allow_empty=True)
+    phone = serializers.CharField(allow_blank=True, validators=[validate_phone_number])
+    email = serializers.EmailField(allow_blank=True)
 
-    def _clean_siret(self, siret: str):
-        return "".join([c for c in siret if c.isdigit()])
+    def _clean_siret_or_phone(self, siret_or_phone: str):
+        if not siret_or_phone:
+            return ""
+        return "".join([c for c in siret_or_phone if c.isdigit()])
 
     def to_internal_value(self, data):
         # nettoyage pré-validation
         data |= {
-            "siret": self._clean_siret(data["siret"]),
-            "parent_siret": self._clean_siret(data["parent_siret"]),
+            "siret": self._clean_siret_or_phone(data["siret"]),
+            "phone": self._clean_siret_or_phone(data["phone"]),
+            "parent_siret": self._clean_siret_or_phone(data["parent_siret"]),
         }
 
         return super().to_internal_value(data)
@@ -154,6 +159,10 @@ class Command(BaseCommand):
                         "admins": to_string_array(row["courriels_administrateurs"]),
                         "labels": to_string_array(row["labels"]),
                         "models": to_string_array(row["modeles"]),
+                        # champs optionnels correspondant directement
+                        # à un champ du modèle structure
+                        "phone": row.get("telephone", ""),
+                        "email": row.get("courriel_structure", ""),
                     }
                 )
 
@@ -169,6 +178,8 @@ class Command(BaseCommand):
                             data["name"],
                             data["siret"],
                             data["parent_siret"],
+                            phone=data.get("phone"),
+                            email=data.get("email"),
                         )
                         self.stdout.write(f"{structure.get_frontend_url()}")
                         self.invite_users(structure, data["admins"])
@@ -184,14 +195,17 @@ class Command(BaseCommand):
         name,
         siret,
         parent_siret,
+        **kwargs,
     ):
         if parent_siret:
             parent_structure = self._get_or_create_structure_from_siret(
-                parent_siret, is_parent=True
+                parent_siret, is_parent=True, **kwargs
             )
-            structure = self._get_or_create_branch(name, siret, parent_structure)
+            structure = self._get_or_create_branch(
+                name, siret, parent_structure, **kwargs
+            )
         else:
-            structure = self._get_or_create_structure_from_siret(siret)
+            structure = self._get_or_create_structure_from_siret(siret, **kwargs)
 
         return structure
 
@@ -246,7 +260,7 @@ class Command(BaseCommand):
                     f"Ajout du service {service.name} ({service.get_frontend_url()})"
                 )
 
-    def _get_or_create_branch(self, name, siret, parent_structure):
+    def _get_or_create_branch(self, name, siret, parent_structure, **kwargs):
         try:
             if siret:
                 branch = Structure.objects.get(siret=siret)
@@ -260,12 +274,13 @@ class Command(BaseCommand):
             if siret:
                 establishment = Establishment.objects.get(siret=siret)
                 branch = Structure.objects.create_from_establishment(
-                    establishment, name, parent_structure
+                    establishment, name, parent_structure, **kwargs
                 )
             else:
                 branch = Structure.objects.create(
                     name=name,
                     parent=parent_structure,
+                    **kwargs,
                 )
             parent_structure.post_create_branch(branch, self.bot_user, self.source)
 
@@ -280,7 +295,7 @@ class Command(BaseCommand):
             )
         return branch
 
-    def _get_or_create_structure_from_siret(self, siret, is_parent=False):
+    def _get_or_create_structure_from_siret(self, siret, is_parent=False, **kwargs):
         try:
             structure = Structure.objects.get(siret=siret)
             self.stdout.write(
@@ -288,7 +303,9 @@ class Command(BaseCommand):
             )
         except Structure.DoesNotExist:
             establishment = Establishment.objects.get(siret=siret)
-            structure = Structure.objects.create_from_establishment(establishment)
+            structure = Structure.objects.create_from_establishment(
+                establishment, **kwargs
+            )
             structure.creator = self.bot_user
             structure.last_editor = self.bot_user
             structure.source = self.source

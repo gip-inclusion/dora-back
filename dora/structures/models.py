@@ -150,7 +150,7 @@ class StructureNationalLabel(EnumModel):
 
 class StructureManager(models.Manager):
     def create_from_establishment(
-        self, establishment, name="", parent=None, structure_id=None
+        self, establishment, name="", parent=None, structure_id=None, **kwargs
     ):
         data = EstablishmentSerializer(establishment).data
         siret = data["siret"]
@@ -167,6 +167,7 @@ class StructureManager(models.Manager):
             longitude=data["longitude"],
             latitude=data["latitude"],
             modification_date=timezone.now(),
+            **kwargs,
         )
         if structure_id:
             structure.id = structure_id
