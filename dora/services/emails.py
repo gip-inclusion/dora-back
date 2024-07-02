@@ -147,5 +147,6 @@ def send_service_reminder_email(
         "Des mises à jour de votre offre de service sur DORA sont nécessaires",
         recipient_email,
         body,
+        from_email=("La plateforme DORA", settings.NO_REPLY_EMAIL),
         tags=["services_check"],
     )
