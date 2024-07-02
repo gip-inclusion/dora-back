@@ -67,6 +67,7 @@ class Command(BaseCommand):
                     mjml2html(
                         render_to_string("saved-search-notification.mjml", context)
                     ),
+                    from_email=("La plateforme DORA", settings.NO_REPLY_EMAIL),
                     tags=["saved-search-notification"],
                 )
 
