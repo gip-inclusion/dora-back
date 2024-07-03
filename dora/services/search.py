@@ -1,9 +1,9 @@
 import random
+from _operator import itemgetter
 from datetime import date
 from typing import Optional
 
 import requests
-from _operator import itemgetter
 from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
@@ -304,6 +304,8 @@ def search_services(
 
     If the ``di_client`` parameter is defined, results from data.inclusion will be
     added using the client dependency.
+
+    Note : this is the only point where di_client is "injected"
 
     Returns:
         A list of search results by SearchResultSerializer.

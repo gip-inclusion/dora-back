@@ -21,7 +21,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from dora import data_inclusion
+import dora.data_inclusion as data_inclusion
 from dora.admin_express.models import City
 from dora.admin_express.utils import arrdt_to_main_insee_code
 from dora.core.models import ModerationStatus
@@ -715,11 +715,7 @@ def options(request):
 
 @api_view()
 @permission_classes([permissions.AllowAny])
-def service_di(
-    request,
-    di_id: str,
-    di_client: data_inclusion.DataInclusionClient,
-):
+def service_di(request, di_id: str, di_client=None):
     """Retrieve a single service from data.inclusion.
 
     The ``di_client`` acts as an entrypoint to the data.inclusion service repository.
@@ -747,9 +743,10 @@ def service_di(
 def share_di_service(
     request,
     di_id: str,
-    di_client: data_inclusion.DataInclusionClient,
+    di_client=None,
 ):
     source_di, di_service_id = di_id.split("--")
+
     try:
         raw_service = di_client.retrieve_service(source=source_di, id=di_service_id)
     except requests.ConnectionError:
