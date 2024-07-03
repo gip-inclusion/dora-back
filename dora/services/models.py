@@ -512,12 +512,18 @@ class Service(ModerationMixin, models.Model):
         )
 
     def is_orientable(self):
-        return self.is_orientable_partial_compute and (
+        return self.is_orientable_partial_compute() and (
             self.coach_orientation_modes.filter(
                 Q(value="envoyer-courriel") | Q(value="envoyer-fiche-prescription")
             ).exists()
             or self.beneficiaries_access_modes.filter(value="envoyer-courriel").exists()
         )
+
+    @property
+    def contact_info_filled(self):
+        # L'e-mail et le téléphone peuvent être obfusqués
+        # en mode anonyme / non-connecté (voir AnonymousServiceSerializer).
+        return bool(self.contact_email or self.contact_phone)
 
 
 class ServiceModelManager(models.Manager):
