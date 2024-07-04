@@ -7,10 +7,8 @@ from dora.services.enums import ServiceStatus
 
 def is_orientable(service):
     structure_blacklisted = False
-    for siren in settings.ORIENTATION_SIRENE_BLACKLIST:
-        if service.structure.siret and service.structure.siret.startswith(siren):
-            structure_blacklisted = True
-            break
+    if siret := service.structure.siret:
+            structure_blacklisted = siret[0:9] in settings.ORIENTATION_SIRENE_BLACKLIST
 
     return (
         service.status == ServiceStatus.PUBLISHED
