@@ -683,8 +683,7 @@ class SavedSearch(models.Model):
 
         di_client = (
             data_inclusion.di_client_factory()
-            if not settings.IS_TESTING
-            and settings.INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS
+            if settings.INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS
             else None
         )
 
