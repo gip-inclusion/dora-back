@@ -8,7 +8,7 @@ from dora.services.enums import ServiceStatus
 def is_orientable(service):
     structure_blacklisted = False
     if siret := service.structure.siret:
-            structure_blacklisted = siret[0:9] in settings.ORIENTATION_SIRENE_BLACKLIST
+        structure_blacklisted = siret[0:9] in settings.ORIENTATION_SIRENE_BLACKLIST
 
     return (
         service.status == ServiceStatus.PUBLISHED
@@ -120,5 +120,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(update_orientation_modes, reverse_code=RunPython.noop),
+        migrations.RunPython(
+            update_orientation_modes, reverse_code=migrations.RunPython.noop
+        ),
     ]
