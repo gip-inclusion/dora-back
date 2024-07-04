@@ -120,5 +120,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(update_orientation_modes),
+        migrations.RunPython(update_orientation_modes, reverse_code=RunPython.noop),
     ]
