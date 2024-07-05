@@ -96,6 +96,13 @@ export LIBRARY_PATH=$LIBRARY_PATH:/opt/homebrew/opt/openssl@3/lib/
 
 ## Développement
 
+Veillez à ce que la variable d'environnement `DJANGO_SETTINGS_MODULE` soit initialisée
+pour que le fichier de configuration de développement soit bien chargé.
+
+```bash
+export DJANGO_SETTINGS_MODULE=config.settings.dev
+```
+
 ```bash
 # Démarrer le serveur
 ./manage.py runserver
