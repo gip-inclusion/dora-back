@@ -7,12 +7,28 @@ from dora.services.enums import ServiceStatus
 
 def is_orientable(service):
     structure_blacklisted = False
-    if siret := service.structure.siret:
+
+    # La récupération de la structure du service échoue sur staging à cause de structures non-référencées.
+    # Ce ne devrait pas être possible grâce aux contraintes d'intégrité, mais c'est pourtant le cas.
+    # => la base de staging est moisie
+    # Après vérification, la base de production n'est pas impactée par le problème (ouf).
+    # 2 options :
+    # - modifier le code et ajouter un garde qui sera inutile en production,
+    # - modifier "à la main" les bases de données (staging et recette).
+    # J'opte pour la première option, pour avoir un suivi et éventuellement retirer ce garde une fois
+    # cette PR mise en production.
+    try:
+        structure = service.structure
+    except Exception:
+        # On considère que le service n'est pas orientable
+        return False
+
+    if siret := structure.siret:
         structure_blacklisted = siret[0:9] in settings.ORIENTATION_SIRENE_BLACKLIST
 
     return (
         service.status == ServiceStatus.PUBLISHED
-        and not service.structure.disable_orientation_form
+        and not structure.disable_orientation_form
         and not structure_blacklisted
         and service.contact_email
         and (
