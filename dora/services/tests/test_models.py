@@ -563,3 +563,23 @@ def test_cant_instantiate_models_in_other_structures(api_client):
         {"structure": dest_struct.slug, "model": model.slug, **DUMMY_SERVICE},
     )
     assert 403 == response.status_code
+
+
+def test_is_orientable_with_orientation_form():
+    # fix : les services étaient orientables même si le formulaire
+    # d'orientation était désactivé sur la structure source.
+    structure = make_structure(
+        baker.make("users.User", is_valid=True),
+        disable_orientation_form=False,
+    )
+    service = make_service(
+        structure=structure,
+        status=ServiceStatus.PUBLISHED,
+        contact_email="test@test.com",
+    )
+
+    assert service.is_orientable_partial_compute()
+
+    structure.disable_orientation_form = True
+
+    assert not service.is_orientable_partial_compute()
