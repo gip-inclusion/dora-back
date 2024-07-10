@@ -107,6 +107,9 @@ INSTALLED_APPS = [
     "dora.logs",
 ]
 
+if ENVIRONMENT == "local":
+    INSTALLED_APPS += ["django_extensions"]
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -571,3 +574,9 @@ LOGGING = {
         },
     },
 }
+
+
+# note :
+# ce fichier sert de backup en cas de problème de déploiement des nouveaux profils.
+# Il sera supprimé après vérification du bon fonctionnement des profils déployés
+# (prod et staging).

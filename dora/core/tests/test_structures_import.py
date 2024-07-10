@@ -33,6 +33,8 @@ class StructuresImportTestCase(APITestCase):
                 "courriels_administrateurs",
                 "labels",
                 "modeles",
+                "telephone",
+                "courriel_structure",
             ]
         )
         return writer
@@ -44,7 +46,13 @@ class StructuresImportTestCase(APITestCase):
         self.tmp_file.seek(0)
         out = StringIO()
         err = StringIO()
-        call_command("import_structures", self.tmp_file.name, stdout=out, stderr=err)
+        call_command(
+            "import_structures",
+            self.tmp_file.name,
+            stdout=out,
+            stderr=err,
+            wet_run=True,
+        )
         self.tmp_file.seek(0)
         return out.getvalue(), err.getvalue()
 
@@ -52,7 +60,7 @@ class StructuresImportTestCase(APITestCase):
 
     # Validité des sirets
     def test_unknown_siret_wont_create_anything(self):
-        self.add_row(["foo", "12345678901234", "", "foo@buzz.com", "", ""])
+        self.add_row(["foo", "12345678901234", "", "foo@buzz.com", "", "", "", ""])
         out, err = self.call_command()
         self.assertIn("Siret inconnu", err)
         self.assertFalse(Structure.objects.filter(siret="12345678901234").exists())
@@ -60,7 +68,7 @@ class StructuresImportTestCase(APITestCase):
         self.assertEqual(len(mail.outbox), 0)
 
     def test_invalid_siret_wont_create_anything(self):
-        self.add_row(["foo", "1234", "", "foo@buzz.com", "", ""])
+        self.add_row(["foo", "1234", "", "foo@buzz.com", "", "", "", ""])
         out, err = self.call_command()
         self.assertIn("Le numéro SIRET doit être composé de 14 chiffres.", err)
         self.assertIn("siret", err)
@@ -69,25 +77,25 @@ class StructuresImportTestCase(APITestCase):
         self.assertEqual(len(mail.outbox), 0)
 
     def test_invalid_parent_siret_error(self):
-        self.add_row(["foo", "", "1234", "foo@buzz.com", "", ""])
+        self.add_row(["foo", "", "1234", "foo@buzz.com", "", "", "", ""])
         out, err = self.call_command()
         self.assertIn("Le numéro SIRET doit être composé de 14 chiffres.", err)
         self.assertIn("parent_siret", err)
 
     def test_unknown_parent_siret_error(self):
-        self.add_row(["foo", "", "12345678901234", "foo@buzz.com", "", ""])
+        self.add_row(["foo", "", "12345678901234", "foo@buzz.com", "", "", "", ""])
         out, err = self.call_command()
         self.assertIn("SIRET parent inconnu", err)
 
     def test_missing_siret_error(self):
-        self.add_row(["foo", "", "", "foo@buzz.com", "", ""])
+        self.add_row(["foo", "", "", "foo@buzz.com", "", "", "", ""])
         out, err = self.call_command()
         self.assertIn("`siret` ou `parent_siret` sont requis", err)
 
     def test_no_recursive_branch(self):
         parent = make_structure()
         make_structure(parent=parent, siret="12345678901234")
-        self.add_row(["foo", "", "12345678901234", "foo@buzz.com", "", ""])
+        self.add_row(["foo", "", "12345678901234", "foo@buzz.com", "", "", "", ""])
         out, err = self.call_command()
         self.assertIn(
             "Le SIRET 12345678901234 est une antenne, il ne peut pas être utilisé comme parent",
@@ -97,7 +105,9 @@ class StructuresImportTestCase(APITestCase):
     #
     def test_can_invite_new_user(self):
         structure = make_structure()
-        self.add_row([structure.name, structure.siret, "", "foo@buzz.com", "", ""])
+        self.add_row(
+            [structure.name, structure.siret, "", "foo@buzz.com", "", "", "", ""]
+        )
         self.call_command()
         user = User.objects.filter(email="foo@buzz.com").first()
         self.assertIsNotNone(user)
@@ -116,7 +126,16 @@ class StructuresImportTestCase(APITestCase):
     def test_can_invite_multiple_users(self):
         structure = make_structure()
         self.add_row(
-            [structure.name, structure.siret, "", "foo@buzz.com,bar@buzz.com", "", ""]
+            [
+                structure.name,
+                structure.siret,
+                "",
+                "foo@buzz.com,bar@buzz.com",
+                "",
+                "",
+                "",
+                "",
+            ]
         )
         self.call_command()
         self.assertTrue(User.objects.filter(email="foo@buzz.com").exists())
@@ -127,7 +146,9 @@ class StructuresImportTestCase(APITestCase):
         structure = make_structure()
         user = make_user()
         baker.make(StructureMember, user=user, structure=structure, is_admin=True)
-        self.add_row([structure.name, structure.siret, "", "foo@buzz.com", "", ""])
+        self.add_row(
+            [structure.name, structure.siret, "", "foo@buzz.com", "", "", "", "", ""]
+        )
         out, err = self.call_command()
         self.assertTrue(
             StructurePutativeMember.objects.filter(
@@ -138,7 +159,9 @@ class StructuresImportTestCase(APITestCase):
 
     def test_new_users_are_automatically_accepted(self):
         structure = make_structure()
-        self.add_row([structure.name, structure.siret, "", "foo@buzz.com", "", ""])
+        self.add_row(
+            [structure.name, structure.siret, "", "foo@buzz.com", "", "", "", ""]
+        )
         self.call_command()
         self.assertTrue(
             StructurePutativeMember.objects.filter(
@@ -148,7 +171,9 @@ class StructuresImportTestCase(APITestCase):
 
     def test_idempotent(self):
         structure = make_structure()
-        self.add_row([structure.name, structure.siret, "", "foo@buzz.com", "", ""])
+        self.add_row(
+            [structure.name, structure.siret, "", "foo@buzz.com", "", "", "", ""]
+        )
         self.call_command()
         self.assertEqual(len(mail.outbox), 1)
         out, err = self.call_command()
@@ -159,7 +184,9 @@ class StructuresImportTestCase(APITestCase):
 
     def test_invitee_is_admin(self):
         structure = make_structure()
-        self.add_row([structure.name, structure.siret, "", "foo@buzz.com", "", ""])
+        self.add_row(
+            [structure.name, structure.siret, "", "foo@buzz.com", "", "", "", ""]
+        )
         self.call_command()
         self.assertTrue(
             StructurePutativeMember.objects.filter(
@@ -172,7 +199,9 @@ class StructuresImportTestCase(APITestCase):
 
     def test_email_is_valid(self):
         structure = make_structure()
-        self.add_row([structure.name, structure.siret, "", "foo.buzz.com", "", ""])
+        self.add_row(
+            [structure.name, structure.siret, "", "foo.buzz.com", "", "", "", ""]
+        )
         out, err = self.call_command()
         self.assertIn("admins", err)
         self.assertIn("Saisissez une adresse e-mail valide.", err)
@@ -181,7 +210,7 @@ class StructuresImportTestCase(APITestCase):
 
     def test_structure_name_is_valid(self):
         structure = make_structure()
-        self.add_row(["", structure.siret, "", "foo@buzz.com", "", ""])
+        self.add_row(["", structure.siret, "", "foo@buzz.com", "", "", "", ""])
         out, err = self.call_command()
         self.assertIn("name", err)
         self.assertIn("Ce champ ne peut être vide.", err)
@@ -190,14 +219,18 @@ class StructuresImportTestCase(APITestCase):
 
     def test_invitee_not_a_valid_user_yet(self):
         structure = make_structure()
-        self.add_row([structure.name, structure.siret, "", "foo@buzz.com", "", ""])
+        self.add_row(
+            [structure.name, structure.siret, "", "foo@buzz.com", "", "", "", ""]
+        )
         self.call_command()
         user = User.objects.filter(email="foo@buzz.com").first()
         self.assertFalse(user.is_valid)
 
     def test_invitee_not_a_valid_member_yet(self):
         structure = make_structure()
-        self.add_row([structure.name, structure.siret, "", "foo@buzz.com", "", ""])
+        self.add_row(
+            [structure.name, structure.siret, "", "foo@buzz.com", "", "", "", ""]
+        )
         self.call_command()
         members = StructurePutativeMember.objects.filter(
             user__email="foo@buzz.com", structure=structure
@@ -213,7 +246,7 @@ class StructuresImportTestCase(APITestCase):
         user = baker.make(
             "users.User", first_name="foo", last_name="bar", is_valid=True
         )
-        self.add_row([structure.name, structure.siret, "", user.email, "", ""])
+        self.add_row([structure.name, structure.siret, "", user.email, "", "", "", ""])
         self.call_command()
         self.assertEqual(User.objects.filter(email=user.email).count(), 1)
         user.refresh_from_db()
@@ -236,7 +269,7 @@ class StructuresImportTestCase(APITestCase):
         user = baker.make(
             "users.User", first_name="foo", last_name="bar", is_valid=True
         )
-        self.add_row([structure.name, structure.siret, "", user.email, "", ""])
+        self.add_row([structure.name, structure.siret, "", user.email, "", "", "", ""])
         self.call_command()
         user.refresh_from_db()
         self.assertTrue(user.is_valid)
@@ -250,7 +283,7 @@ class StructuresImportTestCase(APITestCase):
             structure=structure,
             user=user,
         )
-        self.add_row([structure.name, structure.siret, "", user.email, "", ""])
+        self.add_row([structure.name, structure.siret, "", user.email, "", "", "", ""])
         self.call_command()
         member.refresh_from_db()
 
@@ -262,7 +295,7 @@ class StructuresImportTestCase(APITestCase):
         member = StructureMember.objects.create(
             structure=structure, user=user, is_admin=False
         )
-        self.add_row([structure.name, structure.siret, "", user.email, "", ""])
+        self.add_row([structure.name, structure.siret, "", user.email, "", "", "", ""])
         self.call_command()
         member.refresh_from_db()
         self.assertTrue(member.is_admin)
@@ -274,7 +307,7 @@ class StructuresImportTestCase(APITestCase):
             name="My Establishment",
             parent_name="Parent",
         )
-        self.add_row(["Foo", "12345678901234", "", "foo@buzz.com", "", ""])
+        self.add_row(["Foo", "12345678901234", "", "foo@buzz.com", "", "", "", ""])
         self.call_command()
         self.assertTrue(
             Structure.objects.filter(
@@ -289,7 +322,7 @@ class StructuresImportTestCase(APITestCase):
             name="My Establishment",
             parent_name="Parent",
         )
-        self.add_row(["Foo", "", "12345678901234", "foo@buzz.com", "", ""])
+        self.add_row(["Foo", "", "12345678901234", "foo@buzz.com", "", "", "", ""])
         self.call_command()
         self.assertTrue(
             Structure.objects.filter(
@@ -299,7 +332,7 @@ class StructuresImportTestCase(APITestCase):
 
     def test_create_new_branch(self):
         structure = make_structure(name="My Structure")
-        self.add_row(["Foo", "", structure.siret, "foo@buzz.com", "", ""])
+        self.add_row(["Foo", "", structure.siret, "foo@buzz.com", "", "", "", ""])
         self.call_command()
         branches = Structure.objects.filter(parent=structure)
         self.assertEqual(branches.count(), 1)
@@ -317,7 +350,7 @@ class StructuresImportTestCase(APITestCase):
         structure = make_structure(name="My Structure", siret="12345678901234")
         branch = baker.make("Structure", name="Foo", siret=None, parent=structure)
         self.assertEqual(structure.branches.count(), 1)
-        self.add_row(["Foo", "", structure.siret, "foo@buzz.com", "", ""])
+        self.add_row(["Foo", "", structure.siret, "foo@buzz.com", "", "", "", ""])
         self.call_command()
         self.assertEqual(structure.branches.count(), 1)
         self.assertEqual(len(mail.outbox), 1)
@@ -335,7 +368,9 @@ class StructuresImportTestCase(APITestCase):
     def test_create_new_branch_with_siret(self):
         structure = make_structure(name="My Structure")
         baker.make("Establishment", siret="12345678901234", name="My Establishment")
-        self.add_row(["Foo", "12345678901234", structure.siret, "foo@buzz.com", "", ""])
+        self.add_row(
+            ["Foo", "12345678901234", structure.siret, "foo@buzz.com", "", "", "", ""]
+        )
         self.call_command()
         branches = Structure.objects.filter(parent=structure)
         self.assertEqual(branches.count(), 1)
@@ -350,7 +385,7 @@ class StructuresImportTestCase(APITestCase):
 
     def test_user_belong_to_branch(self):
         structure = make_structure(name="My Structure")
-        self.add_row(["Foo", "", structure.siret, "foo@buzz.com", "", ""])
+        self.add_row(["Foo", "", structure.siret, "foo@buzz.com", "", "", "", ""])
 
         self.call_command()
         branch = Structure.objects.filter(parent=structure).first()
@@ -367,7 +402,7 @@ class StructuresImportTestCase(APITestCase):
 
     def test_user_doesnt_belong_to_parent(self):
         structure = make_structure(name="My Structure")
-        self.add_row(["Foo", "", structure.siret, "foo@buzz.com", "", ""])
+        self.add_row(["Foo", "", structure.siret, "foo@buzz.com", "", "", "", ""])
 
         self.call_command()
         self.assertEqual(
@@ -380,7 +415,7 @@ class StructuresImportTestCase(APITestCase):
     def test_parent_admin_are_branch_admins(self):
         parent_structure = make_structure()
         parent_admin = make_user(structure=parent_structure, is_admin=True)
-        self.add_row(["branch", "", parent_structure.siret, "", "", ""])
+        self.add_row(["branch", "", parent_structure.siret, "", "", "", "", ""])
         self.call_command()
         branches = Structure.objects.filter(parent=parent_structure, name="branch")
         self.assertEqual(branches.count(), 1)
@@ -397,7 +432,7 @@ class StructuresImportTestCase(APITestCase):
         baker.make("StructureNationalLabel", value="l1")
         baker.make("StructureNationalLabel", value="l2")
         self.add_row(
-            [structure.name, structure.siret, "", "foo@buzz.com", "l1, l2", ""]
+            [structure.name, structure.siret, "", "foo@buzz.com", "l1, l2", "", "", ""]
         )
         self.call_command()
         self.assertTrue(structure.national_labels.filter(value="l1").exists())
@@ -406,14 +441,14 @@ class StructuresImportTestCase(APITestCase):
     def test_add_services(self):
         model = make_model()
         structure = make_structure()
-        self.add_row([structure.name, structure.siret, "", "", "", model.slug])
+        self.add_row([structure.name, structure.siret, "", "", "", model.slug, "", ""])
         self.call_command()
         self.assertTrue(structure.services.filter(model=model).exists())
 
     def test_labels_must_exist(self):
         structure = make_structure()
         self.add_row(
-            [structure.name, structure.siret, "", "foo@buzz.com", "l1, l2", ""]
+            [structure.name, structure.siret, "", "foo@buzz.com", "l1, l2", "", "", ""]
         )
         out, err = self.call_command()
         self.assertIn("Label inconnu l1", err)
@@ -421,7 +456,16 @@ class StructuresImportTestCase(APITestCase):
     def test_models_must_exist(self):
         structure = make_structure()
         self.add_row(
-            [structure.name, structure.siret, "", "foo@buzz.com", "", "mod1,mod2"]
+            [
+                structure.name,
+                structure.siret,
+                "",
+                "foo@buzz.com",
+                "",
+                "mod1,mod2",
+                "",
+                "",
+            ]
         )
         out, err = self.call_command()
         self.assertIn("Modèle inconnu mod1", err)
@@ -431,7 +475,7 @@ class StructuresImportTestCase(APITestCase):
         structure = make_structure()
         structure.national_labels.add(l1)
         self.assertEqual(structure.national_labels.filter(value="l1").count(), 1)
-        self.add_row([structure.name, structure.siret, "", "", "l1", ""])
+        self.add_row([structure.name, structure.siret, "", "", "l1", "", ""])
         self.call_command()
         self.assertEqual(structure.national_labels.filter(value="l1").count(), 1)
 
@@ -440,6 +484,39 @@ class StructuresImportTestCase(APITestCase):
         structure = make_structure()
         make_service(structure=structure, model=model)
         self.assertEqual(structure.services.filter(model=model).count(), 1)
-        self.add_row([structure.name, structure.siret, "", "", "", model.slug])
+        self.add_row([structure.name, structure.siret, "", "", "", model.slug, ""])
         self.call_command()
         self.assertEqual(structure.services.filter(model=model).count(), 1)
+
+    # champs optionnels :
+
+    def test_add_phone_number(self):
+        baker.make(
+            "Establishment",
+            siret="12345678901234",
+            name="My Establishment",
+        )
+
+        self.add_row(["Test", "12345678901234", "", "", "", "", "0123456789", ""])
+        self.call_command()
+
+        structure = Structure.objects.get(siret="12345678901234")
+
+        assert structure.phone == "0123456789"
+
+    def test_add_structure_email(self):
+        baker.make(
+            "Establishment",
+            siret="12345678900000",
+            name="My Establishment",
+        )
+
+        self.add_row(
+            ["Test", "12345678900000", "", "", "", "", "", "email@structure.com"]
+        )
+        out, err = self.call_command()
+        print(out, err)
+
+        structure = Structure.objects.get(siret="12345678900000")
+
+        assert structure.email == "email@structure.com"
