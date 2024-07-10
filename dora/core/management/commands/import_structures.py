@@ -301,6 +301,10 @@ class Command(BaseCommand):
             self.stdout.write(
                 f"La structure {'parente' if is_parent else ''} {structure.name} ({structure.get_frontend_url()}) existe déjà"
             )
+            # certains champs comme le téléphone ou le courriel de structure
+            # peuvent néanmoins être mis à jour lors d'un import,
+            # même si la structure exite déjà
+            self._update_optional_fields(structure, **kwargs)
         except Structure.DoesNotExist:
             establishment = Establishment.objects.get(siret=siret)
             structure = Structure.objects.create_from_establishment(
@@ -322,3 +326,10 @@ class Command(BaseCommand):
             )
 
         return structure
+
+    def _update_optional_fields(self, structure, **kwargs):
+        # Même si la structure existe déjà,
+        # les champs optionnels peuvent être mis à jour si ils contiennent une valeur
+        to_update = dict({(k, v) for k, v in kwargs.items() if v})
+        self.stdout.write(f" > mise à jour des champs : {to_update}")
+        Structure.objects.filter(pk=structure.pk).update(**to_update)
