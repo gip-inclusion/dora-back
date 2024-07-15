@@ -175,6 +175,8 @@ class StructureManager(models.Manager):
         return structure
 
     def orphans(self):
+        # structures "orphelines" :
+        # pas de membres enregistrés, ni en attente d'enregistrement
         return self.filter(membership=None, putative_membership=None)
 
 

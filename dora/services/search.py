@@ -15,6 +15,7 @@ import dora.services.models as models
 from dora import data_inclusion
 from dora.admin_express.models import City
 from dora.core.constants import WGS84
+from dora.structures.models import Structure
 
 from .serializers import SearchResultSerializer
 from .utils import filter_services_by_city_code
@@ -233,6 +234,11 @@ def _get_dora_results(
             "beneficiaries_access_modes",
         )
     )
+
+    # Par souci de qualité des données,
+    # les services DORA rattachés à une structure orpheline
+    # sont filtrés lors de la recherche.
+    services = services.exclude(structure__in=Structure.objects.orphans())
 
     if kinds:
         services = services.filter(kinds__value__in=kinds)
