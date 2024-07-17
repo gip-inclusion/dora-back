@@ -78,7 +78,7 @@ def send_service_sharing_email(
         ]
         if "se-presenter" in all_beneficiaries_modes:
             modes.append("Se présenter")
-        if "envoyer-courriel" in all_beneficiaries_modes and service_email:
+        if "envoyer-un-mail" in all_beneficiaries_modes and service_email:
             modes.append(f"Envoyer un mail: {service_email}")
         if "telephoner" in all_beneficiaries_modes and service_phone:
             modes.append(f"Téléphoner: {service_phone}")

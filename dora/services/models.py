@@ -534,9 +534,10 @@ class Service(ModerationMixin, models.Model):
     def is_orientable(self):
         return self.is_orientable_partial_compute and (
             self.coach_orientation_modes.filter(
-                Q(value="envoyer-courriel") | Q(value="envoyer-fiche-prescription")
+                Q(value="envoyer-un-mail")
+                | Q(value="envoyer-un-mail-avec-une-fiche-de-prescription")
             ).exists()
-            or self.beneficiaries_access_modes.filter(value="envoyer-courriel").exists()
+            or self.beneficiaries_access_modes.filter(value="envoyer-un-mail").exists()
         )
 
 

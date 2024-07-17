@@ -224,12 +224,14 @@ def test_service_serialization_exemple(authenticated_user, api_client, settings)
         baker.make(Credential, name="Carte d'identité, passeport ou permis de séjour"),
     )
     service.coach_orientation_modes.add(
-        CoachOrientationMode.objects.get(value="envoyer-courriel"),
-        CoachOrientationMode.objects.get(value="envoyer-formulaire"),
-        CoachOrientationMode.objects.get(value="envoyer-fiche-prescription"),
+        CoachOrientationMode.objects.get(value="envoyer-un-mail"),
+        CoachOrientationMode.objects.get(value="formulaire-dora"),
+        CoachOrientationMode.objects.get(
+            value="envoyer-un-mail-avec-une-fiche-de-prescription"
+        ),
     )
     service.beneficiaries_access_modes.add(
-        BeneficiaryAccessMode.objects.get(value="envoyer-courriel")
+        BeneficiaryAccessMode.objects.get(value="envoyer-un-mail")
     )
 
     response = api_client.get(f"/api/v2/services/{service.id}/")

@@ -376,7 +376,7 @@ class Command(BaseCommand):
 
         service.coach_orientation_modes.add(
             CoachOrientationMode.objects.get(value="telephoner"),
-            CoachOrientationMode.objects.get(value="envoyer-courriel"),
+            CoachOrientationMode.objects.get(value="envoyer-un-mail"),
         )
 
         service.beneficiaries_access_modes.add(

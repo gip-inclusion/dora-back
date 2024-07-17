@@ -379,12 +379,10 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     def get_modes_orientation_accompagnateur(self, obj):
         mapping = {
-            "autre": "autre",
-            "telephoner": "telephoner",
-            "envoyer-formulaire": "completer-le-formulaire-dadhesion",
-            "envoyer-courriel": "envoyer-un-mail",
-            "envoyer-fiche-prescription": "envoyer-un-mail-avec-une-fiche-de-prescription",
-        }  # TODO: à supprimer une fois dora et data.inclusion alignés sur le référentiel
+            # "formulaire-dora" n'est pas une valeur valide pour DI,
+            # on la remplace donc par "completer-le-formulaire-dadhesion"
+            "formulaire-dora": "completer-le-formulaire-dadhesion",
+        }
         return [
             mapping.get(mode.value, mode.value)
             for mode in obj.coach_orientation_modes.all()
@@ -394,16 +392,8 @@ class ServiceSerializer(serializers.ModelSerializer):
         return obj.coach_orientation_modes_other
 
     def get_modes_orientation_beneficiaire(self, obj):
-        mapping = {
-            "autre": "autre",
-            "telephoner": "telephoner",
-            "envoyer-courriel": "envoyer-un-mail",
-            "se-presenter": "se-presenter",
-        }  # TODO: à supprimer une fois dora et data.inclusion alignés sur le référentiel
-        return [
-            mapping.get(mode.value, mode.value)
-            for mode in obj.beneficiaries_access_modes.all()
-        ]
+        # Pas de mapping nécessaire
+        return list(obj.beneficiaries_access_modes.values_list("value", flat=True))
 
     def get_modes_orientation_beneficiaire_autres(self, obj):
         return obj.beneficiaries_access_modes_other
