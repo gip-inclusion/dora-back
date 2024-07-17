@@ -120,6 +120,7 @@ urlpatterns = [
     *private_api_patterns,
     *di_api_patterns,
     *oidc_patterns,
+    path("oidc/", include("mozilla_django_oidc.urls")),
 ]
 
 if settings.PROFILE:
