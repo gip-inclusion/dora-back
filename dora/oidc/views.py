@@ -171,3 +171,15 @@ def inclusion_connect_authenticate(request):
     except requests.exceptions.RequestException as e:
         logging.exception(e)
         raise APIException("Erreur de communication avec le fournisseur d'identité")
+
+
+# Migration vers ProConnect :
+# En parallèle des différents enpoints OIDC inclusion-connect.
+# Les endpoints utilisés pour pro-connect, demandés pour le dossier d'inscription,
+# seront les suivants:
+
+
+def oidc_authorize(request): ...
+
+
+def oidc_logout(request): ...
