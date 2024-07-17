@@ -518,26 +518,15 @@ class Service(ModerationMixin, models.Model):
             status=self.status, modification_date=self.modification_date
         )
 
-    def is_orientable_partial_compute(self):
+    def is_orientable(self):
         structure_blacklisted = False
-        for siren in settings.ORIENTATION_SIRENE_BLACKLIST:
-            if self.structure.siret and self.structure.siret.startswith(siren):
-                structure_blacklisted = True
-                break
+        if siret := self.structure.siret:
+            structure_blacklisted = siret[0:9] in settings.ORIENTATION_SIRENE_BLACKLIST
         return bool(
             self.status == ServiceStatus.PUBLISHED
             and not self.structure.disable_orientation_form
             and not structure_blacklisted
             and self.contact_email
-        )
-
-    def is_orientable(self):
-        return self.is_orientable_partial_compute and (
-            self.coach_orientation_modes.filter(
-                Q(value="envoyer-un-mail")
-                | Q(value="envoyer-un-mail-avec-une-fiche-de-prescription")
-            ).exists()
-            or self.beneficiaries_access_modes.filter(value="envoyer-un-mail").exists()
         )
 
 
