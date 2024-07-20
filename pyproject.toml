@@ -1,5 +1,7 @@
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE="config.settings.test"
+# Les variables d'environnement ont priorité sur la configuration du fichier de config.
+# Pour sélectionner une configuration de settings Django depuis ce fichier:
+addopts="--ds=config.settings.test"
 python_files = ["test.py", "tests*.py", "test_*.py"]
 
 [tool.ruff]
