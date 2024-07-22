@@ -36,6 +36,7 @@ def make_di_service_data(**kwargs) -> dict:
             "lien_source": "https://dora.fr/cacher-violent",
             "telephone": "0102030405",
             "courriel": "xavierlaunay@example.org",
+            "contact_info_filled": True,
             "contact_public": False,
             "contact_nom_prenom": "David Rocher",
             "date_maj": "2023-01-01",
