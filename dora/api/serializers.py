@@ -303,6 +303,16 @@ class ServiceSerializer(serializers.ModelSerializer):
         return [c.name for c in obj.credentials.all()]
 
     def get_formulaire_en_ligne(self, obj):
+        if obj.coach_orientation_modes.filter(
+            value="completer-le-formulaire-dadhesion"
+        ).exists():
+            return obj.coach_orientation_modes_external_form_link
+        elif obj.beneficiaries_access_modes.filter(
+            value="completer-le-formulaire-dadhesion"
+        ).exists():
+            return obj.beneficiaries_access_modes_external_form_link
+        elif obj.coach_orientation_modes.filter(value="formulaire-dora").exists():
+            return obj.get_dora_form_url()
         return obj.online_form if obj.online_form else None
 
     def get_commune(self, obj):

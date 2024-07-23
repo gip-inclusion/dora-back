@@ -78,7 +78,12 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = (
         Service.objects.published()
         .select_related("structure", "fee_condition")
-        .prefetch_related("subcategories", "kinds")
+        .prefetch_related(
+            "subcategories",
+            "kinds",
+            "coach_orientation_modes",
+            "beneficiaries_access_modes",
+        )
         .order_by("pk")
     )
     serializer_class = ServiceSerializer
