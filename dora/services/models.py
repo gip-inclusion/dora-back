@@ -501,6 +501,9 @@ class Service(ModerationMixin, models.Model):
     def get_frontend_url(self):
         return f"{settings.FRONTEND_URL}/services/{self.slug}"
 
+    def get_dora_form_url(self):
+        return f"{self.get_frontend_url()}/orienter"
+
     def get_admin_url(self):
         return f"https://{settings.ALLOWED_HOSTS[0]}/services/service/{self.id}/change"
 
