@@ -55,7 +55,11 @@ def make_structure(user=None, putative_member=None, **kwargs):
 
 
 def make_service(**kwargs):
-    structure = kwargs.pop("structure") if "structure" in kwargs else make_structure()
+    structure = (
+        kwargs.pop("structure")
+        if "structure" in kwargs
+        else make_structure(user=make_user())
+    )
     categories = kwargs.pop("categories").split(",") if "categories" in kwargs else []
     subcategories = (
         kwargs.pop("subcategories").split(",") if "subcategories" in kwargs else []

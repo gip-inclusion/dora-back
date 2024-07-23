@@ -273,6 +273,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "coach_orientation_modes_other",
             "concerned_public",
             "concerned_public_display",
+            "contact_info_filled",
             "contact_email",
             "contact_name",
             "contact_phone",

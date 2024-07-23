@@ -1230,7 +1230,7 @@ class DataInclusionSearchTestCase(APITestCase):
 
         for field in set(ServiceSerializer.Meta.fields):
             with self.subTest(field=field):
-                self.assertIn(field, response.data)
+                assert field in response.data
 
     def test_service_di_address(self):
         service_data = self.make_di_service(

@@ -532,6 +532,12 @@ class Service(ModerationMixin, models.Model):
             and self.contact_email
         )
 
+    @property
+    def contact_info_filled(self):
+        # L'e-mail et le téléphone peuvent être obfusqués
+        # en mode anonyme / non-connecté (voir AnonymousServiceSerializer).
+        return bool(self.contact_email or self.contact_phone)
+
 
 class ServiceModelManager(models.Manager):
     def get_queryset(self):
