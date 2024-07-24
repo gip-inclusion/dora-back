@@ -111,17 +111,16 @@ private_api_patterns = [
     ),  # TODO: remove when not used by frontend anymore
 ]
 
-urlpatterns = [
-    *private_api_patterns,
-    *oidc_patterns,
+di_api_patterns = [
+    path("api/v2/", include("dora.api.urls", namespace="v2")),
 ]
 
-if settings.API_V2_ENABLED:
-    # en attendant, voir si encore utilisé
-    di_api_patterns = [
-        path("api/v2/", include("dora.api.urls", namespace="v2")),
-    ]
-    urlpatterns += [*di_api_patterns]
+
+urlpatterns = [
+    *private_api_patterns,
+    *di_api_patterns,
+    *oidc_patterns,
+]
 
 if settings.PROFILE:
     urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]

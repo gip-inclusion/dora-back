@@ -481,8 +481,3 @@ ENVIRONMENT = os.environ.get("ENVIRONMENT", "local")
 # Profiling (Silk) :
 # Doit être explicitement activé (via env var)
 PROFILE = False
-
-# Activation de l'API v2:
-# après quelques questionnements sur l'utilité de l'API,
-# on permet de l'activer ou de la désactiver dynamiquement.
-API_V2_ENABLED = bool(os.getenv("API_V2_ENABLED") == "true")

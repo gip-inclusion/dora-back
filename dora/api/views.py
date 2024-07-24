@@ -28,10 +28,6 @@ class PrettyCamelCaseJSONRenderer(CamelCaseJSONRenderer):
 # V2
 ############
 
-# Note : où cette API est-elle utilisée ?
-# Data·Inclusion nous a confirmé ne pas l'utiliser.
-# Désactivation des routes à venir : sans forcément enlever ce code, si aucune connexion.
-
 
 class APIPermission(permissions.BasePermission):
     def has_permission(self, request, view):
