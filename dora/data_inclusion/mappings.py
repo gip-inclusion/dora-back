@@ -233,7 +233,10 @@ def map_service(service_data: dict, is_authenticated: bool) -> dict:
         "contact_phone": service_data["telephone"]
         if service_data["contact_public"] or is_authenticated
         else None,
-        "contact_info_filled": service_data["contact_info_filled"],
+        # double implémentation de cette valeur métier (voir modèle du service DORA) 😩
+        "contact_info_filled": bool(
+            service_data["courriel"] or service_data["telephone"]
+        ),
         "creation_date": service_data["date_creation"],
         "credentials": service_data["justificatifs"],
         "credentials_display": service_data["justificatifs"],

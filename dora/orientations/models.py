@@ -172,6 +172,18 @@ class Orientation(models.Model):
     )
     last_reminder_email_sent = models.DateTimeField(blank=True, null=True)
 
+    class Meta:
+        constraints = (
+            # service lié à l'orientation : DORA ou D·I, mais pas les deux
+            models.CheckConstraint(
+                check=(
+                    (models.Q(service=None) & ~models.Q(di_service_id=""))
+                    | (~models.Q(service=None) & models.Q(di_service_id=""))
+                ),
+                name="check_valid_service",
+            ),
+        )
+
     def save(self, *args, **kwargs):
         if not self.id:
             self.original_service_name = self.get_service_name()

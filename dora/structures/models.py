@@ -278,6 +278,9 @@ class Structure(ModerationMixin, models.Model):
     data_inclusion_source = models.TextField(blank=True, db_index=True)
 
     members = models.ManyToManyField(User, through=StructureMember)
+    putative_members = models.ManyToManyField(
+        User, through=StructurePutativeMember, related_name="putative_structure_set"
+    )
 
     disable_orientation_form = models.BooleanField(default=False)
 

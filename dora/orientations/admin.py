@@ -32,6 +32,16 @@ class OrientationAdmin(admin.ModelAdmin):
         "prescriber_structure",
         "service",
     )
+    readonly_fields = ("service", "di_service")
+    search_fields = (
+        "beneficiary_last_name",
+        "beneficiary_email",
+        "referent_last_name",
+        "referent_email",
+        "original_service_name",
+        "di_structure_name",
+        "di_service_name",
+    )
     date_hierarchy = "creation_date"
     ordering = ("-id",)
     readonly_fields = ("query_id", "query_expires_at", "original_service_name")
