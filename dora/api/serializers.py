@@ -303,15 +303,17 @@ class ServiceSerializer(serializers.ModelSerializer):
         return [c.name for c in obj.credentials.all()]
 
     def get_formulaire_en_ligne(self, obj):
-        if obj.coach_orientation_modes.filter(
-            value="completer-le-formulaire-dadhesion"
-        ).exists():
+        coach_orientation_mode_values = set(
+            m.value for m in obj.coach_orientation_modes.all()
+        )
+        beneficiaries_access_mode_values = set(
+            m.value for m in obj.beneficiaries_access_modes.all()
+        )
+        if "completer-le-formulaire-dadhesion" in coach_orientation_mode_values:
             return obj.coach_orientation_modes_external_form_link
-        elif obj.beneficiaries_access_modes.filter(
-            value="completer-le-formulaire-dadhesion"
-        ).exists():
+        elif "completer-le-formulaire-dadhesion" in beneficiaries_access_mode_values:
             return obj.beneficiaries_access_modes_external_form_link
-        elif obj.coach_orientation_modes.filter(value="formulaire-dora").exists():
+        elif "formulaire-dora" in coach_orientation_mode_values:
             return obj.get_dora_form_url()
         return obj.online_form if obj.online_form else None
 
@@ -403,7 +405,7 @@ class ServiceSerializer(serializers.ModelSerializer):
 
     def get_modes_orientation_beneficiaire(self, obj):
         # Pas de mapping nécessaire
-        return list(obj.beneficiaries_access_modes.values_list("value", flat=True))
+        return [m.value for m in obj.beneficiaries_access_modes.all()]
 
     def get_modes_orientation_beneficiaire_autres(self, obj):
         return obj.beneficiaries_access_modes_other
