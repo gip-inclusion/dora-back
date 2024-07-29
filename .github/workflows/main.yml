@@ -15,7 +15,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: $MINIO_SECRET_KEY
       REQUIREMENTS_PATH: requirements/test.txt
     concurrency:
-      # Voir: https://docs.github.com/en/actions/using-jobs/using-concurrency 
+      # Voir: https://docs.github.com/en/actions/using-jobs/using-concurrency
       group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.event.pull_request.number || github.sha }}
       cancel-in-progress: true
     services:
@@ -23,7 +23,7 @@ jobs:
         image: bitnami/minio:latest
         env:
           MINIO_SERVER_ACCESS_KEY: minio-access-key
-          MINIO_SERVER_SECRET_KEY: $MINIO_SECRET_KEY 
+          MINIO_SERVER_SECRET_KEY: $MINIO_SECRET_KEY
         ports:
           - 9000:9000
       redis:
@@ -43,41 +43,49 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-    - name: Installation de GDAL et psql
-      run: sudo apt update && sudo apt install -y gdal-bin postgresql-client
-    
-    - name: Checkout du projet
-      uses: actions/checkout@v4.1.7
-    
-    - name: Création de la base de données
-      env:
-        POSTGRES_USER: postgres
-        POSTGRES_DB: postgres
-        POSTGRES_HOST: localhost
-      run: |
-        psql -h $POSTGRES_HOST -U $POSTGRES_USER $POSTGRES_DB <<EOL
-        DROP DATABASE IF EXISTS dora;
-        CREATE DATABASE dora;
-        EOL
+      - name: Installation de GDAL et psql
+        run: sudo apt update && sudo apt install -y gdal-bin postgresql-client
 
-    - name: Installation de Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.12"
-        cache: pip
-        cache-dependency-path: $REQUIREMENTS_PATH
+      - name: Checkout du projet
+        uses: actions/checkout@v4.1.7
 
-    - name: Installation des dépendences
-      run: pip install -r $REQUIREMENTS_PATH 
+      - name: Création de la base de données
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+          POSTGRES_HOST: localhost
+        run: |
+          psql -h $POSTGRES_HOST -U $POSTGRES_USER $POSTGRES_DB <<EOL
+          DROP DATABASE IF EXISTS dora;
+          CREATE DATABASE dora;
+          EOL
 
-    - name: Lint et vérification du formattage
-      run: |
-        ruff check dora config
-        python -m compileall -q .
-        ./manage.py check 
-        ./manage.py makemigrations --check --dry-run --noinput
-        sqlfluff lint queries
-        djhtml -t 2 -c dora
-    
-    - name: Tests
-      run: pytest
+      - name: Installation de Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: $REQUIREMENTS_PATH
+
+      - name: Installation des dépendences
+        run: pip install -r $REQUIREMENTS_PATH
+
+      - name: Vérification de la compilation des sources Python
+        run: python -m compileall -q .
+
+      - name: Linting et formatage du code Python
+        run: ruff check dora config
+
+      - name: Vérification Django (check et migrations)
+        run: |
+          ./manage.py check 
+          ./manage.py makemigrations --check --dry-run --noinput
+
+      - name: Vérification des fichiers SQL
+        run: sqlfluff lint queries
+
+      - name: Vérification des fichier HTML et templates
+        run: djhtml -t 2 -c dora
+
+      - name: Tests
+        run: pytest
