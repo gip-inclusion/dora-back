@@ -16,7 +16,7 @@ model-bakery==1.18.2
 osm_opening_hours==0.1.1
 psycopg[binary]==3.1.19
 PyJWT==2.6.0 # conflit avec ggshield sur versions supérieures
-redis==5.0.5
+redis==5.0.7
 requests==2.32.3
 sentry-sdk==2.11.0
 sib-api-v3-sdk==7.6.0
