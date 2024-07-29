@@ -47,7 +47,7 @@ jobs:
         run: sudo apt update && sudo apt install -y gdal-bin postgresql-client
 
       - name: Checkout du projet
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4
 
       - name: Création de la base de données
         env:
