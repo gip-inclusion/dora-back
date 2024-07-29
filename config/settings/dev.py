@@ -16,11 +16,11 @@ else:
     # sinon configuration "traditionnelle" de postgres
     DATABASES = {
         "default": {
-            "NAME": os.environ["POSTGRES_DB"],
-            "USER": os.environ["POSTGRES_USER"],
-            "PASSWORD": os.environ["POSTGRES_PASSWORD"],
-            "HOST": os.environ["POSTGRES_HOST"],
-            "PORT": os.environ["POSTGRES_PORT"],
+            "NAME": os.getenv("POSTGRES_DB"),
+            "USER": os.getenv("POSTGRES_USER"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+            "HOST": os.getenv("POSTGRES_HOST"),
+            "PORT": os.getenv("POSTGRES_PORT"),
         }
     }
 
@@ -33,7 +33,7 @@ INSTALLED_APPS += ["django_extensions"]  # noqa F405
 # ALLOWED_HOSTS:
 # fixé par variable d'environnement, hôtes séparés par des virgules et sans espace
 # ou si absent : valeurs par défaut usuelles pour un environnement de dev.
-if allowed_hosts := os.environ.get("ALLOWED_HOSTS"):
+if allowed_hosts := os.getenv("ALLOWED_HOSTS"):
     ALLOWED_HOSTS = allowed_hosts.split(",")
 else:
     ALLOWED_HOSTS = ["localhost", "127.0.0.1", "192.168.0.1", "0.0.0.0"]
@@ -49,7 +49,7 @@ REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] += (  # noqa F405
 
 # Profiling :
 # utilisation de Silk (configurable via var env)
-PROFILE = os.environ.get("DJANGO_PROFILE") == "true"
+PROFILE = os.getenv("DJANGO_PROFILE") == "true"
 
 if DEBUG and PROFILE:
     SILKY_PYTHON_PROFILER = True

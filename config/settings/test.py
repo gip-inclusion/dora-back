@@ -9,18 +9,18 @@ DEBUG = True
 # Base de données :
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-if DATABASE_URL := os.environ.get("DATABASE_URL"):
+if DATABASE_URL := os.getenv("DATABASE_URL"):
     # utilisation de DATABASE_URL si défini, mais sans SSL
     DATABASES = {"default": dj_database_url.config()}
 else:
     # sinon configuration "traditionnelle" de postgres
     DATABASES = {
         "default": {
-            "NAME": os.environ["POSTGRES_DB"],
-            "USER": os.environ["POSTGRES_USER"],
-            "PASSWORD": os.environ["POSTGRES_PASSWORD"],
-            "HOST": os.environ["POSTGRES_HOST"],
-            "PORT": os.environ["POSTGRES_PORT"],
+            "NAME": os.getenv("POSTGRES_DB", "dora"),
+            "USER": os.getenv("POSTGRES_USER", "dora"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+            "HOST": os.getenv("POSTGRES_HOST", "localhost"),
+            "PORT": os.getenv("POSTGRES_PORT", "5432"),
         }
     }
 
@@ -32,3 +32,11 @@ AUTH_PASSWORD_VALIDATORS = []
 
 # Configuration nécessaire pour les tests :
 SIB_ACTIVE = False
+
+# Nécessaire pour la C.I. : fixe des valeurs par défaut pour les conteneurs
+# faire correspondre les valeurs définies dans la configuration de la CI
+CORS_ALLOWED_ORIGIN_REGEXES = [os.getenv("DJANGO_CORS_ALLOWED_ORIGIN_REGEXES","*")]
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+IC_TOKEN_URL = os.getenv("IC_TOKEN_URL", "https://whatever-oidc-token-url.com")
+AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "dora")
+
