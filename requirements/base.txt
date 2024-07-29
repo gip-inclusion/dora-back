@@ -15,7 +15,7 @@ mjml-python==1.3.3
 model-bakery==1.18.1
 osm_opening_hours==0.1.1
 psycopg[binary]==3.1.19
-PyJWT==2.6.0 # conflit avec ggshield sur versions supérieures
+PyJWT==2.8.0 # conflit avec ggshield sur versions supérieures
 redis==5.0.5
 requests==2.32.3
 sentry-sdk==2.11.0
