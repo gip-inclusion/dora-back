@@ -578,8 +578,8 @@ def test_is_orientable_with_orientation_form():
         contact_email="test@test.com",
     )
 
-    assert service.is_orientable_partial_compute()
+    assert service.is_orientable()
 
     structure.disable_orientation_form = True
 
-    assert not service.is_orientable_partial_compute()
+    assert not service.is_orientable()

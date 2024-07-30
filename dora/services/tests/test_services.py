@@ -1290,7 +1290,7 @@ class DataInclusionSearchTestCase(APITestCase):
 
     def test_service_di_beneficiaries_access_modes(self):
         courriel_mode_instance = BeneficiaryAccessMode.objects.get(
-            value="envoyer-courriel"
+            value="envoyer-un-mail"
         )
 
         cases = [
@@ -1340,7 +1340,7 @@ class DataInclusionSearchTestCase(APITestCase):
 
     def test_service_di_coach_orientation_modes(self):
         courriel_mode_instance = CoachOrientationMode.objects.get(
-            value="envoyer-courriel"
+            value="envoyer-un-mail"
         )
 
         cases = [

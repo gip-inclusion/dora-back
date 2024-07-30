@@ -77,8 +77,17 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
     versioning_class = NamespaceVersioning
     queryset = (
         Service.objects.published()
-        .select_related("structure", "fee_condition")
-        .prefetch_related("subcategories", "kinds")
+        .select_related("structure", "fee_condition", "source")
+        .prefetch_related(
+            "subcategories",
+            "kinds",
+            "location_kinds",
+            "coach_orientation_modes",
+            "beneficiaries_access_modes",
+            "concerned_public",
+            "requirements",
+            "credentials",
+        )
         .order_by("pk")
     )
     serializer_class = ServiceSerializer

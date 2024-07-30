@@ -164,34 +164,14 @@ def map_service(service_data: dict, is_authenticated: bool) -> dict:
 
     beneficiaries_access_modes = None
     if service_data["modes_orientation_beneficiaire"] is not None:
-        mapping = {
-            "autre": "autre",
-            "telephoner": "telephoner",
-            "envoyer-un-mail": "envoyer-courriel",
-            "se-presenter": "se-presenter",
-        }  # TODO: à supprimer une fois dora et data.inclusion alignés sur le référentiel
-        mapped_modes = [
-            mapping.get(mode, mode)
-            for mode in service_data["modes_orientation_beneficiaire"]
-        ]
         beneficiaries_access_modes = BeneficiaryAccessMode.objects.filter(
-            value__in=mapped_modes
+            value__in=service_data["modes_orientation_beneficiaire"]
         )
 
     coach_orientation_modes = None
     if service_data["modes_orientation_accompagnateur"] is not None:
-        mapping = {
-            "autre": "autre",
-            "telephoner": "telephoner",
-            "envoyer-un-mail": "envoyer-courriel",
-            "envoyer-fiche-prescription": "envoyer-un-mail-avec-une-fiche-de-prescription",
-        }  # TODO: à supprimer une fois dora et data.inclusion alignés sur le référentiel
-        mapped_modes = [
-            mapping.get(mode, mode)
-            for mode in service_data["modes_orientation_accompagnateur"]
-        ]
         coach_orientation_modes = CoachOrientationMode.objects.filter(
-            value__in=mapped_modes
+            value__in=service_data["modes_orientation_accompagnateur"]
         )
 
     profils = None
@@ -213,6 +193,10 @@ def map_service(service_data: dict, is_authenticated: bool) -> dict:
         ]
         if beneficiaries_access_modes is not None
         else None,
+        "beneficiaries_access_modes_external_form_link": service_data[
+            "formulaire_en_ligne"
+        ],
+        "beneficiaries_access_modes_external_form_link_text": "",
         "beneficiaries_access_modes_other": service_data[
             "modes_orientation_beneficiaire_autres"
         ],
@@ -229,6 +213,10 @@ def map_service(service_data: dict, is_authenticated: bool) -> dict:
         "coach_orientation_modes_display": [m.label for m in coach_orientation_modes]
         if coach_orientation_modes is not None
         else None,
+        "coach_orientation_modes_external_form_link": service_data[
+            "formulaire_en_ligne"
+        ],
+        "coach_orientation_modes_external_form_link_text": "",
         "coach_orientation_modes_other": service_data[
             "modes_orientation_accompagnateur_autres"
         ],

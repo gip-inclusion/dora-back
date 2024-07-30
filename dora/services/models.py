@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.core.cache import cache
-from django.db.models import CharField, Q
+from django.db.models import CharField, Q, URLField
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.crypto import get_random_string
@@ -275,6 +275,16 @@ class Service(ModerationMixin, models.Model):
         blank=True,
     )
 
+    beneficiaries_access_modes_external_form_link = URLField(
+        verbose_name="Lien vers le formulaire externe", blank=True
+    )
+
+    beneficiaries_access_modes_external_form_link_text = CharField(
+        verbose_name="L’intitulé du lien vers le formulaire externe",
+        max_length=27,
+        blank=True,
+    )
+
     beneficiaries_access_modes_other = CharField(
         verbose_name="Autre", max_length=280, blank=True
     )
@@ -282,6 +292,16 @@ class Service(ModerationMixin, models.Model):
     coach_orientation_modes = models.ManyToManyField(
         CoachOrientationMode,
         verbose_name="Comment orienter un bénéficiaire en tant qu’accompagnateur",
+        blank=True,
+    )
+
+    coach_orientation_modes_external_form_link = URLField(
+        verbose_name="Lien vers le formulaire externe", blank=True
+    )
+
+    coach_orientation_modes_external_form_link_text = CharField(
+        verbose_name="L’intitulé du lien vers le formulaire externe",
+        max_length=27,
         blank=True,
     )
 
@@ -481,6 +501,9 @@ class Service(ModerationMixin, models.Model):
     def get_frontend_url(self):
         return f"{settings.FRONTEND_URL}/services/{self.slug}"
 
+    def get_dora_form_url(self):
+        return f"{self.get_frontend_url()}/orienter"
+
     def get_admin_url(self):
         return f"https://{settings.ALLOWED_HOSTS[0]}/services/service/{self.id}/change"
 
@@ -498,25 +521,15 @@ class Service(ModerationMixin, models.Model):
             status=self.status, modification_date=self.modification_date
         )
 
-    def is_orientable_partial_compute(self):
+    def is_orientable(self):
         structure_blacklisted = False
-        for siren in settings.ORIENTATION_SIRENE_BLACKLIST:
-            if self.structure.siret and self.structure.siret.startswith(siren):
-                structure_blacklisted = True
-                break
+        if siret := self.structure.siret:
+            structure_blacklisted = siret[0:9] in settings.ORIENTATION_SIRENE_BLACKLIST
         return bool(
             self.status == ServiceStatus.PUBLISHED
             and not self.structure.disable_orientation_form
             and not structure_blacklisted
             and self.contact_email
-        )
-
-    def is_orientable(self):
-        return self.is_orientable_partial_compute() and (
-            self.coach_orientation_modes.filter(
-                Q(value="envoyer-courriel") | Q(value="envoyer-fiche-prescription")
-            ).exists()
-            or self.beneficiaries_access_modes.filter(value="envoyer-courriel").exists()
         )
 
     @property

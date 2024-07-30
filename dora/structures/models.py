@@ -448,3 +448,7 @@ class Structure(ModerationMixin, models.Model):
             .order_by(F("user__last_login").desc(nulls_last=True))
             .first()
         )
+
+    def no_dora_form(self):
+        siren = self.siret[:9] if self.siret else None
+        return siren in settings.ORIENTATION_SIRENE_BLACKLIST
