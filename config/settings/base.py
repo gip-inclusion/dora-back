@@ -19,7 +19,7 @@ from . import BASE_DIR
 # Paramètres Django
 # Voir : https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 # Liste des applications Django :
 # peut-être étendue ou complétée par les profils de dev ou test.
@@ -95,7 +95,7 @@ AUTH_USER_MODEL = "users.User"
 # Si la connexion est déjà définie de cette manière, on la réutilise.
 # Sinon, elle sera définie dans les différents fichiers de settings
 # (via les variables d'environnement `PG_xxx` standards).
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Cache :
 # https://docs.djangoproject.com/en/4.2/topics/cache/
@@ -103,7 +103,7 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.environ["REDIS_URL"],
+        "LOCATION": os.getenv("REDIS_URL"),
         "TIMEOUT": None,
     }
 }
@@ -112,8 +112,8 @@ CACHES = {
 # https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/#allowed-hosts
 
 ALLOWED_HOSTS = (
-    os.environ["DJANGO_ALLOWED_HOSTS"].split(",")
-    if os.environ.get("DJANGO_ALLOWED_HOSTS")
+    os.getenv("DJANGO_ALLOWED_HOSTS").split(",")
+    if os.getenv("DJANGO_ALLOWED_HOSTS")
     else None
 )
 
@@ -131,8 +131,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
         "OPTIONS": {
-            # TODO: passer à 12
-            "min_length": 9,
+            "min_length": 12,
         },
     },
     {
@@ -169,10 +168,10 @@ STORAGES = {
 }
 
 # Stockage S3 CleverCloud :
-AWS_S3_ENDPOINT_URL = os.environ["AWS_S3_ENDPOINT_URL"]
-AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
-AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
-AWS_STORAGE_BUCKET_NAME = os.environ["AWS_STORAGE_BUCKET_NAME"]
+AWS_S3_ENDPOINT_URL = os.getenv("AWS_S3_ENDPOINT_URL")
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
 AWS_QUERYSTRING_EXPIRE = 24 * 3600  # secondes
 
 MAX_UPLOAD_SIZE_MB = 6
@@ -244,7 +243,7 @@ REST_FRAMEWORK = {
 
 # CORS :
 # https://github.com/adamchainz/django-cors-headers/blob/main/README.rst
-CORS_ALLOWED_ORIGIN_REGEXES = [os.environ["DJANGO_CORS_ALLOWED_ORIGIN_REGEXES"]]
+CORS_ALLOWED_ORIGIN_REGEXES = [os.getenv("DJANGO_CORS_ALLOWED_ORIGIN_REGEXES")]
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "sentry-trace",
 ]
@@ -260,59 +259,59 @@ RECENT_SERVICES_CUTOFF_DAYS = 30
 DORA_BOT_USER = "dora-bot@dora.beta.gouv.fr"
 
 # Authentifications tierces parties :
-PE_CLIENT_ID = os.environ["PE_CLIENT_ID"]
-PE_CLIENT_SECRET = os.environ["PE_CLIENT_SECRET"]
+PE_CLIENT_ID = os.getenv("PE_CLIENT_ID")
+PE_CLIENT_SECRET = os.getenv("PE_CLIENT_SECRET")
 
 # Compte utilisateur Data·Inclusion
 DATA_INCLUSION_EMAIL = "data.inclusion@beta.gouv.fr"
-DATA_INCLUSION_URL = os.environ["DATA_INCLUSION_URL"]
-DATA_INCLUSION_IMPORT_API_KEY = os.environ.get("DATA_INCLUSION_IMPORT_API_KEY")
-DATA_INCLUSION_STREAM_API_KEY = os.environ.get("DATA_INCLUSION_STREAM_API_KEY")
+DATA_INCLUSION_URL = os.getenv("DATA_INCLUSION_URL")
+DATA_INCLUSION_IMPORT_API_KEY = os.getenv("DATA_INCLUSION_IMPORT_API_KEY")
+DATA_INCLUSION_STREAM_API_KEY = os.getenv("DATA_INCLUSION_STREAM_API_KEY")
 DATA_INCLUSION_STREAM_SOURCES = (lambda s: s.split(",") if s else None)(
-    os.environ.get("DATA_INCLUSION_STREAM_SOURCES")
+    os.getenv("DATA_INCLUSION_STREAM_SOURCES")
 )
-DATA_INCLUSION_TIMEOUT_SECONDS = os.environ.get("DATA_INCLUSION_TIMEOUT_SECONDS")
+DATA_INCLUSION_TIMEOUT_SECONDS = os.getenv("DATA_INCLUSION_TIMEOUT_SECONDS")
 SKIP_DI_INTEGRATION_TESTS = True
 
 # Send In Blue :
-SIB_ACTIVE = os.environ["SIB_ACTIVE"] == "true"
-SIB_API_KEY = os.environ["SIB_API_KEY"]
-SIB_ONBOARDING_LIST = os.environ["SIB_ONBOARDING_LIST"]
+SIB_ACTIVE = os.getenv("SIB_ACTIVE") == "true"
+SIB_API_KEY = os.getenv("SIB_API_KEY")
+SIB_ONBOARDING_LIST = os.getenv("SIB_ONBOARDING_LIST")
 
 # Actualisation des services :
 NUM_DAYS_BEFORE_ADVISED_SERVICE_UPDATE = 30 * 6
 NUM_DAYS_BEFORE_MANDATORY_SERVICE_UPDATE = 30 * 8
 
 # Modération :
-MATTERMOST_HOOK_KEY = os.environ.get("MATTERMOST_HOOK_KEY")
+MATTERMOST_HOOK_KEY = os.getenv("MATTERMOST_HOOK_KEY")
 
 # INCLUSION-CONNECT / PRO-CONNECT
-IC_ISSUER_ID = os.environ.get("IC_ISSUER_ID")
-IC_AUTH_URL = os.environ.get("IC_AUTH_URL")
-IC_TOKEN_URL = os.environ.get("IC_TOKEN_URL")
-IC_LOGOUT_URL = os.environ.get("IC_LOGOUT_URL")
-IC_ACCOUNT_URL = os.environ.get("IC_ACCOUNT_URL")
-IC_CLIENT_ID = os.environ.get("IC_CLIENT_ID")
-IC_CLIENT_SECRET = os.environ.get("IC_CLIENT_SECRET")
+IC_ISSUER_ID = os.getenv("IC_ISSUER_ID")
+IC_AUTH_URL = os.getenv("IC_AUTH_URL")
+IC_TOKEN_URL = os.getenv("IC_TOKEN_URL")
+IC_LOGOUT_URL = os.getenv("IC_LOGOUT_URL")
+IC_ACCOUNT_URL = os.getenv("IC_ACCOUNT_URL")
+IC_CLIENT_ID = os.getenv("IC_CLIENT_ID")
+IC_CLIENT_SECRET = os.getenv("IC_CLIENT_SECRET")
 
 # Recherches sauvagardées :
 INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS = (
-    os.environ.get("INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS") == "true"
+    os.getenv("INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS") == "true"
 )
 
 # Notifications :
 # voir management command `process_notification_tasks`
 
 # activation des notifications
-NOTIFICATIONS_ENABLED = os.environ.get("NOTIFICATIONS_ENABLED", "") == "true"
+NOTIFICATIONS_ENABLED = os.getenv("NOTIFICATIONS_ENABLED", "") == "true"
 
 # si défini, seules ces tâches de notification seront lancées par le CRON
 # même principe que pour la management command, les tâches sélectionnées sont séparées par des ","
-NOTIFICATIONS_TASK_TYPES = os.environ.get("NOTIFICATIONS_TASK_TYPES", "")
+NOTIFICATIONS_TASK_TYPES = os.getenv("NOTIFICATIONS_TASK_TYPES", "")
 
 # nombre de Notifications à envoyer pour chaque tâche
 try:
-    NOTIFICATIONS_LIMIT = int(os.environ.get("NOTIFICATIONS_LIMIT", 0))
+    NOTIFICATIONS_LIMIT = int(os.getenv("NOTIFICATIONS_LIMIT", 0))
 except Exception:
     NOTIFICATIONS_LIMIT = 0
 
@@ -322,14 +321,14 @@ NUM_DAYS_BEFORE_ORIENTATIONS_NOTIFICATION = 10
 
 # GDAL :
 if "GDAL_LIBRARY_PATH" in os.environ:
-    GDAL_LIBRARY_PATH = os.environ["GDAL_LIBRARY_PATH"]
+    GDAL_LIBRARY_PATH = os.getenv("GDAL_LIBRARY_PATH")
 if "GEOS_LIBRARY_PATH" in os.environ:
-    GEOS_LIBRARY_PATH = os.environ["GEOS_LIBRARY_PATH"]
+    GEOS_LIBRARY_PATH = os.getenv("GEOS_LIBRARY_PATH")
 
 # DJANGO_ADMINS=Name1:email1,Name2:email2
 ADMINS = (
-    [u.split(":") for u in os.environ["DJANGO_ADMINS"].split(",")]
-    if os.environ.get("DJANGO_ADMINS")
+    [u.split(":") for u in os.getenv("DJANGO_ADMINS").split(",")]
+    if os.getenv("DJANGO_ADMINS")
     else None
 )
 
@@ -343,23 +342,23 @@ CSP_EXCLUDE_URL_PREFIXES = (
 
 # Envoi d'e-mails transactionnels :
 # https://app.tipimail.com/#/app/settings/smtp_and_apis
-DEFAULT_FROM_EMAIL = os.environ["DEFAULT_FROM_EMAIL"]
-NO_REPLY_EMAIL = os.environ.get("NO_REPLY_EMAIL", DEFAULT_FROM_EMAIL)
-EMAIL_HOST = os.environ["EMAIL_HOST"]
-EMAIL_HOST_USER = os.environ["EMAIL_HOST_USER"]
-EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
-EMAIL_SUBJECT_PREFIX = os.environ["EMAIL_SUBJECT_PREFIX"]
-EMAIL_PORT = os.environ["EMAIL_PORT"]
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
+NO_REPLY_EMAIL = os.getenv("NO_REPLY_EMAIL", DEFAULT_FROM_EMAIL)
+EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+EMAIL_SUBJECT_PREFIX = os.getenv("EMAIL_SUBJECT_PREFIX")
+EMAIL_PORT = os.getenv("EMAIL_PORT")
 EMAIL_USE_TLS = True
-EMAIL_DOMAIN = os.environ["EMAIL_DOMAIN"]
-FRONTEND_URL = os.environ["FRONTEND_URL"]
-SUPPORT_EMAIL = os.environ["SUPPORT_EMAIL"]
+EMAIL_DOMAIN = os.getenv("EMAIL_DOMAIN")
+FRONTEND_URL = os.getenv("FRONTEND_URL")
+SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL")
 
 SUPPORT_LINK = "https://aide.dora.inclusion.beta.gouv.fr"
 
 # Rientations :
-ORIENTATION_SUPPORT_LINK = os.environ["ORIENTATION_SUPPORT_LINK"]
-ORIENTATION_EMAILS_DEBUG = os.environ.get("ORIENTATION_EMAILS_DEBUG") == "true"
+ORIENTATION_SUPPORT_LINK = os.getenv("ORIENTATION_SUPPORT_LINK")
+ORIENTATION_EMAILS_DEBUG = os.getenv("ORIENTATION_EMAILS_DEBUG") == "true"
 ORIENTATION_SIRENE_BLACKLIST = [
     # Pole Emploi / France Travail
     "130005481",
@@ -477,7 +476,7 @@ ORIENTATION_SIRENE_BLACKLIST = [
 # production | staging | local
 # Utilisé our l'affichage de l'environnement sur l'admin,
 # et pour activer le SSL sur la connexion à la base de données.
-ENVIRONMENT = os.environ.get("ENVIRONMENT", "local")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
 
 # Profiling (Silk) :
 # Doit être explicitement activé (via env var)
