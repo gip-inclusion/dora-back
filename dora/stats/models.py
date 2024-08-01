@@ -297,8 +297,8 @@ class ServiceShare(AbstractServiceEvent):
 
 
 class MobilisationEvent(AbstractServiceEvent):
-    pass
+    external_link = models.URLField(verbose_name="lien externe", blank=True, null=True)
 
 
 class DiMobilisationEvent(AbstractDiServiceEvent):
-    pass
+    external_link = models.URLField(verbose_name="lien externe", blank=True, null=True)
