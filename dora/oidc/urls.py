@@ -1,3 +1,4 @@
+import mozilla_django_oidc.urls  # noqa: F401
 from django.urls import path
 
 import dora.oidc.views as views
@@ -19,12 +20,8 @@ oidc_patterns = [
         "inclusion-connect-authenticate/",
         views.inclusion_connect_authenticate,
     ),
-]
-
-# Prendront la place de `oidc_patterns`,
-# une fois Inclusion-Connect décommissionné.
-proconnect_patterns = [
-    path("oidc/authorize", views.oidc_authorize),
-    path("oidc/logout", views.oidc_logout),
-    # ...
+    # temporaire : sera remplacé par 'oidc/callback' une fois la route demandée
+    path(
+        "oidc/authorize", views.oidc_authorize_callback, name="oidc_authorize_callback"
+    ),
 ]
