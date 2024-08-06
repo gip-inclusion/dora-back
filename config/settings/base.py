@@ -322,7 +322,7 @@ OIDC_RP_CLIENT_SECRET = os.getenv("PC_CLIENT_SECRET")
 OIDC_RP_SCOPES = "openid given_name usual_name email siret uid"
 # OIDC_TIMEOUT=60
 # les deu prochains vont de pair (pas de discovery)
-OIDC_RP_SIGN_ALGO="RS256"
+OIDC_RP_SIGN_ALGO = "RS256"
 OIDC_OP_JWKS_ENDPOINT = f"https://{PC_ISSUER}/jwks"
 # obligatoire pour ProConnect: à passer en paramètre de requête supplémentaire
 OIDC_AUTH_REQUEST_EXTRA_PARAMS = {"acr_values": "eidas1"}
@@ -333,7 +333,7 @@ OIDC_OP_TOKEN_ENDPOINT = f"https://{PC_ISSUER}/token"
 OIDC_OP_USER_ENDPOINT = f"https://{PC_ISSUER}/userinfo"
 
 # Temporaire : modifié pour l'intégration, à supprimer pour la production
-OIDC_AUTHENTICATION_CALLBACK_URL="oidc_authorize_callback"
+OIDC_AUTHENTICATION_CALLBACK_URL = "oidc_authorize_callback"
 # Temporaire : force la représentation interne des URL avec un scheme HTTPS (build_absolute_uri)
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

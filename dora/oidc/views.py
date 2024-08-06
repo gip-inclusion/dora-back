@@ -6,6 +6,8 @@ import requests
 from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
+from django.http.response import HttpResponseRedirect
+from django.urls import reverse
 from django.utils.crypto import get_random_string
 from furl import furl
 from rest_framework import permissions
@@ -175,11 +177,13 @@ def inclusion_connect_authenticate(request):
 
 # Migration vers ProConnect :
 # En parallèle des différents enpoints OIDC inclusion-connect.
-# Les endpoints utilisés pour pro-connect, demandés pour le dossier d'inscription,
-# seront les suivants:
 
 
-def oidc_authorize(request): ...
-
-
-def oidc_logout(request): ...
+# temporaire : redirige vers /oidc/callback
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def oidc_authorize_callback(request):
+    return HttpResponseRedirect(
+        redirect_to=reverse("oidc_authentication_callback")
+        + f"?{request.META.get("QUERY_STRING")}"
+    )
