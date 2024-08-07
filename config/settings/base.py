@@ -315,15 +315,18 @@ PC_ISSUER = os.getenv("PC_ISSUER", f"{PC_DOMAIN}/api/v2")
 PC_AUTHORIZE_PATH = os.getenv("PC_AUTHORIZE_PATH", "authorize")
 PC_TOKEN_PATH = os.getenv("PC_TOKEN_PATH", "token")
 PC_USERINFO_PATH = os.getenv("PC_USERINFO_PATH", "userinfo")
+
 # mozilla_django_oidc:
 OIDC_RP_CLIENT_ID = os.getenv("PC_CLIENT_ID")
 OIDC_RP_CLIENT_SECRET = os.getenv("PC_CLIENT_SECRET")
-# `email` semble être un scope invalide pour ProConnect: corrigé par PC
 OIDC_RP_SCOPES = "openid given_name usual_name email siret uid"
-# OIDC_TIMEOUT=60
-# les deu prochains vont de pair (pas de discovery)
+# Nécessaire pour la gestion de la fin de session
+OIDC_STORE_ID_TOKEN = True
+
+# DEV uniquement : les deux prochains vont de pair (pas de discovery)
 OIDC_RP_SIGN_ALGO = "RS256"
 OIDC_OP_JWKS_ENDPOINT = f"https://{PC_ISSUER}/jwks"
+
 # obligatoire pour ProConnect: à passer en paramètre de requête supplémentaire
 OIDC_AUTH_REQUEST_EXTRA_PARAMS = {"acr_values": "eidas1"}
 # mozilla_django_oidc n'utilise pas de discovery / WK

@@ -33,6 +33,9 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
             # comme c'est le cas pour ProConnect
             return self.verify_token(user_response.text)
 
+    # Pas nécessaire de surcharger `get_or_create_user` puisque sur DORA,
+    # les utilisateurs ont un e-mail unique qui leur sert de `username`.
+
     def create_user(self, claims):
         # on peut à la rigueur se passer de certains élements contenus dans les claims,
         # mais pas de ceux-là :
