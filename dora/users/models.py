@@ -62,9 +62,12 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser):
+    # obsolète : sera remplacé par `sub_pc` pour ProConnect
     ic_id = models.UUIDField(
         verbose_name="Identifiant Inclusion Connect", null=True, blank=True
     )
+    sub_pc = models.UUIDField(verbose_name="Identifiant ProConnect", null=True)
+
     email = models.EmailField(
         verbose_name="email address",
         max_length=255,
