@@ -2,5 +2,4 @@
 
 django-extensions==3.2.3
 django-silk==5.1.0
-ggshield==1.27.0
 pre-commit==3.7.1
