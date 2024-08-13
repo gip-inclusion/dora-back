@@ -114,3 +114,7 @@ export DJANGO_SETTINGS_MODULE=config.settings.dev
 # Installer les hooks de pre-commit:
 pre-commit install
 ```
+
+Le pre-commit du projet nécessite une installation locale sur le poste de dev de Talisman (en remplacement de GGShield).
+Voir [la procédure d'installation](https://github.com/thoughtworks/talisman?tab=readme-ov-file#installation).
+
