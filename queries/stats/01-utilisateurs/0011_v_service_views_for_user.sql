@@ -2,7 +2,7 @@
 -- non-gestionnaire, 
 -- non-membre de l'équipe, 
 -- pas porté par une structure dont l'utilisateur est membre,
--- et offreur seulement. 
+-- et non-offreur seulement. 
 
 drop view v_service_views_for_user;
 

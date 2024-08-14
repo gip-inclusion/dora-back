@@ -1,7 +1,7 @@
 -- Décompte des recherches effectuées par des utilisateurs connectés :
 -- non-gestionnaire, 
 -- non-membre de l'équipe, 
--- et offreur seulement. 
+-- et non-offreur seulement. 
 
 drop view v_searches_for_user;
 
