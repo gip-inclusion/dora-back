@@ -9,6 +9,14 @@ services:
       - pgconf:/etc/postgresql
     ports:
       - "5432:5432"
+  pgadmin:
+    image: dpage/pgadmin4
+    env_file:
+      - envs/secrets.env
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    ports:
+      - "8888:80"
   s3:
     image: bitnami/minio:latest
     volumes:
