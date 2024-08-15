@@ -224,12 +224,14 @@ def test_service_serialization_exemple(authenticated_user, api_client, settings)
         baker.make(Credential, name="Carte d'identité, passeport ou permis de séjour"),
     )
     service.coach_orientation_modes.add(
-        CoachOrientationMode.objects.get(value="envoyer-courriel"),
-        CoachOrientationMode.objects.get(value="envoyer-formulaire"),
-        CoachOrientationMode.objects.get(value="envoyer-fiche-prescription"),
+        CoachOrientationMode.objects.get(value="envoyer-un-mail"),
+        CoachOrientationMode.objects.get(value="formulaire-dora"),
+        CoachOrientationMode.objects.get(
+            value="envoyer-un-mail-avec-une-fiche-de-prescription"
+        ),
     )
     service.beneficiaries_access_modes.add(
-        BeneficiaryAccessMode.objects.get(value="envoyer-courriel")
+        BeneficiaryAccessMode.objects.get(value="envoyer-un-mail")
     )
 
     response = api_client.get(f"/api/v2/services/{service.id}/")
@@ -248,7 +250,7 @@ def test_service_serialization_exemple(authenticated_user, api_client, settings)
         "date_creation": "2023-02-04T12:34:44Z",
         "date_maj": "2023-03-11T16:54:10Z",
         "date_suspension": None,
-        "formulaire_en_ligne": None,
+        "formulaire_en_ligne": service.get_dora_form_url(),
         "frais_autres": "10 €",
         "frais": "payant",
         "id": str(service.id),
@@ -284,6 +286,69 @@ def test_service_serialization_exemple(authenticated_user, api_client, settings)
         "modes_orientation_beneficiaire": ["envoyer-un-mail"],
         "modes_orientation_beneficiaire_autres": "Contacter conseiller(e) Pôle Emploi",
     }
+
+
+def test_service_serialization_formulaire_en_ligne(
+    authenticated_user, api_client, settings
+):
+    # Initialisation du service
+    service = make_service(status=ServiceStatus.PUBLISHED)
+    service.coach_orientation_modes.clear()
+    service.coach_orientation_modes_external_form_link = "http://example.com/coach-form"
+    service.coach_orientation_modes.add(
+        CoachOrientationMode.objects.get(value="formulaire-dora"),
+        CoachOrientationMode.objects.get(value="completer-le-formulaire-dadhesion"),
+    )
+    service.beneficiaries_access_modes.clear()
+    service.beneficiaries_access_modes.add(
+        BeneficiaryAccessMode.objects.get(value="completer-le-formulaire-dadhesion")
+    )
+    service.beneficiaries_access_modes_external_form_link = (
+        "http://example.com/beneficiary-form"
+    )
+    service.online_form = "http://example.com/online-form"
+    service.save()
+
+    # Formulaire en ligne = formulaire accompagnateur
+    response = api_client.get(f"/api/v2/services/{service.id}/")
+    assert response.status_code == 200
+    json = response.json()
+    assert json["formulaire_en_ligne"] == "http://example.com/coach-form"
+
+    # Formulaire en ligne = formulaire bénéficiaire
+    service.coach_orientation_modes.remove(
+        CoachOrientationMode.objects.get(value="completer-le-formulaire-dadhesion")
+    )
+    response = api_client.get(f"/api/v2/services/{service.id}/")
+    assert response.status_code == 200
+    json = response.json()
+    assert json["formulaire_en_ligne"] == "http://example.com/beneficiary-form"
+
+    # Formulaire en ligne = formulaire DORA
+    service.beneficiaries_access_modes.remove(
+        BeneficiaryAccessMode.objects.get(value="completer-le-formulaire-dadhesion")
+    )
+    response = api_client.get(f"/api/v2/services/{service.id}/")
+    assert response.status_code == 200
+    json = response.json()
+    assert json["formulaire_en_ligne"] == service.get_dora_form_url()
+
+    # Formulaire en ligne = lien documents
+    service.coach_orientation_modes.remove(
+        CoachOrientationMode.objects.get(value="formulaire-dora")
+    )
+    response = api_client.get(f"/api/v2/services/{service.id}/")
+    assert response.status_code == 200
+    json = response.json()
+    assert json["formulaire_en_ligne"] == "http://example.com/online-form"
+
+    # Formulaire en ligne = aucun
+    service.online_form = ""
+    service.save()
+    response = api_client.get(f"/api/v2/services/{service.id}/")
+    assert response.status_code == 200
+    json = response.json()
+    assert json["formulaire_en_ligne"] is None
 
 
 def test_service_serialization_exemple_need_di_user(api_client):

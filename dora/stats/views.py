@@ -255,15 +255,20 @@ def log_event(request):
                 event.subcategories.set(service.subcategories.all())
 
         case Tag.MOBILISATION:
+            external_link = request.data.get("external_link")
             event = MobilisationEvent.objects.create(
-                **common_analytics_data, **structure_data, **service_data
+                external_link=external_link,
+                **common_analytics_data,
+                **structure_data,
+                **service_data,
             )
             event.categories.set(service.categories.all())
             event.subcategories.set(service.subcategories.all())
 
         case Tag.DI_MOBILISATION:
+            external_link = request.data.get("external_link")
             event = DiMobilisationEvent.objects.create(
-                **common_analytics_data, **di_service_data
+                external_link=external_link, **common_analytics_data, **di_service_data
             )
             cats_values = request.data.get("di_categories", [])
             subcats_values = request.data.get("di_subcategories", [])
