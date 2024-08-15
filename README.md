@@ -32,6 +32,8 @@ Utiliser _psql_ :
 docker compose exec db psql dora -U POSTGRES_USER
 ```
 
+Accéder à pgAdmin 4 via http://localhost:8888/ en utilisant l'adresse e-mail et le mot de passe configurés par les variables d'environnement `PGADMIN_DEFAULT_EMAIL` et `PGADMIN_DEFAULT_PASSWORD`. Le nom d'hôte de la base de données est `db`.
+
 ## Installation
 
 - Créer une base de données PostgresQL `dora`.
@@ -117,4 +119,3 @@ pre-commit install
 
 Le pre-commit du projet nécessite une installation locale sur le poste de dev de Talisman (en remplacement de GGShield).
 Voir [la procédure d'installation](https://github.com/thoughtworks/talisman?tab=readme-ov-file#installation).
-
