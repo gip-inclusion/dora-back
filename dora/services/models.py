@@ -730,3 +730,14 @@ class SavedSearch(models.Model):
             for r in results
             if datetime.fromisoformat(r["publication_date"]).date() > cutoff_date
         ]
+
+
+class FundingLabel(models.Model):
+    class Meta:
+        verbose_name = "label de financement"
+        verbose_name_plural = "labels de financement"
+
+    department = models.CharField(
+        max_length=3, db_index=True, verbose_name="département"
+    )
+    label = models.CharField(verbose_name="label")
