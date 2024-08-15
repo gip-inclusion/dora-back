@@ -1,4 +1,6 @@
 fileignoreconfig:
 - filename: dora/services/migrations/0110_fundinglabel.py
   checksum: b04db85f9727ef213d715ce04cc4bf7f093e8e76ed3c6435a9d214d68b1f7226
+- filename: dora/services/migrations/0111_service_funding_label.py
+  checksum: 1cb43c3e900ef7cc49bf25dec3b419d5b99e5581dea214eff89480cabfa8ee09
 version: ""
