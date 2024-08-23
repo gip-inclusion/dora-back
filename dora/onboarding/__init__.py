@@ -50,7 +50,9 @@ def _setup_sib_client() -> sib_api.ContactsApi | None:
     return sib_api.ContactsApi(sib_api.ApiClient(configuration))
 
 
-def _sib_contact_for_user(client: sib_api.ContactsApi, user: User):
+def _sib_contact_for_user(
+    client: sib_api.ContactsApi, user: User
+) -> sib_api.GetExtendedContactDetails | None:
     # on vérifie l'existence de l'utilisateur en tant que contact Brevo / SiB
     try:
         # l'API SiB renvoie une erreur 404 si l'utilisateur n'est pas trouvé
@@ -175,14 +177,10 @@ def _create_or_update_sib_contact(
     # le contact existe, on vérifie si il est déjà rattaché à la liste
     if not _contact_in_sib_list(client, user, sib_list_id):
         # si l'utilisateur existe mais n'est pas rattaché :
-        all(
-            (
-                # on mets à jour les attributs du contact (pas possible en une étape à date)
-                _update_sib_contact(client, user, attributes),
-                # on rattache le contact à la liste SiB voulue
-                _add_user_to_sib_list(client, user, sib_list_id),
-            )
-        )
+        # on mets à jour les attributs du contact (pas possible en une étape à date)
+        if _update_sib_contact(client, user, attributes):
+            # on rattache le contact à la liste SiB voulue
+            _add_user_to_sib_list(client, user, sib_list_id)
 
     # à ce point, l'utilisateur est déjà onboardé / rattaché, rien d'autre à faire
 
