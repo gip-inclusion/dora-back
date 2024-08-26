@@ -4,6 +4,7 @@ from rest_framework.test import APITestCase
 
 from dora.core.test_utils import make_service, make_structure
 from dora.services.enums import ServiceStatus
+from dora.structures.constants import RESTRICTED_NATIONAL_LABELS
 from dora.structures.models import (
     Structure,
     StructureMember,
@@ -1201,3 +1202,23 @@ class StructureMemberTestCase(APITestCase):
         self.assertGreater(len(mail.outbox), 0)
         self.assertIn("Demande d’accès à votre structure", mail.outbox[0].subject)
         self.assertIn(self.my_struct.slug, mail.outbox[0].body)
+
+
+# Tests au format pytest
+
+
+def test_restricted_national_labels(api_client):
+    # On s'assure que la liste des options contient
+    # les label nationaux sélectionnables "restreints"
+    response = api_client.get("/structures-options", follow=True)
+    data = response.json()
+
+    assert (
+        "restrictedNationalLabels" in data.keys()
+    ), "Les labels restreints ne sont pas dans les options"
+
+    values = [lbl.get("value") for lbl in data["restrictedNationalLabels"]]
+
+    assert (
+        tuple(values) == RESTRICTED_NATIONAL_LABELS
+    ), "la liste des labels restreints est incorrecte"
