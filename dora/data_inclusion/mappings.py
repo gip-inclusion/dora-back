@@ -263,6 +263,7 @@ def map_service(service_data: dict, is_authenticated: bool) -> dict:
         "is_orientable": is_orientable(service_data),
         "kinds": [k.value for k in kinds] if kinds is not None else None,
         "kinds_display": [k.label for k in kinds] if kinds is not None else None,
+        "lien_source": service_data["lien_source"],
         "location_kinds": [lk.value for lk in location_kinds]
         if location_kinds is not None
         else None,
