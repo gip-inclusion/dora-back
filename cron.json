@@ -1,7 +1,7 @@
 {
   "jobs": [
     {
-      "command": "17 07-18 * * * tools/update-metabase-db.sh",
+      "command": "0 6,13 * * * tools/update-metabase-db.sh",
       "size": "S"
     },
     {
