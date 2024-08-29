@@ -1,4 +1,6 @@
 fileignoreconfig:
   - filename: dora/services/migrations/0110_remove_service_fee_pass_numerique.py
     checksum: 8d45217f8fc80d3ffb37ca6040b04a9aa99a37c1eb82f4ae0939b91f6989850d
+  - filename: queries/metabase/02-utils/structure_has_admin.sql
+    checksum: 45b9ac4798a7f2f60b0bcd520727578195684a96aca9890f2558ab84e9b2aae5
 version: ""
