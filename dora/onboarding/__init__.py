@@ -20,8 +20,8 @@ dans un module distinct `dora.onboarding`.
 
 Il y a également deux nouvelles listes ("routes") SIB distinctes pour l'envoi des données,
 voir dans les settings :
-    - `SIB_ONBOARDING_MEMBERS_LIST`
-    - `SIB_ONBOARDING_PUTATIVE_MEMBERS_LIST`
+    - `SIB_ONBOARDING_MEMBER_LIST`
+    - `SIB_ONBOARDING_PUTATIVE_MEMBER_LIST`
 
 La route/liste par défaut (`SIB_ONBOARDING_LIST`) reste encore active pour tous les utilisateurs
 offreurs ou d'une autre catégorie.
@@ -224,9 +224,9 @@ def onboard_user(user: User, structure: Structure):
         case MainActivity.ACCOMPAGNATEUR | MainActivity.ACCOMPAGNATEUR_OFFREUR:
             # pour les accompagnateurs et accompagnateurs + offreurs :
             sib_list_id = (
-                settings.SIB_ONBOARDING_MEMBERS_LIST
+                settings.SIB_ONBOARDING_MEMBER_LIST
                 if user in structure.members.all()
-                else settings.SIB_ONBOARDING_PUTATIVE_MEMBERS_LIST
+                else settings.SIB_ONBOARDING_PUTATIVE_MEMBER_LIST
             )
             attributes |= {
                 "NOM_STRUCTURE": structure.name,
