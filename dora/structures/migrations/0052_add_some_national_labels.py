@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
         # Mise à jour de CAP emploi
         cap_emploi = StructureNationalLabel.objects.filter(value="cheops").first()
         if cap_emploi:
-            cap_emploi.value = "cap-emploi-cheops"
+            cap_emploi.value = "cap-emploi-reseau-cheops"
             cap_emploi.label = "CAP Emploi - Réseau CHEOPS"
             cap_emploi.save()
 

@@ -11,6 +11,7 @@ from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
 from dora.core.pagination import OptionalPageNumberPagination
 from dora.services.enums import ServiceStatus
+from dora.structures.constants import RESTRICTED_NATIONAL_LABELS
 from dora.structures.emails import send_invitation_email
 from dora.structures.models import (
     Structure,
@@ -344,15 +345,19 @@ def siret_was_claimed(request, siret):
 @api_view()
 @permission_classes([permissions.AllowAny])
 def options(request):
+    labels = StructureNationalLabel.objects.all().order_by("label")
     result = {
         "typologies": Typologie.as_dict_list(),
-        "national_labels": [
-            {"value": c.value, "label": c.label}
-            for c in StructureNationalLabel.objects.all().order_by("label")
-        ],
+        "national_labels": [{"value": c.value, "label": c.label} for c in labels],
         "sources": [
             {"value": c.value, "label": c.label}
             for c in StructureSource.objects.all().order_by("label")
+        ],
+        # les labels nationaux font l'objet d'une curation : voir `.constants`
+        "restricted_national_labels": [
+            {"value": c.value, "label": c.label}
+            for c in labels
+            if c.value in RESTRICTED_NATIONAL_LABELS
         ],
     }
     return Response(result)
