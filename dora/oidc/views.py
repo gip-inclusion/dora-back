@@ -187,3 +187,12 @@ def oidc_authorize_callback(request):
         redirect_to=reverse("oidc_authentication_callback")
         + f"?{request.META.get("QUERY_STRING")}"
     )
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def oidc_login(request):
+    # Simple redirection vers la page d'identification ProConnect (si pas identifié)
+    return HttpResponseRedirect(
+        redirect_to=reverse("oidc_authentication_init")
+        + f"?{request.META.get("QUERY_STRING")}"
+    )

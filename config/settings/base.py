@@ -66,6 +66,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "csp.middleware.CSPMiddleware",
+    # Rafraichissement du token ProConnect
+    "mozilla_django_oidc.middleware.SessionRefresh",
 ]
 
 # OIDC / ProConnect
@@ -335,12 +337,15 @@ OIDC_OP_TOKEN_ENDPOINT = f"https://{PC_ISSUER}/token"
 # https://fca.integ01.dev-agentconnect.fr/api/v2/userinfo
 OIDC_OP_USER_ENDPOINT = f"https://{PC_ISSUER}/userinfo"
 
+# Intervalle de rafraichissement du token (4h)
+OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 4 * 60 * 60
+
 # Temporaire : modifié pour l'intégration, à supprimer pour la production
 OIDC_AUTHENTICATION_CALLBACK_URL = "oidc_authorize_callback"
 # Temporaire : force la représentation interne des URL avec un scheme HTTPS (build_absolute_uri)
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
+ALLOW_LOGOUT_GET_METHOD = True
 
 # Recherches sauvegardées :
 INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS = (

@@ -26,11 +26,11 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
         user_response.raise_for_status()
 
         try:
-            # cas où le type du contenu est `application/json`
+            # cas où le type du token JWT est `application/json`
             return user_response.json()
         except requests.exceptions.JSONDecodeError:
-            # sinon, on présume qu'il s'agit d'un contenu `application/jwt` (+...)
-            # comme c'est le cas pour ProConnect
+            # sinon, on présume qu'il s'agit d'un token JWT au format `application/jwt` (+...)
+            # comme c'est le cas pour ProConnect.
             return self.verify_token(user_response.text)
 
     # Pas nécessaire de surcharger `get_or_create_user` puisque sur DORA,
@@ -63,3 +63,4 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
             last_name=claims.get("usual_name", "N/D"),
             is_valid=True,
         )
+

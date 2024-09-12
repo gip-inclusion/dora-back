@@ -24,4 +24,5 @@ oidc_patterns = [
     path(
         "oidc/authorize", views.oidc_authorize_callback, name="oidc_authorize_callback"
     ),
+    path("oidc/login", views.oidc_login, name="oidc_login"),
 ]
