@@ -10,6 +10,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
+import dora.onboarding as onboarding
 from dora.core.constants import SIREN_POLE_EMPLOI
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
@@ -176,6 +177,8 @@ def join_structure(request):
             StructureSerializer(structure, context={"request": request}).data
         )
 
+    # on teste au préalable si l'utilisateur était membre de la structure
+    # pour effectuer l'onboarding *après* le attachement
     was_already_member_of_a_structure = (
         StructureMember.objects.filter(user=user).exists()
         or StructurePutativeMember.objects.filter(
@@ -188,8 +191,10 @@ def join_structure(request):
     else:
         _add_user_to_structure_or_waitlist(structure, user)
 
+    # point de départ de l'onboarding : l'utilisateur demande à rejoindre
+    # ou rejoint effectivement une structure (en tant que premier admin)
     if not was_already_member_of_a_structure:
-        user.start_onboarding(structure, not structure_has_admin)
+        onboarding.onboard_user(user, structure)
 
     return Response(StructureSerializer(structure, context={"request": request}).data)
 
