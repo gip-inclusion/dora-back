@@ -58,7 +58,9 @@ def test_onboard_other_activities(
 
     assert user == invited_user, "L'utilisateur ne correspond pas"
     assert attrs, "Les attributs Brevo ne sont pas définis"
-    assert str(sib_list) == expected_sib_list
+    assert (
+        str(sib_list) == expected_sib_list
+    ), "L'utilisateur n'est pas rattaché à la bonne liste Brevo"
 
 
 @pytest.mark.parametrize(
@@ -68,10 +70,15 @@ def test_onboard_other_activities(
         (MainActivity.ACCOMPAGNATEUR_OFFREUR, settings.SIB_ONBOARDING_MEMBER_LIST),
     ],
 )
+@patch("dora.onboarding._remove_from_sib_list")
 @patch("dora.onboarding._create_or_update_sib_contact")
 @patch("dora.onboarding._setup_sib_client", Mock(return_value=True))
 def test_onboard_new_member(
-    mock_create_contact, main_activity, expected_sib_list, api_client
+    mock_create_contact,
+    mock_remove_from_list,
+    main_activity,
+    expected_sib_list,
+    api_client,
 ):
     # Les utilisateurs accompagnateurs ou accompagnateurs/offreurs
     # sont "onboardés" sur la liste Brevo des membres lors de leur premier rattachement à une structure.
@@ -103,4 +110,14 @@ def test_onboard_new_member(
 
     assert user == member, "L'utilisateur ne correspond pas"
     assert attrs, "Les attributs Brevo ne sont pas définis"
-    assert str(sib_list) == expected_sib_list
+    assert (
+        str(sib_list) == expected_sib_list
+    ), "L'utilisateur n'est pas rattaché à la bonne liste Brevo"
+
+    # On retire un utilisateur de la liste Brevo "invité" après qu'il soit devenu membre.
+    assert (
+        mock_remove_from_list.called
+    ), "Pas de retrait de l'utilisateur de la liste Brevo des invités"
+    mock_remove_from_list.assert_called_with(
+        True, user, int(settings.SIB_ONBOARDING_PUTATIVE_MEMBER_LIST)
+    )
