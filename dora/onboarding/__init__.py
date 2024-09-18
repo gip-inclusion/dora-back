@@ -135,6 +135,29 @@ def _add_user_to_sib_list(
     return True
 
 
+def _remove_from_sib_list(
+    client: sib_api.ContactsApi, user: User, sib_list_id: int
+) -> bool:
+    # retire un utilisateur donné d'une liste SiB
+    try:
+        client.remove_contact_from_list(
+            sib_list_id, sib_api.RemoveContactFromList(emails=[user.email])
+        )
+        logger.info(
+            "L'utilisateur #%s a été retiré de la liste SiB: %s", user.pk, sib_list_id
+        )
+    except SibApiException as exc:
+        logger.exception(exc)
+        logger.error(
+            "Impossible de retirer l'utilisateur #%s de la liste SiB: %s",
+            user.pk,
+            sib_list_id,
+        )
+        return False
+
+    return True
+
+
 def _create_sib_contact(
     client: sib_api.ContactsApi, user: User, attributes: dict, sib_list_id: int
 ) -> bool:
@@ -252,3 +275,9 @@ def onboard_user(user: User, structure: Structure):
 
     # création ou maj du contact SiB
     _create_or_update_sib_contact(client, user, attributes, sib_list_id)
+
+    # dans le cas d'un utilisateur passé membre, le retirer de la liste des invités
+    if sib_list_id == int(settings.SIB_ONBOARDING_MEMBER_LIST):
+        _remove_from_sib_list(
+            client, user, int(settings.SIB_ONBOARDING_PUTATIVE_MEMBER_LIST)
+        )

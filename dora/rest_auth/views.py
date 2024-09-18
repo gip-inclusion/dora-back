@@ -178,7 +178,7 @@ def join_structure(request):
         )
 
     # on teste au préalable si l'utilisateur était membre de la structure
-    # pour effectuer l'onboarding *après* le attachement
+    # pour effectuer l'onboarding *après* le rattachement
     was_already_member_of_a_structure = (
         StructureMember.objects.filter(user=user).exists()
         or StructurePutativeMember.objects.filter(
