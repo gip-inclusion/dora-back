@@ -25,3 +25,7 @@ from users_user
 where (users_user.is_active is true);
 
 alter table mb_user add primary key (id);
+
+-- Indexes
+CREATE INDEX idx_mb_user_is_staff_is_manager ON mb_user ("is_staff", "is_manager");
+CREATE INDEX idx_mb_user_is_valid ON mb_user ("is_valid");

@@ -61,15 +61,8 @@ where
 order by mu.date_joined desc;
 
 -- Indexes 
-
-create index mb_putative_members_date_joined_idx on public.mb_putative_members (
-    "Date de création"
-);
-create index mb_putative_members_dpt_idx on public.mb_putative_members (
-    "Département"
-);
-create index mb_putative_members_dpt_is_valid on public.mb_putative_members (
-    "E-mail validé"
-);
+CREATE INDEX mb_putative_members_date_joined_idx on mb_putative_members ("Date de création");
+CREATE INDEX mb_putative_members_dpt_idx on mb_putative_members ("Département");
+CREATE INDEX mb_putative_members_dpt_is_valid on mb_putative_members ("E-mail validé");
 
 comment on table mb_putative_members is 'Liste des membres en attente de rattachement';

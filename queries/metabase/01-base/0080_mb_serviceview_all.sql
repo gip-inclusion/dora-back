@@ -52,3 +52,8 @@ left join services_service as s on sv.service_id = s.id
 left join structures_structure as st on sv.structure_id = st.id;
 
 alter table mb_serviceview_all add primary key (id);
+
+-- Indexes
+CREATE INDEX idx_mb_serviceview_all_structure_id ON mb_serviceview_all ("structure_id");
+CREATE INDEX idx_mb_serviceview_all_user_id ON mb_serviceview_all ("user_id");
+CREATE INDEX idx_mb_serviceview_all_is_staff_is_manager ON mb_serviceview_all ("is_staff", "is_manager");
