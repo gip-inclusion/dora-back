@@ -1,26 +1,36 @@
 -- Question(s) concernée(s):
 --   • "Nombre de mobilisations par thématique"
 
-DROP TABLE IF EXISTS q_mobilisations_by_category_department;
+drop table if exists q_mobilisations_by_category_department;
 
-CREATE TABLE q_mobilisations_by_category_department AS (
-    SELECT 
-        mobilisation.id AS "id",
-        mobilisation.path AS "path",
-        mobilisation.date AS "date",
-        structure.department AS "department",
-        ss.label AS "label",
-        category.label AS "category"
-    FROM stats_mobilisationevent AS mobilisation
-        LEFT JOIN services_service_categories AS "service" ON mobilisation.service_id = "service".service_id
-        LEFT JOIN services_servicecategory AS category ON "service".servicecategory_id = category.id
-        LEFT JOIN structures_structuremember AS member ON mobilisation.user_id = member.user_id
-        LEFT JOIN mb_structure AS structure ON member.structure_id = structure.id
-        LEFT JOIN structures_structure_national_labels AS ssnl ON structure.id = ssnl.structure_id
-        LEFT JOIN structures_structurenationallabel AS ss ON ssnl.structurenationallabel_id = ss.id
-    WHERE 
-        mobilisation.is_staff = FALSE
-        AND mobilisation.is_manager = FALSE
-        AND mobilisation.is_structure_member = FALSE
-        AND mobilisation.is_structure_admin = FALSE
+create table q_mobilisations_by_category_department as (
+    select
+        mobilisation.id      as "id",
+        mobilisation.path    as "path",
+        mobilisation.date    as "date",
+        structure.department as "department",
+        ss.label             as "label",
+        category.label       as "category"
+    from stats_mobilisationevent as mobilisation
+    left join
+        services_service_categories as "service"
+        on mobilisation.service_id = "service".service_id
+    left join
+        services_servicecategory as category
+        on "service".servicecategory_id = category.id
+    left join
+        structures_structuremember as member
+        on mobilisation.user_id = member.user_id
+    left join mb_structure as structure on member.structure_id = structure.id
+    left join
+        structures_structure_national_labels as ssnl
+        on structure.id = ssnl.structure_id
+    left join
+        structures_structurenationallabel as ss
+        on ssnl.structurenationallabel_id = ss.id
+    where
+        mobilisation.is_staff = false
+        and mobilisation.is_manager = false
+        and mobilisation.is_structure_member = false
+        and mobilisation.is_structure_admin = false
 );

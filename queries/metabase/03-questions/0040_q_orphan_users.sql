@@ -37,7 +37,10 @@ alter table public.q_orphan_users add constraint q_orphan_users_pk primary key (
     "ID utilisateur"
 );
 
-CREATE INDEX q_orphan_users_valide_idx on q_orphan_users ("E-mail validé");
-CREATE INDEX q_orphan_users_date_joined_idx on q_orphan_users ("Date de création");
+create index q_orphan_users_valide_idx
+on q_orphan_users ("E-mail validé");
+
+create index q_orphan_users_date_joined_idx
+on q_orphan_users ("Date de création");
 
 comment on table q_orphan_users is 'Liste des utilisateurs non rattachés à une structure et sans invitation';

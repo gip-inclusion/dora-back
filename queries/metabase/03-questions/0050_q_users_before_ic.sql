@@ -36,6 +36,7 @@ alter table public.q_users_before_ic add constraint q_users_before_ic_pk primary
     "ID utilisateur"
 );
 
-CREATE INDEX q_users_before_ic_date_joined_idx on q_users_before_ic ("Date de création");
+create index q_users_before_ic_date_joined_idx
+on q_users_before_ic ("Date de création");
 
 comment on table q_users_before_ic is 'Utilisateurs avec e-mail non validé, créés avant IC';

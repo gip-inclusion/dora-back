@@ -59,7 +59,7 @@ select
             and services_service.status = 'PUBLISHED'
             then 'NEEDED'
         else 'NOT_NEEDED'
-    end as update_status
+    end                                                      as update_status
 from services_service;
 
 alter table mb_all_service add primary key (id);
