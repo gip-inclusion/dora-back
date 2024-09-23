@@ -7,6 +7,7 @@ from rest_framework import exceptions, mixins, permissions, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
+from dora import onboarding
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
 from dora.core.pagination import OptionalPageNumberPagination
@@ -299,6 +300,8 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
         if not structure.can_edit_members(request_user):
             raise exceptions.PermissionDenied
 
+        new_member = pm.user
+
         with transaction.atomic(durable=True):
             membership = StructureMember.objects.create(
                 user=pm.user,
@@ -307,6 +310,13 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
             )
             pm.delete()
             membership.notify_access_granted()
+
+        # À ce point, il peut être nécessaire de déclencher un onboarding :
+        # la *première* acceptation en tant que membre d'une structure déclenche
+        # l'inscription à une liste Brevo.
+        if new_member.membership.count() == 1:
+            # on vient d'enregistrer le nouveau membre (1 seule structure)
+            onboarding.onboard_user(new_member, structure)
 
         return Response(status=201)
 

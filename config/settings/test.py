@@ -35,8 +35,10 @@ SIB_ACTIVE = False
 
 # Nécessaire pour la C.I. : fixe des valeurs par défaut pour les conteneurs
 # faire correspondre les valeurs définies dans la configuration de la CI
-CORS_ALLOWED_ORIGIN_REGEXES = [os.getenv("DJANGO_CORS_ALLOWED_ORIGIN_REGEXES","*")]
+CORS_ALLOWED_ORIGIN_REGEXES = [os.getenv("DJANGO_CORS_ALLOWED_ORIGIN_REGEXES", "*")]
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 IC_TOKEN_URL = os.getenv("IC_TOKEN_URL", "https://whatever-oidc-token-url.com")
 AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "dora")
-
+SIB_ONBOARDING_LIST = os.getenv("SIB_ONBOARDING_LIST", "1")
+SIB_ONBOARDING_PUTATIVE_MEMBER_LIST = os.getenv("SIB_ONBOARDING_PUTATIVE_MEMBER_LIST", "2")
+SIB_ONBOARDING_MEMBER_LIST = os.getenv("SIB_ONBOARDING_MEMBER_LIST", "3")
