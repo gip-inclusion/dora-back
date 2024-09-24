@@ -169,6 +169,16 @@ def _get_di_results(
         )
     ]
 
+    # Exclus les services Action Logement ayant comme thématique
+    # logement-hebergement--aides-financieres-investissement-locatif
+    # car ce ne sont pas des services a destination des bénéficiaires
+    raw_di_results = [
+        result
+        for result in raw_di_results
+        if "logement-hebergement--aides-financieres-investissement-locatif"
+        not in result["service"]["thematiques"]
+    ]
+
     supported_service_kinds = models.ServiceKind.objects.values_list("value", flat=True)
 
     mapped_di_results = [
