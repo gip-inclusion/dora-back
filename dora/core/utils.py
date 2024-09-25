@@ -1,3 +1,4 @@
+import collections
 import logging
 import re
 from typing import Tuple
@@ -50,3 +51,15 @@ def get_object_or_none(klass, *args, **kwargs):
         return get_object_or_404(klass, *args, **kwargs)
     except Http404:
         return None
+
+
+def deep_update(source, overrides):
+    """
+    Met à jour le dictionnaire source avec les valeurs du dictionnaire overrides de manière récursive.
+    """
+    for key, value in overrides.items():
+        if isinstance(value, collections.abc.Mapping) and key in source:
+            source[key] = deep_update(source.get(key, {}), value)
+        else:
+            source[key] = value
+    return source
