@@ -6,6 +6,7 @@ import requests
 from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
+from django.http import HttpResponseForbidden
 from django.http.response import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.crypto import get_random_string
@@ -188,6 +189,7 @@ def oidc_authorize_callback(request):
         + f"?{request.META.get("QUERY_STRING")}"
     )
 
+
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
 def oidc_login(request):
@@ -196,3 +198,46 @@ def oidc_login(request):
         redirect_to=reverse("oidc_authentication_init")
         + f"?{request.META.get("QUERY_STRING")}"
     )
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def oidc_logged_in(request):
+    # redirection vers la page d'accueil de DORA
+    print("request.user:", request.user)
+    # attention : l'utilisateur est toujours anonyme (a ce point il n'existe qu'un token DRF)
+    token = Token.objects.get(user_id=request.session["_auth_user_id"])
+    print("fetching token...")
+    return HttpResponseRedirect(
+        redirect_to=f"{settings.FRONTEND_URL}/auth/pc-callback/{token}"
+    )
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def oidc_pre_logout(request):
+    # attention : le nom oidc_logout est pris par mozilla-django-oidc
+    # récuperation du token stocké en session:
+    print("OIDC logout")
+    if oidc_token := request.session.get("oidc_id_token"):
+        print("session oidc_token:", oidc_token)
+        print(
+            "URL de logout de mozilla-oidc:",
+            request.build_absolute_uri(reverse("oidc_logout")),
+        )
+        # construction de l'URL de logout
+        # attention au trailing slashes  !!!!
+        params = {
+            "id_token_hint": oidc_token,
+            "state": "todo_xxx",
+            "post_logout_redirect_uri": request.build_absolute_uri(
+                reverse("oidc_logout").rstrip("/")
+            ),
+        }
+        print("logout params:", params)
+        logout_url = furl(settings.OIDC_OP_LOGOUT_ENDPOINT, args=params)
+        print("logout URL:", logout_url)
+        # attention :  pas de trailing slash dans la version de test
+        return HttpResponseRedirect(redirect_to=logout_url.url)
+    # FIXME: URL de fallback ?
+    return HttpResponseForbidden("Déconnexion incorrecte")

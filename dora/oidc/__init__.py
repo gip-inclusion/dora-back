@@ -1,8 +1,15 @@
+from logging import getLogger
+
 import requests
 from django.core.exceptions import SuspiciousOperation
 from mozilla_django_oidc.auth import (
     OIDCAuthenticationBackend as MozillaOIDCAuthenticationBackend,
 )
+from rest_framework.authtoken.models import Token
+
+from dora.users.models import User
+
+logger = getLogger(__name__)
 
 
 class OIDCError(Exception):
@@ -56,7 +63,7 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
 
         # L'utilisateur est créé sans mot de passe (aucune connexion à l'admin),
         # et comme venant de ProConnect, on considère l'e-mail vérifié.
-        return self.UserModel.objects.create_user(
+        new_user = self.UserModel.objects.create_user(
             email,
             sub_pc=sub,
             first_name=claims.get("given_name", "N/D"),
@@ -64,3 +71,30 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
             is_valid=True,
         )
 
+        # compatibilité :
+        # durant la phase de migration vers ProConnect on ne replace *que* le fournisseur d'identité,
+        # et on ne touche pas aux mécanismes d'identification entre back et front.
+        self.get_or_create_drf_token(new_user)
+
+        return new_user
+
+    def get_user(self, user_id):
+        if user := super().get_user(user_id):
+            self.get_or_create_drf_token(user)
+            return user
+        return None
+
+    def get_or_create_drf_token(self, user_email):
+        # Pour être temporairement compatible, on crée un token d'identification DRF lié au nouvel utilisateur.
+        print("get token for:", user_email)
+        if not user_email:
+            logger.exception("Utilisateur non renseigné pour la création du token DRF")
+
+        user = User.objects.get(email=user_email)
+
+        token, created = Token.objects.get_or_create(user=user)
+
+        if created:
+            logger.info("Initialisation du token DRF pour l'utilisateur %s", user_email)
+
+        return token

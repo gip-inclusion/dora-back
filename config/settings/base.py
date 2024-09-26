@@ -336,9 +336,13 @@ OIDC_OP_AUTHORIZATION_ENDPOINT = f"https://{PC_ISSUER}/authorize"
 OIDC_OP_TOKEN_ENDPOINT = f"https://{PC_ISSUER}/token"
 # https://fca.integ01.dev-agentconnect.fr/api/v2/userinfo
 OIDC_OP_USER_ENDPOINT = f"https://{PC_ISSUER}/userinfo"
+OIDC_OP_LOGOUT_ENDPOINT = f"https://{PC_ISSUER}/session/end"
 
 # Intervalle de rafraichissement du token (4h)
 OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 4 * 60 * 60
+
+# Redirection vers le front DORA en cas de succès de l'identification
+LOGIN_REDIRECT_URL = "/oidc/logged_in"
 
 # Temporaire : modifié pour l'intégration, à supprimer pour la production
 OIDC_AUTHENTICATION_CALLBACK_URL = "oidc_authorize_callback"

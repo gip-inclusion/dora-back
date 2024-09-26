@@ -66,6 +66,8 @@ class User(AbstractBaseUser):
     ic_id = models.UUIDField(
         verbose_name="Identifiant Inclusion Connect", null=True, blank=True
     )
+
+    # null possible en base ... pour l'instant
     sub_pc = models.UUIDField(verbose_name="Identifiant ProConnect", null=True)
 
     email = models.EmailField(

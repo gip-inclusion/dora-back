@@ -25,4 +25,6 @@ oidc_patterns = [
         "oidc/authorize", views.oidc_authorize_callback, name="oidc_authorize_callback"
     ),
     path("oidc/login", views.oidc_login, name="oidc_login"),
+    path("oidc/logged_in", views.oidc_logged_in, name="oidc_logged_in"),
+    path("oidc/pre_logout", views.oidc_pre_logout, name="oidc_pre_logout"),
 ]
