@@ -715,7 +715,7 @@ def options(request):
 
 @api_view()
 @permission_classes([permissions.AllowAny])
-def service_di(request, di_id: str, di_client=None):
+def service_di(request, di_id: str):
     """Retrieve a single service from data.inclusion.
 
     The ``di_client`` acts as an entrypoint to the data.inclusion service repository.
@@ -724,6 +724,8 @@ def service_di(request, di_id: str, di_client=None):
     """
 
     source_di, di_service_id = di_id.split("--")
+
+    di_client = data_inclusion.di_client_factory()
 
     try:
         raw_service = di_client.retrieve_service(source=source_di, id=di_service_id)
@@ -743,9 +745,10 @@ def service_di(request, di_id: str, di_client=None):
 def share_di_service(
     request,
     di_id: str,
-    di_client=None,
 ):
     source_di, di_service_id = di_id.split("--")
+
+    di_client = data_inclusion.di_client_factory()
 
     try:
         raw_service = di_client.retrieve_service(source=source_di, id=di_service_id)
@@ -763,7 +766,8 @@ def share_di_service(
 
 @api_view()
 @permission_classes([permissions.AllowAny])
-def search(request, di_client=None):
+def search(request):
+    di_client = data_inclusion.di_client_factory()
     city_code = request.GET.get("city")
     categories = request.GET.get("cats")
     subcategories = request.GET.get("subs")
@@ -784,6 +788,8 @@ def search(request, di_client=None):
 
     city_code = arrdt_to_main_insee_code(city_code)
     city = get_object_or_404(City, pk=city_code)
+
+    di_client = data_inclusion.di_client_factory()
 
     sorted_services = search_services(
         request=request,
