@@ -5,11 +5,11 @@ from model_bakery import baker
 
 from dora.admin_express.models import AdminDivisionType
 from dora.core.test_utils import (
-    make_di_service,
     make_service,
     make_structure,
     make_user,
 )
+from dora.data_inclusion.test_utils import FakeDataInclusionClient, make_di_service_data
 from dora.services.enums import ServiceStatus
 
 
@@ -69,31 +69,24 @@ def test_search_services_excludes_some_action_logement_results(api_client):
     city = baker.make("City")
 
     with mock.patch("dora.data_inclusion.di_client_factory") as mock_di_client_factory:
-        mock_client = mock.Mock()
-        mock_client.search_services.return_value = [
-            make_di_service(
-                {
-                    "service": {
-                        "thematiques": [
-                            "logement-hebergement",
-                            "logement-hebergement--aides-financieres-investissement-locatif",
-                            "logement-hebergement--besoin-dadapter-mon-logement",
-                        ]
-                    }
-                }
-            ),
-            make_di_service(
-                {
-                    "service": {
-                        "thematiques": [
-                            "logement-hebergement",
-                            "logement-hebergement--besoin-dadapter-mon-logement",
-                        ]
-                    }
-                }
-            ),
-        ]
-        mock_di_client_factory.return_value = mock_client
+        di_client = FakeDataInclusionClient()
+        service1 = make_di_service_data(
+            thematiques=[
+                "logement-hebergement",
+                "logement-hebergement--aides-financieres-investissement-locatif",
+                "logement-hebergement--besoin-dadapter-mon-logement",
+            ]
+        )
+        service2 = make_di_service_data(
+            thematiques=[
+                "logement-hebergement",
+                "logement-hebergement--besoin-dadapter-mon-logement",
+            ]
+        )
+        di_client.services.append(service1)
+        di_client.services.append(service2)
+
+        mock_di_client_factory.return_value = di_client
 
         response = api_client.get(f"/search/?city={city.code}")
 

@@ -8,8 +8,6 @@ from dora.services.enums import ServiceStatus
 from dora.services.models import ServiceCategory, ServiceSubCategory
 from dora.services.utils import update_sync_checksum
 
-from .utils import deep_update
-
 
 def make_user(structure=None, is_valid=True, is_admin=False, **kwargs):
     user = baker.make("users.User", is_valid=is_valid, **kwargs)
@@ -87,104 +85,6 @@ def make_service(**kwargs):
         service.subcategories.set(db_subcats)
 
     return service
-
-
-def make_di_service(overrides):
-    """
-    Génère un service DI tel que retourné par di_client.search_services().
-
-    Les données par défaut peuvent être remplaçées via overrides.
-
-    Idéalement, il nous faudrait pouvoir utiliser le ServiceFactory de data-inclusion:
-    https://github.com/gip-inclusion/data-inclusion/blob/main/api/tests/factories.py#L70
-    """
-    default_data = {
-        "service": {
-            "id": "id",
-            "structure_id": "structure_id",
-            "source": "source",
-            "nom": "nom",
-            "presentation_resume": "presentation_resume",
-            "presentation_detail": "presentation_detail",
-            "types": ["type1"],
-            "thematiques": [
-                "thematique1",
-                "thematique2",
-            ],
-            "prise_rdv": None,
-            "frais": [],
-            "frais_autres": None,
-            "profils": [
-                "profil1",
-                "profil2",
-                "profil3",
-                "profil4",
-            ],
-            "pre_requis": None,
-            "cumulable": False,
-            "justificatifs": None,
-            "formulaire_en_ligne": None,
-            "commune": "commune",
-            "code_postal": "code_postal",
-            "code_insee": "code_insee",
-            "adresse": "adresse",
-            "complement_adresse": None,
-            "longitude": 1.9,
-            "latitude": 46.6,
-            "recurrence": None,
-            "date_creation": None,
-            "date_suspension": None,
-            "lien_source": None,
-            "telephone": "telephone",
-            "courriel": "courriel",
-            "contact_public": True,
-            "date_maj": "date_maj",
-            "modes_accueil": ["a-distance", "en-presentiel"],
-            "zone_diffusion_type": "zone_diffusion_type",
-            "zone_diffusion_code": "zone_diffusion_code",
-            "zone_diffusion_nom": "zone_diffusion_nom",
-            "contact_nom_prenom": None,
-            "page_web": None,
-            "modes_orientation_beneficiaire": ["modes_orientation_beneficiaire"],
-            "modes_orientation_beneficiaire_autres": None,
-            "modes_orientation_accompagnateur": ["modes_orientation_accompagnateur"],
-            "modes_orientation_accompagnateur_autres": None,
-            "structure": {
-                "id": "id",
-                "siret": None,
-                "rna": None,
-                "nom": "nom",
-                "commune": "commune",
-                "code_postal": "code_postal",
-                "code_insee": "code_insee",
-                "adresse": "adresse",
-                "complement_adresse": None,
-                "longitude": 1.9,
-                "latitude": 46.6,
-                "typologie": None,
-                "telephone": "telephone",
-                "courriel": "courriel",
-                "site_web": None,
-                "presentation_resume": None,
-                "presentation_detail": "",
-                "source": "source",
-                "date_maj": "date_maj",
-                "antenne": False,
-                "lien_source": None,
-                "horaires_ouverture": None,
-                "accessibilite": "accessibilite",
-                "labels_nationaux": [],
-                "labels_autres": [],
-                "thematiques": [
-                    "thematique1",
-                    "thematique2",
-                ],
-            },
-        },
-        "distance": 0,
-    }
-
-    return deep_update(default_data, overrides)
 
 
 def make_published_service(**kwargs):
