@@ -18,12 +18,8 @@ where
     -- log level 20 => INFO
     and level = 20;
 
-
-create index mb_notification_logs_date_creation_idx on public.mb_notification_logs (
-    "date_creation"
-);
-create index mb_notification_logs_tache_idx on public.mb_notification_logs (
-    "tache"
-);
+-- Indexes
+create index mb_notification_logs_date_creation_idx on mb_notification_logs ("date_creation");
+create index mb_notification_logs_tache_idx on mb_notification_logs ("tache");
 
 comment on table mb_notification_logs is 'Historique des tâches de traitement de notification';

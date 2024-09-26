@@ -7,3 +7,6 @@ select -- noqa: AM04
         select concat('https://dora.inclusion.beta.gouv.fr/structures/', slug)
     ) as dora_url
 from structures_structure;
+
+-- Keys & constraints
+alter table mb_structure add primary key (id);
