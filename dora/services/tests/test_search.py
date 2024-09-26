@@ -61,28 +61,6 @@ def test_search_services_with_orphan_structure(
     assert found["slug"] == orphan_service.slug
 
 
-def search_services_excludes_some_action_logement_results_mock(*args, **kwargs):
-    return [
-        make_di_service(
-            service={
-                "thematiques": [
-                    "logement-hebergement",
-                    "logement-hebergement--aides-financieres-investissement-locatif",
-                    "logement-hebergement--besoin-dadapter-mon-logement",
-                ]
-            }
-        ),
-        make_di_service(
-            service={
-                "thematiques": [
-                    "logement-hebergement",
-                    "logement-hebergement--besoin-dadapter-mon-logement",
-                ]
-            }
-        ),
-    ]
-
-
 def test_search_services_excludes_some_action_logement_results(api_client):
     # Le service ayant la thématique logement-hebergement--aides-financieres-investissement-locatif
     # ne doit pas être retourné
@@ -90,10 +68,32 @@ def test_search_services_excludes_some_action_logement_results(api_client):
     # le paramètre `city` est nécessaire a minima
     city = baker.make("City")
 
-    with mock.patch("dora.data_inclusion.client.di_client_factory") as mock_di_client:
-        mock_di_client.return_value.search_services = (
-            search_services_excludes_some_action_logement_results_mock
-        )
+    with mock.patch("dora.data_inclusion.di_client_factory") as mock_di_client_factory:
+        mock_client = mock.Mock()
+        mock_client.search_services.return_value = [
+            make_di_service(
+                {
+                    "service": {
+                        "thematiques": [
+                            "logement-hebergement",
+                            "logement-hebergement--aides-financieres-investissement-locatif",
+                            "logement-hebergement--besoin-dadapter-mon-logement",
+                        ]
+                    }
+                }
+            ),
+            make_di_service(
+                {
+                    "service": {
+                        "thematiques": [
+                            "logement-hebergement",
+                            "logement-hebergement--besoin-dadapter-mon-logement",
+                        ]
+                    }
+                }
+            ),
+        ]
+        mock_di_client_factory.return_value = mock_client
 
         response = api_client.get(f"/search/?city={city.code}")
 

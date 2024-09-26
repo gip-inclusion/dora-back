@@ -89,11 +89,11 @@ def make_service(**kwargs):
     return service
 
 
-def make_di_service(**kwargs):
+def make_di_service(overrides):
     """
     Génère un service DI tel que retourné par di_client.search_services().
 
-    Les données par défaut peuvent être remplaçées via kwargs.
+    Les données par défaut peuvent être remplaçées via overrides.
 
     Idéalement, il nous faudrait pouvoir utiliser le ServiceFactory de data-inclusion:
     https://github.com/gip-inclusion/data-inclusion/blob/main/api/tests/factories.py#L70
@@ -184,7 +184,7 @@ def make_di_service(**kwargs):
         "distance": 0,
     }
 
-    return deep_update(default_data, kwargs)
+    return deep_update(default_data, overrides)
 
 
 def make_published_service(**kwargs):
