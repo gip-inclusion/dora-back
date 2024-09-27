@@ -767,7 +767,6 @@ def share_di_service(
 @api_view()
 @permission_classes([permissions.AllowAny])
 def search(request):
-    di_client = data_inclusion.di_client_factory()
     city_code = request.GET.get("city")
     categories = request.GET.get("cats")
     subcategories = request.GET.get("subs")
