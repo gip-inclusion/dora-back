@@ -204,8 +204,9 @@ def oidc_login(request):
 @permission_classes([permissions.AllowAny])
 def oidc_logged_in(request):
     # redirection vers la page d'accueil de DORA
-    print("request.user:", request.user)
+    print("request.user:", request.user, "authenticated:", request.user.is_authenticated)
     # attention : l'utilisateur est toujours anonyme (a ce point il n'existe qu'un token DRF)
+    # FIXME : smell, pourquoi l'utilisateur n'est pas authentifié ?
     token = Token.objects.get(user_id=request.session["_auth_user_id"])
     print("fetching token...")
     return HttpResponseRedirect(

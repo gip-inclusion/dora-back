@@ -78,6 +78,22 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
 
         return new_user
 
+    def update_user(self, user, claims):
+        # L'utilisateur peut déjà étre inscrit à IC, dans ce cas on réutilise la plupart
+        # des informations déjà connues
+
+        if not user.sub_pc:
+            # utilisateur existant, mais non-enregistré sur ProConnect
+            sub = claims.get("sub")
+            if not sub:
+                raise SuspiciousOperation(
+                    "Le sujet (`sub`) n'est pas inclu dans les `claims`"
+                )
+            user.sub_pc = sub
+            user.save()
+
+        return user
+
     def get_user(self, user_id):
         if user := super().get_user(user_id):
             self.get_or_create_drf_token(user)
@@ -86,7 +102,6 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
 
     def get_or_create_drf_token(self, user_email):
         # Pour être temporairement compatible, on crée un token d'identification DRF lié au nouvel utilisateur.
-        print("get token for:", user_email)
         if not user_email:
             logger.exception("Utilisateur non renseigné pour la création du token DRF")
 
