@@ -321,20 +321,21 @@ PC_USERINFO_PATH = os.getenv("PC_USERINFO_PATH", "userinfo")
 # mozilla_django_oidc:
 OIDC_RP_CLIENT_ID = os.getenv("PC_CLIENT_ID")
 OIDC_RP_CLIENT_SECRET = os.getenv("PC_CLIENT_SECRET")
-OIDC_RP_SCOPES = "openid given_name usual_name email siret uid"
+OIDC_RP_SCOPES = "openid given_name usual_name email siret custom uid"
+
 # Nécessaire pour la gestion de la fin de session
 OIDC_STORE_ID_TOKEN = True
-
-# DEV uniquement : les deux prochains vont de pair (pas de discovery)
-OIDC_RP_SIGN_ALGO = "RS256"
-OIDC_OP_JWKS_ENDPOINT = f"https://{PC_ISSUER}/jwks"
+ALLOW_LOGOUT_GET_METHOD = True
 
 # obligatoire pour ProConnect: à passer en paramètre de requête supplémentaire
 OIDC_AUTH_REQUEST_EXTRA_PARAMS = {"acr_values": "eidas1"}
-# mozilla_django_oidc n'utilise pas de discovery / WK
+
+# mozilla_django_oidc n'utilise pas de discovery / .well-known
+# on définit donc chaque endpoint
+OIDC_RP_SIGN_ALGO = "RS256"
+OIDC_OP_JWKS_ENDPOINT = f"https://{PC_ISSUER}/jwks"
 OIDC_OP_AUTHORIZATION_ENDPOINT = f"https://{PC_ISSUER}/authorize"
 OIDC_OP_TOKEN_ENDPOINT = f"https://{PC_ISSUER}/token"
-# https://fca.integ01.dev-agentconnect.fr/api/v2/userinfo
 OIDC_OP_USER_ENDPOINT = f"https://{PC_ISSUER}/userinfo"
 OIDC_OP_LOGOUT_ENDPOINT = f"https://{PC_ISSUER}/session/end"
 
@@ -342,14 +343,8 @@ OIDC_OP_LOGOUT_ENDPOINT = f"https://{PC_ISSUER}/session/end"
 OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 4 * 60 * 60
 
 # Redirection vers le front DORA en cas de succès de l'identification
-LOGIN_REDIRECT_URL = "/oidc/logged_in"
-
-# Temporaire : modifié pour l'intégration, à supprimer pour la production
-OIDC_AUTHENTICATION_CALLBACK_URL = "oidc_authorize_callback"
-# Temporaire : force la représentation interne des URL avec un scheme HTTPS (build_absolute_uri)
-USE_X_FORWARDED_HOST = True
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-ALLOW_LOGOUT_GET_METHOD = True
+LOGIN_REDIRECT_URL = "/oidc/logged_in/"
+# USE_X_FORWARDED_PORT = True
 
 # Recherches sauvegardées :
 INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS = (
