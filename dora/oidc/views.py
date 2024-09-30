@@ -184,6 +184,10 @@ def inclusion_connect_authenticate(request):
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
 def oidc_authorize_callback(request):
+    url = (
+        reverse("oidc_authentication_callback") + f"?{request.META.get("QUERY_STRING")}"
+    )
+    print("URL:", url)
     return HttpResponseRedirect(
         redirect_to=reverse("oidc_authentication_callback")
         + f"?{request.META.get("QUERY_STRING")}"
@@ -204,7 +208,9 @@ def oidc_login(request):
 @permission_classes([permissions.AllowAny])
 def oidc_logged_in(request):
     # redirection vers la page d'accueil de DORA
-    print("request.user:", request.user, "authenticated:", request.user.is_authenticated)
+    print(
+        "request.user:", request.user, "authenticated:", request.user.is_authenticated
+    )
     # attention : l'utilisateur est toujours anonyme (a ce point il n'existe qu'un token DRF)
     # FIXME : smell, pourquoi l'utilisateur n'est pas authentifié ?
     token = Token.objects.get(user_id=request.session["_auth_user_id"])
@@ -219,26 +225,17 @@ def oidc_logged_in(request):
 def oidc_pre_logout(request):
     # attention : le nom oidc_logout est pris par mozilla-django-oidc
     # récuperation du token stocké en session:
-    print("OIDC logout")
     if oidc_token := request.session.get("oidc_id_token"):
-        print("session oidc_token:", oidc_token)
-        print(
-            "URL de logout de mozilla-oidc:",
-            request.build_absolute_uri(reverse("oidc_logout")),
-        )
         # construction de l'URL de logout
         # attention au trailing slashes  !!!!
         params = {
             "id_token_hint": oidc_token,
             "state": "todo_xxx",
             "post_logout_redirect_uri": request.build_absolute_uri(
-                reverse("oidc_logout").rstrip("/")
+                reverse("oidc_logout")
             ),
         }
-        print("logout params:", params)
         logout_url = furl(settings.OIDC_OP_LOGOUT_ENDPOINT, args=params)
-        print("logout URL:", logout_url)
-        # attention :  pas de trailing slash dans la version de test
         return HttpResponseRedirect(redirect_to=logout_url.url)
     # FIXME: URL de fallback ?
     return HttpResponseForbidden("Déconnexion incorrecte")
