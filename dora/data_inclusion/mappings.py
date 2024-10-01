@@ -16,7 +16,7 @@ from dora.services.models import (
     get_update_status,
 )
 
-from .constants import THEMATIQUES_MAPPING
+from .constants import THEMATIQUES_MAPPING_DI_TO_DORA
 
 DI_TO_DORA_DIFFUSION_ZONE_TYPE_MAPPING = {
     "commune": "city",
@@ -117,7 +117,7 @@ def map_service(service_data: dict, is_authenticated: bool) -> dict:
     subcategories = None
     if service_data["thematiques"] is not None:
         thematiques = [
-            THEMATIQUES_MAPPING.get(thematique, thematique)
+            THEMATIQUES_MAPPING_DI_TO_DORA.get(thematique, thematique)
             for thematique in service_data["thematiques"]
         ]
         categories = ServiceCategory.objects.filter(value__in=thematiques)
