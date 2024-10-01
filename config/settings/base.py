@@ -323,14 +323,7 @@ OIDC_RP_CLIENT_ID = os.getenv("PC_CLIENT_ID")
 OIDC_RP_CLIENT_SECRET = os.getenv("PC_CLIENT_SECRET")
 OIDC_RP_SCOPES = "openid given_name usual_name email siret custom uid"
 
-# Nécessaire pour la gestion de la fin de session
-OIDC_STORE_ID_TOKEN = True
-ALLOW_LOGOUT_GET_METHOD = True
-
-# obligatoire pour ProConnect: à passer en paramètre de requête supplémentaire
-OIDC_AUTH_REQUEST_EXTRA_PARAMS = {"acr_values": "eidas1"}
-
-# mozilla_django_oidc n'utilise pas de discovery / .well-known
+# `mozilla_django_oidc` n'utilise pas de discovery / .well-known
 # on définit donc chaque endpoint
 OIDC_RP_SIGN_ALGO = "RS256"
 OIDC_OP_JWKS_ENDPOINT = f"https://{PC_ISSUER}/jwks"
@@ -339,11 +332,27 @@ OIDC_OP_TOKEN_ENDPOINT = f"https://{PC_ISSUER}/token"
 OIDC_OP_USER_ENDPOINT = f"https://{PC_ISSUER}/userinfo"
 OIDC_OP_LOGOUT_ENDPOINT = f"https://{PC_ISSUER}/session/end"
 
-# Intervalle de rafraichissement du token (4h)
+# Les paramètres suivants servent à adapter la configuration OIDC
+# de `mozilla-django_oidc` pour pouvoir fonctionner dans le contexte
+# spécifique à DORA et ProConnect.
+
+# OIDC : intervalle de rafraichissement du token (4h)
 OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 4 * 60 * 60
 
-# Redirection vers le front DORA en cas de succès de l'identification
+# OIDC : nécessaire pour la gestion de la fin de session coté ProConnect
+OIDC_STORE_ID_TOKEN = True
+ALLOW_LOGOUT_GET_METHOD = True
+
+# obligatoire pour ProConnect: à passer en paramètre de requête supplémentaire
+# lors de la première phase du flow OIDC
+OIDC_AUTH_REQUEST_EXTRA_PARAMS = {"acr_values": "eidas1"}
+
+# OIDC : redirection vers le front DORA en cas de succès de l'identification
+# necessaire pour la gestion de "l'URL suivant" (`next_url`)
 LOGIN_REDIRECT_URL = "/oidc/logged_in/"
+
+# OIDC : permet de préciser quelle est la class/vue en charge du callback dans le flow OIDC
+# (essentiellement pour la gestion du `next_url`).
 OIDC_CALLBACK_CLASS = "dora.oidc.views.CustomAuthorizationCallbackView"
 
 # Recherches sauvegardées :
