@@ -277,8 +277,7 @@ class ServiceSerializer(serializers.ModelSerializer):
         return [k.value for k in obj.kinds.all()]
 
     def get_thematiques(self, obj):
-        scats = [scat.value for scat in obj.subcategories.all()]
-        return [scat for scat in scats if not scat.endswith("--autre")]
+        return [scat.value for scat in obj.subcategories.all()]
 
     def get_prise_rdv(self, obj):
         return obj.appointment_link
