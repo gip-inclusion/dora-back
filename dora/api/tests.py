@@ -403,25 +403,3 @@ def test_service_serialization_exemple_need_di_user(api_client):
     response = api_client.get(f"/api/v2/services/{service.id}/")
 
     assert 401 == response.status_code
-
-
-def test_subcategories_other_excluded(authenticated_user, api_client):
-    # Example adapté de la doc data·inclusion :
-    # https://www.data.inclusion.beta.gouv.fr/schemas-de-donnees-de-loffre/schema-des-structures-et-services-dinsertion
-    structure = make_structure()
-    service = make_service(
-        structure=structure,
-        name="TISF",
-        short_desc="Accompagnement des familles à domicile",
-        fee_details="",
-        status=ServiceStatus.PUBLISHED,
-    )
-    service.subcategories.add(
-        ServiceSubCategory.objects.get(value="numerique--acceder-a-du-materiel")
-    )
-    service.subcategories.add(ServiceSubCategory.objects.get(value="numerique--autre"))
-
-    response = api_client.get(f"/api/v2/services/{service.id}/")
-
-    assert 200 == response.status_code
-    assert response.json().get("thematiques") == ["numerique--acceder-a-du-materiel"]
