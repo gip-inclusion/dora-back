@@ -20,6 +20,9 @@ from rest_framework.response import Response
 from dora.rest_auth.views import update_last_login
 from dora.users.models import User
 
+
+from mozilla_django_oidc.views import OIDCAuthenticationCallbackView, resolve_url
+
 from .utils import updated_ic_user
 
 
@@ -207,17 +210,22 @@ def oidc_login(request):
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
 def oidc_logged_in(request):
-    # redirection vers la page d'accueil de DORA
-    print(
-        "request.user:", request.user, "authenticated:", request.user.is_authenticated
-    )
+    # étape indispensable pour le passage du token au frontend_state :
+    # malheuresement, cette étape est "zappée" si un paramètre `next` est passé lors de l'identification
+    # mozilla-django-oidc ne le prends pas en compte, il faut pour modifier la vue de callback et le redirect final
+
     # attention : l'utilisateur est toujours anonyme (a ce point il n'existe qu'un token DRF)
     # FIXME : smell, pourquoi l'utilisateur n'est pas authentifié ?
     token = Token.objects.get(user_id=request.session["_auth_user_id"])
-    print("fetching token...")
-    return HttpResponseRedirect(
-        redirect_to=f"{settings.FRONTEND_URL}/auth/pc-callback/{token}"
-    )
+
+    redirect_uri = f"{settings.FRONTEND_URL}/auth/pc-callback/{token}/"
+
+    # gestion du next :
+    if next := request.GET.get("next"):
+        redirect_uri += f"?next={next}"
+
+    # on redirige (pour l'instant) vers le front en faisant passer le token DRF
+    return HttpResponseRedirect( redirect_to= redirect_uri)
 
 
 @api_view(["GET"])
@@ -227,7 +235,6 @@ def oidc_pre_logout(request):
     # récuperation du token stocké en session:
     if oidc_token := request.session.get("oidc_id_token"):
         # construction de l'URL de logout
-        # attention au trailing slashes  !!!!
         params = {
             "id_token_hint": oidc_token,
             "state": "todo_xxx",
@@ -239,3 +246,34 @@ def oidc_pre_logout(request):
         return HttpResponseRedirect(redirect_to=logout_url.url)
     # FIXME: URL de fallback ?
     return HttpResponseForbidden("Déconnexion incorrecte")
+
+
+class CustomAuthorizationCallbackView(OIDCAuthenticationCallbackView):
+    """
+    Callback OIDC :
+        Vue personnalisée basée en grande partie sur celle définie par `mozilla-django-oidc`,
+        pour la gestion du retour OIDC après identification.
+
+        La gestion du `next_url` par la classe par défaut n'est pas satisfaisante dans le contexte de DORA,
+        la redirection vers le frontend nécessitant une étape supplémentaire pour l'enregistrement du token DRF.
+        Cette classe modifie la dernière redirection du flow pour y ajouter le paramètre d'URL suivant,
+        plutôt que d'effectuer une redirection directement vers ce paramètre.
+
+        A noter qu'il est trés simple de modifier les différentes étapes du flow OIDC pour les adapter,
+        `mozilla-django-oidc` disposant d'une série de settings pour spécifier les classes de vue à utiliser
+        pour chaque étape OIDC (dans ce cas via le setting `OIDC_CALLBACK_CLASS`).
+    """
+
+    @property
+    def success_url(self):
+        # récupération du paramètre d'URL suivant stocké en session en début de flow OIDC
+        print("Boo was here")
+
+        next_url = self.request.session.get("oidc_login_next", None)
+        next_fieldname = self.get_settings("OIDC_REDIRECT_FIELD_NAME", "next")
+
+        success_url = resolve_url(self.get_settings("LOGIN_REDIRECT_URL", "/"))
+        success_url += f"?{next_fieldname}={next_url}" if next_url else ""
+
+        # redirection vers le front via `oidc/logged_in`
+        return success_url

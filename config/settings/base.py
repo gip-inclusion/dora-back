@@ -344,7 +344,7 @@ OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 4 * 60 * 60
 
 # Redirection vers le front DORA en cas de succès de l'identification
 LOGIN_REDIRECT_URL = "/oidc/logged_in/"
-# USE_X_FORWARDED_PORT = True
+OIDC_CALLBACK_CLASS = "dora.oidc.views.CustomAuthorizationCallbackView"
 
 # Recherches sauvegardées :
 INCLUDES_DI_SERVICES_IN_SAVED_SEARCH_NOTIFICATIONS = (
