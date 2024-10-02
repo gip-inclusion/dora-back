@@ -19,5 +19,5 @@ def test_map_service_thematiques_mapping():
     di_service_data = make_di_service_data(thematiques=input_thematiques)
     service = map_service(di_service_data, False)
 
-    assert set(service["categories"]) == set(expected_categories)
-    assert set(service["subcategories"]) == set(expected_subcategories)
+    assert sorted(service["categories"]) == sorted(expected_categories)
+    assert sorted(service["subcategories"]) == sorted(expected_subcategories)
