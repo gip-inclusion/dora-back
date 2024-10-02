@@ -9,6 +9,8 @@ THEMATIQUES_MAPPING_DI_TO_DORA = {
 # À une thématique Dora correspond une liste de thématiques DI
 THEMATIQUES_MAPPING_DORA_TO_DI = {}
 for key, value in THEMATIQUES_MAPPING_DI_TO_DORA.items():
+    if value.endswith("--autre"):
+        continue
     if value not in THEMATIQUES_MAPPING_DORA_TO_DI:
         THEMATIQUES_MAPPING_DORA_TO_DI[value] = [key]
     else:
