@@ -205,7 +205,7 @@ class Structure(ModerationMixin, models.Model):
         db_index=True,
     )
 
-    name = models.CharField(verbose_name="Nom", max_length=255)
+    name = models.CharField(verbose_name="Nom", max_length=255, db_index=True)
 
     typology = models.CharField(
         choices=zip([t.value for t in Typologie], [t.label for t in Typologie]),
