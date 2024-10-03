@@ -19,19 +19,28 @@ LABEL = StructureNationalLabel.objects.get(value="france-travail")
 class Command(BaseCommand):
     help = "Importe les DG/DR/DT France Travail, ainsi que leur code SAFIR"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--file", help="Fichier à importer (si diffétent de `drdt.csv`)"
+        )
+
     def finalize_structure(self, structure, safir):
         structure.code_safir_pe = safir
         structure.source = SOURCE
         structure.creator = BOT_USER
         structure.last_editor = BOT_USER
         structure.typology = Typologie.FT.value
-        structure.save()
-        structure.national_labels.add(LABEL)
-        send_moderation_notification(
-            structure,
-            BOT_USER,
-            "Structure créée à partir de l’import DR/DT France Travail",
-            ModerationStatus.VALIDATED,
+        try:
+            structure.save()
+        except Exception as ex:
+            print(f"Erreur à la création de la structure SIRET:{structure.siret} / SAFIR: {safir} ({ex})")
+        else:
+            structure.national_labels.add(LABEL)
+            send_moderation_notification(
+                structure,
+                BOT_USER,
+                "Structure créée à partir de l’import DR/DT France Travail",
+                ModerationStatus.VALIDATED,
         )
 
     def create_structure(self, siret, name, safir):
@@ -57,10 +66,15 @@ class Command(BaseCommand):
         self.finalize_structure(structure, safir)
 
     def handle(self, *args, **options):
+        file = options["file"]
+
         with transaction.atomic(durable=True):
-            mapping_file_path = (
-                Path(__file__).parent.parent.parent / "data" / "drdt.csv"
-            )
+            if file:
+                mapping_file_path = Path(file)
+            else:
+                mapping_file_path = (
+                    Path(__file__).parent.parent.parent / "data" / "drdt.csv"
+                )
 
             with open(mapping_file_path) as mapping_file:
                 reader = csv.DictReader(mapping_file)
@@ -88,7 +102,7 @@ class Command(BaseCommand):
                             .exists()
                         ):
                             print(
-                                f"{name} : ce safir existe déjà, mais il est associé à un autre siret"
+                                f"{name} : ce code SAFIR ({safir}) existe déjà, mais il est associé à un autre SIRET"
                             )
                             continue
                         try:
