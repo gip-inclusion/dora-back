@@ -14,7 +14,7 @@ humanize==4.10.0
 mjml-python==1.3.3
 model-bakery==1.19.5
 osm_opening_hours==0.1.1
-psycopg==3.2.2
+psycopg==3.2.3
 PyJWT==2.6.0 # conflit avec ggshield sur versions supérieures
 redis==5.1.0
 requests==2.32.3
