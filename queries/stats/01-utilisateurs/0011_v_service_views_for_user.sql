@@ -4,7 +4,7 @@
 -- pas porté par une structure dont l'utilisateur est membre,
 -- et non-offreur seulement. 
 
-drop view v_service_views_for_user;
+drop view if exists v_service_views_for_user;
 
 create or replace view v_service_views_for_user as
 select

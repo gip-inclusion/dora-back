@@ -1,4 +1,4 @@
-drop table if exists mb_stats_searchview;
+drop table if exists mb_stats_searchview cascade;
 
 create table mb_stats_searchview as
 select

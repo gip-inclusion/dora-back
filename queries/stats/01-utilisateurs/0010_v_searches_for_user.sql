@@ -3,7 +3,7 @@
 -- non-membre de l'équipe, 
 -- et non-offreur seulement. 
 
-drop view v_searches_for_user;
+drop view if exists v_searches_for_user;
 
 create or replace view v_searches_for_user as
 select
