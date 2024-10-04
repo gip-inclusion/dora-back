@@ -10,9 +10,6 @@
 #                               voir dans l'espace administrateur, rubrique : 'Bases de données'
 #                               l'ID est affiché dans l'URL
 
-
-echo "Synchronisation des schémas et champs Metabase"
-
 if [ -z ${METABASE_API_URL} ]; then
 	echo " > l'URL de l'API Metabase n'est pas défini"
 	exit 1
