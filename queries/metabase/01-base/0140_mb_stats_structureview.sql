@@ -1,4 +1,4 @@
-drop table if exists mb_stats_structureview;
+drop table if exists mb_stats_structureview cascade;
 
 create table mb_stats_structureview as
 select

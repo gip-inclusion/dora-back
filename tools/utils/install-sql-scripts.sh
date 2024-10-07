@@ -62,13 +62,14 @@ function walkDirs() {
 
 	    echo "Suppression de '$tblname' sur la DB de destination"
 		drop_table_or_view_in_cascade_if_exists "$tblname"	    
-	    echo "--"
+	    echo " "
         fi
     done
     if [ -n "$tables_stmt" ]; then
 	    echo "Export du dump vers la DB de destination"
 	    pg_dump $SRC_DB_URL -O -c $tables_stmt | psql -q $DEST_DB_URL
 	    echo "Dump exporté"
+		echo " "
     fi
 }
 
@@ -83,5 +84,4 @@ if [ ! -d "$1" ]; then
 fi
 
 walkDirs "$1"
-echo "--"
-echo "✅ Terminé!"
+echo " "

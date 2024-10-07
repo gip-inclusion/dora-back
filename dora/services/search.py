@@ -17,6 +17,7 @@ from dora.admin_express.models import City
 from dora.core.constants import WGS84
 from dora.structures.models import Structure
 
+from .constants import EXCLUDED_DI_SERVICES_THEMATIQUES
 from .serializers import SearchResultSerializer
 from .utils import filter_services_by_city_code
 
@@ -166,6 +167,16 @@ def _get_di_results(
                 or result["service"]["longitude"] is None
             )
             and "en-presentiel" in result["service"]["modes_accueil"]
+        )
+    ]
+
+    # Exclus les services ayant des thématiques à exclure
+    raw_di_results = [
+        result
+        for result in raw_di_results
+        if not any(
+            thematique in result["service"]["thematiques"]
+            for thematique in EXCLUDED_DI_SERVICES_THEMATIQUES
         )
     ]
 
