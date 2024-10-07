@@ -53,22 +53,27 @@ class StructureViewSet(
         only_managed = self.request.query_params.get("managed")
         only_pending = self.request.query_params.get("pending")
         only_active = self.request.query_params.get("active")
+        search_string = self.request.query_params.get("search", None)
 
-        all_structures = Structure.objects.select_related("source", "parent").all()
+        structures = Structure.objects.select_related("source", "parent").all()
+
+        if search_string:
+            structures = structures.filter(name__icontains=search_string)
+
         if only_managed:
             if not user or not user.is_authenticated:
                 return Structure.objects.none()
             if user.is_staff:
-                return all_structures.order_by("-modification_date").distinct()
+                return structures.order_by("-modification_date").distinct()
             elif user.is_manager and user.departments:
                 return (
-                    all_structures.filter(department__in=user.departments)
+                    structures.filter(department__in=user.departments)
                     .order_by("-modification_date")
                     .distinct()
                 )
             else:
                 return (
-                    all_structures.filter(membership__user=user)
+                    structures.filter(membership__user=user)
                     .order_by("-modification_date")
                     .distinct()
                 )
@@ -76,20 +81,20 @@ class StructureViewSet(
             if not user or not user.is_authenticated:
                 return Structure.objects.none()
             return (
-                all_structures.filter(putative_membership__user=user)
+                structures.filter(putative_membership__user=user)
                 .exclude(putative_membership__invited_by_admin=True)
                 .order_by("-modification_date")
                 .distinct()
             )
         elif only_active:
             qs = (
-                all_structures.filter(services__status=ServiceStatus.PUBLISHED)
+                structures.filter(services__status=ServiceStatus.PUBLISHED)
                 .order_by("-modification_date")
                 .distinct()
             )
             return qs
         else:
-            return all_structures.order_by("-modification_date")
+            return structures.order_by("-modification_date")
 
     def get_serializer_class(self):
         if self.action == "list":
