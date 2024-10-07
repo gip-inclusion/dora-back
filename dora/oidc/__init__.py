@@ -57,10 +57,6 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
                 "Le sujet (`sub`) n'est pas inclu dans les `claims`"
             )
 
-        # TODO: le SIRET fait partie des claims obligatoire,
-        # voir comment traiter les rattachements à une structure.
-        # De plus, il semble que l'appartenance à plusieurs SIRET soit possible.
-
         # L'utilisateur est créé sans mot de passe (aucune connexion à l'admin),
         # et comme venant de ProConnect, on considère l'e-mail vérifié.
         new_user = self.UserModel.objects.create_user(
@@ -70,6 +66,13 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
             last_name=claims.get("usual_name", "N/D"),
             is_valid=True,
         )
+
+        # recupération du code SAFIR :
+        # même pour l'instant inutilisé, on pourra par la suite le passer au frontend
+        # pour rattachement direct à une agence France Travail
+        if custom := claims.get("custom"):
+            code_safir = custom.get("structureTravail")  # noqa F481
+            # TODO: une fois le code SAFIR récupéré, voir quoi en faire (redirection vers un rattachement)
 
         # compatibilité :
         # durant la phase de migration vers ProConnect on ne replace *que* le fournisseur d'identité,
