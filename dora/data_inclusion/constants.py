@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 # À une thématique DI correspond une thématique Dora
 THEMATIQUES_MAPPING_DI_TO_DORA = {
     "logement-hebergement--etre-accompagne-dans-son-projet-accession": "logement-hebergement--etre-accompagne-pour-se-loger",
@@ -7,11 +9,7 @@ THEMATIQUES_MAPPING_DI_TO_DORA = {
 
 # Inversion du dictionnaire
 # À une thématique Dora correspond une liste de thématiques DI
-THEMATIQUES_MAPPING_DORA_TO_DI = {}
+THEMATIQUES_MAPPING_DORA_TO_DI = defaultdict(list)
 for key, value in THEMATIQUES_MAPPING_DI_TO_DORA.items():
-    if value.endswith("--autre"):
-        continue
-    if value not in THEMATIQUES_MAPPING_DORA_TO_DI:
-        THEMATIQUES_MAPPING_DORA_TO_DI[value] = [key]
-    else:
+    if not value.endswith("--autre"):
         THEMATIQUES_MAPPING_DORA_TO_DI[value].append(key)
