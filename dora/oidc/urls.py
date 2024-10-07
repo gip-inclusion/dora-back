@@ -32,6 +32,9 @@ proconnect_patterns = [
     # preparation au logout : 2 étapes nécessaires
     # l'une de déconnexion sur ProConnect, l'autre locale de destruction de la session active
     path("oidc/pre_logout/", views.oidc_pre_logout, name="oidc_pre_logout"),
+    # la plupart des vues de `mozilla-django-oidc` sont paramètrables
+    # pas le logout
+    path("oidc/logout/", views.CustomLogoutView.as_view(), name="oidc_logout"),
 ]
 
 

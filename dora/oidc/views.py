@@ -5,13 +5,17 @@ import jwt
 import requests
 from django.conf import settings
 from django.core.cache import cache
+from django.core.exceptions import SuspiciousOperation
 from django.db import transaction
-from django.http import HttpResponseForbidden
 from django.http.response import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.crypto import get_random_string
 from furl import furl
-from mozilla_django_oidc.views import OIDCAuthenticationCallbackView, resolve_url
+from mozilla_django_oidc.views import (
+    OIDCAuthenticationCallbackView,
+    OIDCLogoutView,
+    resolve_url,
+)
 from rest_framework import permissions
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
@@ -215,12 +219,14 @@ def oidc_logged_in(request):
 @permission_classes([permissions.AllowAny])
 def oidc_pre_logout(request):
     # attention : le nom oidc_logout est pris par mozilla-django-oidc
-    # récuperation du token stocké en session:
+    # récupération du token stocké en session:
     if oidc_token := request.session.get("oidc_id_token"):
-        # construction de l'URL de logout
+        # ProConnect nécessite un `state` pour vérifier la déconnexion effective
+        logout_state = get_random_string(32)
+        request.session["logout_state"] = logout_state
         params = {
             "id_token_hint": oidc_token,
-            "state": "todo_xxx",
+            "state": logout_state,
             "post_logout_redirect_uri": request.build_absolute_uri(
                 reverse("oidc_logout")
             ),
@@ -228,8 +234,7 @@ def oidc_pre_logout(request):
         logout_url = furl(settings.OIDC_OP_LOGOUT_ENDPOINT, args=params)
         return HttpResponseRedirect(redirect_to=logout_url.url)
 
-    # FIXME: URL de fallback ?
-    return HttpResponseForbidden("Déconnexion incorrecte")
+    raise SuspiciousOperation("Tentative de déconnexion avec un token incorrect")
 
 
 class CustomAuthorizationCallbackView(OIDCAuthenticationCallbackView):
@@ -260,3 +265,25 @@ class CustomAuthorizationCallbackView(OIDCAuthenticationCallbackView):
 
         # redirection vers le front via `oidc/logged_in`
         return success_url
+
+
+class CustomLogoutView(OIDCLogoutView):
+    """
+    Logout OIDC :
+        ProConnect effectue des vérifications avant de déconnecter l'utilisateur
+        sur sa plateforme.
+        Essentiellement en vérifiant la validité d'un `state` passé en paramètre
+        avant la destruction de la session.
+        Cette classe effectue simplement la vérification du `state` précédemment stocké
+        en session (voir `oidc/pre_logout`) et réutilise la classe de vue originale
+        de `mozilla-django-oidc`.
+    """
+
+    def post(self, request):
+        if logout_state := request.session.pop("logout_state", None):
+            if request.GET.get("state") != logout_state:
+                raise SuspiciousOperation("La vérification de la déconnexion a échoué")
+        else:
+            raise SuspiciousOperation("Vérification de la déconnexion impossible")
+
+        return super().post(request)
