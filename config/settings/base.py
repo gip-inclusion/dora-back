@@ -72,6 +72,8 @@ MIDDLEWARE = [
 
 # OIDC / ProConnect
 AUTHENTICATION_BACKENDS = [
+    # auth par défaut pour la partie admin :
+    "django.contrib.auth.backends.ModelBackend",
     "dora.oidc.OIDCAuthenticationBackend",
 ]
 
