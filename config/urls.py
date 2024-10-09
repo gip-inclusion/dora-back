@@ -13,7 +13,6 @@ import dora.stats.views
 import dora.structures.views
 import dora.support.views
 import dora.users.views
-from dora.data_inclusion.client import di_client_factory
 from dora.oidc.urls import oidc_patterns
 
 from .url_converters import InseeCodeConverter, SiretConverter
@@ -66,26 +65,20 @@ register_converter(InseeCodeConverter, "insee_code")
 register_converter(SiretConverter, "siret")
 
 
-# injection conditionnelle du client D·I : voir conftest.py
-di_client = di_client_factory()
-
 private_api_patterns = [
     path("auth/", include("dora.rest_auth.urls")),
     path(
         "search/",
         dora.services.views.search,
-        {"di_client": di_client},
     ),
     path("stats/event/", dora.stats.views.log_event),
     path(
         "services-di/<slug:di_id>/",
         dora.services.views.service_di,
-        {"di_client": di_client},
     ),
     path(
         "services-di/<slug:di_id>/share/",
         dora.services.views.share_di_service,
-        {"di_client": di_client},
     ),
     path("admin-division-search/", dora.admin_express.views.search),
     path("admin-division-reverse-search/", dora.admin_express.views.reverse_search),

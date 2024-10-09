@@ -1,6 +1,8 @@
 from typing import Optional
 from uuid import uuid4
 
+from .constants import THEMATIQUES_MAPPING_DORA_TO_DI
+
 
 def make_di_service_data(**kwargs) -> dict:
     return {
@@ -99,13 +101,18 @@ class FakeDataInclusionClient:
             services = [r for r in services if r["source"] in sources]
 
         if thematiques is not None:
+            enriched_thematiques = []
+            for thematique in thematiques:
+                enriched_thematiques += THEMATIQUES_MAPPING_DORA_TO_DI.get(
+                    thematique, [thematique]
+                )
             services = [
                 r
                 for r in services
                 if any(
                     t.startswith(requested_thematique)
                     for t in r["thematiques"]
-                    for requested_thematique in thematiques
+                    for requested_thematique in enriched_thematiques
                 )
             ]
 

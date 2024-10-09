@@ -750,7 +750,7 @@ class BookmarkSerializer(BookmarkListSerializer):
             # le client D·I doit être importé avec le *même* chemin que
             # celui utilisé au moment du `patch`
             # (sinon, le mock échoue)
-            di_client = dora.data_inclusion.client.di_client_factory()
+            di_client = dora.data_inclusion.di_client_factory()
 
             try:
                 di_service = (

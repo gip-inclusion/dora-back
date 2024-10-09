@@ -7,6 +7,7 @@ from rest_framework import exceptions, mixins, permissions, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
+from dora import onboarding
 from dora.core.models import ModerationStatus
 from dora.core.notify import send_moderation_notification
 from dora.core.pagination import OptionalPageNumberPagination
@@ -52,22 +53,27 @@ class StructureViewSet(
         only_managed = self.request.query_params.get("managed")
         only_pending = self.request.query_params.get("pending")
         only_active = self.request.query_params.get("active")
+        search_string = self.request.query_params.get("search", None)
 
-        all_structures = Structure.objects.select_related("source", "parent").all()
+        structures = Structure.objects.select_related("source", "parent").all()
+
+        if search_string:
+            structures = structures.filter(name__icontains=search_string)
+
         if only_managed:
             if not user or not user.is_authenticated:
                 return Structure.objects.none()
             if user.is_staff:
-                return all_structures.order_by("-modification_date").distinct()
+                return structures.order_by("-modification_date").distinct()
             elif user.is_manager and user.departments:
                 return (
-                    all_structures.filter(department__in=user.departments)
+                    structures.filter(department__in=user.departments)
                     .order_by("-modification_date")
                     .distinct()
                 )
             else:
                 return (
-                    all_structures.filter(membership__user=user)
+                    structures.filter(membership__user=user)
                     .order_by("-modification_date")
                     .distinct()
                 )
@@ -75,20 +81,20 @@ class StructureViewSet(
             if not user or not user.is_authenticated:
                 return Structure.objects.none()
             return (
-                all_structures.filter(putative_membership__user=user)
+                structures.filter(putative_membership__user=user)
                 .exclude(putative_membership__invited_by_admin=True)
                 .order_by("-modification_date")
                 .distinct()
             )
         elif only_active:
             qs = (
-                all_structures.filter(services__status=ServiceStatus.PUBLISHED)
+                structures.filter(services__status=ServiceStatus.PUBLISHED)
                 .order_by("-modification_date")
                 .distinct()
             )
             return qs
         else:
-            return all_structures.order_by("-modification_date")
+            return structures.order_by("-modification_date")
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -299,6 +305,8 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
         if not structure.can_edit_members(request_user):
             raise exceptions.PermissionDenied
 
+        new_member = pm.user
+
         with transaction.atomic(durable=True):
             membership = StructureMember.objects.create(
                 user=pm.user,
@@ -307,6 +315,13 @@ class StructurePutativeMemberViewset(viewsets.ModelViewSet):
             )
             pm.delete()
             membership.notify_access_granted()
+
+        # À ce point, il peut être nécessaire de déclencher un onboarding :
+        # la *première* acceptation en tant que membre d'une structure déclenche
+        # l'inscription à une liste Brevo.
+        if new_member.membership.count() == 1:
+            # on vient d'enregistrer le nouveau membre (1 seule structure)
+            onboarding.onboard_user(new_member, structure)
 
         return Response(status=201)
 

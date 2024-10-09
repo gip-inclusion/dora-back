@@ -1,43 +1,36 @@
-import unittest
-
-from django.conf import settings
-from rest_framework.test import APITestCase
-
-from dora import data_inclusion
+from .constants import THEMATIQUES_MAPPING_DI_TO_DORA, THEMATIQUES_MAPPING_DORA_TO_DI
+from .mappings import map_service
+from .test_utils import FakeDataInclusionClient, make_di_service_data
 
 
-class DataInclusionIntegrationTestCase(APITestCase):
-    """These integration-level tests check the connection to data.inclusion.
+def test_map_service_thematiques_mapping():
+    input_thematiques = [
+        "logement-hebergement",
+        "logement-hebergement--connaissance-de-ses-droits-et-interlocuteurs",
+        "logement-hebergement--besoin-dadapter-mon-logement",
+    ] + list(THEMATIQUES_MAPPING_DI_TO_DORA.keys())
 
-    They depend on the data.inclusion api and should not be run
-    systematically, because of their inherent high cost and instability.
-    """
+    expected_categories = ["logement-hebergement"]
+    expected_subcategories = [
+        "logement-hebergement--connaissance-de-ses-droits-et-interlocuteurs",
+        "logement-hebergement--besoin-dadapter-mon-logement",
+    ] + list(THEMATIQUES_MAPPING_DI_TO_DORA.values())
 
-    def setUp(self):
-        self.di_client = data_inclusion.di_client_factory()
+    di_service_data = make_di_service_data(thematiques=input_thematiques)
+    service = map_service(di_service_data, False)
 
-    @unittest.skipIf(
-        settings.SKIP_DI_INTEGRATION_TESTS, "data.inclusion api not available"
-    )
-    def test_search_services(self):
-        self.di_client.search_services(
-            code_insee="91223",
-            thematiques=["mobilite--comprendre-et-utiliser-les-transports-en-commun"],
-        )
+    assert sorted(service["categories"]) == sorted(expected_categories)
+    assert sorted(service["subcategories"]) == sorted(expected_subcategories)
 
-    @unittest.skipIf(
-        settings.SKIP_DI_INTEGRATION_TESTS, "data.inclusion api not available"
-    )
-    def test_list_services(self):
-        self.di_client.list_services(source="dora")
 
-    @unittest.skipIf(
-        settings.SKIP_DI_INTEGRATION_TESTS, "data.inclusion api not available"
-    )
-    def test_retrieve_service(self):
-        services = self.di_client.list_services(source="dora")
+def test_di_client_search_thematiques_mapping():
+    input_thematique = list(THEMATIQUES_MAPPING_DORA_TO_DI.keys())[0]
+    output_thematique = list(THEMATIQUES_MAPPING_DORA_TO_DI.values())[0][0]
 
-        self.di_client.retrieve_service(
-            source="dora",
-            id=services[0]["id"],
-        )
+    di_client = FakeDataInclusionClient()
+    di_service_data = make_di_service_data(thematiques=[output_thematique])
+    di_client.services.append(di_service_data)
+
+    results = di_client.search_services(thematiques=[input_thematique])
+
+    assert len(results) == 1

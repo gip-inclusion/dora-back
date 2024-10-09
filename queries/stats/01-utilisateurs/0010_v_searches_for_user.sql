@@ -3,7 +3,7 @@
 -- non-membre de l'équipe, 
 -- et non-offreur seulement. 
 
-drop view v_searches_for_user;
+drop view if exists v_searches_for_user;
 
 create or replace view v_searches_for_user as
 select
@@ -13,7 +13,7 @@ select
     date_part('month', date) as mois,
     date_part('year', date)  as annee,
     count(*)                 as nb
-from stats_searchview
+from mb_stats_searchview
 where
     user_kind != 'offreur'
     and not is_manager
