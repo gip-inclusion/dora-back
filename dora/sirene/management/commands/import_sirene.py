@@ -9,24 +9,51 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.utils import DataError
 
+from dora.sirene.backup import (
+    bulk_add_establishments,
+    create_indexes,
+    create_table,
+    rename_table,
+    vacuum_analyze,
+)
 from dora.sirene.models import Establishment
 
 # Documentation des variables SIRENE : https://www.sirene.fr/static-resources/htm/v_sommaire.htm
+USE_TEMP_DIR = not settings.DEBUG
+SIRENE_TABLE = "sirene_establishment"
+TMP_TABLE = "_sirene_establishment_tmp"
+BACKUP_TABLE = "_sirene_establishment_bak"
 
 
 def clean_spaces(string):
     return string.replace("  ", " ").strip()
 
 
-USE_TEMP_DIR = not settings.DEBUG
-
-
 def commit(rows):
-    Establishment.objects.bulk_create(rows)
+    bulk_add_establishments(TMP_TABLE, rows)
 
 
 class Command(BaseCommand):
-    help = "Import the latest Sirene database"
+    help = "Import de la dernière base SIRENE géolocalisée"
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--activate",
+            action="store_true",
+            help="Active la table de travail temporaire générée par l'import.",
+        )
+
+        parser.add_argument(
+            "--rollback",
+            action="store_true",
+            help="Active la table de travail sauvegardée en production.",
+        )
+
+        parser.add_argument(
+            "--analyze",
+            action="store_true",
+            help="Effectue un VACUUM ANALYZE sur la base.",
+        )
 
     def download_data(self, tmp_dir_name):
         if USE_TEMP_DIR:
@@ -135,12 +162,46 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        if args.get("activate"):
+            # activation de la table temporaire (si existante),
+            # comme table de production (`sirene_establishment`)
+            self.stdout.write(self.WARNING("Activation de la table de travail"))
+
+            # on sauvegarde la base de production
+            self.stdout.write(self.NOTICE(" > sauvegarde de la table actuelle"))
+            rename_table(SIRENE_TABLE, BACKUP_TABLE)
+
+            # on renomme la table de travail
+            self.stdout.write(self.NOTICE(" > renommage de la table de travail"))
+            rename_table(TMP_TABLE, SIRENE_TABLE)
+
+            self.stdout.write(self.NOTICE("Activation terminée"))
+            return
+
+        if args.get("rollback"):
+            # activation de la table sauvegardée
+            self.stdout.write(self.WARNING("Activation de la table sauvegardée"))
+            rename_table(SIRENE_TABLE, TMP_TABLE)
+            rename_table(BACKUP_TABLE, SIRENE_TABLE)
+            rename_table(TMP_TABLE, BACKUP_TABLE)
+
+        if args.get("analyse"):
+            # lance une analyse statistique sur la base Postgres
+            self.stdout.write(self.WARNING("Analyse de la DB en cours..."))
+            vacuum_analyze()
+            self.stdout.write(self.NOTICE("Analyse terminée"))
+            return
+
+        self.stdout.write(self.NOTICE(" > création de la base de travail"))
+        # efface la précédente
+        create_table(TMP_TABLE)
+
         with tempfile.TemporaryDirectory() as tmp_dir_name:
             stock_file, estab_file = self.download_data(tmp_dir_name)
 
             num_stock_items = 0
             with open(stock_file) as f:
-                num_stock_items = sum(1 for line in f)
+                num_stock_items = sum(1 for _ in f)
 
             legal_units = {}
             with open(stock_file) as units_file:
@@ -157,20 +218,30 @@ class Command(BaseCommand):
                         # On ignore les unités légales fermées
                         legal_units[row["siren"]] = self.get_ul_name(row)
 
-                self.stdout.write(self.style.NOTICE("Counting establishments"))
+                self.stdout.write(
+                    self.style.NOTICE(" > décompte des établissements...")
+                )
 
                 num_establishments = 0
                 with open(estab_file) as f:
-                    num_establishments = sum(1 for line in f)
+                    num_establishments = sum(1 for _ in f)
                 last_prog = 0
 
+                self.stdout.write(
+                    self.style.NOTICE(f" > {num_establishments} établissements")
+                )
+
             with open(estab_file) as establishment_file:
-                self.stdout.write(self.style.NOTICE("Importing establishments"))
+                self.stdout.write(self.style.NOTICE(" > import des établissements..."))
                 reader = csv.DictReader(establishment_file, delimiter=",")
 
                 with transaction.atomic(durable=True):
-                    self.stdout.write(self.style.WARNING("Emptying current table"))
-                    Establishment.objects.all().delete()
+                    self.stdout.write(
+                        self.style.WARNING(
+                            " > insertion des données dans la table temporaire..."
+                        )
+                    )
+                    # Establishment.objects.all().delete()
                     batch_size = 1_000
                     rows = []
                     for i, row in enumerate(reader):
@@ -199,4 +270,11 @@ class Command(BaseCommand):
 
                     commit(rows)
 
-                self.stdout.write(self.style.SUCCESS("Import successful"))
+                # recréation des indexes sur la table de travail
+                self.stdout.write(self.style.NOTICE(" > re-création des indexes"))
+                create_indexes(TMP_TABLE)
+
+                # la sauvegarde de la base de production et l'analyse de la DB
+                # ne sont pas automatique, voir arguments `--activate` et `--analyze`
+
+                self.stdout.write(self.style.SUCCESS("L'import est terminé. Ne pas oublier d'activer la table de travail (--activate)"))
