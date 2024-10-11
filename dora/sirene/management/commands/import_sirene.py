@@ -11,6 +11,7 @@ from django.db.utils import DataError
 
 from dora.sirene.backup import (
     bulk_add_establishments,
+    clean_tmp_tables,
     create_indexes,
     create_table,
     rename_table,
@@ -55,12 +56,18 @@ class Command(BaseCommand):
             help="Effectue un VACUUM ANALYZE sur la base.",
         )
 
+        parser.add_argument(
+            "--clean",
+            action="store_true",
+            help="Efface les tables de travail temporaires en DB.",
+        )
+
     def download_data(self, tmp_dir_name):
         if USE_TEMP_DIR:
             the_dir = pathlib.Path(tmp_dir_name)
         else:
             the_dir = pathlib.Path("/tmp")
-        self.stdout.write("Saving SIRENE files to " + str(the_dir))
+        self.stdout.write("Sauvegarde des fichiers SIRENE dans : " + str(the_dir))
 
         legal_units_file_url = (
             "https://files.data.gouv.fr/insee-sirene/StockUniteLegale_utf8.zip"
@@ -68,13 +75,17 @@ class Command(BaseCommand):
         zipped_stock_file = the_dir / "StockUniteLegale_utf8.zip"
 
         if not os.path.exists(zipped_stock_file):
-            self.stdout.write(self.style.NOTICE("Downloading legal units file"))
+            self.stdout.write(
+                self.style.NOTICE(
+                    "Téléchargement des 'unités légales' (entreprises mères)"
+                )
+            )
             subprocess.run(
                 ["curl", legal_units_file_url, "-o", zipped_stock_file],
                 check=True,
             )
 
-            self.stdout.write(self.style.NOTICE("Unzipping legal units file"))
+            self.stdout.write(self.style.NOTICE("Décompression fichier unités légales"))
             subprocess.run(
                 ["unzip", zipped_stock_file, "-d", the_dir],
                 check=True,
@@ -86,13 +97,15 @@ class Command(BaseCommand):
         gzipped_estab_file = the_dir / "StockEtablissementActif_utf8_geo.csv.gz"
 
         if not os.path.exists(gzipped_estab_file):
-            self.stdout.write(self.style.NOTICE("Downloading establishments file"))
+            self.stdout.write(self.style.NOTICE("Télécharchement des établissements"))
             subprocess.run(
                 ["curl", establishments_geo_file_url, "-o", gzipped_estab_file],
                 check=True,
             )
 
-            self.stdout.write(self.style.NOTICE("Unzipping establishments file"))
+            self.stdout.write(
+                self.style.NOTICE("Décompression du fichier établissements")
+            )
             subprocess.run(
                 ["gzip", "-dk", gzipped_estab_file],
                 check=True,
@@ -162,37 +175,46 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        if args.get("activate"):
+        if options.get("activate"):
             # activation de la table temporaire (si existante),
             # comme table de production (`sirene_establishment`)
-            self.stdout.write(self.WARNING("Activation de la table de travail"))
+            self.stdout.write(self.style.WARNING("Activation de la table de travail"))
 
             # on sauvegarde la base de production
-            self.stdout.write(self.NOTICE(" > sauvegarde de la table actuelle"))
+            self.stdout.write(self.style.NOTICE(" > sauvegarde de la table actuelle"))
             rename_table(SIRENE_TABLE, BACKUP_TABLE)
 
             # on renomme la table de travail
-            self.stdout.write(self.NOTICE(" > renommage de la table de travail"))
+            self.stdout.write(self.style.NOTICE(" > renommage de la table de travail"))
             rename_table(TMP_TABLE, SIRENE_TABLE)
 
-            self.stdout.write(self.NOTICE("Activation terminée"))
+            self.stdout.write(self.style.NOTICE("Activation terminée"))
             return
 
-        if args.get("rollback"):
+        if options.get("rollback"):
             # activation de la table sauvegardée
-            self.stdout.write(self.WARNING("Activation de la table sauvegardée"))
+            self.stdout.write(self.style.WARNING("Activation de la table sauvegardée"))
             rename_table(SIRENE_TABLE, TMP_TABLE)
             rename_table(BACKUP_TABLE, SIRENE_TABLE)
             rename_table(TMP_TABLE, BACKUP_TABLE)
 
-        if args.get("analyse"):
+        if options.get("analyze"):
             # lance une analyse statistique sur la base Postgres
-            self.stdout.write(self.WARNING("Analyse de la DB en cours..."))
+            self.stdout.write(self.style.WARNING("Analyse de la DB en cours..."))
             vacuum_analyze()
-            self.stdout.write(self.NOTICE("Analyse terminée"))
+            self.stdout.write(self.style.NOTICE("Analyse terminée"))
             return
 
-        self.stdout.write(self.NOTICE(" > création de la base de travail"))
+        if options.get("clean"):
+            # Supprime les tables de travail / temporaires de la base Postgres
+            self.stdout.write(
+                self.style.WARNING("Suppression des tables temporaires...")
+            )
+            clean_tmp_tables(TMP_TABLE, BACKUP_TABLE)
+            self.stdout.write(self.style.NOTICE("Suppression terminée"))
+            return
+
+        self.stdout.write(self.style.NOTICE(" > création de la base de travail"))
         # efface la précédente
         create_table(TMP_TABLE)
 
@@ -277,4 +299,8 @@ class Command(BaseCommand):
                 # la sauvegarde de la base de production et l'analyse de la DB
                 # ne sont pas automatique, voir arguments `--activate` et `--analyze`
 
-                self.stdout.write(self.style.SUCCESS("L'import est terminé. Ne pas oublier d'activer la table de travail (--activate)"))
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        "L'import est terminé. Ne pas oublier d'activer la table de travail (--activate)"
+                    )
+                )

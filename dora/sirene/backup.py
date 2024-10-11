@@ -1,3 +1,5 @@
+import random
+
 from django.db import connection, transaction
 
 from .models import Establishment
@@ -48,18 +50,22 @@ def create_table(table_name: str):
 
 
 def create_indexes(table_name: str):
+    def _suffix():
+        # pas de risque ici : cette table n'est pas utilisée par l'ORM Django
+        return f"{random.getrandbits(16*8):8x}"
+
     create_indexes_ddl = f"""
     CREATE INDEX {table_name}_full_text_trgm_idx ON public.{table_name} USING gin (full_search_text gin_trgm_ops);
-    CREATE INDEX {table_name}_code_commune_100bb2ad ON public.{table_name} USING btree (city_code);
-    CREATE INDEX {table_name}_code_commune_100bb2ad_like ON public.{table_name} USING btree (city_code varchar_pattern_ops);
-    CREATE INDEX {table_name}_is_siege_9c0272c3 ON public.{table_name} USING btree (is_siege);
-    CREATE INDEX {table_name}_name_d8569d90 ON public.{table_name} USING btree (name);
-    CREATE INDEX {table_name}_name_d8569d90_like ON public.{table_name} USING btree (name varchar_pattern_ops);
-    CREATE INDEX {table_name}_parent_name_1990928d ON public.{table_name} USING btree (parent_name);
-    CREATE INDEX {table_name}_parent_name_1990928d_like ON public.{table_name} USING btree (parent_name varchar_pattern_ops);
-    CREATE INDEX {table_name}_siren_b19f551a ON public.{table_name} USING btree (siren);
-    CREATE INDEX {table_name}_siren_b19f551a_like ON public.{table_name} USING btree (siren varchar_pattern_ops);
-    CREATE INDEX {table_name}_siret_3eb91925_like ON public.{table_name} USING btree (siret varchar_pattern_ops);
+    CREATE INDEX {table_name}_code_commune_{_suffix()} ON public.{table_name} USING btree (city_code);
+    CREATE INDEX {table_name}_code_commune_{_suffix()}_like ON public.{table_name} USING btree (city_code varchar_pattern_ops);
+    CREATE INDEX {table_name}_is_siege_{_suffix()} ON public.{table_name} USING btree (is_siege);
+    CREATE INDEX {table_name}_name_{_suffix()} ON public.{table_name} USING btree (name);
+    CREATE INDEX {table_name}_name_{_suffix()}_like ON public.{table_name} USING btree (name varchar_pattern_ops);
+    CREATE INDEX {table_name}_parent_name_{_suffix()} ON public.{table_name} USING btree (parent_name);
+    CREATE INDEX {table_name}_parent_name_{_suffix()}_like ON public.{table_name} USING btree (parent_name varchar_pattern_ops);
+    CREATE INDEX {table_name}_siren_{_suffix()} ON public.{table_name} USING btree (siren);
+    CREATE INDEX {table_name}_siren_{_suffix()}_like ON public.{table_name} USING btree (siren varchar_pattern_ops);
+    CREATE INDEX {table_name}_siret_{_suffix()}_like ON public.{table_name} USING btree (siret varchar_pattern_ops);
     """
     with connection.cursor() as c:
         c.execute(create_indexes_ddl)
@@ -67,12 +73,27 @@ def create_indexes(table_name: str):
 
 def rename_table(orig_table_name: str, dest_table_name: str):
     with connection.cursor() as c:
-        c.execute("ALTER TABLE %s RENAME TO %s;", [orig_table_name, dest_table_name])
+        # au lieu de :
+        # c.execute("ALTER TABLE %s RENAME TO %s;", [orig_table_name, dest_table_name])
+        # les placeholders de type `string` sont automatiquement entourés de quotes ('),
+        # ce qui vrille les ordres DDL.
+        order = f"ALTER TABLE {orig_table_name} RENAME TO {dest_table_name};"
+        c.execute(order)
 
 
 def vacuum_analyze():
     with connection.cursor() as c:
         c.execute("VACUUM ANALYZE;")
+
+
+def clean_tmp_tables(*tmp_tables):
+    # attention ...
+    with connection.cursor() as c:
+        # petite sécurité supplémentaire:
+        # les tables temporaires sont obligatoirement préfixées par `_`
+        for tmp_table in [tt for tt in tmp_tables if tt.startswith("_")]:
+            print(f" > suppression de {tmp_table}")
+            c.execute(f"DROP TABLE IF EXISTS {tmp_table}")
 
 
 def create_insert_statement(table_name: str) -> tuple[str, list[str]]:
