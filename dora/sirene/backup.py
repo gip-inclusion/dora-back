@@ -73,12 +73,27 @@ def create_indexes(table_name: str):
 
 def rename_table(orig_table_name: str, dest_table_name: str):
     with connection.cursor() as c:
-        c.execute("ALTER TABLE %s RENAME TO %s;", [orig_table_name, dest_table_name])
+        # au lieu de :
+        # c.execute("ALTER TABLE %s RENAME TO %s;", [orig_table_name, dest_table_name])
+        # les placeholders de type `string` sont automatiquement entourés de quotes ('),
+        # ce qui vrille les ordres DDL.
+        order = f"ALTER TABLE {orig_table_name} RENAME TO {dest_table_name};"
+        c.execute(order)
 
 
 def vacuum_analyze():
     with connection.cursor() as c:
         c.execute("VACUUM ANALYZE;")
+
+
+def clean_tmp_tables(*tmp_tables):
+    # attention ...
+    with connection.cursor() as c:
+        # petite sécurité supplémentaire:
+        # les tables temporaires sont obligatoirement préfixées par `_`
+        for tmp_table in [tt for tt in tmp_tables if tt.startswith("_")]:
+            print(f" > suppression de {tmp_table}")
+            c.execute(f"DROP TABLE IF EXISTS {tmp_table}")
 
 
 def create_insert_statement(table_name: str) -> tuple[str, list[str]]:

@@ -11,6 +11,7 @@ from django.db.utils import DataError
 
 from dora.sirene.backup import (
     bulk_add_establishments,
+    clean_tmp_tables,
     create_indexes,
     create_table,
     rename_table,
@@ -55,6 +56,12 @@ class Command(BaseCommand):
             help="Effectue un VACUUM ANALYZE sur la base.",
         )
 
+        parser.add_argument(
+            "--clean",
+            action="store_true",
+            help="Efface les tables de travail temporaires en DB.",
+        )
+
     def download_data(self, tmp_dir_name):
         if USE_TEMP_DIR:
             the_dir = pathlib.Path(tmp_dir_name)
@@ -68,7 +75,11 @@ class Command(BaseCommand):
         zipped_stock_file = the_dir / "StockUniteLegale_utf8.zip"
 
         if not os.path.exists(zipped_stock_file):
-            self.stdout.write(self.style.NOTICE("Téléchargement des 'unités légales' (entreprises mères)"))
+            self.stdout.write(
+                self.style.NOTICE(
+                    "Téléchargement des 'unités légales' (entreprises mères)"
+                )
+            )
             subprocess.run(
                 ["curl", legal_units_file_url, "-o", zipped_stock_file],
                 check=True,
@@ -92,7 +103,9 @@ class Command(BaseCommand):
                 check=True,
             )
 
-            self.stdout.write(self.style.NOTICE("Décompression du fichier établissements"))
+            self.stdout.write(
+                self.style.NOTICE("Décompression du fichier établissements")
+            )
             subprocess.run(
                 ["gzip", "-dk", gzipped_estab_file],
                 check=True,
@@ -165,31 +178,40 @@ class Command(BaseCommand):
         if options.get("activate"):
             # activation de la table temporaire (si existante),
             # comme table de production (`sirene_establishment`)
-            self.stdout.write(self.WARNING("Activation de la table de travail"))
+            self.stdout.write(self.style.WARNING("Activation de la table de travail"))
 
             # on sauvegarde la base de production
-            self.stdout.write(self.NOTICE(" > sauvegarde de la table actuelle"))
+            self.stdout.write(self.style.NOTICE(" > sauvegarde de la table actuelle"))
             rename_table(SIRENE_TABLE, BACKUP_TABLE)
 
             # on renomme la table de travail
-            self.stdout.write(self.NOTICE(" > renommage de la table de travail"))
+            self.stdout.write(self.style.NOTICE(" > renommage de la table de travail"))
             rename_table(TMP_TABLE, SIRENE_TABLE)
 
-            self.stdout.write(self.NOTICE("Activation terminée"))
+            self.stdout.write(self.style.NOTICE("Activation terminée"))
             return
 
         if options.get("rollback"):
             # activation de la table sauvegardée
-            self.stdout.write(self.WARNING("Activation de la table sauvegardée"))
+            self.stdout.write(self.style.WARNING("Activation de la table sauvegardée"))
             rename_table(SIRENE_TABLE, TMP_TABLE)
             rename_table(BACKUP_TABLE, SIRENE_TABLE)
             rename_table(TMP_TABLE, BACKUP_TABLE)
 
-        if options.get("analyse"):
+        if options.get("analyze"):
             # lance une analyse statistique sur la base Postgres
             self.stdout.write(self.style.WARNING("Analyse de la DB en cours..."))
             vacuum_analyze()
             self.stdout.write(self.style.NOTICE("Analyse terminée"))
+            return
+
+        if options.get("clean"):
+            # Supprime les tables de travail / temporaires de la base Postgres
+            self.stdout.write(
+                self.style.WARNING("Suppression des tables temporaires...")
+            )
+            clean_tmp_tables(TMP_TABLE, BACKUP_TABLE)
+            self.stdout.write(self.style.NOTICE("Suppression terminée"))
             return
 
         self.stdout.write(self.style.NOTICE(" > création de la base de travail"))
@@ -277,4 +299,8 @@ class Command(BaseCommand):
                 # la sauvegarde de la base de production et l'analyse de la DB
                 # ne sont pas automatique, voir arguments `--activate` et `--analyze`
 
-                self.stdout.write(self.style.SUCCESS("L'import est terminé. Ne pas oublier d'activer la table de travail (--activate)"))
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        "L'import est terminé. Ne pas oublier d'activer la table de travail (--activate)"
+                    )
+                )
