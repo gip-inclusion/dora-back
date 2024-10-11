@@ -278,6 +278,11 @@ def onboard_user(user: User, structure: Structure):
 
     # dans le cas d'un utilisateur passé membre, le retirer de la liste des invités
     if sib_list_id == int(settings.SIB_ONBOARDING_MEMBER_LIST):
-        _remove_from_sib_list(
-            client, user, int(settings.SIB_ONBOARDING_PUTATIVE_MEMBER_LIST)
-        )
+        if _contact_in_sib_list(client, user, sib_list_id):
+            # Dans le cas des imports via commande / script,
+            # les utilisateurs peuvent ne pas être passés par la liste "invité".
+            # Les retirer de la liste sans y vérifier leur présense provoque un log d'erreur,
+            # sans conséquence, mais qui alimente quand même les erreurs Sentry.
+            _remove_from_sib_list(
+                client, user, int(settings.SIB_ONBOARDING_PUTATIVE_MEMBER_LIST)
+            )
