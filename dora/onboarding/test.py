@@ -73,6 +73,7 @@ def test_onboard_other_activities(
 @patch("dora.onboarding._remove_from_sib_list")
 @patch("dora.onboarding._create_or_update_sib_contact")
 @patch("dora.onboarding._setup_sib_client", Mock(return_value=True))
+@patch("dora.onboarding._contact_in_sib_list", Mock(return_value=True))
 def test_onboard_new_member(
     mock_create_contact,
     mock_remove_from_list,
