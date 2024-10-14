@@ -11,5 +11,4 @@ THEMATIQUES_MAPPING_DI_TO_DORA = {
 # À une thématique Dora correspond une liste de thématiques DI
 THEMATIQUES_MAPPING_DORA_TO_DI = defaultdict(list)
 for key, value in THEMATIQUES_MAPPING_DI_TO_DORA.items():
-    if not value.endswith("--autre"):
-        THEMATIQUES_MAPPING_DORA_TO_DI[value].append(key)
+    THEMATIQUES_MAPPING_DORA_TO_DI[value].append(key)
