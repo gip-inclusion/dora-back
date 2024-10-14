@@ -106,7 +106,9 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
     def get_or_create_drf_token(self, user_email):
         # Pour être temporairement compatible, on crée un token d'identification DRF lié au nouvel utilisateur.
         if not user_email:
-            logger.exception("Utilisateur non renseigné pour la création du token DRF")
+            raise SuspiciousOperation(
+                "Utilisateur non renseigné pour la création du token DRF"
+            )
 
         user = User.objects.get(email=user_email)
 
