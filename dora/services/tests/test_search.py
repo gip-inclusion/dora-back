@@ -5,6 +5,7 @@ from model_bakery import baker
 
 from dora.admin_express.models import AdminDivisionType
 from dora.core.test_utils import (
+    make_published_service,
     make_service,
     make_structure,
     make_user,
@@ -29,6 +30,38 @@ def orphan_service():
 @pytest.fixture
 def structure_with_user():
     return make_structure(user=make_user())
+
+
+def test_search_services_with_obsolete_structure(api_client):
+    # les services rattachés à une structure obsolète
+    # doivent être filtrés lors de la recherche
+
+    # Service publié avec structure non obsolète
+    service = make_published_service(diffusion_zone_type=AdminDivisionType.COUNTRY)
+
+    # le paramètre `city` est nécessaire a minima
+    city = baker.make("City")
+    response = api_client.get(f"/search/?city={city.code}")
+
+    assert response.status_code == 200
+    assert response.data[
+        "services"
+    ], "un service devrait être retourné (structure non obsolète)"
+
+    [found] = response.data["services"]
+
+    assert found["slug"] == service.slug
+
+    # on rend la structure obsolète
+    service.structure.is_obsolete = True
+    service.structure.save()
+
+    response = api_client.get(f"/search/?city={city.code}")
+
+    assert response.status_code == 200
+    assert not response.data[
+        "services"
+    ], "aucun service ne devrait être retourné (structure obsolète)"
 
 
 def test_search_services_with_orphan_structure(
