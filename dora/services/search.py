@@ -256,6 +256,9 @@ def _get_dora_results(
         )
     )
 
+    # On exclus les services dont la structure est marquèe comme obsolète
+    services = services.exclude(structure__is_obsolete=True)
+
     # Par souci de qualité des données,
     # les services DORA rattachés à une structure orpheline
     # sont filtrés lors de la recherche.
