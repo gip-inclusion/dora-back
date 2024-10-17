@@ -6,12 +6,17 @@ from django.core import mail
 from django.utils import timezone
 from freezegun import freeze_time
 
+from dora.core.models import ModerationStatus
 from dora.core.test_utils import make_structure, make_user
 from dora.notifications.models import Notification
 from dora.users.models import User
 
 from ..core import Task
-from ..users import UserAccountDeletionTask, UsersWithoutStructureTask
+from ..users import (
+    ManagerStructureModerationTask,
+    UserAccountDeletionTask,
+    UsersWithoutStructureTask,
+)
 
 
 @pytest.fixture
@@ -217,3 +222,87 @@ def test_user_without_structure_task_should_trigger(user_without_structure_task)
     # le compte utilisateur doit avoir été supprimé
     with pytest.raises(User.DoesNotExist):
         user.refresh_from_db()
+
+
+@pytest.fixture
+def manager_structure_moderation_task():
+    return ManagerStructureModerationTask()
+
+
+def test_manager_structure_moderation_task_is_registered():
+    assert ManagerStructureModerationTask in Task.registered_tasks()
+
+
+def test_manager_structure_moderation_candidates(manager_structure_moderation_task):
+    # gestionnaire sans structure à modérer en attente
+    manager = make_user(is_manager=True, departments=["37", "81"])
+    assert (
+        manager not in manager_structure_moderation_task.candidates()
+    ), "Ce gestionnaire ne doit pas être candidat à une notification"
+
+    # création d'une structure en attente de validation (hors-scope du gestionnaire)
+    structure = make_structure(
+        department="11", moderation_status=ModerationStatus.NEED_NEW_MODERATION
+    )
+
+    assert (
+        manager not in manager_structure_moderation_task.candidates()
+    ), "Ce gestionnaire ne doit pas être candidat à une notification"
+
+    # la structure est en attente de modération et dans le territoire du gestionnaire
+    structure.department = "37"
+    structure.save()
+
+    assert (
+        manager in manager_structure_moderation_task.candidates()
+    ), "Ce gestionnaire doit être candidat à une notification"
+
+
+def test_manager_structure_moderation_task_should_trigger(
+    manager_structure_moderation_task,
+):
+    manager = make_user(is_manager=True, departments=["37"])
+
+    # le gestionnaire n'a aucune structure à modérer
+    ok, _, _ = manager_structure_moderation_task.run()
+    assert not ok, "Le gestionnaire n'a aucune structure à modérer"
+
+    # Le gestionnaire à une structure à modérer
+    make_structure(
+        department="37", moderation_status=ModerationStatus.NEED_NEW_MODERATION
+    )
+
+    # on crée une notification, qui sera en attente
+    monday = timezone.datetime.strptime("2024-10-14", "%Y-%m-%d")
+
+    with freeze_time(monday - relativedelta(days=1)):
+        manager_structure_moderation_task.run()
+        # cette étape, la notification est créée mais pas déclenchée
+
+    notification = Notification.objects.first()
+    assert (
+        notification.is_pending
+    ), "Il doit y avoir une notification en attente pour ce gestionnaire"
+
+    for d in range(6):
+        with freeze_time(monday + relativedelta(days=d)):
+            ok, _, _ = manager_structure_moderation_task.run()
+            notification.refresh_from_db()
+
+            # ok, uniquement les mercredis
+            assert ok == (
+                d == 2
+            ), "Cette notification ne doit s'exécuter que les mercredis"
+
+    # le mercredi suivant
+    with freeze_time(monday + relativedelta(days=9)):
+        ok, _, _ = manager_structure_moderation_task.run()
+        assert ok, "Cette notification doit pouvoir être executée"
+
+        # on en profite pour vérifier l'envoi d'e-mail (en surface)
+        assert len(mail.outbox)
+        assert mail.outbox[0].to == [manager.email]
+
+        # pas deux fois le même mercredi
+        ok, _, _ = manager_structure_moderation_task.run()
+        assert not ok, "Cette notification ne doit pas être executée une deuxième fois"
