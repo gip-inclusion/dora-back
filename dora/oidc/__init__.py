@@ -49,12 +49,12 @@ class OIDCAuthenticationBackend(MozillaOIDCAuthenticationBackend):
         email, sub = claims.get("email"), claims.get("sub")
         if not email:
             raise SuspiciousOperation(
-                "L'adresse e-mail n'est pas inclue dans les `claims`"
+                "L'adresse e-mail n'est pas incluse dans les `claims`"
             )
 
         if not sub:
             raise SuspiciousOperation(
-                "Le sujet (`sub`) n'est pas inclu dans les `claims`"
+                "Le sujet (`sub`) n'est pas inclus dans les `claims`"
             )
 
         # L'utilisateur est créé sans mot de passe (aucune connexion à l'admin),
